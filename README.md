@@ -26,27 +26,19 @@ Self-funded partners: NERSC, SLAC
 
 This repository uses independent **git branches** (["orphan branches"](https://graphite.dev/guides/git-orphan-branches)).
 
-### Simulations
-
-[Milestone tasks: Simulation](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/1)
+### Simulations [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/1)
 
 - [2024-05-03_iP2-13mu-Kapton](https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/2024-05-03_iP2-13mu-Kapton): initial simulation design (draft)
 - [2024-05-30_superfacilities_ldrd_kapton_2D](https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/2024-05-30_superfacilities_ldrd_kapton_2D): latest 2D simulation WarpX input
 
-### Experimental Data Extraction
-
-[Milestone tasks: Experimental Data Input](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/2)
+### Experimental Data Input [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/2)
 
 - [extra_data](https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/extra_data): Python scripts & notebooks for BELLA-GEECS data reading
 
-### Machine Learning
-
-[Milestone tasks: ML Training & Prediction](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/3)
+### ML Training & Prediction [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/3)
 
 *TODO*
 
-### Data Transfer & Workflows
-
-[Milestone tasks: Compute & Copy Automation](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/4)
+### Compute & Copy Automation [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/4)
 
 *TODO*
