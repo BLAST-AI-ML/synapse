@@ -13,8 +13,9 @@ Self-funded partners: NERSC, SLAC
 - [Meeting Minutes](https://docs.google.com/document/d/1dcpWVORoMVZ1U-bFw1yFQzZOMu8ay4K9hkbavuiiwJI/edit)
 - GChat: `Superfacility LDRD`
 - Project Management:
-  - [Tasks (Issues)](https://github.com/ECP-WarpX/2024_IFE-superfacility/issues)
   - [Milestones](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestones)
+  - [Tasks (Issues)](https://github.com/ECP-WarpX/2024_IFE-superfacility/issues)
+  - [GitHub Team Access](https://github.com/orgs/ECP-WarpX/teams/ife-superfacility)
 - Perlmutter (NERSC):
   - File directory: `/global/cfs/cdirs/m3239/ip2data`
   - Project: `m3239`
