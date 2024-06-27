@@ -22,23 +22,11 @@ Self-funded partners: NERSC, SLAC
   - Unix Group: `ip2data`
 
 
-## Git Branches in this Repository
+## Organization of this repository
 
-This repository uses independent **git branches** (["orphan branches"](https://graphite.dev/guides/git-orphan-branches)).
+We will create separate folder to store the code associated with the different tasks:
 
-### Simulations [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/1)
-
-- [2024-05-03_iP2-13mu-Kapton](https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/2024-05-03_iP2-13mu-Kapton): initial simulation design (draft)
-- [2024-05-30_superfacilities_ldrd_kapton_2D](https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/2024-05-30_superfacilities_ldrd_kapton_2D): latest 2D simulation WarpX input
-
-### Experimental Data Input [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/2)
-
-- [extra_data](https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/extra_data): Python scripts & notebooks for BELLA-GEECS data reading
-
-### ML Training & Prediction [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/3)
-
-*TODO*
-
-### Compute & Copy Automation [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/4)
-
-*TODO*
+- `simulation_data`: scripts that allow to produce simulations and extract a corresponding dataset, including WarpX and optimas script, submission scripts, etc. [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/1)
+- `experimental_data`: scripts that extract datasets from the BELLA raw data. [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/2)
+-  `ml`: scripts/notebook for experimentation with different ML models. [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/3)
+-  `automation`: code that implements the orchestration workflow (automated copies, launching jobs at NERSC, etc.) [(Tasks)](https://github.com/ECP-WarpX/2024_IFE-superfacility/milestone/4)
