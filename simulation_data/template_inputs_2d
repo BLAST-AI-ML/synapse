@@ -1,3 +1,5 @@
+# GPU-aware MPI optimizations
+amrex.use_gpu_aware_mpi=1
 #################################
 # Domain, Resolution & Numerics
 #
@@ -10,10 +12,11 @@
 # time-scale for converged ion energy in our region of interest
 #   notes: - effective acc. time depends on laser pulse
 #          - ions will start to leave the box
-stop_time = 0.7e-12           # [s]
+stop_time = 1.1e-12           # [s]
 
 # grid resolution (cells in x and z)
 amr.n_cell = 4096 6144
+#amr.n_cell = 8192 12288
 
 # simulation box, no MR
 #   note: increase z (space & cells) for converging ion energy
@@ -51,7 +54,7 @@ warpx.use_filter = 1          # bilinear current/charge filter
 #   the numprocs product must be equal to the number of MPI ranks and splits
 #   the domain on the coarsest level equally into grids;
 #   slicing in the 2nd dimension is preferred for ideal performance
-warpx.numprocs = 32 1  # 16 MPI ranks
+warpx.numprocs = 32 1  # 32 MPI ranks
 
 # detail tuning instead of warpx.numprocs:
 #   It is important to have enough cells in a block & grid, otherwise
@@ -199,7 +202,7 @@ electronsO.zmin = zmin
 electronsO.zmax = zmax
 
 # Carbon-Hydrogen Layer
-# TODO
+# - do later if required
 
 # density profiles (target extent, pre-plasma and cutoffs defined above particle species list)
 
@@ -217,7 +220,7 @@ electronsO.density_function(x,y,z) = nr_eO * ne * nc * (abs(x) < x_cut) * ((abs(
 # Laser Pulse Profile
 #
 my_constants.alpha = 30. * pi / 180.                 # tilt of laser to target normal
-my_constants.sz = 20.e-6                             # z-distance from laser pulse origin to focus
+my_constants.sz = 30.e-6                             # z-distance from laser pulse origin to focus
 my_constants.sx = sz * atan(alpha)                   # x-distance from laser pulse origin to focus
 my_constants.sf = sqrt(sx*sx + sz*sz)
 my_constants.lambda_L = 0.815e-6                      # [m] central laser wavelength
@@ -233,8 +236,10 @@ lasy_laser.lasy_file_name = "laser_with_tod_00000.h5"   # focal distance is impl
 lasy_laser.delay = 0.0
 
 
+# Of the 20J total we have 58% in Gaussian focal spot.
+# The following values are just for internal normalization.
+# The actual a0 will come from the input file
 # without PM
-# TODO: double check if not 52 or so - renormalize it to 20J total with 58% in Gaussian focal spot
 lasy_laser.a0           = 54.0               # maximum amplitude of the laser field [V/m]
 # with PM
 #lasy_laser.a0           = 42.0               # maximum amplitude of the laser field [V/m]
@@ -261,7 +266,7 @@ warpx.reduced_diags_names                   = histuH_tp histuH_rcf histuH_fw Fie
 
 # Thomson-Parabola
 histuH_tp.type                                 = ParticleHistogram
-histuH_tp.intervals                            = 100
+histuH_tp.intervals                            = 250
 #histuH_tp.path                                 = "./histograms/"
 histuH_tp.species                              = hydrogen
 histuH_tp.bin_number                           = 1000
@@ -272,7 +277,7 @@ histuH_tp.filter_function(t,x,y,z,ux,uy,uz)    = "u2=ux*ux+uy*uy+uz*uz; if(u2>0,
 
 # Radio-Chromic Film Stacks
 histuH_rcf.type                                 = ParticleHistogram
-histuH_rcf.intervals                            = 100
+histuH_rcf.intervals                            = 250
 #histuH_rcf.path                                 = "./histograms/"
 histuH_rcf.species                              = hydrogen
 histuH_rcf.bin_number                           = 1000
@@ -283,7 +288,7 @@ histuH_rcf.filter_function(t,x,y,z,ux,uy,uz)    = "u2=ux*ux+uy*uy+uz*uz; if(u2>0
 
 # Forward-moving protons behind the cold target rear surface
 histuH_fw.type                                 = ParticleHistogram
-histuH_fw.intervals                            = 100
+histuH_fw.intervals                            = 250
 #histuH_fw.path                                 = "./histograms/"
 histuH_fw.species                              = hydrogen
 histuH_fw.bin_number                           = 1000
@@ -293,7 +298,7 @@ histuH_fw.histogram_function(t,x,y,z,ux,uy,uz) = "u2=ux*ux+uy*uy+uz*uz; if(u2>0,
 histuH_fw.filter_function(t,x,y,z,ux,uy,uz)    = "(uz > 0) * (z > d0)"
 
 FieldProbe_Z.type = FieldProbe
-FieldProbe_Z.intervals = 100
+FieldProbe_Z.intervals = 250
 FieldProbe_Z.integrate = 0
 FieldProbe_Z.probe_geometry = Line
 FieldProbe_Z.x_probe = 0.0
