@@ -6,11 +6,11 @@
 #
 # License: BSD-3-Clause-LBNL
 
-#SBATCH -t 08:00:00
-#SBATCH -N 4
+#SBATCH -t 12:00:00
+#SBATCH -N 128
 #SBATCH -J WarpX
 #    note: <proj> must end on _g
-#SBATCH -A m4546_g
+#SBATCH -A m3239_g
 #SBATCH -q regular
 # A100 40GB (most nodes)
 #SBATCH -C gpu
@@ -21,12 +21,12 @@
 #SBATCH --gpu-bind=none
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=4
-#SBATCH -o WarpX.o%j
-#SBATCH -e WarpX.e%j
+#SBATCH -o WarpX_grid_scan.o%j
+#SBATCH -e WarpX_grid_scan.e%j
 
 # executable & inputs file or python interpreter & PICMI script here
-EXE=./warpx.2d
-INPUTS=inputs_2d
+EXE=python
+INPUTS=run_grid_scan.py
 
 # pin to closest NIC to GPU
 export MPICH_OFI_NIC_POLICY=GPU
@@ -36,13 +36,17 @@ export MPICH_OFI_NIC_POLICY=GPU
 export SRUN_CPUS_PER_TASK=16
 
 # GPU-aware MPI optimizations
+# Note: currently activated in `template_inputs_2d` because using `srun`  als the EXE defined above does not work
+#       at the moment
 GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
-
-#export MAX_STEP=150000
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun --cpu-bind=cores bash -c "
-    export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
-    ${EXE} ${INPUTS} ${GPU_AWARE_MPI}" \
-  > output_${SLURM_JOBID}.txt
+# Stephen Hudson has an open issue with NERSC
+#   Starting with srun does not work immediately
+#srun --cpu-bind=cores bash -c "
+#    export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
+#    ${EXE} ${INPUTS} ${GPU_AWARE_MPI}" \
+#  > output_${SLURM_JOBID}.txt
+
+${EXE} ${INPUTS}
