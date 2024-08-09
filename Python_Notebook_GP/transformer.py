@@ -1,7 +1,10 @@
 import numpy as np
 import torch
 
-'''lightweight class for normalization/standardization using numpy'''
+"""
+Lightweight class for normalization/standardization using numpy
+This is taken from: https://github.com/uspas/optimization_and_ml/blob/master/uspas_ml/utils/transformer.py
+"""
 
 
 class Transformer:
