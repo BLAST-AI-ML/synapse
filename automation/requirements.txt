@@ -1,3 +1,4 @@
 sfapi_client
 prefect
+globus_sdk
 jupyter
