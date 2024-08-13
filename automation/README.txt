@@ -21,3 +21,12 @@ As documented [here](https://docs.nersc.gov/services/sfapi/#getting-started), co
     - open the downloaded file (`priv_key.pem`) and copy the new client Id on the first line.
 
 Then move the file `priv_key.pem` to the folder containing this README file and run `chmod 600 priv_key.pem` on the Terminal.
+
+## Login to prefect
+
+- Create a new account or sign in at [app.prefect.cloud/](Create a new account or sign in at https://app.prefect.cloud/.)
+- From the Terminal, run
+```
+prefect cloud Login
+```
+Choose Log in with a web browser and click the Authorize button in the browser window that opens.
