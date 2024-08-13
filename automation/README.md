@@ -12,6 +12,7 @@ pip install -r requirements.txt
 
 As documented [here](https://docs.nersc.gov/services/sfapi/#getting-started), connect to
 [iris.nersc.gov/profile](https://iris.nersc.gov/profile) and:
+
     - click the upper right icon with your username
     - scroll down to the section `Superfacility API Client`, at the bottom of the page
     - click `New Client`
