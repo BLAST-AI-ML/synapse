@@ -31,3 +31,9 @@ Then move the file `priv_key.pem` to the folder containing this README file and 
 prefect cloud Login
 ```
 Choose Log in with a web browser and click the Authorize button in the browser window that opens.
+
+## Setting up Globus file tranfers
+
+- Create a new account or sign in at [app.globus.org](https://app.globus.org)
+- On the menu on the left, click `Collections`
+- If you have not yet installed `Global Connect Personal`, click on `Get Globus Connect Personal` in the upper right corner and follow instructions
