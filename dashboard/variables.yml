@@ -1,0 +1,23 @@
+input_variables:
+  input1:
+      name: tod
+      type: scalar
+      default: 1. #0.
+      value_range: [-8e-41, 8e41]
+
+  input2:
+      name: gvd
+      type: scalar
+      default: 2. #0.
+      value_range: [-1., 1.]
+
+  input3:
+      name: z_target
+      type: scalar
+      default: 3. #0.
+      value_range: [-150e-6, 150e-6]
+
+output_variables:
+  output1:
+    name: proton_number
+    type: scalar
