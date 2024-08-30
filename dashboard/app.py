@@ -1,4 +1,5 @@
 import numpy as np
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 from trame.app import get_server
@@ -12,20 +13,31 @@ server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
 
 # TODO generalize for different objectives
-def model(*_args, **kwargs):
-    inputs = np.array(_args)
+def model(*inputs_list, **kwargs):
+    inputs = np.array(inputs_list)
     result = np.sum(inputs)
     return result
 
-def plot(*_args, **kwargs):
-    inputs = np.array(_args)
+def plot(*inputs_list, **kwargs):
+    # number of inputs
+    inputs_num = len(inputs_list)
+    # NumPy array of inputs for math operations
+    inputs = np.array(inputs_list)
     result = np.sum(inputs)
     x = np.arange(0.0, 2.0, 0.01)
     y = np.sin(2 * np.pi * x)
     y *= result
-    fig = go.Figure(data=go.Scatter(x=x, y=y))
-    fig.update_xaxes(exponentformat="e")
-    fig.update_yaxes(exponentformat="e")
+    fig = make_subplots(rows=inputs_num, cols=1)
+    for i, input in enumerate(inputs_list):
+        # NOTE row count starts from 1, enumerate count starts from 0
+        this_row = i+1
+        this_col = 1
+        fig.add_trace(
+            go.Scatter(x=x, y=y),
+            row=this_row, col=this_col)
+        fig.add_vline(x=input, line_dash="dash", row=this_row, col=this_col)
+        fig.update_xaxes(exponentformat="e", row=this_row, col=this_col)
+        fig.update_yaxes(exponentformat="e", row=this_row, col=this_col)
     return fig
 
 # read state variables
@@ -33,8 +45,11 @@ yaml_file = "variables.yml"
 input_variables, output_variables = read_variables(yaml_file)
 
 # initialize input variables (parameters)
-parameters_name = []  # FIXME global variable?
-parameters_value = [] # FIXME global variable?
+# FIXME global variables?
+parameters_name = []
+parameters_value = []
+parameters_min = []
+parameters_max = []
 for _, parameter_dict in input_variables.items():
     parameter_name = parameter_dict["name"]
     parameter_default = parameter_dict["default"]
@@ -45,9 +60,12 @@ for _, parameter_dict in input_variables.items():
     exec(f"state.parameter_{parameter_name}_max = {parameter_max}")
     parameters_name.append(parameter_name)
     parameters_value.append(parameter_default)
+    parameters_min.append(parameter_min)
+    parameters_max.append(parameter_max)
 
 # initialize output variables (objectives)
-objectives_name = [] # FIXME global variable?
+# FIXME global variables?
+objectives_name = []
 for _, objective_dict in output_variables.items():
     objective_name = objective_dict["name"]
     exec(f"state.objective_{objective_name} = {model(*parameters_value)}")
@@ -110,7 +128,7 @@ with SinglePageLayout(server) as layout:
                 with vuetify.VCol():
                     with vuetify.VCard():
                         with vuetify.VCardTitle("Plots"):
-                            with vuetify.VContainer(style="height: 50vh"):
+                            with vuetify.VContainer(style=f"height: {25*len(parameters_name)}vh"):
                                 plotly_figure = plotly.Figure(
                                         display_mode_bar="true", config={"responsive": True}
                                 )
