@@ -18,7 +18,7 @@ def model(inputs_list, **kwargs):
     result = np.sum(inputs)
     return result
 
-def plot(inputs_list, **kwargs):
+def plot(inputs_list, inputs_name, **kwargs):
     # number of inputs
     inputs_num = len(inputs_list)
     # NumPy array of inputs for math operations
@@ -36,8 +36,9 @@ def plot(inputs_list, **kwargs):
             go.Scatter(x=x, y=y),
             row=this_row, col=this_col)
         fig.add_vline(x=input, line_dash="dash", row=this_row, col=this_col)
-        fig.update_xaxes(exponentformat="e", row=this_row, col=this_col)
+        fig.update_xaxes(exponentformat="e", title_text=f"{inputs_name[i]}", row=this_row, col=this_col)
         fig.update_yaxes(exponentformat="e", row=this_row, col=this_col)
+    fig.update_layout(showlegend=False)
     return fig
 
 # read state variables
@@ -86,7 +87,7 @@ def update_objectives(**kwargs):
 @state.change(*[f"parameter_{name}" for name in parameters_name])
 def update_plots(**kwargs):
     parameters = get_state_parameters()
-    fig = plot(parameters, **kwargs)
+    fig = plot(parameters, parameters_name, **kwargs)
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
 # GUI
