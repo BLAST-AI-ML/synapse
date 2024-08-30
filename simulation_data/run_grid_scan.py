@@ -14,7 +14,7 @@ from analyze_histogram_1D import analyze_hist1D
 # Specify the analysis function.
 def analysis_func_main(work_dir, output_params):
     num_particles = analyze_hist1D(
-        filepath=f"{work_dir}/diags/reducedfiles/histuH_tp.txt",
+        filepath=f"{work_dir}/diags/reducedfiles/histuH_fw.txt",
         Ekin_MeV_lo=5,
         Ekin_MeV_hi=20,
         time_readout_fs=1100

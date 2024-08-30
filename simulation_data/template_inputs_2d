@@ -232,7 +232,7 @@ lasy_laser.a0           = 54.0               # maximum amplitude of the laser fi
 # histograms with 2.0 degree acceptance angle in fw direction
 # 2 deg * pi / 180 : 0.03490658503 rad
 # half-angle +/-   : 0.017453292515 rad
-warpx.reduced_diags_names                   = histuH_tp histuH_rcf histuH_fw FieldProbe_Z LBC
+warpx.reduced_diags_names                   = histuH_tp histuH_rcf histuH_fw
 
 # Thomson-Parabola
 histuH_tp.type                                 = ParticleHistogram
@@ -266,20 +266,6 @@ histuH_fw.bin_min                              = 0.0
 histuH_fw.bin_max                              = 0.474  # 100 MeV protons
 histuH_fw.histogram_function(t,x,y,z,ux,uy,uz) = "u2=ux*ux+uy*uy+uz*uz; if(u2>0, sqrt(u2), 0.0)"
 histuH_fw.filter_function(t,x,y,z,ux,uy,uz)    = "(uz > 0) * (z > d0)"
-
-FieldProbe_Z.type = FieldProbe
-FieldProbe_Z.intervals = 250
-FieldProbe_Z.integrate = 0
-FieldProbe_Z.probe_geometry = Line
-FieldProbe_Z.x_probe = 0.0
-FieldProbe_Z.z_probe = z_lo
-FieldProbe_Z.x1_probe = 0.0
-FieldProbe_Z.z1_probe = z_hi
-FieldProbe_Z.resolution = 6144
-
-# check computational load per box
-LBC.type = LoadBalanceCosts
-LBC.intervals = 100
 
 
 #################################
