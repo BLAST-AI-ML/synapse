@@ -13,12 +13,12 @@ server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
 
 # TODO generalize for different objectives
-def model(*inputs_list, **kwargs):
+def model(inputs_list, **kwargs):
     inputs = np.array(inputs_list)
     result = np.sum(inputs)
     return result
 
-def plot(*inputs_list, **kwargs):
+def plot(inputs_list, **kwargs):
     # number of inputs
     inputs_num = len(inputs_list)
     # NumPy array of inputs for math operations
@@ -68,7 +68,7 @@ for _, parameter_dict in input_variables.items():
 objectives_name = []
 for _, objective_dict in output_variables.items():
     objective_name = objective_dict["name"]
-    exec(f"state.objective_{objective_name} = {model(*parameters_value)}")
+    exec(f"state.objective_{objective_name} = {model(parameters_value)}")
     objectives_name.append(objective_name)
 
 def get_state_parameters():
@@ -81,12 +81,12 @@ def get_state_parameters():
 def update_objectives(**kwargs):
     parameters = get_state_parameters()
     for name in objectives_name:
-        exec(f"state.objective_{name} = model(*parameters, **kwargs)")
+        exec(f"state.objective_{name} = model(parameters, **kwargs)")
 
 @state.change(*[f"parameter_{name}" for name in parameters_name])
 def update_plots(**kwargs):
     parameters = get_state_parameters()
-    fig = plot(*parameters, **kwargs)
+    fig = plot(parameters, **kwargs)
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
 # GUI
