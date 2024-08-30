@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
 
 from trame.app import get_server
 from trame.ui.vuetify import SinglePageLayout
-from trame.widgets import matplotlib, vuetify
+from trame.widgets import plotly, vuetify
 
 from variables import read_variables
 
@@ -13,15 +13,28 @@ state, ctrl = server.state, server.controller
 
 # TODO generalize for different objectives
 def model(*_args, **kwargs):
-    return sum(_args)
+    inputs = np.array(_args)
+    result = np.sum(inputs)
+    return result
+
+def plot(*_args, **kwargs):
+    inputs = np.array(_args)
+    result = np.sum(inputs)
+    x = np.arange(0.0, 2.0, 0.01)
+    y = np.sin(2 * np.pi * x)
+    y *= result
+    fig = go.Figure(data=go.Scatter(x=x, y=y))
+    fig.update_xaxes(exponentformat="e")
+    fig.update_yaxes(exponentformat="e")
+    return fig
 
 # read state variables
 yaml_file = "variables.yml"
 input_variables, output_variables = read_variables(yaml_file)
 
 # initialize input variables (parameters)
-parameters_name = []
-parameters_value = []
+parameters_name = []  # FIXME global variable?
+parameters_value = [] # FIXME global variable?
 for _, parameter_dict in input_variables.items():
     parameter_name = parameter_dict["name"]
     parameter_default = parameter_dict["default"]
@@ -34,57 +47,29 @@ for _, parameter_dict in input_variables.items():
     parameters_value.append(parameter_default)
 
 # initialize output variables (objectives)
-objectives_name = []
+objectives_name = [] # FIXME global variable?
 for _, objective_dict in output_variables.items():
     objective_name = objective_dict["name"]
     exec(f"state.objective_{objective_name} = {model(*parameters_value)}")
     objectives_name.append(objective_name)
 
-@state.change(*[f"parameter_{name}" for name in parameters_name])
-def update_objectives(**kwargs):
+def get_state_parameters():
     parameters = []
     for parameter in [f"state.parameter_{name}" for name in parameters_name]:
         exec(f"parameters.append(np.float64({parameter}))")
+    return parameters
+
+@state.change(*[f"parameter_{name}" for name in parameters_name])
+def update_objectives(**kwargs):
+    parameters = get_state_parameters()
     for name in objectives_name:
         exec(f"state.objective_{name} = model(*parameters, **kwargs)")
 
-#def plot(tod, gvd, z_target, **kwargs):
-#    # tod array
-#    tod_min = tod - 0.5
-#    tod_max = tod + 0.5
-#    tod_arr = np.linspace(tod_min, tod_max, 100)
-#    # gvd array
-#    gvd_min = gvd - 0.5
-#    gvd_max = gvd + 0.5
-#    gvd_arr = np.linspace(gvd_min, gvd_max, 100)
-#    # z_target array
-#    z_target_min = z_target - 0.5
-#    z_target_max = z_target + 0.5
-#    z_target_arr = np.linspace(z_target_min, z_target_max, 100)
-#    # plot
-#    fig, ax = plt.subplots(nrows=3, ncols=1)
-#    # objective vs tod
-#    ax[0].plot(tod_arr, model(tod_arr, gvd, z_target))
-#    ax[0].set_xlabel("TOD")
-#    ax[0].set_ylabel("Number of protons")
-#    # objective vs gvd
-#    ax[1].plot(gvd_arr, model(tod, gvd_arr, z_target))
-#    ax[1].set_xlabel("GVD")
-#    ax[1].set_ylabel("Number of protons")
-#    # objective vs z_target
-#    ax[2].plot(z_target_arr, model(tod, gvd, z_target_arr))
-#    ax[2].set_xlabel("Z (target)")
-#    ax[2].set_ylabel("Number of protons")
-#    fig.tight_layout()
-#    return fig
-
-#@state.change("tod", "gvd", "z_target")
-#def update_plots(tod, gvd, z_target, **kwargs):
-#    tod = np.float64(tod)
-#    gvd = np.float64(gvd)
-#    z_target = np.float64(z_target)
-#    fig  = plot(tod, gvd, z_target, **kwargs)
-#    ctrl.matplotlib_figure_update = matplotlib_figure.update(fig)
+@state.change(*[f"parameter_{name}" for name in parameters_name])
+def update_plots(**kwargs):
+    parameters = get_state_parameters()
+    fig = plot(*parameters, **kwargs)
+    ctrl.plotly_figure_update = plotly_figure.update(fig)
 
 # GUI
 with SinglePageLayout(server) as layout:
@@ -125,10 +110,11 @@ with SinglePageLayout(server) as layout:
                 with vuetify.VCol():
                     with vuetify.VCard():
                         with vuetify.VCardTitle("Plots"):
-                            with vuetify.VContainer():
-                                pass
-                                #matplotlib_figure = matplotlib.Figure()
-                                #ctrl.matplotlib_figure_update = matplotlib_figure.update
+                            with vuetify.VContainer(style="height: 50vh"):
+                                plotly_figure = plotly.Figure(
+                                        display_mode_bar="true", config={"responsive": True}
+                                )
+                                ctrl.plotly_figure_update = plotly_figure.update
 
 # Main
 if __name__ == "__main__":
