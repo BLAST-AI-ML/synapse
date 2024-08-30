@@ -56,29 +56,6 @@ warpx.use_filter = 1          # bilinear current/charge filter
 #   slicing in the 2nd dimension is preferred for ideal performance
 warpx.numprocs = 32 1  # 32 MPI ranks
 
-# detail tuning instead of warpx.numprocs:
-#   It is important to have enough cells in a block & grid, otherwise
-#   performance will suffer.
-#   Use larger values for GPUs, try to fill a GPU well with memory and place
-#   few large grids on each device (you can go as low as 1 large grid / device
-#   if you do not need load balancing).
-#   Slicing in the 2nd dimension is preferred for ideal performance
-#amr.blocking_factor = 64
-#amr.max_grid_size_x = 2688
-#amr.max_grid_size_y = 128  # this is confusingly named and means z in 2D
-
-# load balancing
-#   The grid & block parameters above are needed for load balancing:
-#   an average of ~10 grids per MPI rank (and device) are a good granularity
-#   to allow efficient load-balancing as the simulation evolves
-algo.load_balance_intervals = 100
-algo.load_balance_costs_update = Heuristic
-
-# particle bin-sorting on GPU (ideal defaults not investigated in 2D)
-#   Try larger values than the defaults below and report back! :)
-#warpx.sort_intervals = 4    # default on CPU: -1 (off); on GPU: 4
-#warpx.sort_bin_size = 1 1 1
-
 
 #################################
 # Target Profile
@@ -221,7 +198,7 @@ electronsO.density_function(x,y,z) = nr_eO * ne * nc * (abs(x) < x_cut) * ((abs(
 #
 my_constants.alpha = 30. * pi / 180.                 # tilt of laser to target normal
 my_constants.sz = 30.e-6                             # z-distance from laser pulse origin to focus
-my_constants.sx = sz * atan(alpha)                   # x-distance from laser pulse origin to focus
+my_constants.sx = sz * tan(alpha)                   # x-distance from laser pulse origin to focus
 my_constants.sf = sqrt(sx*sx + sz*sz)
 my_constants.lambda_L = 0.815e-6                      # [m] central laser wavelength
 
@@ -241,13 +218,6 @@ lasy_laser.delay = 0.0
 # The actual a0 will come from the input file
 # without PM
 lasy_laser.a0           = 54.0               # maximum amplitude of the laser field [V/m]
-# with PM
-#lasy_laser.a0           = 42.0               # maximum amplitude of the laser field [V/m]
-
-
-# e_max = a0 * 3.211e12 / lambda_0[mu]
-#   a0 = 16, lambda_0 = 0.8mu -> e_max = 64.22 TV/m
-
 
 #################################
 # Diagnostics

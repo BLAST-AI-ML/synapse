@@ -62,7 +62,7 @@ def analyze_hist1D(
     # Find the row with the minimum difference
     closest_entry = df.loc[df['time_difference'].idxmin()]
 
-    bins_data = closest_entry.iloc[2:1002].values
+    bins_data = closest_entry.iloc[2:].values
 
     num_in_interval = np.sum(bins_data[my_filter])
 

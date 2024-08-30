@@ -8,18 +8,8 @@ from optimas.evaluators import TemplateEvaluator,FunctionEvaluator,ChainEvaluato
 from optimas.explorations import Exploration
 
 from analyze_histogram_1D import analyze_hist1D
-from prepare_simulation import analyze_peak_from_file
-
-from multiprocessing import set_start_method
 
 
-def analysis_func_pre(work_dir, output_params):
-
-    output_dict = analyze_peak_from_file(work_dir=work_dir)
-    # peak intensity in W/m²
-    output_params["intensity_peak"] = output_dict["intensity_peak"]
-    # peak position in time from the start of the simulation (in seconds)
-    output_params["t_peak"] = output_dict["peak_in_t"]
 
 # Specify the analysis function.
 def analysis_func_main(work_dir, output_params):
@@ -35,10 +25,6 @@ def analysis_func_main(work_dir, output_params):
 var_1 = VaryingParameter("TOD_fs3", -80000, 80000)  # recommend doing 9 or 17 steps
 var_2 = VaryingParameter("z_pos_um", -150, 150)  # target z position - script converts this to laser focal position
 obj = Objective("f", minimize=False)  # the objective will be maximized (or would be, if an optimization were to be run)
-
-# Define other quantities to analyze (which are not the optimization objective)
-#par_1 = Parameter("intensity_peak")
-#par_2 = Parameter("t_peak")
 
 n_TOD_vals = 17
 n_zpos_vals = 9
@@ -58,7 +44,6 @@ gen = GridSamplingGenerator(
 ev_pre = TemplateEvaluator(
     sim_template="prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
     sim_files=["warpx.2d", "analyze_histogram_1D.py", "template_inputs_2d"],
-    #analysis_func=analysis_func_pre
 )
 
 # Create evaluator
@@ -89,5 +74,4 @@ exp = Exploration(
 # To safely perform exploration, run it in the block below (this is needed
 # for some flavours of multiprocessing, namely spawn and forkserver)
 if __name__ == "__main__":
-    #set_start_method("spawn")
     exp.run()
