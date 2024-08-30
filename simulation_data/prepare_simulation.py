@@ -20,9 +20,9 @@ def create_laser_input(input_params):
     t_peak = 0.0  # Location of the peak of the laser pulse in time
     TOD = input_params["TOD_fs3"] * (1e-15) ** 3  # 80k fs^3
     alpha = 30  # angle (degrees) of laser incidence
-    d_foc_0 = 33.30755999973977e-6  # focal distance from laser init plane to target surface for 30 µm distance in z
+    d_foc_z = 30.e-6  # distance from laser init plane to target surface in z (30 µm) which needs to be added to focal distance
     z_offset_foc_um = -input_params['z_pos_um']  # converts target position into laser focal offset in z
-    d_foc = d_foc_0 + z_offset_foc_um * 1e-6 / np.cos(alpha * np.pi / 180)  # focal distance of the laser pulse
+    d_foc = (d_foc_z + z_offset_foc_um * 1e-6) / np.cos(alpha * np.pi / 180)  # focal distance of the laser pulse
     time_window_fs = 1000
 
     dimensions = 'rt'  # Use cylindrical geometry
