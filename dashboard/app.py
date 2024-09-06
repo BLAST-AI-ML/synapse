@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import plotly.express as px
 
 from trame.app import get_server
 from trame.ui.vuetify import SinglePageLayout
@@ -13,31 +15,60 @@ server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
 
 # TODO generalize for different objectives
-def model(inputs_list, **kwargs):
-    inputs = np.array(inputs_list)
-    result = np.sum(inputs)
+def model(parameters_list, **kwargs):
+    parameters = np.array(parameters_list)
+    result = np.sum(parameters)
     return result
 
-def plot(inputs_list, inputs_name, **kwargs):
-    # number of inputs
-    inputs_num = len(inputs_list)
-    # NumPy array of inputs for math operations
-    inputs = np.array(inputs_list)
-    result = np.sum(inputs)
-    x = np.arange(0.0, 2.0, 0.01)
-    y = np.sin(2 * np.pi * x)
-    y *= result
-    fig = make_subplots(rows=inputs_num, cols=1)
-    for i, input in enumerate(inputs_list):
+def plot(
+        parameters_list,
+        parameters_name,
+        parameters_min,
+        parameters_max,
+        objectives_name,
+        **kwargs
+    ):
+    # FIXME generalize for multiple objectives
+    objective_name = objectives_name[0]
+    # number of parameters
+    parameters_num = len(parameters_list)
+    # load experimental data
+    df = pd.read_csv("experimental_data.csv")
+    # plot
+    fig = make_subplots(rows=parameters_num, cols=1)
+    for i, input in enumerate(parameters_list):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
         this_col = 1
-        fig.add_trace(
-            go.Scatter(x=x, y=y),
-            row=this_row, col=this_col)
+        # figure trace from CSV data
+        exp_fig = px.scatter(
+            df,
+            x=f"{parameters_name[i]}",
+            y=f"{objective_name}",
+            opacity=0.5  # FIXME adaptive opacity
+        )
+        exp_trace = exp_fig["data"][0]
+        fig.add_trace(exp_trace, row=this_row, col=this_col)
+        # figure trace from model data
+        #x = np.linspace(start=parameters_min[i], stop=parameters_max[i], num=100)
+        #y = model(x)
+        #mod_trace = go.Scatter(x=x, y=y)
+        #fig.add_trace(mod_trace, row=this_row, col=this_col)
+        # add input line
         fig.add_vline(x=input, line_dash="dash", row=this_row, col=this_col)
-        fig.update_xaxes(exponentformat="e", title_text=f"{inputs_name[i]}", row=this_row, col=this_col)
-        fig.update_yaxes(exponentformat="e", row=this_row, col=this_col)
+        # figures style
+        fig.update_xaxes(
+            exponentformat="e",
+            title_text=f"{parameters_name[i]}",
+            row=this_row,
+            col=this_col
+        )
+        fig.update_yaxes(
+            exponentformat="e",
+            title_text=f"{objective_name}",
+            row=this_row,
+            col=this_col
+        )
     fig.update_layout(showlegend=False)
     return fig
 
@@ -53,12 +84,10 @@ parameters_min = []
 parameters_max = []
 for _, parameter_dict in input_variables.items():
     parameter_name = parameter_dict["name"]
-    parameter_default = parameter_dict["default"]
-    parameter_min = parameter_dict["value_range"][0]
-    parameter_max = parameter_dict["value_range"][1]
+    parameter_default = np.float64(parameter_dict["default"])
+    parameter_min = np.float64(parameter_dict["value_range"][0])
+    parameter_max = np.float64(parameter_dict["value_range"][1])
     exec(f"state.parameter_{parameter_name} = {parameter_default}")
-    exec(f"state.parameter_{parameter_name}_min = {parameter_min}")
-    exec(f"state.parameter_{parameter_name}_max = {parameter_max}")
     parameters_name.append(parameter_name)
     parameters_value.append(parameter_default)
     parameters_min.append(parameter_min)
@@ -87,7 +116,14 @@ def update_objectives(**kwargs):
 @state.change(*[f"parameter_{name}" for name in parameters_name])
 def update_plots(**kwargs):
     parameters = get_state_parameters()
-    fig = plot(parameters, parameters_name, **kwargs)
+    fig = plot(
+        parameters,
+        parameters_name,
+        parameters_min,
+        parameters_max,
+        objectives_name,
+        **kwargs
+    )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
 # GUI
