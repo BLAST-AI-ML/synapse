@@ -8,8 +8,8 @@ input_variables:
   input2:
       name: gvd
       type: scalar
-      default: 0.
-      value_range: [-1., 1.]
+      default: 13.6
+      value_range: [13.2, 14.0]
 
   input3:
       name: z_target
