@@ -34,18 +34,30 @@ def plot(
     parameters_num = len(parameters_list)
     # load experimental data
     df = pd.read_csv("experimental_data.csv")
+    # set opacity map based on distance from current inputs
+    # compute Euclidean distance
+    df["distance"] = 0.
+    for i, parameter in enumerate(parameters_list):
+        distance = (df[f"{parameters_name[i]}"] - parameter)**2
+        df["distance"] += (df[f"{parameters_name[i]}"] - parameter)**2
+    df["distance"] = np.sqrt(df["distance"])
+    # normalize distance in [0,1]
+    df["distance"] = df["distance"] / df["distance"].max()
+    # compute opacity
+    df["opacity"] = 1. - df["distance"]
     # plot
     fig = make_subplots(rows=parameters_num, cols=1)
-    for i, input in enumerate(parameters_list):
+    for i, parameter in enumerate(parameters_list):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
         this_col = 1
         # figure trace from CSV data
+        # scatter plot with opacity
         exp_fig = px.scatter(
             df,
             x=f"{parameters_name[i]}",
             y=f"{objective_name}",
-            opacity=0.5  # FIXME adaptive opacity
+            opacity=df["opacity"],
         )
         exp_trace = exp_fig["data"][0]
         fig.add_trace(exp_trace, row=this_row, col=this_col)
@@ -55,19 +67,19 @@ def plot(
         #mod_trace = go.Scatter(x=x, y=y)
         #fig.add_trace(mod_trace, row=this_row, col=this_col)
         # add input line
-        fig.add_vline(x=input, line_dash="dash", row=this_row, col=this_col)
+        fig.add_vline(x=parameter, line_dash="dash", row=this_row, col=this_col)
         # figures style
         fig.update_xaxes(
             exponentformat="e",
             title_text=f"{parameters_name[i]}",
             row=this_row,
-            col=this_col
+            col=this_col,
         )
         fig.update_yaxes(
             exponentformat="e",
             title_text=f"{objective_name}",
             row=this_row,
-            col=this_col
+            col=this_col,
         )
     fig.update_layout(showlegend=False)
     return fig
@@ -122,7 +134,7 @@ def update_plots(**kwargs):
         parameters_min,
         parameters_max,
         objectives_name,
-        **kwargs
+        **kwargs,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
