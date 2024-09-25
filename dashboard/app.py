@@ -34,44 +34,60 @@ def plot(
     parameters_num = len(parameters_list)
     # load experimental data
     df = pd.read_csv("experimental_data.csv")
-    # set opacity map based on distance from current inputs
-    # compute Euclidean distance
-    df["distance"] = 0.
-    for i, parameter in enumerate(parameters_list):
-        distance = (df[f"{parameters_name[i]}"] - parameter)**2
-        df["distance"] += (df[f"{parameters_name[i]}"] - parameter)**2
-    df["distance"] = np.sqrt(df["distance"])
-    # normalize distance in [0,1]
-    df["distance"] = df["distance"] / df["distance"].max()
-    # compute opacity
-    df["opacity"] = 1. - df["distance"]
     # plot
     fig = make_subplots(rows=parameters_num, cols=1)
-    for i, parameter in enumerate(parameters_list):
+    for i in range(parameters_num):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
         this_col = 1
+        #----------------------------------------------------------------------
         # figure trace from CSV data
+        #----------------------------------------------------------------------
+        # set opacity map based on distance from current inputs
+        # compute Euclidean distance
+        df_copy = df.copy()
+        df_copy["distance"] = 0.
+        # loop over all inputs except the current one
+        for j in [j for j in range(parameters_num) if j != i]:
+            pname_loc = parameters_name[j]
+            pmin_loc = parameters_min[j]
+            pmax_loc = parameters_max[j]
+            pval_loc = parameters_list[j]
+            df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
+        df_copy["distance"] = np.sqrt(df_copy["distance"])
+        # normalize distance in [0,1] and compute opacity
+        df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
+        df_copy["opacity"] = 1. - df_copy["distance"]
         # scatter plot with opacity
+        pname = parameters_name[i]
+        pmin = parameters_min[i]
+        pmax = parameters_max[i]
+        pval = parameters_list[i]
         exp_fig = px.scatter(
-            df,
-            x=f"{parameters_name[i]}",
+            df_copy,
+            x=f"{pname}",
             y=f"{objective_name}",
-            opacity=df["opacity"],
+            opacity=df_copy["opacity"],
         )
         exp_trace = exp_fig["data"][0]
         fig.add_trace(exp_trace, row=this_row, col=this_col)
+        #----------------------------------------------------------------------
         # figure trace from model data
-        #x = np.linspace(start=parameters_min[i], stop=parameters_max[i], num=100)
+        #----------------------------------------------------------------------
+        #x = np.linspace(start=pmin, stop=pmax, num=100)
         #y = model(x)
         #mod_trace = go.Scatter(x=x, y=y)
         #fig.add_trace(mod_trace, row=this_row, col=this_col)
-        # add input line
-        fig.add_vline(x=parameter, line_dash="dash", row=this_row, col=this_col)
+        #----------------------------------------------------------------------
+        # add reference input line
+        #----------------------------------------------------------------------
+        fig.add_vline(x=pval, line_dash="dash", row=this_row, col=this_col)
+        #----------------------------------------------------------------------
         # figures style
+        #----------------------------------------------------------------------
         fig.update_xaxes(
             exponentformat="e",
-            title_text=f"{parameters_name[i]}",
+            title_text=f"{pname}",
             row=this_row,
             col=this_col,
         )
@@ -95,15 +111,15 @@ parameters_value = []
 parameters_min = []
 parameters_max = []
 for _, parameter_dict in input_variables.items():
-    parameter_name = parameter_dict["name"]
-    parameter_default = np.float64(parameter_dict["default"])
-    parameter_min = np.float64(parameter_dict["value_range"][0])
-    parameter_max = np.float64(parameter_dict["value_range"][1])
-    exec(f"state.parameter_{parameter_name} = {parameter_default}")
-    parameters_name.append(parameter_name)
-    parameters_value.append(parameter_default)
-    parameters_min.append(parameter_min)
-    parameters_max.append(parameter_max)
+    pname = parameter_dict["name"]
+    pmin = np.float64(parameter_dict["value_range"][0])
+    pmax = np.float64(parameter_dict["value_range"][1])
+    pval = np.float64(parameter_dict["default"])
+    exec(f"state.parameter_{pname} = {pval}")
+    parameters_name.append(pname)
+    parameters_min.append(pmin)
+    parameters_max.append(pmax)
+    parameters_value.append(pval)
 parameters_num = len(parameters_name)
 
 # initialize output variables (objectives)
@@ -161,8 +177,7 @@ with SinglePageLayout(server) as layout:
                                             pname = parameters_name[i]
                                             pmin = parameters_min[i]
                                             pmax = parameters_max[i]
-                                            pstep = (pmax - pmin) / 10.
-                                            print(pname, pmin, pmax, pstep)
+                                            pstep = (pmax - pmin) / 20.
                                             # create slider for each parameter
                                             with vuetify.VSlider(
                                                 v_model=(f"parameter_{pname}",),
