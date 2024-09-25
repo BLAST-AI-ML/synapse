@@ -104,6 +104,7 @@ for _, parameter_dict in input_variables.items():
     parameters_value.append(parameter_default)
     parameters_min.append(parameter_min)
     parameters_max.append(parameter_max)
+parameters_num = len(parameters_name)
 
 # initialize output variables (objectives)
 # FIXME global variables?
@@ -153,19 +154,43 @@ with SinglePageLayout(server) as layout:
                 with vuetify.VCol():
                     with vuetify.VRow():
                         with vuetify.VCol():
-                            with vuetify.VCard(style="width: 300px"):
+                            with vuetify.VCard(style="width: 500px"):
                                 with vuetify.VCardTitle("Parameters"):
                                     with vuetify.VCardText():
-                                        for name in parameters_name:
-                                            vuetify.VTextField(
-                                                clearable=True,
+                                        for i in range(parameters_num):
+                                            pname = parameters_name[i]
+                                            pmin = parameters_min[i]
+                                            pmax = parameters_max[i]
+                                            pstep = (pmax - pmin) / 10.
+                                            print(pname, pmin, pmax, pstep)
+                                            # create slider for each parameter
+                                            with vuetify.VSlider(
+                                                v_model=(f"parameter_{pname}",),
+                                                label=f"{pname}",
+                                                min=np.float64(pmin),
+                                                max=np.float64(pmax),
+                                                step=np.float64(pstep),
+                                                classes="align-center",
                                                 hide_details=True,
-                                                label=f"{name}",
-                                                v_model=(f"parameter_{name}",),
-                                            )
+                                            ):
+                                                # append text field
+                                                with vuetify.Template(
+                                                    v_slot_append=True,
+                                                    __properties=[("v_slot_append", "v-slot:append")],
+                                                ):
+                                                    # TODO type="number"
+                                                    vuetify.VTextField(
+                                                        v_model=(f"parameter_{pname}",),
+                                                        label=f"{pname}",
+                                                        clearable=True,
+                                                        density="compact",
+                                                        hide_details=True,
+                                                        single_line=True,
+                                                        style="width: 100px",
+                                                    )
                     with vuetify.VRow():
                         with vuetify.VCol():
-                            with vuetify.VCard(style="width: 300px"):
+                            with vuetify.VCard(style="width: 500px"):
                                 with vuetify.VCardTitle("Objectives"):
                                     with vuetify.VCardText():
                                         for name in objectives_name:
