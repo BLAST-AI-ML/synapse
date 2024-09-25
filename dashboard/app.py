@@ -14,10 +14,20 @@ from variables import read_variables
 server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
 
+# normalize data in [0,1]
+def normalize(x, xmin, xmax):
+    y = (x - xmin) / (xmax - xmin)
+    return y
+
+# rescale data to physical range
+def denormalize(y, xmin, xmax):
+    x = xmin + (xmax - xmin) * y
+    return x
+
 # TODO generalize for different objectives
 def model(parameters_list, **kwargs):
-    parameters = np.array(parameters_list)
-    result = np.sum(parameters)
+    pvals = np.array(parameters_list)
+    result = np.sum(pvals)
     return result
 
 def plot(
@@ -26,7 +36,7 @@ def plot(
         parameters_min,
         parameters_max,
         objectives_name,
-        **kwargs
+        **kwargs,
     ):
     # FIXME generalize for multiple objectives
     objective_name = objectives_name[0]
@@ -40,9 +50,7 @@ def plot(
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
         this_col = 1
-        #----------------------------------------------------------------------
         # figure trace from CSV data
-        #----------------------------------------------------------------------
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
         df_copy = df.copy()
@@ -71,20 +79,14 @@ def plot(
         )
         exp_trace = exp_fig["data"][0]
         fig.add_trace(exp_trace, row=this_row, col=this_col)
-        #----------------------------------------------------------------------
         # figure trace from model data
-        #----------------------------------------------------------------------
         #x = np.linspace(start=pmin, stop=pmax, num=100)
         #y = model(x)
         #mod_trace = go.Scatter(x=x, y=y)
         #fig.add_trace(mod_trace, row=this_row, col=this_col)
-        #----------------------------------------------------------------------
         # add reference input line
-        #----------------------------------------------------------------------
         fig.add_vline(x=pval, line_dash="dash", row=this_row, col=this_col)
-        #----------------------------------------------------------------------
         # figures style
-        #----------------------------------------------------------------------
         fig.update_xaxes(
             exponentformat="e",
             title_text=f"{pname}",
@@ -116,6 +118,7 @@ for _, parameter_dict in input_variables.items():
     pmax = np.float64(parameter_dict["value_range"][1])
     pval = np.float64(parameter_dict["default"])
     exec(f"state.parameter_{pname} = {pval}")
+    exec(f"state.parameter_{pname}_norm = normalize({pval}, {pmin}, {pmax})")
     parameters_name.append(pname)
     parameters_min.append(pmin)
     parameters_max.append(pmax)
@@ -132,17 +135,19 @@ for _, objective_dict in output_variables.items():
 
 def get_state_parameters():
     parameters = []
-    for parameter in [f"state.parameter_{name}" for name in parameters_name]:
-        exec(f"parameters.append(np.float64({parameter}))")
+    for i, pval in enumerate([f"state.parameter_{pname}_norm" for pname in parameters_name]):
+        pmin = parameters_min[i]
+        pmax = parameters_max[i]
+        exec(f"parameters.append(denormalize(np.float64({pval}), {pmin}, {pmax}))")
     return parameters
 
-@state.change(*[f"parameter_{name}" for name in parameters_name])
+@state.change(*[f"parameter_{pname}_norm" for pname in parameters_name])
 def update_objectives(**kwargs):
     parameters = get_state_parameters()
-    for name in objectives_name:
-        exec(f"state.objective_{name} = model(parameters, **kwargs)")
+    for oname in objectives_name:
+        exec(f"state.objective_{oname} = model(parameters, **kwargs)")
 
-@state.change(*[f"parameter_{name}" for name in parameters_name])
+@state.change(*[f"parameter_{pname}_norm" for pname in parameters_name])
 def update_plots(**kwargs):
     parameters = get_state_parameters()
     fig = plot(
@@ -171,35 +176,28 @@ with SinglePageLayout(server) as layout:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             with vuetify.VCard(style="width: 500px"):
-                                with vuetify.VCardTitle("Parameters"):
+                                with vuetify.VCardTitle("Parameters (normalized in [0,1])"):
                                     with vuetify.VCardText():
                                         for i in range(parameters_num):
                                             pname = parameters_name[i]
-                                            pmin = parameters_min[i]
-                                            pmax = parameters_max[i]
-                                            pstep = (pmax - pmin) / 20.
                                             # create slider for each parameter
                                             with vuetify.VSlider(
-                                                v_model=(f"parameter_{pname}",),
+                                                v_model=(f"parameter_{pname}_norm",),
                                                 label=f"{pname}",
-                                                min=np.float64(pmin),
-                                                max=np.float64(pmax),
-                                                step=np.float64(pstep),
+                                                min=0.,
+                                                max=1.,
+                                                step=0.01,
                                                 classes="align-center",
                                                 hide_details=True,
                                             ):
                                                 # append text field
                                                 with vuetify.Template(
                                                     v_slot_append=True,
-                                                    __properties=[("v_slot_append", "v-slot:append")],
                                                 ):
-                                                    # TODO type="number"
                                                     vuetify.VTextField(
-                                                        v_model=(f"parameter_{pname}",),
+                                                        v_model=(f"parameter_{pname}_norm",),
                                                         label=f"{pname}",
-                                                        clearable=True,
                                                         density="compact",
-                                                        hide_details=True,
                                                         single_line=True,
                                                         style="width: 100px",
                                                     )
@@ -216,7 +214,7 @@ with SinglePageLayout(server) as layout:
                                             )
                 with vuetify.VCol():
                     with vuetify.VCard():
-                        with vuetify.VCardTitle("Plots"):
+                        with vuetify.VCardTitle("Experimental data"):
                             with vuetify.VContainer(style=f"height: {25*len(parameters_name)}vh"):
                                 plotly_figure = plotly.Figure(
                                         display_mode_bar="true", config={"responsive": True}
