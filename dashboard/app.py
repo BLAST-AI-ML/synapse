@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 from trame.app import get_server
-from trame.ui.vuetify import SinglePageLayout
-from trame.widgets import plotly, vuetify
+from trame.ui.vuetify2 import SinglePageLayout
+from trame.widgets import plotly, vuetify2 as v2
 
 from variables import read_variables
 
@@ -170,18 +170,18 @@ with SinglePageLayout(server) as layout:
 
     with layout.content:
         # content components
-        with vuetify.VContainer():
-            with vuetify.VRow():
-                with vuetify.VCol():
-                    with vuetify.VRow():
-                        with vuetify.VCol():
-                            with vuetify.VCard(style="width: 500px"):
-                                with vuetify.VCardTitle("Parameters (normalized in [0,1])"):
-                                    with vuetify.VCardText():
+        with v2.VContainer():
+            with v2.VRow():
+                with v2.VCol():
+                    with v2.VRow():
+                        with v2.VCol():
+                            with v2.VCard(style="width: 500px"):
+                                with v2.VCardTitle("Parameters (normalized in [0,1])"):
+                                    with v2.VCardText():
                                         for i in range(parameters_num):
                                             pname = parameters_name[i]
                                             # create slider for each parameter
-                                            with vuetify.VSlider(
+                                            with v2.VSlider(
                                                 v_model=(f"parameter_{pname}_norm",),
                                                 label=f"{pname}",
                                                 min=0.,
@@ -191,31 +191,31 @@ with SinglePageLayout(server) as layout:
                                                 hide_details=True,
                                             ):
                                                 # append text field
-                                                with vuetify.Template(
+                                                with v2.Template(
                                                     v_slot_append=True,
                                                 ):
-                                                    vuetify.VTextField(
+                                                    v2.VTextField(
                                                         v_model=(f"parameter_{pname}_norm",),
                                                         label=f"{pname}",
                                                         density="compact",
                                                         single_line=True,
                                                         style="width: 100px",
                                                     )
-                    with vuetify.VRow():
-                        with vuetify.VCol():
-                            with vuetify.VCard(style="width: 500px"):
-                                with vuetify.VCardTitle("Objectives"):
-                                    with vuetify.VCardText():
+                    with v2.VRow():
+                        with v2.VCol():
+                            with v2.VCard(style="width: 500px"):
+                                with v2.VCardTitle("Objectives"):
+                                    with v2.VCardText():
                                         for name in objectives_name:
-                                            vuetify.VTextField(
+                                            v2.VTextField(
                                                 label=f"{name}",
                                                 readonly=True,
                                                 v_model=(f"objective_{name}",),
                                             )
-                with vuetify.VCol():
-                    with vuetify.VCard():
-                        with vuetify.VCardTitle("Experimental data"):
-                            with vuetify.VContainer(style=f"height: {25*len(parameters_name)}vh"):
+                with v2.VCol():
+                    with v2.VCard():
+                        with v2.VCardTitle("Experimental data"):
+                            with v2.VContainer(style=f"height: {25*len(parameters_name)}vh"):
                                 plotly_figure = plotly.Figure(
                                         display_mode_bar="true", config={"responsive": True}
                                 )
