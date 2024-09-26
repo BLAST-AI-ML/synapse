@@ -193,6 +193,7 @@ with SinglePageLayout(server) as layout:
                                                 # append text field
                                                 with v2.Template(
                                                     v_slot_append=True,
+                                                    __properties=[("v_slot_append", "v-slot:append")],
                                                 ):
                                                     v2.VTextField(
                                                         v_model=(f"parameter_{pname}_norm",),
