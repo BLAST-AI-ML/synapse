@@ -1,7 +1,3 @@
-"""
-TODO Add module docstring
-"""
-
 import yaml
 
 def read_variables(yaml_file):
