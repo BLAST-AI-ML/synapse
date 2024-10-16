@@ -3,7 +3,7 @@ input_variables:
       name: tod
       type: scalar
       default: 0.
-      value_range: [-8e-41, 8e-41]
+      value_range: [-80000.0, 80000.0]
 
   input2:
       name: gvd
@@ -15,7 +15,7 @@ input_variables:
       name: z_target
       type: scalar
       default: 0.
-      value_range: [-150e-6, 150e-6]
+      value_range: [-150.0, 150.0]
 
 output_variables:
   output1:
