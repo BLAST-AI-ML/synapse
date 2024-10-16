@@ -1,0 +1,20 @@
+model_class: TorchModel
+input_variables:
+  z_target:
+    variable_type: scalar
+    default: 0.0
+    is_constant: false
+    value_range: [-1.0, 1.0]
+  TOD:
+    variable_type: scalar
+    default: 0.0
+    is_constant: false
+    value_range: [-1.0, 1.0]
+output_variables:
+  n_protons: {variable_type: scalar, default: 0.0}
+model: bella_saved_model_model.pt
+input_transformers: [bella_saved_model_input_transformers_0.pt]
+output_transformers: [bella_saved_model_output_transformers_0.pt]
+output_format: tensor
+device: cpu
+fixed_model: true
