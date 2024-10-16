@@ -40,7 +40,9 @@ def plot(
     # FIXME generalize for multiple objectives
     objective_name = list(objectives.keys())[0]
     # load experimental data
-    df = pd.read_csv("experimental_data.csv")
+    df_exp = pd.read_csv("experimental_data.csv")
+    df_sim = pd.read_csv("simulation_data.csv")
+    df_cds = ["blue", "red"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
     for i, key in enumerate(parameters.keys()):
@@ -51,28 +53,31 @@ def plot(
         # figure trace from CSV data
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
-        df_copy = df.copy()
-        df_copy["distance"] = 0.
-        # loop over all inputs except the current one
-        for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
-            pname_loc = subkey
-            pval_loc = parameters[subkey]
-            pmin_loc = parameters_min[subkey]
-            pmax_loc = parameters_max[subkey]
-            df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
-        df_copy["distance"] = np.sqrt(df_copy["distance"])
-        # normalize distance in [0,1] and compute opacity
-        df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
-        df_copy["opacity"] = 1. - df_copy["distance"]
-        # scatter plot with opacity
-        exp_fig = px.scatter(
-            df_copy,
-            x=key,
-            y=f"{objective_name}",
-            opacity=df_copy["opacity"],
-        )
-        exp_trace = exp_fig["data"][0]
-        fig.add_trace(exp_trace, row=this_row, col=this_col)
+        for df_count, df in enumerate([df_exp]):
+        #for df_count, df in enumerate([df_exp, df_sim]):
+            df_copy = df.copy()
+            df_copy["distance"] = 0.
+            # loop over all inputs except the current one
+            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
+                pname_loc = subkey
+                pval_loc = parameters[subkey]
+                pmin_loc = parameters_min[subkey]
+                pmax_loc = parameters_max[subkey]
+                df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
+            df_copy["distance"] = np.sqrt(df_copy["distance"])
+            # normalize distance in [0,1] and compute opacity
+            df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
+            df_copy["opacity"] = 1. - df_copy["distance"]
+            # scatter plot with opacity
+            exp_fig = px.scatter(
+                df_copy,
+                x=key,
+                y=f"{objective_name}",
+                opacity=df_copy["opacity"],
+                color_discrete_sequence=[df_cds[df_count]],
+            )
+            exp_trace = exp_fig["data"][0]
+            fig.add_trace(exp_trace, row=this_row, col=this_col)
         #----------------------------------------------------------------------
         # figure trace from model data
         #x = np.linspace(start=pmin, stop=pmax, num=100)
