@@ -139,6 +139,8 @@ def update_state(parameters_norm, parameters_phys_min, parameters_phys_max, **kw
             parameters_phys_min[key],
             parameters_phys_max[key],
         )
+    # push again at flush time
+    state.dirty("parameters_phys")
     # update objectives
     for key in state.objectives_phys.keys():
         state.objectives_phys[key] = model(state.parameters_phys.values(), **kwargs)
@@ -170,7 +172,7 @@ with SinglePageLayout(server) as layout:
                     with v2.VRow():
                         with v2.VCol():
                             with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Parameters (normalized in [0,1])"):
+                                with v2.VCardTitle("Parameters"):
                                     with v2.VCardText():
                                         for key in state.parameters_norm.keys():
                                             # create slider for each parameter
@@ -189,11 +191,12 @@ with SinglePageLayout(server) as layout:
                                                     v_slot_append=True,
                                                 ):
                                                     v2.VTextField(
-                                                        v_model=(f"parameters_norm['{key}']",),
-                                                        change="flushState('parameters_norm')",
+                                                        v_model=(f"parameters_phys['{key}']",),
+                                                        #change="flushState('parameters_norm')",
                                                         label=key,
                                                         density="compact",
                                                         hide_details=True,
+                                                        readonly=True,
                                                         single_line=True,
                                                         style="width: 100px",
                                                     )
