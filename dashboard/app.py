@@ -43,6 +43,7 @@ def plot(
     df_exp = pd.read_csv("experimental_data.csv")
     df_sim = pd.read_csv("simulation_data.csv")
     df_cds = ["blue", "red"]
+    df_leg = ["experiment", "simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
     for i, key in enumerate(parameters.keys()):
@@ -53,8 +54,7 @@ def plot(
         # figure trace from CSV data
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
-        for df_count, df in enumerate([df_exp]):
-        #for df_count, df in enumerate([df_exp, df_sim]):
+        for df_count, df in enumerate([df_exp, df_sim]):
             df_copy = df.copy()
             df_copy["distance"] = 0.
             # loop over all inputs except the current one
@@ -76,17 +76,32 @@ def plot(
                 opacity=df_copy["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
             )
+            exp_fig["data"][0]["showlegend"] = (True if i==0 else False)  # do not repeat legend
+            exp_fig["data"][0]["name"] = df_leg[df_count]
             exp_trace = exp_fig["data"][0]
-            fig.add_trace(exp_trace, row=this_row, col=this_col)
+            fig.add_trace(
+                exp_trace,
+                row=this_row,
+                col=this_col,
+            )
         #----------------------------------------------------------------------
         # figure trace from model data
         #x = np.linspace(start=pmin, stop=pmax, num=100)
         #y = model(x)
         #mod_trace = go.Scatter(x=x, y=y)
-        #fig.add_trace(mod_trace, row=this_row, col=this_col)
+        #fig.add_trace(
+        #    mod_trace,
+        #    row=this_row,
+        #    col=this_col,
+        #)
         #----------------------------------------------------------------------
         # add reference input line
-        fig.add_vline(x=parameters[key], line_dash="dash", row=this_row, col=this_col)
+        fig.add_vline(
+            x=parameters[key],
+            line_dash="dash",
+            row=this_row,
+            col=this_col,
+        )
         #----------------------------------------------------------------------
         # figures style
         fig.update_xaxes(
@@ -101,7 +116,7 @@ def plot(
             row=this_row,
             col=this_col,
         )
-    fig.update_layout(showlegend=False)
+    fig.update_layout()
     return fig
 
 # read state variables
@@ -218,7 +233,7 @@ with SinglePageLayout(server) as layout:
                                             )
                 with v2.VCol():
                     with v2.VCard():
-                        with v2.VCardTitle("Experimental data"):
+                        with v2.VCardTitle("Plots"):
                             with v2.VContainer(style=f"height: {25*len(state.parameters_norm)}vh"):
                                 plotly_figure = plotly.Figure(
                                         display_mode_bar="true", config={"responsive": True}
