@@ -80,6 +80,7 @@ def plot(
             exp_fig["data"][0]["showlegend"] = (True if i==0 else False)  # do not repeat legend
             exp_fig["data"][0]["name"] = df_leg[df_count]
             exp_trace = exp_fig["data"][0]
+            # add trace
             fig.add_trace(
                 exp_trace,
                 row=this_row,
@@ -95,10 +96,10 @@ def plot(
                 end=parameters_max[key],
                 steps=steps,
             )
-            # loop over all inputs except the current one
             for subkey in [subkey for subkey in parameters.keys() if subkey != key and subkey != "GVD"]:
                 input_dict[subkey] = parameters[subkey] * torch.ones(steps)
             y = model.evaluate(input_dict)[objective_name]
+            # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict[key],
                 y=y,
@@ -106,6 +107,7 @@ def plot(
                 name="ML model",
                 showlegend=(True if i==0 else False),
             )
+            # add trace
             fig.add_trace(
                 mod_trace,
                 row=this_row,
