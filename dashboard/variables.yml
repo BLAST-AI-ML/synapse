@@ -4,18 +4,21 @@ input_variables:
       type: scalar
       default: 0.
       value_range: [-80000.0, 80000.0]
+      units: "fs^3"
 
   input2:
       name: GVD
       type: scalar
       default: 13.6
       value_range: [13.2, 14.0]
+      units: "n/a"
 
   input3:
       name: z_target
       type: scalar
       default: 0.
       value_range: [-150.0, 150.0]
+      units: "um"
 
 output_variables:
   output1:
