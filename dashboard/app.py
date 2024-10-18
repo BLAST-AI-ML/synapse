@@ -234,7 +234,7 @@ with SinglePageLayout(server) as layout:
                                                     v_slot_append=True,
                                                 ):
                                                     v2.VTextField(
-                                                        v_model=(f"parameters_phys['{key}']",),
+                                                        v_model_number=(f"parameters_phys['{key}']",),
                                                         #change="flushState('parameters_norm')",
                                                         label=key,
                                                         density="compact",
@@ -242,6 +242,7 @@ with SinglePageLayout(server) as layout:
                                                         readonly=True,
                                                         single_line=True,
                                                         style="width: 100px",
+                                                        type="number",
                                                     )
                     with v2.VRow():
                         with v2.VCol():
@@ -250,9 +251,10 @@ with SinglePageLayout(server) as layout:
                                     with v2.VCardText():
                                         for key in state.objectives_phys.keys():
                                             v2.VTextField(
-                                                v_model=(f"objectives_phys['{key}']",),
+                                                v_model_number=(f"objectives_phys['{key}']",),
                                                 label=key,
                                                 readonly=True,
+                                                type="number",
                                             )
                 with v2.VCol():
                     with v2.VCard():
