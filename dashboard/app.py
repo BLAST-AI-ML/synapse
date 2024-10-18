@@ -8,6 +8,9 @@ from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
 from trame.widgets import plotly, vuetify2 as v2
 
+import torch
+from lume_model.models import TorchModel
+
 from variables import read_variables
 
 # Get a server to work with
@@ -24,12 +27,7 @@ def denormalize(y, xmin, xmax):
     x = xmin + (xmax - xmin) * y
     return x
 
-# TODO generalize for different objectives
-def model(parameters, **kwargs):
-    pvals = np.array(list(parameters))
-    result = float(np.sum(pvals))
-    return result
-
+# plot experimental, simulation, and ML data
 def plot(
         parameters,
         parameters_min,
@@ -44,6 +42,8 @@ def plot(
     df_sim = pd.read_csv("simulation_data.csv")
     df_cds = ["blue", "red"]
     df_leg = ["experiment", "simulation"]
+    # load model
+    model = TorchModel("bella_saved_model.yml")
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
     for i, key in enumerate(parameters.keys()):
@@ -72,7 +72,7 @@ def plot(
             exp_fig = px.scatter(
                 df_copy,
                 x=key,
-                y=f"{objective_name}",
+                y=objective_name,
                 opacity=df_copy["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
             )
@@ -86,14 +86,30 @@ def plot(
             )
         #----------------------------------------------------------------------
         # figure trace from model data
-        #x = np.linspace(start=pmin, stop=pmax, num=100)
-        #y = model(x)
-        #mod_trace = go.Scatter(x=x, y=y)
-        #fig.add_trace(
-        #    mod_trace,
-        #    row=this_row,
-        #    col=this_col,
-        #)
+        if key != "GVD":
+            input_dict = dict()
+            steps = 1000
+            input_dict[key] = torch.linspace(
+                start=parameters_min[key],
+                end=parameters_max[key],
+                steps=steps,
+            )
+            # loop over all inputs except the current one
+            for subkey in [subkey for subkey in parameters.keys() if subkey != key and subkey != "GVD"]:
+                input_dict[subkey] = parameters[subkey] * torch.ones(steps)
+            y = model.evaluate(input_dict)[objective_name]
+            mod_trace = go.Scatter(
+                x=input_dict[key],
+                y=y,
+                line=dict(color="orange"),
+                name="ML model",
+                showlegend=(True if i==0 else False),
+            )
+            fig.add_trace(
+                mod_trace,
+                row=this_row,
+                col=this_col,
+            )
         #----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
@@ -112,7 +128,7 @@ def plot(
         )
         fig.update_yaxes(
             exponentformat="e",
-            title_text=f"{objective_name}",
+            title_text=objective_name,
             row=this_row,
             col=this_col,
         )
@@ -143,11 +159,16 @@ parameters_num = len(state.parameters_phys)
 # push again at flush time
 state.dirty("parameters_norm")
 
+# load model
+model = TorchModel("bella_saved_model.yml")
+
 # initialize objectives
 state.objectives_phys = dict()
 for _, objective_dict in output_variables.items():
     key = objective_dict["name"]
-    state.objectives_phys[key] = model(state.parameters_phys.values())
+    input_dict = state.parameters_phys.copy()
+    input_dict.pop("GVD")
+    state.objectives_phys[key] = float(model.evaluate(input_dict)[key])
 state.dirty("objectives_phys")  # pushed again at flush time
 
 @state.change("parameters_norm")
@@ -163,7 +184,9 @@ def update_state(parameters_norm, parameters_phys_min, parameters_phys_max, **kw
     state.dirty("parameters_phys")
     # update objectives
     for key in state.objectives_phys.keys():
-        state.objectives_phys[key] = model(state.parameters_phys.values(), **kwargs)
+        input_dict = state.parameters_phys.copy()
+        input_dict.pop("GVD")
+        state.objectives_phys[key] = float(model.evaluate(input_dict)[key])
     # push again at flush time
     state.dirty("objectives_phys")
     # update plots
