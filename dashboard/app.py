@@ -32,6 +32,7 @@ def plot(
         parameters,
         parameters_min,
         parameters_max,
+        parameters_units,
         objectives,
         **kwargs,
     ):
@@ -120,9 +121,14 @@ def plot(
         )
         #----------------------------------------------------------------------
         # figures style
+        xlabel = ""
+        if parameters_units[key]:
+            xlabel = f"{key} ({parameters_units[key]})"
+        else:
+            xlabel = key
         fig.update_xaxes(
             exponentformat="e",
-            title_text=key,
+            title_text=xlabel,
             row=this_row,
             col=this_col,
         )
@@ -146,14 +152,17 @@ state.parameters_norm = dict()
 state.parameters_phys = dict()
 state.parameters_phys_min = dict()
 state.parameters_phys_max = dict()
+state.parameters_phys_units = dict()
 for _, parameter_dict in input_variables.items():
     key = parameter_dict["name"]
     pmin = float(parameter_dict["value_range"][0])
     pmax = float(parameter_dict["value_range"][1])
     pval = float(parameter_dict["default"])
+    punit = parameter_dict["units"]
     state.parameters_phys[key] = pval
     state.parameters_phys_min[key] = pmin
     state.parameters_phys_max[key] = pmax
+    state.parameters_phys_units[key] = punit
     state.parameters_norm[key] = normalize(pval, pmin, pmax)
 parameters_num = len(state.parameters_phys)
 # push again at flush time
@@ -194,6 +203,7 @@ def update_state(parameters_norm, parameters_phys_min, parameters_phys_max, **kw
         state.parameters_phys,
         state.parameters_phys_min,
         state.parameters_phys_max,
+        state.parameters_phys_units,
         state.objectives_phys,
         **kwargs,
     )
