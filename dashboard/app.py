@@ -1,9 +1,3 @@
-import numpy as np
-import pandas as pd
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-import plotly.express as px
-
 from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
 from trame.widgets import plotly, vuetify2 as v2
@@ -11,193 +5,92 @@ from trame.widgets import plotly, vuetify2 as v2
 import torch
 from lume_model.models import TorchModel
 
-from variables import read_variables
+from utils import read_variables, normalize, denormalize, plot
 
-# Get a server to work with
+# -----------------------------------------------------------------------------
+# Trame initialization 
+# -----------------------------------------------------------------------------
+
 server = get_server(client_type="vue2")
 state, ctrl = server.state, server.controller
 
-# normalize data in [0,1]
-def normalize(x, xmin, xmax):
-    y = (x - xmin) / (xmax - xmin)
-    return y
+state.trame__title = "IFE Superfacility"
 
-# rescale data to physical range
-def denormalize(y, xmin, xmax):
-    x = xmin + (xmax - xmin) * y
-    return x
+# -----------------------------------------------------------------------------
+# Initialize state
+# -----------------------------------------------------------------------------
 
-# plot experimental, simulation, and ML data
-def plot(
-        parameters,
-        parameters_min,
-        parameters_max,
-        parameters_units,
-        objectives,
-        **kwargs,
-    ):
-    # FIXME generalize for multiple objectives
-    objective_name = list(objectives.keys())[0]
-    # load experimental data
-    df_exp = pd.read_csv("experimental_data.csv")
-    df_sim = pd.read_csv("simulation_data.csv")
-    df_cds = ["blue", "red"]
-    df_leg = ["experiment", "simulation"]
-    # load model
-    model = TorchModel("bella_saved_model.yml")
-    # plot
-    fig = make_subplots(rows=len(parameters), cols=1)
-    for i, key in enumerate(parameters.keys()):
-        # NOTE row count starts from 1, enumerate count starts from 0
-        this_row = i+1
-        this_col = 1
-        #----------------------------------------------------------------------
-        # figure trace from CSV data
-        # set opacity map based on distance from current inputs
-        # compute Euclidean distance
-        for df_count, df in enumerate([df_exp, df_sim]):
-            df_copy = df.copy()
-            df_copy["distance"] = 0.
-            # loop over all inputs except the current one
-            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
-                pname_loc = subkey
-                pval_loc = parameters[subkey]
-                pmin_loc = parameters_min[subkey]
-                pmax_loc = parameters_max[subkey]
-                df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
-            df_copy["distance"] = np.sqrt(df_copy["distance"])
-            # normalize distance in [0,1] and compute opacity
-            df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
-            df_copy["opacity"] = 1. - df_copy["distance"]
-            # scatter plot with opacity
-            exp_fig = px.scatter(
-                df_copy,
-                x=key,
-                y=objective_name,
-                opacity=df_copy["opacity"],
-                color_discrete_sequence=[df_cds[df_count]],
-            )
-            exp_fig["data"][0]["showlegend"] = (True if i==0 else False)  # do not repeat legend
-            exp_fig["data"][0]["name"] = df_leg[df_count]
-            exp_trace = exp_fig["data"][0]
-            # add trace
-            fig.add_trace(
-                exp_trace,
-                row=this_row,
-                col=this_col,
-            )
-        #----------------------------------------------------------------------
-        # figure trace from model data
-        if key != "GVD":
-            input_dict = dict()
-            steps = 1000
-            input_dict[key] = torch.linspace(
-                start=parameters_min[key],
-                end=parameters_max[key],
-                steps=steps,
-            )
-            for subkey in [subkey for subkey in parameters.keys() if subkey != key and subkey != "GVD"]:
-                input_dict[subkey] = parameters[subkey] * torch.ones(steps)
-            y = model.evaluate(input_dict)[objective_name]
-            # scatter plot
-            mod_trace = go.Scatter(
-                x=input_dict[key],
-                y=y,
-                line=dict(color="orange"),
-                name="ML model",
-                showlegend=(True if i==0 else False),
-            )
-            # add trace
-            fig.add_trace(
-                mod_trace,
-                row=this_row,
-                col=this_col,
-            )
-        #----------------------------------------------------------------------
-        # add reference input line
-        fig.add_vline(
-            x=parameters[key],
-            line_dash="dash",
-            row=this_row,
-            col=this_col,
-        )
-        #----------------------------------------------------------------------
-        # figures style
-        xlabel = ""
-        if parameters_units[key]:
-            xlabel = f"{key} ({parameters_units[key]})"
-        else:
-            xlabel = key
-        fig.update_xaxes(
-            exponentformat="e",
-            title_text=xlabel,
-            row=this_row,
-            col=this_col,
-        )
-        fig.update_yaxes(
-            exponentformat="e",
-            title_text=objective_name,
-            row=this_row,
-            col=this_col,
-        )
-    fig.update_layout()
-    return fig
-
-# read state variables
-yaml_file = "variables.yml"
-input_variables, output_variables = read_variables(yaml_file)
+# read input and output variables
+input_variables, output_variables = read_variables("variables.yml")
 # FIXME generalize for multiple objectives
 assert len(output_variables) == 1, "number of objectives > 1 not supported"
+
+# load model
+model = TorchModel("bella_saved_model.yml")
 
 # initialize parameters
 state.parameters_norm = dict()
 state.parameters_phys = dict()
 state.parameters_phys_min = dict()
 state.parameters_phys_max = dict()
-state.parameters_phys_units = dict()
 for _, parameter_dict in input_variables.items():
     key = parameter_dict["name"]
     pmin = float(parameter_dict["value_range"][0])
     pmax = float(parameter_dict["value_range"][1])
     pval = float(parameter_dict["default"])
-    punit = parameter_dict["units"]
     state.parameters_phys[key] = pval
     state.parameters_phys_min[key] = pmin
     state.parameters_phys_max[key] = pmax
-    state.parameters_phys_units[key] = punit
     state.parameters_norm[key] = normalize(pval, pmin, pmax)
-parameters_num = len(state.parameters_phys)
 # push again at flush time
 state.dirty("parameters_norm")
 
-# load model
-model = TorchModel("bella_saved_model.yml")
+# initialize parameters for ML model
+state.parameters_model = state.parameters_phys.copy()
+# workaround to match keys:
+# - model labels do not carry units (e.g., "TOD" instead of "TOD (fs^3)")
+# - model inputs do not include GVD
+for key_old in state.parameters_model.keys():
+    key_new, _ = key_old.split(maxsplit=1)
+    state.parameters_model[key_new] = state.parameters_model.pop(key_old)
+gvd_key = [key_tmp for key_tmp in state.parameters_model.keys() if key_tmp == "GVD"][0]
+state.parameters_model.pop(gvd_key)
 
 # initialize objectives
 state.objectives_phys = dict()
 for _, objective_dict in output_variables.items():
     key = objective_dict["name"]
-    input_dict = state.parameters_phys.copy()
-    input_dict.pop("GVD")
-    state.objectives_phys[key] = float(model.evaluate(input_dict)[key])
+    state.objectives_phys[key] = float(model.evaluate(state.parameters_model)[key.split(maxsplit=1)[0]])
 state.dirty("objectives_phys")  # pushed again at flush time
 
+# -----------------------------------------------------------------------------
+# Callbacks
+# -----------------------------------------------------------------------------
+
 @state.change("parameters_norm")
-def update_state(parameters_norm, parameters_phys_min, parameters_phys_max, **kwargs):
+def update_state(**kwargs):
     # update parameters in physical units
-    for key, value in parameters_norm.items():
+    for key, value in state.parameters_norm.items():
         state.parameters_phys[key] = denormalize(
-            parameters_norm[key],
-            parameters_phys_min[key],
-            parameters_phys_max[key],
+            state.parameters_norm[key],
+            state.parameters_phys_min[key],
+            state.parameters_phys_max[key],
         )
     # push again at flush time
     state.dirty("parameters_phys")
+    # update model parameters
+    state.parameters_model = state.parameters_phys.copy()
+    # workaround to match keys:
+    # - model labels do not carry units (e.g., "TOD" instead of "TOD (fs^3)")
+    # - model inputs do not include GVD
+    for key_old in state.parameters_model.keys():
+        key_new, _ = key_old.split(maxsplit=1)
+        state.parameters_model[key_new] = state.parameters_model.pop(key_old)
+    gvd_key = [key_tmp for key_tmp in state.parameters_model.keys() if key_tmp == "GVD"][0]
+    state.parameters_model.pop(gvd_key)
     # update objectives
     for key in state.objectives_phys.keys():
-        input_dict = state.parameters_phys.copy()
-        input_dict.pop("GVD")
-        state.objectives_phys[key] = float(model.evaluate(input_dict)[key])
+        state.objectives_phys[key] = float(model.evaluate(state.parameters_model)[key.split(maxsplit=1)[0]])
     # push again at flush time
     state.dirty("objectives_phys")
     # update plots
@@ -205,13 +98,16 @@ def update_state(parameters_norm, parameters_phys_min, parameters_phys_max, **kw
         state.parameters_phys,
         state.parameters_phys_min,
         state.parameters_phys_max,
-        state.parameters_phys_units,
         state.objectives_phys,
+        model,
         **kwargs,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
+# -----------------------------------------------------------------------------
 # GUI
+# -----------------------------------------------------------------------------
+
 with SinglePageLayout(server) as layout:
     layout.title.set_text("IFE Superfacility")
 
@@ -277,6 +173,9 @@ with SinglePageLayout(server) as layout:
                                 )
                                 ctrl.plotly_figure_update = plotly_figure.update
 
+# -----------------------------------------------------------------------------
 # Main
+# -----------------------------------------------------------------------------
+
 if __name__ == "__main__":
     server.start()
