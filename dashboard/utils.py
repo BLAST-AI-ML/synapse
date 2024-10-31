@@ -25,7 +25,6 @@ def plot(
         parameters_max,
         objectives,
         model,
-        **kwargs,
     ):
     # FIXME generalize for multiple objectives
     objective_name = list(objectives.keys())[0]
