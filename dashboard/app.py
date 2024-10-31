@@ -95,7 +95,14 @@ def model_wrapper(parameters_array):
 @ctrl.add("optimize")
 def optimize():
     x0 = np.array(list(state.parameters.values()))
-    res = minimize(model_wrapper, x0)
+    bounds = []
+    for key in state.parameters.keys():
+        bounds.append((state.parameters_min[key], state.parameters_max[key]))
+    res = minimize(
+        fun=model_wrapper,
+        x0=x0,
+        bounds=bounds,
+    )
     state.parameters = dict(zip(state.parameters.keys(), res.x))
     state.dirty("parameters")
 
