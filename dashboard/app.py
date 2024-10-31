@@ -89,9 +89,14 @@ def update_state(**kwargs):
         state.parameters_phys_max,
         state.objectives_phys,
         model,
-        **kwargs,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
+
+@ctrl.add("recenter")
+def recenter():
+    for key in state.parameters_phys.keys():
+        state.parameters_phys[key] = (state.parameters_phys_min[key] + state.parameters_phys_max[key]) / 2.
+    state.dirty("parameters_phys")
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -145,6 +150,11 @@ with SinglePageLayout(server) as layout:
                                                         style="width: 100px",
                                                         type="number",
                                                     )
+                                        v2.VSpacer(style="height: 20px")
+                                        v2.VBtn(
+                                            "recenter",
+                                            click=recenter,
+                                        )
                     with v2.VRow():
                         with v2.VCol():
                             with v2.VCard(style="width: 500px"):
