@@ -18,6 +18,19 @@ def read_variables(yaml_file):
     output_variables = yaml_dict["output_variables"]
     return (input_variables, output_variables)
 
+# convert parameters dictionary for model input
+def convert_parameters(parameters):
+    parameters_model = parameters.copy()
+    # workaround to match keys:
+    # - model labels do not carry units (e.g., "TOD" instead of "TOD (fs^3)")
+    # - model inputs do not include GVD
+    for key_old in parameters_model.keys():
+        key_new, _ = key_old.split(maxsplit=1)
+        parameters_model[key_new] = parameters_model.pop(key_old)
+    gvd_key = [key_tmp for key_tmp in parameters_model.keys() if key_tmp == "GVD"][0]
+    parameters_model.pop(gvd_key)
+    return parameters_model
+
 # plot experimental, simulation, and ML data
 def plot(
         parameters,
