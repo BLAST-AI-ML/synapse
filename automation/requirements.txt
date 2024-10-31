@@ -1,3 +1,0 @@
-sfapi_client
-prefect
-jupyter
