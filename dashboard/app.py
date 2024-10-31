@@ -1,3 +1,6 @@
+import numpy as np
+from scipy.optimize import minimize
+
 from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
 from trame.widgets import plotly, vuetify2 as v2
@@ -82,6 +85,20 @@ def recenter():
         state.parameters[key] = (state.parameters_min[key] + state.parameters_max[key]) / 2.
     state.dirty("parameters")
 
+def model_wrapper(parameters_array):
+    parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
+    parameters_model = convert_parameters(parameters_dict)
+    for key in state.objectives.keys():
+        res = -float(model.evaluate(parameters_model)[key.split(maxsplit=1)[0]])
+    return res
+
+@ctrl.add("optimize")
+def optimize():
+    x0 = np.array(list(state.parameters.values()))
+    res = minimize(model_wrapper, x0)
+    state.parameters = dict(zip(state.parameters.keys(), res.x))
+    state.dirty("parameters")
+
 # -----------------------------------------------------------------------------
 # GUI
 # -----------------------------------------------------------------------------
@@ -120,9 +137,7 @@ with SinglePageLayout(server) as layout:
                                                 type="number",
                                             ):
                                                 # append text field
-                                                with v2.Template(
-                                                    v_slot_append=True,
-                                                ):
+                                                with v2.Template(v_slot_append=True):
                                                     v2.VTextField(
                                                         v_model_number=(f"parameters['{key}']",),
                                                         #change="flushState('parameters')",
@@ -134,11 +149,20 @@ with SinglePageLayout(server) as layout:
                                                         style="width: 100px",
                                                         type="number",
                                                     )
-                                        v2.VSpacer(style="height: 20px")
-                                        v2.VBtn(
-                                            "recenter",
-                                            click=recenter,
-                                        )
+                                        v2.VSpacer(style="height: 50px")
+                                        with v2.VRow():
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "recenter",
+                                                    click=recenter,
+                                                )
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "optimize",
+                                                    click=optimize,
+                                                )
+                                            with v2.VCol():
+                                                pass
                     with v2.VRow():
                         with v2.VCol():
                             with v2.VCard(style="width: 500px"):
