@@ -5,7 +5,7 @@ from trame.widgets import plotly, vuetify2 as v2
 import torch
 from lume_model.models import TorchModel
 
-from utils import read_variables, normalize, denormalize, plot
+from utils import read_variables, plot
 
 # -----------------------------------------------------------------------------
 # Trame initialization 
@@ -29,7 +29,6 @@ assert len(output_variables) == 1, "number of objectives > 1 not supported"
 model = TorchModel("bella_saved_model.yml")
 
 # initialize parameters
-state.parameters_norm = dict()
 state.parameters_phys = dict()
 state.parameters_phys_min = dict()
 state.parameters_phys_max = dict()
@@ -41,9 +40,6 @@ for _, parameter_dict in input_variables.items():
     state.parameters_phys[key] = pval
     state.parameters_phys_min[key] = pmin
     state.parameters_phys_max[key] = pmax
-    state.parameters_norm[key] = normalize(pval, pmin, pmax)
-# push again at flush time
-state.dirty("parameters_norm")
 
 # initialize parameters for ML model
 state.parameters_model = state.parameters_phys.copy()
@@ -67,17 +63,10 @@ state.dirty("objectives_phys")  # pushed again at flush time
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("parameters_norm")
+@state.change("parameters_phys")
 def update_state(**kwargs):
-    # update parameters in physical units
-    for key, value in state.parameters_norm.items():
-        state.parameters_phys[key] = denormalize(
-            state.parameters_norm[key],
-            state.parameters_phys_min[key],
-            state.parameters_phys_max[key],
-        )
-    # push again at flush time
-    state.dirty("parameters_phys")
+    for key in state.parameters_phys.keys():
+        state.parameters_phys[key] = float(state.parameters_phys[key])
     # update model parameters
     state.parameters_model = state.parameters_phys.copy()
     # workaround to match keys:
@@ -125,17 +114,21 @@ with SinglePageLayout(server) as layout:
                             with v2.VCard(style="width: 500px"):
                                 with v2.VCardTitle("Parameters"):
                                     with v2.VCardText():
-                                        for key in state.parameters_norm.keys():
+                                        for key in state.parameters_phys.keys():
+                                            pmin = state.parameters_phys_min[key]
+                                            pmax = state.parameters_phys_max[key]
+                                            step = (pmax - pmin) / 100.
                                             # create slider for each parameter
                                             with v2.VSlider(
-                                                v_model=(f"parameters_norm['{key}']",),
-                                                change="flushState('parameters_norm')",
+                                                v_model_number=(f"parameters_phys['{key}']",),
+                                                change="flushState('parameters_phys')",
                                                 label=key,
-                                                min=0.,
-                                                max=1.,
-                                                step=0.01,
+                                                min=pmin,
+                                                max=pmax,
+                                                step=step,
                                                 classes="align-center",
                                                 hide_details=True,
+                                                type="number",
                                             ):
                                                 # append text field
                                                 with v2.Template(
@@ -143,7 +136,7 @@ with SinglePageLayout(server) as layout:
                                                 ):
                                                     v2.VTextField(
                                                         v_model_number=(f"parameters_phys['{key}']",),
-                                                        #change="flushState('parameters_norm')",
+                                                        #change="flushState('parameters_phys')",
                                                         label=key,
                                                         density="compact",
                                                         hide_details=True,
@@ -167,7 +160,7 @@ with SinglePageLayout(server) as layout:
                 with v2.VCol():
                     with v2.VCard():
                         with v2.VCardTitle("Plots"):
-                            with v2.VContainer(style=f"height: {25*len(state.parameters_norm)}vh"):
+                            with v2.VContainer(style=f"height: {25*len(state.parameters_phys)}vh"):
                                 plotly_figure = plotly.Figure(
                                         display_mode_bar="true", config={"responsive": True}
                                 )

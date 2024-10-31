@@ -18,16 +18,6 @@ def read_variables(yaml_file):
     output_variables = yaml_dict["output_variables"]
     return (input_variables, output_variables)
 
-# normalize data in [0,1]
-def normalize(x, xmin, xmax):
-    y = (x - xmin) / (xmax - xmin)
-    return y
-
-# rescale data to physical range
-def denormalize(y, xmin, xmax):
-    x = xmin + (xmax - xmin) * y
-    return x
-
 # plot experimental, simulation, and ML data
 def plot(
         parameters,
