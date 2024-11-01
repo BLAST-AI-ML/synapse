@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import torch
 import yaml
 
@@ -17,19 +17,6 @@ def read_variables(yaml_file):
     # dictionary of output variables (objectives)
     output_variables = yaml_dict["output_variables"]
     return (input_variables, output_variables)
-
-# convert parameters dictionary for model input
-def convert_parameters(parameters):
-    parameters_model = parameters.copy()
-    # workaround to match keys:
-    # - model labels do not carry units (e.g., "TOD" instead of "TOD (fs^3)")
-    # - model inputs do not include GVD
-    for key_old in parameters_model.keys():
-        key_new, _ = key_old.split(maxsplit=1)
-        parameters_model[key_new] = parameters_model.pop(key_old)
-    gvd_key = [key_tmp for key_tmp in parameters_model.keys() if key_tmp == "GVD"][0]
-    parameters_model.pop(gvd_key)
-    return parameters_model
 
 # plot experimental, simulation, and ML data
 def plot(
@@ -46,8 +33,6 @@ def plot(
     df_sim = pd.read_csv("simulation_data.csv")
     df_cds = ["blue", "red"]
     df_leg = ["experiment", "simulation"]
-    ## load model
-    #model = TorchModel("bella_saved_model.yml")
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
     for i, key in enumerate(parameters.keys()):
@@ -105,7 +90,7 @@ def plot(
             )
             for subkey in [subkey for subkey in parameters.keys() if (subkey != key and "GVD" not in subkey)]:
                 input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters[subkey] * torch.ones(steps)
-            y = model.evaluate(input_dict_loc)[objective_name.split(maxsplit=1)[0]]
+            y = model.evaluate(input_dict_loc)
             # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict_loc[key.split(maxsplit=1)[0]],

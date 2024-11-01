@@ -1,14 +1,9 @@
-import numpy as np
-from scipy.optimize import minimize
-
 from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
 from trame.widgets import plotly, vuetify2 as v2
 
-import torch
-from lume_model.models import TorchModel
-
-from utils import read_variables, convert_parameters, plot
+from model import Model
+from utils import read_variables, plot
 
 # -----------------------------------------------------------------------------
 # Trame initialization 
@@ -29,7 +24,8 @@ input_variables, output_variables = read_variables("variables.yml")
 assert len(output_variables) == 1, "number of objectives > 1 not supported"
 
 # load model
-model = TorchModel("bella_saved_model.yml")
+model_file = "bella_saved_model.yml"
+model = Model(server, model_file)
 
 # initialize parameters
 state.parameters = dict()
@@ -45,13 +41,13 @@ for _, parameter_dict in input_variables.items():
     state.parameters_max[key] = pmax
 
 # initialize parameters for ML model
-state.parameters_model = convert_parameters(state.parameters)
+state.parameters_model = model.format(state.parameters)
 
 # initialize objectives
 state.objectives = dict()
 for _, objective_dict in output_variables.items():
     key = objective_dict["name"]
-    state.objectives[key] = float(model.evaluate(state.parameters_model)[key.split(maxsplit=1)[0]])
+    state.objectives[key] = model.evaluate(state.parameters_model)
 state.dirty("objectives")  # pushed again at flush time
 
 # -----------------------------------------------------------------------------
@@ -63,10 +59,10 @@ def update_state(**kwargs):
     for key in state.parameters.keys():
         state.parameters[key] = float(state.parameters[key])
     # update model parameters
-    state.parameters_model = convert_parameters(state.parameters)
+    state.parameters_model = model.format(state.parameters)
     # update objectives
     for key in state.objectives.keys():
-        state.objectives[key] = float(model.evaluate(state.parameters_model)[key.split(maxsplit=1)[0]])
+        state.objectives[key] = model.evaluate(state.parameters_model)
     # push again at flush time
     state.dirty("objectives")
     # update plots
@@ -83,27 +79,6 @@ def update_state(**kwargs):
 def recenter():
     for key in state.parameters.keys():
         state.parameters[key] = (state.parameters_min[key] + state.parameters_max[key]) / 2.
-    state.dirty("parameters")
-
-def model_wrapper(parameters_array):
-    parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
-    parameters_model = convert_parameters(parameters_dict)
-    for key in state.objectives.keys():
-        res = -float(model.evaluate(parameters_model)[key.split(maxsplit=1)[0]])
-    return res
-
-@ctrl.add("optimize")
-def optimize():
-    x0 = np.array(list(state.parameters.values()))
-    bounds = []
-    for key in state.parameters.keys():
-        bounds.append((state.parameters_min[key], state.parameters_max[key]))
-    res = minimize(
-        fun=model_wrapper,
-        x0=x0,
-        bounds=bounds,
-    )
-    state.parameters = dict(zip(state.parameters.keys(), res.x))
     state.dirty("parameters")
 
 # -----------------------------------------------------------------------------
@@ -166,7 +141,7 @@ with SinglePageLayout(server) as layout:
                                             with v2.VCol():
                                                 v2.VBtn(
                                                     "optimize",
-                                                    click=optimize,
+                                                    click=model.optimize,
                                                 )
                                             with v2.VCol():
                                                 pass
