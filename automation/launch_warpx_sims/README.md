@@ -12,7 +12,7 @@ In order for this to run properly, you need to setup your environment at NERSC a
 cd $HOME/src/warpx
 rm -rf build_pm_gpu
 
-cmake -S . -B build_pm_gpu -DWarpX_COMPUTE=CUDA -DWarpX_DIMS="RZ"
+cmake -S . -B build_pm_gpu -DWarpX_COMPUTE=CUDA -DWarpX_DIMS="2"
 cmake --build build_pm_gpu -j 16
 ```
 
