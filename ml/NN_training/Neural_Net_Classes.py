@@ -20,11 +20,11 @@ class NN(nn.Module):
             int patience: how many repeated values (plateaus or flat data) should occur before changing learning rate
             float factor: by what factor should learning rate decrease upon scheduler step
             float threshold: how many place values to consider repeated numbers
-            
+
         '''
         super(NN, self).__init__()
 
-        self.hidden1 = nn.Linear(2, hidden_size)
+        self.hidden1 = nn.Linear(3, hidden_size)
         self.hidden2 = nn.Linear(hidden_size, hidden_size)
         self.hidden3 = nn.Linear(hidden_size, hidden_size)
         self.hidden4 = nn.Linear(hidden_size, hidden_size)
@@ -36,20 +36,20 @@ class NN(nn.Module):
             'loss':[],
             'epoch_count':[]
             }
-        
+
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-        self.scheduler = ReduceLROnPlateau(self.optimizer, 'min', 
+        self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
                                            factor=factor, patience=patience, threshold=threshold)
 
     def forward(self, x):
         '''
         args:
-            x: single value or tensor to pass 
+            x: single value or tensor to pass
         returns:
             output of NN
         '''
-        
+
         x = self.relu(self.hidden1(x))
         x = self.relu(self.hidden2(x))
         x = self.relu(self.hidden3(x))
@@ -59,19 +59,15 @@ class NN(nn.Module):
 
         return x
 
-    def train_model(self, x_train, y_train, z_train, num_epochs=1500):
+    def train_model(self, inputs, outputs, num_epochs=1500):
         '''
         args:
-            tensor x_train: input dataset to train NN
-            tensor y_train: input dataset to train NN
-            tensor z_train: output dataset to train NN
+            tensor inputs input dataset to train NN
+            tensor outputs: output dataset to train NN
             int num_epochs: iterations of training
         '''
-        x_train = x_train.to(torch.float32)
-        y_train = y_train.to(torch.float32)
-        z_train = z_train.to(torch.float32)
-        
-        inputs = torch.cat((x_train, y_train), dim=1).to(torch.float32)
+        oputputs = outputs.to(torch.float32)
+        inputs = inputs.to(torch.float32)
 
         self.train()
 
@@ -79,8 +75,8 @@ class NN(nn.Module):
         for epoch in range(num_epochs):
             self.optimizer.zero_grad()
 
-            outputs = self(inputs)
-            loss = self.criterion(outputs, z_train)
+            predictions = self(inputs)
+            loss = self.criterion(predictions, outputs)
             loss.backward()
 
             self.optimizer.step()
@@ -95,55 +91,37 @@ class NN(nn.Module):
 
 
 
-    def test_model(self, x_test, y_test, z_test):
+    def test_model(self, inputs, outputs):
         '''
         args:
-            tensor x_test: an input dataset to pass through NN and test
-            tensor y_test: an input dataset to pass through NN
-            tensor z_test: an output dataset to pass through NN
-        returns:
-            numpy array output: Returns the predictions the NN made with x_test
+            tensor inputs: an input dataset to pass through NN and test
+            tensor outputs: an output dataset to pass through NN
         '''
-        x_test = x_test.to(torch.float32)
-        y_test = y_test.to(torch.float32)
-        z_test = z_test.to(torch.float32)
-        
-        inputs = torch.cat((x_test, y_test),dim=1).to(torch.float32)
+        inputs = inputs.to(torch.float32)
+        outputs = outputs.to(torch.float32)
         self.eval()
         with torch.no_grad():
-            output = self(inputs)
-            loss = self.criterion(output, z_test).item()
-            predicted_values = output.detach().numpy()
-            
+            predictions = self(inputs)
+            loss = self.criterion(predictions, outputs).item()
+
             print(f'Test Loss: {loss:.4f}')
 
-        
 
-
-
-
-    def predict(self, x_values, y_values):
+    def predict(self, inputs):
         '''
         args:
-            tensor x_values
-            tensor y_values
+            tensor inputs
         returns:
             numpy array with predictions
         '''
-        predictions = {
-        'Z_target': x_values.tolist(),
-        'TOD': y_values.tolist(),
-        'predictions': []
-        }
-    
-        inputs = torch.cat((x_values, y_values), dim=1).to(torch.float32)
+        inputs = inputs.to(torch.float32)
         self.eval()
         with torch.no_grad():
             output = self(inputs)
-            predictions['predictions'] = output.detach().numpy().tolist()
-    
+            predictions = output.detach().numpy()
+
         return predictions
-    
+
 
 
 
@@ -160,10 +138,8 @@ class NN(nn.Module):
         plt.title('epochs vs loss')
         plt.xlabel('epochs')
         plt.ylabel('loss')
-        
+
         if filename:
             plt.savefig(filename+'.png')
         else:
             plt.show()
-
-
