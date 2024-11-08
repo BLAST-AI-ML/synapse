@@ -6,7 +6,7 @@ import pandas as pd
 if __name__ == "__main__":
 
     # Directory containing exploration history
-    exp_dir = './exploration'
+    exp_dir = '/global/cfs/cdirs/m3239/ip2data/simulations/scan_TODs_and_positions_3cppwl_optimas/014_try_3/exploration'
 
     # History file prefix to match
     prefix = 'exploration_history_after_sim_'
@@ -45,7 +45,11 @@ if __name__ == "__main__":
     # Subselect columns into a new dataframe to write into its own CSV file
     select_cols = ['z_pos_um', 'TOD_fs3', 'f']
     df_res = df[select_cols].copy()
-    df_res.rename(columns={'z_pos_um' : 'target_z_pos_um', 'f' : 'num_particles'}, inplace=True)
+    df_res.rename(columns={'z_pos_um': 'z_target_um', 'f' : 'n_protons'}, inplace=True)
+    # Rescale the number of protons to take into account differences between 2D and 3D simulations
+    df_res['n_protons'] *= 1e-4
+    # Also store a default value of the GVD
+    df_res['GVD'] = 13.6
 
     res_file = './simulation_results.csv'
     df_res.to_csv(res_file)
