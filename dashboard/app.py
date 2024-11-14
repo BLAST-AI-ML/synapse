@@ -23,9 +23,13 @@ input_variables, output_variables = read_variables("variables.yml")
 # FIXME generalize for multiple objectives
 assert len(output_variables) == 1, "number of objectives > 1 not supported"
 
+# set file paths
+model_data = "../ml/NN_training/bella_saved_model.yml"
+experimental_data = "../experimental_data/experimental_data.csv"
+simulation_data = "../simulation_data/simulation_data.csv"
+
 # load model
-model_file = "bella_saved_model.yml"
-model = Model(server, model_file)
+model = Model(server, model_data)
 
 # initialize parameters
 state.parameters = dict()
@@ -40,14 +44,11 @@ for _, parameter_dict in input_variables.items():
     state.parameters_min[key] = pmin
     state.parameters_max[key] = pmax
 
-# initialize parameters for ML model
-state.parameters_model = model.format(state.parameters)
-
 # initialize objectives
 state.objectives = dict()
 for _, objective_dict in output_variables.items():
     key = objective_dict["name"]
-    state.objectives[key] = model.evaluate(state.parameters_model)
+    state.objectives[key] = model.evaluate(state.parameters)
 state.dirty("objectives")  # pushed again at flush time
 
 # -----------------------------------------------------------------------------
@@ -58,11 +59,9 @@ state.dirty("objectives")  # pushed again at flush time
 def update_state(**kwargs):
     for key in state.parameters.keys():
         state.parameters[key] = float(state.parameters[key])
-    # update model parameters
-    state.parameters_model = model.format(state.parameters)
     # update objectives
     for key in state.objectives.keys():
-        state.objectives[key] = model.evaluate(state.parameters_model)
+        state.objectives[key] = model.evaluate(state.parameters)
     # push again at flush time
     state.dirty("objectives")
     # update plots
@@ -72,6 +71,8 @@ def update_state(**kwargs):
         state.parameters_max,
         state.objectives,
         model,
+        experimental_data,
+        simulation_data,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 

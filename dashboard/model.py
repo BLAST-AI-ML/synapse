@@ -5,26 +5,14 @@ import torch
 from lume_model.models import TorchModel
 
 class Model:
-    def __init__(self, server, model_file):
+    def __init__(self, server, model_data):
         # Trame state and controller
         self.__state = server.state
         self.__ctrl = server.controller
         # PyTorch model
-        self.__model = TorchModel(model_file)
+        self.__model = TorchModel(model_data)
         # decorate method 'optimize'
         self.optimize = self.__ctrl.add("optimize")(self.optimize)
-
-    def format(self, parameters):
-        parameters_model = parameters.copy()
-        # workaround to match keys:
-        # - model labels do not carry units (e.g., "TOD" instead of "TOD (fs^3)")
-        for key_old in parameters_model.keys():
-            key_new, _ = key_old.split(maxsplit=1)
-            parameters_model[key_new] = parameters_model.pop(key_old)
-        # - model inputs do not include GVD
-        gvd_key = [key_tmp for key_tmp in parameters_model.keys() if key_tmp == "GVD"][0]
-        parameters_model.pop(gvd_key)
-        return parameters_model
 
     def evaluate(self, parameters_model):
         # evaluate model
@@ -41,10 +29,8 @@ class Model:
     def _model_wrapper(self, parameters_array):
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(self.__state.parameters.keys(), parameters_array))
-        # format dictionary of parameters for model evaluation
-        parameters_model = self.format(parameters_dict)
         # change sign to the result in order to maximize when optimizing
-        res = -self.evaluate(parameters_model)
+        res = -self.evaluate(parameters_dict)
         return res
 
     def optimize(self):
