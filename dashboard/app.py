@@ -51,6 +51,9 @@ for _, objective_dict in output_variables.items():
     state.objectives[key] = model.evaluate(state.parameters)
 state.dirty("objectives")  # pushed again at flush time
 
+# initialize opacity cutoff controller
+state.opacity_cutoff = 0.1
+
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
@@ -73,6 +76,21 @@ def update_state(**kwargs):
         model,
         experimental_data,
         simulation_data,
+        state.opacity_cutoff,
+    )
+    ctrl.plotly_figure_update = plotly_figure.update(fig)
+
+@state.change("opacity_cutoff")
+def update_plots(**kwargs):
+    fig = plot(
+        state.parameters,
+        state.parameters_min,
+        state.parameters_max,
+        state.objectives,
+        model,
+        experimental_data,
+        simulation_data,
+        state.opacity_cutoff,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
@@ -166,6 +184,21 @@ with SinglePageLayout(server) as layout:
                                         display_mode_bar="true", config={"responsive": True}
                                 )
                                 ctrl.plotly_figure_update = plotly_figure.update
+                            # transparency slider
+                            with v2.VCardText(style="width: 250px"):
+                                v2.VSlider(
+                                    v_model_number=("opacity_cutoff",),
+                                    change="flushState('opacity_cutoff')",
+                                    label="opacity cutoff",
+                                    min=0.0,
+                                    max=1.0,
+                                    step=0.1,
+                                    classes="align-center",
+                                    hide_details=True,
+                                    thumb_label="always",
+                                    thumb_size=25,
+                                    type="number",
+                                )
 
 # -----------------------------------------------------------------------------
 # Main
