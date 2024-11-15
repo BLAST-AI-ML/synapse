@@ -3,6 +3,8 @@ from trame.ui.vuetify2 import SinglePageLayout
 from trame.widgets import plotly, vuetify2 as v2
 
 from model import Model
+from parameters import Parameters
+from objectives import Objectives
 from utils import read_variables, plot
 
 # -----------------------------------------------------------------------------
@@ -20,36 +22,20 @@ state.trame__title = "IFE Superfacility"
 
 # read input and output variables
 input_variables, output_variables = read_variables("variables.yml")
-# FIXME generalize for multiple objectives
-assert len(output_variables) == 1, "number of objectives > 1 not supported"
 
 # set file paths
 model_data = "../ml/NN_training/bella_saved_model.yml"
 experimental_data = "../experimental_data/experimental_data.csv"
 simulation_data = "../simulation_data/simulation_data.csv"
 
-# load model
+# initialize model
 model = Model(server, model_data)
 
 # initialize parameters
-state.parameters = dict()
-state.parameters_min = dict()
-state.parameters_max = dict()
-for _, parameter_dict in input_variables.items():
-    key = parameter_dict["name"]
-    pmin = float(parameter_dict["value_range"][0])
-    pmax = float(parameter_dict["value_range"][1])
-    pval = float(parameter_dict["default"])
-    state.parameters[key] = pval
-    state.parameters_min[key] = pmin
-    state.parameters_max[key] = pmax
+parameters = Parameters(server, input_variables)
 
 # initialize objectives
-state.objectives = dict()
-for _, objective_dict in output_variables.items():
-    key = objective_dict["name"]
-    state.objectives[key] = model.evaluate(state.parameters)
-state.dirty("objectives")  # pushed again at flush time
+objectives = Objectives(server, model, output_variables)
 
 # initialize opacity cutoff controller
 state.opacity_cutoff = 0.1
@@ -58,47 +44,26 @@ state.opacity_cutoff = 0.1
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("parameters")
-def update_state(**kwargs):
-    for key in state.parameters.keys():
-        state.parameters[key] = float(state.parameters[key])
-    # update objectives
-    for key in state.objectives.keys():
-        state.objectives[key] = model.evaluate(state.parameters)
-    # push again at flush time
-    state.dirty("objectives")
-    # update plots
-    fig = plot(
-        state.parameters,
-        state.parameters_min,
-        state.parameters_max,
-        state.objectives,
-        model,
-        experimental_data,
-        simulation_data,
-        state.opacity_cutoff,
-    )
-    ctrl.plotly_figure_update = plotly_figure.update(fig)
-
 @state.change("opacity_cutoff")
 def update_plots(**kwargs):
     fig = plot(
-        state.parameters,
-        state.parameters_min,
-        state.parameters_max,
-        state.objectives,
         model,
+        parameters,
+        objectives,
         experimental_data,
         simulation_data,
         state.opacity_cutoff,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
-@ctrl.add("recenter")
-def recenter():
-    for key in state.parameters.keys():
-        state.parameters[key] = (state.parameters_min[key] + state.parameters_max[key]) / 2.
-    state.dirty("parameters")
+@state.change("parameters")
+def update_state(**kwargs):
+    # update parameters
+    parameters.update()
+    # update objectives
+    objectives.update()
+    # update plots (TODO plots.update())
+    update_plots()
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -121,9 +86,9 @@ with SinglePageLayout(server) as layout:
                             with v2.VCard(style="width: 500px"):
                                 with v2.VCardTitle("Parameters"):
                                     with v2.VCardText():
-                                        for key in state.parameters.keys():
-                                            pmin = state.parameters_min[key]
-                                            pmax = state.parameters_max[key]
+                                        for key in parameters.get().keys():
+                                            pmin = parameters.get_min()[key]
+                                            pmax = parameters.get_max()[key]
                                             step = (pmax - pmin) / 100.
                                             # create slider for each parameter
                                             with v2.VSlider(
@@ -141,7 +106,6 @@ with SinglePageLayout(server) as layout:
                                                 with v2.Template(v_slot_append=True):
                                                     v2.VTextField(
                                                         v_model_number=(f"parameters['{key}']",),
-                                                        #change="flushState('parameters')",
                                                         label=key,
                                                         density="compact",
                                                         hide_details=True,
@@ -155,7 +119,7 @@ with SinglePageLayout(server) as layout:
                                             with v2.VCol():
                                                 v2.VBtn(
                                                     "recenter",
-                                                    click=recenter,
+                                                    click=parameters.recenter,
                                                 )
                                             with v2.VCol():
                                                 v2.VBtn(
@@ -169,7 +133,7 @@ with SinglePageLayout(server) as layout:
                             with v2.VCard(style="width: 500px"):
                                 with v2.VCardTitle("Objectives"):
                                     with v2.VCardText():
-                                        for key in state.objectives.keys():
+                                        for key in objectives.get().keys():
                                             v2.VTextField(
                                                 v_model_number=(f"objectives['{key}']",),
                                                 label=key,
@@ -179,12 +143,12 @@ with SinglePageLayout(server) as layout:
                 with v2.VCol():
                     with v2.VCard():
                         with v2.VCardTitle("Plots"):
-                            with v2.VContainer(style=f"height: {25*len(state.parameters)}vh"):
+                            with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
                                 plotly_figure = plotly.Figure(
                                         display_mode_bar="true", config={"responsive": True}
                                 )
                                 ctrl.plotly_figure_update = plotly_figure.update
-                            # transparency slider
+                            # opacity cutoff slider
                             with v2.VCardText(style="width: 250px"):
                                 v2.VSlider(
                                     v_model_number=("opacity_cutoff",),
