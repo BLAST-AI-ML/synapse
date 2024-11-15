@@ -27,6 +27,7 @@ def plot(
         model,
         experimental_data,
         simulation_data,
+        opacity_cutoff,
     ):
     # FIXME generalize for multiple objectives
     objective_name = list(objectives.keys())[0]
@@ -62,7 +63,7 @@ def plot(
             df_copy["distance"] = np.sqrt(df_copy["distance"])
             # normalize distance in [0,1] and compute opacity
             df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
-            df_copy["opacity"] = 1. - df_copy["distance"]
+            df_copy["opacity"] = np.where(df_copy["distance"] > opacity_cutoff, 0., 1. - df_copy["distance"])
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy,
@@ -71,10 +72,22 @@ def plot(
                 opacity=df_copy["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
             )
-            exp_fig["data"][0]["showlegend"] = (True if i==0 else False)  # do not repeat legend
-            exp_fig["data"][0]["name"] = df_leg[df_count]
+            # do now show default legend affected by opacity map
+            exp_fig["data"][0]["showlegend"] = False
+            # create custom legend empty trace (i==0 only, avoid repetition)
+            if i==0:
+                legend = go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode='markers',
+                    marker=dict(color=df_cds[df_count], opacity=1),
+                    showlegend=True,
+                    name=df_leg[df_count],
+                )
+                # add custom legend trace to display custom legend
+                fig.add_trace(legend)
+            # add original trace (with correct opacity)
             exp_trace = exp_fig["data"][0]
-            # add trace
             fig.add_trace(
                 exp_trace,
                 row=this_row,
