@@ -26,7 +26,7 @@ class Model:
             res = float(res)
         return res
 
-    def _model_wrapper(self, parameters_array):
+    def model_wrapper(self, parameters_array):
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(self.__state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
@@ -42,7 +42,7 @@ class Model:
             parameters_bounds.append((self.__state.parameters_min[key], self.__state.parameters_max[key]))
         # optimize model (maximize output value)
         res = minimize(
-            fun=self._model_wrapper,
+            fun=self.model_wrapper,
             x0=parameters_values,
             bounds=parameters_bounds,
         )
