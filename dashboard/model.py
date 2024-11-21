@@ -11,8 +11,8 @@ class Model:
         self.__ctrl = server.controller
         # PyTorch model
         self.__model = TorchModel(model_data)
-        # decorate method 'optimize'
-        self.optimize = self.__ctrl.add("optimize")(self.optimize)
+        ## TODO decorate method 'optimize'?
+        #self.optimize = self.__ctrl.add("optimize")(self.optimize)
 
     def evaluate(self, parameters_model):
         # evaluate model
