@@ -37,14 +37,14 @@ parameters = Parameters(server, input_variables)
 # initialize objectives
 objectives = Objectives(server, model, output_variables)
 
-# initialize opacity cutoff controller
-state.opacity_cutoff = 0.1
+# initialize opacity controller
+state.opacity = 0.1
 
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("opacity_cutoff")
+@state.change("opacity")
 def update_plots(**kwargs):
     fig = plot(
         model,
@@ -52,7 +52,7 @@ def update_plots(**kwargs):
         objectives,
         experimental_data,
         simulation_data,
-        state.opacity_cutoff,
+        state.opacity,
     )
     ctrl.plotly_figure_update = plotly_figure.update(fig)
 
@@ -64,6 +64,10 @@ def update_state(**kwargs):
     objectives.update()
     # update plots (TODO plots.update())
     update_plots()
+
+# TODO encapsulate in simulation class?
+def calibrate():
+    pass
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -114,20 +118,6 @@ with SinglePageLayout(server) as layout:
                                                         style="width: 100px",
                                                         type="number",
                                                     )
-                                        v2.VSpacer(style="height: 50px")
-                                        with v2.VRow():
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "recenter",
-                                                    click=parameters.recenter,
-                                                )
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "optimize",
-                                                    click=model.optimize,
-                                                )
-                                            with v2.VCol():
-                                                pass
                     with v2.VRow():
                         with v2.VCol():
                             with v2.VCard(style="width: 500px"):
@@ -140,6 +130,27 @@ with SinglePageLayout(server) as layout:
                                                 readonly=True,
                                                 type="number",
                                             )
+                    with v2.VRow():
+                        with v2.VCol():
+                            with v2.VCard(style="width: 500px"):
+                                with v2.VCardTitle("Control"):
+                                    with v2.VCardText():
+                                        with v2.VRow():
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "recenter",
+                                                    click=parameters.recenter,
+                                                )
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "optimize",
+                                                    click=model.optimize,
+                                                )
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "calibrate",
+                                                    click=calibrate,
+                                                )
                 with v2.VCol():
                     with v2.VCard():
                         with v2.VCardTitle("Plots"):
@@ -148,17 +159,18 @@ with SinglePageLayout(server) as layout:
                                         display_mode_bar="true", config={"responsive": True}
                                 )
                                 ctrl.plotly_figure_update = plotly_figure.update
-                            # opacity cutoff slider
-                            with v2.VCardText(style="width: 250px"):
+                            # opacity slider
+                            with v2.VCardText():
                                 v2.VSlider(
-                                    v_model_number=("opacity_cutoff",),
-                                    change="flushState('opacity_cutoff')",
-                                    label="opacity cutoff",
+                                    v_model_number=("opacity",),
+                                    change="flushState('opacity')",
+                                    label="OPACITY",
                                     min=0.0,
                                     max=1.0,
                                     step=0.1,
                                     classes="align-center",
                                     hide_details=True,
+                                    style="width: 200px",
                                     thumb_label="always",
                                     thumb_size=25,
                                     type="number",
