@@ -24,7 +24,7 @@ state.trame__title = "IFE Superfacility"
 input_variables, output_variables = read_variables("variables.yml")
 
 # set file paths
-model_data = "../ml/NN_training/bella_saved_model.yml"
+model_data = "../ml/NN_training/base_simulation_model_with_transformers_calibration.yml"
 experimental_data = "../experimental_data/experimental_data.csv"
 simulation_data = "../simulation_data/simulation_data.csv"
 
