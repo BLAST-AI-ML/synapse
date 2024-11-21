@@ -1,0 +1,26 @@
+model_class: TorchModel
+input_variables:
+  z_target_um:
+    variable_type: scalar
+    default: 0.0
+    is_constant: false
+    value_range: [-150.0, 150.0]
+  TOD_fs3:
+    variable_type: scalar
+    default: 0.0
+    is_constant: false
+    value_range: [-80000.0, 80000.0]
+  GVD:
+    variable_type: scalar
+    default: 0.0
+    is_constant: false
+    value_range: [13.2, 13.9]
+output_variables:
+  n_protons: {variable_type: scalar, default: 0.0}
+model: base_simulation_model_with_transformers_calibration_model.pt
+input_transformers: [base_simulation_model_with_transformers_calibration_input_transformers_0.pt]
+output_transformers: [base_simulation_model_with_transformers_calibration_output_transformers_0.pt,
+  base_simulation_model_with_transformers_calibration_output_transformers_1.pt]
+output_format: tensor
+device: cpu
+fixed_model: true
