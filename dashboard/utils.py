@@ -34,8 +34,8 @@ def plot(
     # FIXME generalize for multiple objectives
     objective_name = list(objectives_dict.keys())[0]
     # load experimental data
-    df_exp = pd.read_csv(experimental_data)
-    df_sim = pd.read_csv(simulation_data)
+    df_exp = experimental_data
+    df_sim = simulation_data
     df_cds = ["blue", "red"]
     df_leg = ["experiment", "simulation"]
     # plot

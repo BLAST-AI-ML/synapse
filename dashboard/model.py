@@ -50,3 +50,6 @@ class Model:
         self.__state.parameters = dict(zip(self.__state.parameters.keys(), res.x))
         # push again at flush time
         self.__state.dirty("parameters")
+
+    def get_output_transformers(self):
+        return self.__model.output_transformers
