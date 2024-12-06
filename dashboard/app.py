@@ -1,3 +1,5 @@
+import pandas as pd
+import torch
 from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
 from trame.widgets import plotly, vuetify2 as v2
@@ -25,8 +27,12 @@ input_variables, output_variables = read_variables("variables.yml")
 
 # set file paths
 model_data = "../ml/NN_training/base_simulation_model_with_transformers_calibration.yml"
-experimental_data = "../experimental_data/experimental_data.csv"
-simulation_data = "../simulation_data/simulation_data.csv"
+experimental_file = "../experimental_data/experimental_data.csv"
+simulation_file = "../simulation_data/simulation_data.csv"
+
+# initialize data
+experimental_data = pd.read_csv(experimental_file)
+simulation_data = pd.read_csv(simulation_file)
 
 # initialize model
 model = Model(server, model_data)
@@ -66,8 +72,20 @@ def update_state(**kwargs):
     update_plots()
 
 # TODO encapsulate in simulation class?
+@ctrl.add("calibrate")
 def calibrate():
-    pass
+    # get calibration and normalization transformers
+    output_transformers = model.get_output_transformers()
+    output_calibration = output_transformers[0]
+    output_normalization = output_transformers[1]
+    # de-normalize, calibrate, and re-normalize simulation data
+    n_protons_tensor = torch.from_numpy(simulation_data["n_protons"].values)
+    n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+    n_protons_tensor = output_calibration.transform(n_protons_tensor)
+    n_protons_tensor = output_normalization.transform(n_protons_tensor)
+    simulation_data["n_protons"] = n_protons_tensor.numpy()
+    # update plots (TODO plots.update())
+    update_plots()
 
 # -----------------------------------------------------------------------------
 # GUI
