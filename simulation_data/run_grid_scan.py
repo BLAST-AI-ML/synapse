@@ -27,7 +27,7 @@ var_2 = VaryingParameter("z_pos_um", -150, 150)  # target z position - script co
 obj = Objective("f", minimize=False)  # the objective will be maximized (or would be, if an optimization were to be run)
 
 n_TOD_vals = 17
-n_zpos_vals = 9
+n_zpos_vals = 17
 sim_workers = 16
 
 n_total = n_TOD_vals * n_zpos_vals
@@ -43,7 +43,13 @@ gen = GridSamplingGenerator(
 # Create evaluator.
 ev_pre = TemplateEvaluator(
     sim_template="prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
-    sim_files=["warpx.2d", "analyze_histogram_1D.py", "template_inputs_2d"],
+    sim_files=[
+        "warpx.2d",
+        "analyze_histogram_1D.py",
+        "template_inputs_2d",
+        "input_spectral_intensity_scan005.csv",
+        "input_spectral_intensity_scan006.csv"
+    ],
 )
 
 # Create evaluator
@@ -69,7 +75,6 @@ exp = Exploration(
     sim_workers=sim_workers,  # 8 nodes per job currently, makes this a 128-node job (should be under 15min per run)
     run_async=True,  # with the GridSamplingGenerator it should not matter if we run in batches,
 )
-
 
 # To safely perform exploration, run it in the block below (this is needed
 # for some flavours of multiprocessing, namely spawn and forkserver)
