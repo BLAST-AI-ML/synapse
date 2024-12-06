@@ -83,7 +83,7 @@ def calibrate():
     n_protons_tensor = output_normalization.untransform(n_protons_tensor)
     n_protons_tensor = output_calibration.transform(n_protons_tensor)
     n_protons_tensor = output_normalization.transform(n_protons_tensor)
-    simulation_data["n_protons"] = n_protons_tensor.numpy()
+    simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
     # update plots (TODO plots.update())
     update_plots()
 
