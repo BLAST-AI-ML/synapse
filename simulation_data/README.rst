@@ -42,5 +42,4 @@ Outlook
 Possible updates in ``template_inputs_2d`` for future studies:
 
 - CH surface layer (currently, protons come directly from the target)
-- a realistic laser spectral phase
 
