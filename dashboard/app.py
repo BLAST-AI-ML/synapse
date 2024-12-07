@@ -46,6 +46,9 @@ objectives = Objectives(server, model, output_variables)
 # initialize opacity controller
 state.opacity = 0.1
 
+# calibration of simulation data
+state.is_calibrated = False
+
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
@@ -71,21 +74,45 @@ def update_state(**kwargs):
     # update plots (TODO plots.update())
     update_plots()
 
-# TODO encapsulate in simulation class?
-@ctrl.add("calibrate")
-def calibrate():
+def pre_calibration():
     # get calibration and normalization transformers
     output_transformers = model.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
-    # de-normalize, calibrate, and re-normalize simulation data
+    # de-normalize simulation data
     n_protons_tensor = torch.from_numpy(simulation_data["n_protons"].values)
     n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-    n_protons_tensor = output_calibration.transform(n_protons_tensor)
-    n_protons_tensor = output_normalization.transform(n_protons_tensor)
-    simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-    # update plots (TODO plots.update())
-    update_plots()
+    return (output_calibration, output_normalization, n_protons_tensor)
+
+# TODO encapsulate in simulation class?
+@ctrl.add("apply_calibration")
+def apply_calibration():
+    if not state.is_calibrated:
+        # prepare
+        output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+        # calibrate, and re-normalize simulation data
+        n_protons_tensor = output_calibration.transform(n_protons_tensor)
+        n_protons_tensor = output_normalization.transform(n_protons_tensor)
+        simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
+        # update plots (TODO plots.update())
+        update_plots()
+        # update state
+        state.is_calibrated = True
+
+# TODO encapsulate in simulation class?
+@ctrl.add("undo_calibration")
+def undo_calibration():
+    if state.is_calibrated:
+        # prepare
+        output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+        # calibrate, and re-normalize simulation data
+        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
+        n_protons_tensor = output_normalization.transform(n_protons_tensor)
+        simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
+        # update plots (TODO plots.update())
+        update_plots()
+        # update state
+        state.is_calibrated = False
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -158,16 +185,26 @@ with SinglePageLayout(server) as layout:
                                                 v2.VBtn(
                                                     "recenter",
                                                     click=parameters.recenter,
+                                                    style="width: 200px",
                                                 )
                                             with v2.VCol():
                                                 v2.VBtn(
                                                     "optimize",
                                                     click=model.optimize,
+                                                    style="width: 200px",
+                                                )
+                                        with v2.VRow():
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "apply calibration",
+                                                    click=apply_calibration,
+                                                    style="width: 200px",
                                                 )
                                             with v2.VCol():
                                                 v2.VBtn(
-                                                    "calibrate",
-                                                    click=calibrate,
+                                                    "undo calibration",
+                                                    click=undo_calibration,
+                                                    style="width: 200px",
                                                 )
                 with v2.VCol():
                     with v2.VCard():
