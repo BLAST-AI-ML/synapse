@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 import torch
 
-from lume_model.models import TorchModel
+from lume_model.models.torch_model import TorchModel
 
 class Model:
     def __init__(self, server, model_data):
