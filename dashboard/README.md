@@ -37,3 +37,15 @@ conda install -c pytorch pytorch torchvision torchaudio cpuonly
 conda install -c conda-forge botorch==0.10.0
 pip install pywebview[qt]
 ```
+
+## How to build the Docker image and run the Docker container
+
+1. Build the Docker image based on `Dockerfile`:
+```console
+sudo docker build -t gui-docker-image .
+```
+
+2. Run the Docker container:
+```console
+sudo docker run -p 8080:8080 gui-docker-image
+```
