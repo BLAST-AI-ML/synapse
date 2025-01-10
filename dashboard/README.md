@@ -18,7 +18,7 @@ Alternatively, you can also run the GUI as a desktop application:
 ```console
 python app.py --app
 ```
-If you run the GUI as a desktop application, make sure to set the following environment variable, too:
+If you run the GUI as a desktop application, make sure to set the following environment variable first:
 ```console
 export PYWEBVIEW_GUI=qt
 ```
