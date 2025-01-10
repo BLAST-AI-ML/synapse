@@ -2,7 +2,7 @@
 
 1. Create a conda environment from the available YAML file (only once):
 ```console
-conda env create -n gui -f gui.yml
+conda env create -f gui.yml
 ```
 
 2. Activate the `gui` conda environment:
