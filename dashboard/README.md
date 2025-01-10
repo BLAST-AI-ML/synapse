@@ -32,7 +32,7 @@ The GUI conda environment can be created from scratch (e.g., for debugging purpo
 conda create -n gui
 conda activate gui
 conda install python==3.12
-conda install -c conda-forge lume-model matplotlib pandas plotly scipy trame trame-vuetify trame-plotly
+conda install -c conda-forge lume-model matplotlib pandas plotly scipy trame trame-plotly trame-vuetify
 conda install -c pytorch pytorch torchvision torchaudio cpuonly
 conda install -c conda-forge botorch==0.10.0
 pip install pywebview[qt]
