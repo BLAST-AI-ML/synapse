@@ -24,3 +24,16 @@ export PYWEBVIEW_GUI=qt
 ```
 
 4. Terminate the GUI via `Ctrl` + `C`.
+
+## How to create the GUI conda environment from scratch
+
+The GUI conda environment can be created from scratch (e.g., for debugging purposes) as follows:
+```console
+conda create -n gui
+conda activate gui
+conda install python==3.12
+conda install -c conda-forge lume-model matplotlib pandas plotly scipy trame trame-vuetify trame-plotly
+conda install -c pytorch pytorch torchvision torchaudio cpuonly
+conda install -c conda-forge botorch==0.10.0
+pip install pywebview[qt]
+```
