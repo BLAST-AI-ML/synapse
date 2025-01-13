@@ -57,10 +57,12 @@ def analyze_hist1D(
     my_filter = (edges_MeV >= Ekin_MeV_lo)*(edges_MeV < Ekin_MeV_hi)
 
     time_readout = time_readout_fs * fs
-    df['time_difference'] = (df['1'] - time_readout).abs()
+    time_difference = (df[('1','time','s')] - time_readout).abs()
 
     # Find the row with the minimum difference
-    closest_entry = df.loc[df['time_difference'].idxmin()]
+    closest_entry_idx = time_difference.idxmin()
+    closest_entry = df.loc[closest_entry_idx]
+
 
     bins_data = closest_entry.iloc[2:].values
 
