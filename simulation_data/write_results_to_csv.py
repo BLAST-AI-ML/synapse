@@ -6,7 +6,7 @@ import pandas as pd
 if __name__ == "__main__":
 
     # Directory containing exploration history
-    exp_dir = '/global/cfs/cdirs/m3239/ip2data/simulations/scan_TODs_and_positions_3cppwl_optimas_pulse_from_spectrum/018_scan_with_laser_from_005/exploration'
+    exp_dir = '/global/cfs/cdirs/m3239/ip2data/simulations/scan_TODs_and_positions_3cppwl_optimas_pulse_from_spectrum_fixed_laser_transverse_pos/032_run_fixed_scan_with_tan_corrected/exploration'
 
     # History file prefix to match
     prefix = 'exploration_history_after_sim_'
