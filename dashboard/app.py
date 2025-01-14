@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import torch
 from trame.app import get_server
@@ -8,6 +9,33 @@ from model import Model
 from parameters import Parameters
 from objectives import Objectives
 from utils import read_variables, plot
+
+# -----------------------------------------------------------------------------
+# Command line parser
+# -----------------------------------------------------------------------------
+
+# define parser
+parser = argparse.ArgumentParser()
+# add arguments: path to experimental data
+parser.add_argument(
+    "--experiment",
+    help="path to experimental data file (CSV)",
+    type=str,
+)
+# add arguments: path to simulation data
+parser.add_argument(
+    "--simulation",
+    help="path to simulation data file (CSV)",
+    type=str,
+)
+# add arguments: path to model data
+parser.add_argument(
+    "--model",
+    help="path to model data file (YAML)",
+    type=str,
+)
+# parse arguments (ignore unknown arguments for internal Trame parser)
+args, _ = parser.parse_known_args()
 
 # -----------------------------------------------------------------------------
 # Trame initialization 
@@ -26,9 +54,9 @@ state.trame__title = "IFE Superfacility"
 input_variables, output_variables = read_variables("variables.yml")
 
 # set file paths
-model_data = "../ml/NN_training/base_simulation_model_with_transformers_calibration.yml"
-experimental_file = "../experimental_data/experimental_data.csv"
-simulation_file = "../simulation_data/simulation_data.csv"
+model_data = args.model
+experimental_file = args.experiment
+simulation_file = args.simulation
 
 # initialize data
 experimental_data = pd.read_csv(experimental_file)

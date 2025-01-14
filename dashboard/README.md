@@ -42,10 +42,10 @@ pip install pywebview[qt]
 
 1. Build the Docker image based on `Dockerfile`:
 ```console
-sudo docker build -t gui-docker-image .
+sudo docker build -t gui .
 ```
 
 2. Run the Docker container:
 ```console
-sudo docker run -p 8080:8080 gui-docker-image
+sudo docker run -p 8080:8080 -v /path/to/experimental_data:/app/experimental_data -v /path/to/simulation_data:/app/simulation_data -v /path/to/ml/NN_training:/app/ml/NN_training gui
 ```
