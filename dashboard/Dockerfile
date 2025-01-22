@@ -29,9 +29,6 @@ RUN conda env create -f gui.yml
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-# Set environment variable to run GUI as desktop application
-ENV PYWEBVIEW_GUI=qt
-
 # Run app.py when the container launches
 # NOTE Need to activate conda environment at container launch
 # NOTE The URL http://0.0.0.0:8080/ is used by the application to indicate that
