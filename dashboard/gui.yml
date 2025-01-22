@@ -236,4 +236,3 @@ dependencies:
       - pyqtwebengine-qt5==5.15.16
       - pywebview==5.3.2
       - qtpy==2.4.2
-prefix: /home/edoardo/miniconda3/envs/gui
