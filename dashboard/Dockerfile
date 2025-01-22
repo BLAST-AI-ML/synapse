@@ -10,10 +10,6 @@ COPY . /app
 # Install any needed packages specified in environment.yml
 RUN conda env create -f gui.yml
 
-# TODO Remove if not persistent through container launch
-# Activate the environment
-#SHELL ["conda", "run", "-n", "gui", "/bin/bash", "-c"]
-
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
