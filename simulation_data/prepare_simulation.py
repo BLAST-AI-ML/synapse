@@ -1,15 +1,17 @@
 """ Laser pulse input creation script """
 
-import lasy
-from lasy.laser import Laser
-from lasy.profiles import CombinedLongitudinalTransverseProfile, FromOpenPMDProfile
-from lasy.profiles.longitudinal import LongitudinalProfileFromData, GaussianLongitudinalProfile
-from lasy.profiles.transverse import GaussianTransverseProfile
-import numpy as np
-import scipy.constants as sc
 from datetime import datetime
 
-def create_laser_input(input_params):
+import numpy as np
+import pandas as pd
+import scipy.constants as sc
+from lasy.laser import Laser
+from lasy.profiles import CombinedLongitudinalTransverseProfile, FromOpenPMDProfile
+from lasy.profiles.longitudinal import LongitudinalProfileFromData
+from lasy.profiles.transverse import GaussianTransverseProfile
+
+
+def create_laser_input(input_params, spec_int_input_file):
     print("[PREPARATION] Current date and time:", datetime.now())
     wavelength = 815e-9  # Laser wavelength in meters
     pol = (1, 0)  # Linearly polarized in the x direction
@@ -29,16 +31,16 @@ def create_laser_input(input_params):
     lo = (0,-time_window_fs/2*1e-15)        # Lower bounds of the simulation box
     hi = (10*waist,time_window_fs/2*1e-15)  # Upper bounds of the simulation box
     # change this and the `lambda_bw_nm` below depending on the "noise level" needed
-    # currently, the signal-to-noise ratio is 1e15
     num_points = (1000, 6000)  # Number of points in each dimension
 
     # Generate laser spectral intensity, including TOD, with numpy
+    df_specint = pd.read_csv(spec_int_input_file, index_col=0)
+
     lambda_bw_nm = 200
-    lambda_half_bw = lambda_bw_nm*1e-9/2
-    lambda_range = np.linspace(wavelength-lambda_half_bw, wavelength+lambda_half_bw, num_points[-1])
+    lambda_range = lambda_range = df_specint['lambda_nm'].values * 1e-9
     omega = 2 * np.pi * sc.c / lambda_range
     omega0 = 2 * np.pi * sc.c / wavelength
-    intensity = np.exp(-(omega - omega0) ** 2 * tau ** 2 / 2)
+    intensity = df_specint['specint_bg_corr_windowed'].values
     phase = TOD * (omega - omega0) ** 3 / 6  # From the definition of the TOD
 
     # Create corresponding laser profile, by combining
@@ -63,6 +65,82 @@ def create_laser_input(input_params):
 
     return 0
 
+def super_gaussian_window(input_space, center, order, sigma):
+    """
+    Create a Super-Gaussian window.
+
+    Parameters:
+    N (int): Number of samples in the window.
+    order (float): The order of the Super-Gaussian.
+    sigma (float): Standard deviation of the Gaussian.
+
+    Returns:
+    numpy.ndarray: The Super-Gaussian window.
+    """
+    window = np.exp(-0.5 * ((input_space - center) / sigma) ** (2 * order))
+    return window
+
+def apply_window(signal, window):
+    """
+    Apply a window to a signal.
+
+    Parameters:
+    signal (numpy.ndarray): The input signal.
+    window (numpy.ndarray): The window to apply.
+
+    Returns:
+    numpy.ndarray: The windowed signal.
+    """
+    return signal * window
+
+def remove_background_and_apply_window(
+        spectrum_file: str,
+        background_file: str,
+        window_params: dict = None
+    ):
+    """ Read spectral intensity and background file, subtract background from signal and  apply window function.
+
+    The spectral intensity in this project is scanned with a Hamamatsu diagnostic.
+    A scan without laser pulse is also performed to get a background measurement.
+    Both scans have a number of datasets of intensity vs. wavelength.
+    This function accepts a 1D array for both files, meaning one either supplies one run or an average over the scan.
+
+    :param spectrum_file:  CSV file containing spectral intensity from shot with laser
+    :param background_file:  CSV file containing spectral intensity from shot without laser (background measurement)
+    :param window_params:  Python dictionary containing parameters
+        - central_wavelength (float): The central wavelength around which the window is applied, in meters. Default: 807e-9
+        - sigma (float): The standard deviation of the Gaussian window, in meters. Default: 47e-9
+        - supergauss_order (int): The order of the super-Gaussian function to be applied. Default: 6
+    """
+
+    if window_params is None:
+        window_params = {
+            'central_wavelength': 807e-9,
+            'sigma': 47e-9,
+            'supergauss_order': 6
+        }
+
+    df = pd.read_csv(spectrum_file, index_col=0)
+    df_bg = pd.read_csv(background_file, index_col=0)
+
+    df['specint_bg_corr'] = df['spectral_intensity_mean_au'] - df_bg['spectral_intensity_mean_au']
+
+    intensity = df['specint_bg_corr']
+    lambda_range = df['lambda_nm']
+
+    window = super_gaussian_window(
+        lambda_range,
+        center=window_params['central_wavelength'],
+        order=window_params['supergauss_order'],
+        sigma=window_params['sigma']
+    )
+    windowed_spectrum = apply_window(intensity, window)
+    df['specint_bg_corr_windowed'] = windowed_spectrum
+
+    # write input file for simulation
+    df.to_csv("./input_specint_bg_corr_windowed.csv")
+
+    return 0
 
 def analyze_peak_from_file(work_dir='./', output_params = {}):
     """
@@ -143,6 +221,21 @@ if __name__ == "__main__":
         "z_pos_um" : {{z_pos_um}}
     }
 
+    # window parameters to suppress noise outside the signal after removing measured background
+    window_params = {
+        'central_wavelength': 807e-9,
+        'sigma': 47e-9,
+        'supergauss_order': 6
+    }
+    remove_background_and_apply_window(
+        spectrum_file="./input_spectral_intensity_scan005.csv",
+        background_file="./input_spectral_intensity_scan006.csv",
+        window_params=window_params
+    )
+
     print("Creating laser pulse")
-    create_laser_input(input_params=input_params)
+    create_laser_input(
+        input_params=input_params,
+        spec_int_input_file="./input_specint_bg_corr_windowed.csv"
+    )
     print("Laser pulse creation finished")
