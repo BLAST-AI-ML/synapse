@@ -1,18 +1,6 @@
 # Use an official Python runtime as a parent image
 FROM continuumio/miniconda3:latest
 
-# NOTE Uncomment this block to enable CUDA
-# Use an official CUDA-enabled base image
-#FROM nvidia/cuda:12.6.3-base-ubuntu24.04
-# Install Miniconda
-#RUN apt-get update && \
-#    apt-get install wget -y && \
-#    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
-#    bash /tmp/miniconda.sh -b -p /opt/conda && \
-#    rm /tmp/miniconda.sh
-# Set the PATH to include Miniconda
-#ENV PATH=/opt/conda/bin:$PATH
-
 # Set the working directory in the container
 WORKDIR /app
 
