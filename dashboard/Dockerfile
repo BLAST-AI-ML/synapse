@@ -10,11 +10,14 @@ COPY . /app
 # Install any needed packages specified in environment.yml
 RUN conda env create -f gui.yml
 
+# activate env in interactive and CMD use
+COPY entrypoint.sh /entrypoint.sh
+RUN echo "source entrypoint.sh" >> ~/.bashrc
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
-
-# Entry point for the activation of the conda environment
-ENTRYPOINT ["conda", "run", "-n", "gui"]
 
 # Run app.py when the container launches
 # NOTE The URL http://0.0.0.0:8080/ is used by the application to indicate that

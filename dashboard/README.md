@@ -49,6 +49,14 @@ docker build -t gui .
 ```console
 docker run -p 8080:8080 -v /path/to/experimental_data:/app/experimental_data -v /path/to/simulation_data:/app/simulation_data -v /path/to/ml/NN_training:/app/ml/NN_training gui
 ```
+e.g., for development inside this `dashboard/` directory:
+```console
+docker run -p 8080:8080 -v $PWD/../experimental_data:/app/experimental_data -v $PWD/../simulation_data:/app/simulation_data -v $PWD/../ml:/app/ml gui
+```
+You can also enter the container for debugging, without starting the app, via:
+```console
+docker run -p 8080:8080 -v $PWD/../experimental_data:/app/experimental_data -v $PWD/../simulation_data:/app/simulation_data -v $PWD/../ml:/app/ml -it gui bash
+```
 
 3. Optional: Publish container privately to https://registry.nersc.gov (or publicly to https://hub.docker.com/):
 ```console
@@ -57,6 +65,14 @@ docker login registry.nersc.gov
 # Password: your NERSC password without 2FA
 ```
 ```console
-docker tag gui:latest registry.nersc.gov/m558/superfacility_ldrd/gui:latest
-docker push registry.nersc.gov/m558/superfacility_ldrd/gui:latest
+docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:latest
+docker push registry.nersc.gov/m558/superfacility/gui:latest
+```
+
+4. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
+```console
+docker image prune
+docker container prune
+
+docker system prune
 ```
