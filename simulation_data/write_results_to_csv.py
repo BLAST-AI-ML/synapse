@@ -52,7 +52,8 @@ if __name__ == "__main__":
     df_res['GVD'] = 13.6
 
     res_file = './simulation_results.csv'
-    df_res.to_csv(res_file)
+    # write results to CSV without the index column
+    df_res.to_csv(res_file, index=False)
 
     abs_res_path = os.path.abspath(res_file)
     print(f"Results written to {abs_res_path}.")
