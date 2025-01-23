@@ -49,3 +49,14 @@ docker build -t gui .
 ```console
 docker run -p 8080:8080 -v /path/to/experimental_data:/app/experimental_data -v /path/to/simulation_data:/app/simulation_data -v /path/to/ml/NN_training:/app/ml/NN_training gui
 ```
+
+3. Optional: Publish container privately to https://registry.nersc.gov (or publicly to https://hub.docker.com/):
+```console
+docker login registry.nersc.gov
+# Username: your NERSC username
+# Password: your NERSC password without 2FA
+```
+```console
+docker tag gui:latest registry.nersc.gov/m558/superfacility_ldrd/gui:latest
+docker push registry.nersc.gov/m558/superfacility_ldrd/gui:latest
+```
