@@ -1,0 +1,23 @@
+input_variables:
+  input1:
+      name: "TOD_fs3"
+      type: scalar
+      default: 0.
+      value_range: [-80000.0, 80000.0]
+
+  input2:
+      name: "GVD"
+      type: scalar
+      default: 13.6
+      value_range: [13.2, 14.0]
+
+  input3:
+      name: "z_target_um"
+      type: scalar
+      default: 0.
+      value_range: [-150.0, 150.0]
+
+output_variables:
+  output1:
+    name: "n_protons"
+    type: scalar
