@@ -66,7 +66,8 @@ docker login registry.nersc.gov
 ```
 ```console
 docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:latest
-docker push registry.nersc.gov/m558/superfacility/gui:latest
+docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:$(date "+%y.%m")
+docker push -a registry.nersc.gov/m558/superfacility/gui
 ```
 
 4. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
