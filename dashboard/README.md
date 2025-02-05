@@ -10,7 +10,18 @@ conda env create -f gui.yml
 conda activate gui
 ```
 
-3. Run the GUI from the `dashboard/` folder.
+3. Set the database settings:
+```console
+export SF_DB_HOST="127.0.0.1"
+export SF_DB_READONLY_PASSWORD='...'  # mind the SINGLE quotes around the PW!
+```
+
+4. For local development, open an extra terminal and keep it open while we SSH forward the database connection:
+```console
+ssh -L 27017:mongodb05.nersc.gov:27017 dtn03.nersc.gov -N
+```
+
+5. Run the GUI from the `dashboard/` folder.
 
 Via the web browser interface:
 ```console
