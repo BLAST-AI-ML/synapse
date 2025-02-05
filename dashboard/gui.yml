@@ -8,6 +8,7 @@ dependencies:
   - lume-model
   - matplotlib
   - pandas
+  - pymongo
   - plotly
   - python=3.12
   - pytorch
