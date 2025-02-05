@@ -48,15 +48,18 @@ model_data = args.model
 
 # initialize data
 db_host = os.getenv("SF_DB_HOST", "mongodb05.nersc.gov")
+db_port = int(os.getenv("SF_DB_PORT", 27017))  # default
 db_auth = os.getenv("SF_DB_AUTH_SOURCE", "bella_sf")
 db_user = os.getenv("SF_DB_USER", "bella_sf_ro")
 db_password = os.getenv("SF_DB_READONLY_PASSWORD")
 db_name = os.getenv("SF_DB_NAME", "bella_sf")
 db_collection = os.getenv("SF_DB_COLLECTION", "ip2")
-if SF_DB_READONLY_PASSWORD is None:
+if db_password is None:
     raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
+print(f"{db_host}, {db_user}, {db_password}, {db_auth}")
 db = pymongo.MongoClient(
     host=db_host,
+    port=db_port,
     username=db_user,
     password=db_password,
     authSource=db_auth,
