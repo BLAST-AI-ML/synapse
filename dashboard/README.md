@@ -18,7 +18,7 @@ export SF_DB_READONLY_PASSWORD='...'  # mind the SINGLE quotes around the PW!
 
 4. For local development, open an extra terminal and keep it open while we SSH forward the database connection:
 ```console
-ssh -L 27017:mongodb05.nersc.gov:27017 dtn03.nersc.gov -N
+ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
 ```
 
 5. Run the GUI from the `dashboard/` folder.
