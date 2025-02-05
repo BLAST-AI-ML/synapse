@@ -47,15 +47,22 @@ input_variables, output_variables = read_variables("variables.yml")
 model_data = args.model
 
 # initialize data
+db_host = os.getenv("SF_DB_HOST", "mongodb05.nersc.gov")
+db_auth = os.getenv("SF_DB_AUTH_SOURCE", "bella_sf")
+db_user = os.getenv("SF_DB_USER", "bella_sf_ro")
 db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+db_name = os.getenv("SF_DB_NAME", "bella_sf")
+db_collection = os.getenv("SF_DB_COLLECTION", "ip2")
+if SF_DB_READONLY_PASSWORD is None:
+    raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
 db = pymongo.MongoClient(
-    host="mongodb05.nersc.gov",
-    username="bella_sf_ro",
+    host=db_host,
+    username=db_user,
     password=db_password,
-    authSource="bella_sf",
-)["bella_sf"]
+    authSource=db_auth,
+)[db_name]
 # get collection
-collection = db["ip2"]
+collection = db[db_collection]
 # retrieve all documents
 documents = list(collection.find())
 experimental_docs = [doc for doc in data if doc["experimental_flag"] == 1]
