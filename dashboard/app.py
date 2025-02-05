@@ -1,5 +1,7 @@
 import argparse
+import os
 import pandas as pd
+import pymongo
 import torch
 from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
@@ -16,18 +18,6 @@ from utils import read_variables, plot
 
 # define parser
 parser = argparse.ArgumentParser()
-# add arguments: path to experimental data
-parser.add_argument(
-    "--experiment",
-    help="path to experimental data file (CSV)",
-    type=str,
-)
-# add arguments: path to simulation data
-parser.add_argument(
-    "--simulation",
-    help="path to simulation data file (CSV)",
-    type=str,
-)
 # add arguments: path to model data
 parser.add_argument(
     "--model",
@@ -55,12 +45,24 @@ input_variables, output_variables = read_variables("variables.yml")
 
 # set file paths
 model_data = args.model
-experimental_file = args.experiment
-simulation_file = args.simulation
 
 # initialize data
-experimental_data = pd.read_csv(experimental_file)
-simulation_data = pd.read_csv(simulation_file)
+db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+db = pymongo.MongoClient(
+    host="mongodb05.nersc.gov",
+    username="bella_sf_ro",
+    password=db_password,
+    authSource="bella_sf",
+)["bella_sf"]
+# get collection
+collection = db["ip2"]
+# retrieve all documents
+documents = list(collection.find())
+experimental_docs = [doc for doc in data if doc["experimental_flag"] == 1]
+simulation_docs = [doc for doc in data if doc["experimental_flag"] == 0]
+# convert documents into pandas DataFrames
+experimental_data = pd.DataFrame(experimental_docs)
+simulation_data = pd.DataFrame(simulation_data)
 
 # initialize model
 model = Model(server, model_data)
