@@ -67,11 +67,11 @@ db = pymongo.MongoClient(
 collection = db[db_collection]
 # retrieve all documents
 documents = list(collection.find())
-experimental_docs = [doc for doc in data if doc["experimental_flag"] == 1]
-simulation_docs = [doc for doc in data if doc["experimental_flag"] == 0]
+experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
 # convert documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
-simulation_data = pd.DataFrame(simulation_data)
+simulation_data = pd.DataFrame(simulation_docs)
 
 # initialize model
 model = Model(server, model_data)
