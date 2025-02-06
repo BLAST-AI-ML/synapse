@@ -27,7 +27,7 @@ def load_database(db_defaults):
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    db_collection = os.getenv("SF_DB_COLLECTION", "ip2")
+    db_collection = os.getenv("SF_DB_COLLECTION", db_defaults["collection"])
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_READONLY_PASSWORD")
     if db_password is None:
