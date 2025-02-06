@@ -1,7 +1,5 @@
 import argparse
-import os
 import pandas as pd
-import pymongo
 import torch
 from trame.app import get_server
 from trame.ui.vuetify2 import SinglePageLayout
@@ -10,7 +8,7 @@ from trame.widgets import plotly, vuetify2 as v2
 from model import Model
 from parameters import Parameters
 from objectives import Objectives
-from utils import read_variables, plot
+from utils import read_variables, load_database, plot
 
 # -----------------------------------------------------------------------------
 # Command line parser
@@ -46,30 +44,17 @@ input_variables, output_variables = read_variables("variables.yml")
 # set file paths
 model_data = args.model
 
-# initialize data
-db_host = os.getenv("SF_DB_HOST", "mongodb05.nersc.gov")
-db_port = int(os.getenv("SF_DB_PORT", 27017))  # default
-db_auth = os.getenv("SF_DB_AUTH_SOURCE", "bella_sf")
-db_user = os.getenv("SF_DB_USER", "bella_sf_ro")
-db_password = os.getenv("SF_DB_READONLY_PASSWORD")
-db_name = os.getenv("SF_DB_NAME", "bella_sf")
-db_collection = os.getenv("SF_DB_COLLECTION", "ip2")
-if db_password is None:
-    raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
-db = pymongo.MongoClient(
-    host=db_host,
-    port=db_port,
-    username=db_user,
-    password=db_password,
-    authSource=db_auth,
-)[db_name]
-# get collection
-collection = db[db_collection]
-# retrieve all documents
-documents = list(collection.find())
-experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-# convert documents into pandas DataFrames
+# load database
+db_defaults = {
+    "host": "mongodb05.nersc.gov",
+    "port": 27017,
+    "name": "bella_sf",
+    "auth": "bella_sf",
+    "user": "bella_sf_ro",
+    "collection": "ip2",
+}
+experimental_docs, simulation_docs = load_database(db_defaults)
+# convert database documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
 simulation_data = pd.DataFrame(simulation_docs)
 
