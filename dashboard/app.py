@@ -56,7 +56,6 @@ db_name = os.getenv("SF_DB_NAME", "bella_sf")
 db_collection = os.getenv("SF_DB_COLLECTION", "ip2")
 if db_password is None:
     raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
-print(f"{db_host}, {db_user}, {db_password}, {db_auth}")
 db = pymongo.MongoClient(
     host=db_host,
     port=db_port,
