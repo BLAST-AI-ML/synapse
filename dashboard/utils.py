@@ -1,8 +1,10 @@
 import numpy as np
+import os
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import pymongo
 import torch
 import yaml
 
@@ -17,6 +19,35 @@ def read_variables(yaml_file):
     # dictionary of output variables (objectives)
     output_variables = yaml_dict["output_variables"]
     return (input_variables, output_variables)
+
+def load_database(db_defaults):
+    # read database information from environment variables (if unset, use defaults)
+    db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
+    db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
+    db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
+    db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
+    db_user = os.getenv("SF_DB_USER", db_defaults["user"])
+    db_collection = os.getenv("SF_DB_COLLECTION", "ip2")
+    # read database password from environment variable (no default provided)
+    db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+    if db_password is None:
+        raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
+    # get database instance
+    db = pymongo.MongoClient(
+        host=db_host,
+        port=db_port,
+        username=db_user,
+        password=db_password,
+        authSource=db_auth,
+    )[db_name]
+    # get collection
+    collection = db[db_collection]
+    # retrieve all documents
+    documents = list(collection.find())
+    # separate experimental and simulation documents
+    experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+    simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
+    return (experimental_docs, simulation_docs)
 
 # plot experimental, simulation, and ML data
 def plot(
