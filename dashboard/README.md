@@ -60,15 +60,15 @@ docker build -t gui .
 
 2. Run the Docker container:
 ```console
-docker run -p 8080:8080 -v /path/to/experimental_data:/app/experimental_data -v /path/to/simulation_data:/app/simulation_data -v /path/to/ml/NN_training:/app/ml/NN_training gui
+docker run -p 8080:8080 -v /path/to/ml/NN_training:/app/ml/NN_training gui
 ```
 e.g., for development inside this `dashboard/` directory:
 ```console
-docker run -p 8080:8080 -v $PWD/../experimental_data:/app/experimental_data -v $PWD/../simulation_data:/app/simulation_data -v $PWD/../ml:/app/ml gui
+docker run -p 8080:8080 -v $PWD/../ml:/app/ml gui
 ```
 You can also enter the container for debugging, without starting the app, via:
 ```console
-docker run -p 8080:8080 -v $PWD/../experimental_data:/app/experimental_data -v $PWD/../simulation_data:/app/simulation_data -v $PWD/../ml:/app/ml -it gui bash
+docker run -p 8080:8080 -v $PWD/../ml:/app/ml -it gui bash
 ```
 
 3. Optional: Publish container privately to https://registry.nersc.gov (or publicly to https://hub.docker.com/):
