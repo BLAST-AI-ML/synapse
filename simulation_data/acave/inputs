@@ -2,24 +2,23 @@
 max_step = 1000
 
 # amr
-amr.blocking_factor = 32
-amr.max_grid_size = 64
 amr.max_level = 0
-amr.n_cell = 32 256
+amr.n_cell = 32 256 # TODO: higher longitudinal and transverse resolution
 
 # geometry
 geometry.dims = RZ
 geometry.prob_hi = 3e-05 0e-05
-geometry.prob_lo = 0 -1.e-05
+geometry.prob_lo = 0 -1e-5
 warpx.n_rz_azimuthal_modes = 2
 
 # boundary
-boundary.field_hi = pec pec
-boundary.field_lo = none pec
+boundary.field_hi = none damped
+boundary.field_lo = none damped
 boundary.particle_hi = absorbing absorbing
 boundary.particle_lo = none absorbing
 
 # algo
+algo.maxwell_solver = psatd
 algo.particle_shape = 3
 
 # particles
@@ -38,8 +37,8 @@ atoms.momentum_distribution_type = constant
 atoms.num_particles_per_cell_each_dim = 2 8 2
 atoms.physical_element = N
 atoms.profile = constant
-atoms.zmax = 5e-06
-atoms.zmin = 0e-05
+atoms.zmax = 100e-06 # Length of the plasma
+atoms.zmin = 0.
 
 # electrons
 electrons.charge = -q_e
@@ -50,13 +49,13 @@ diagnostics.diags_names = diag
 diag.diag_type = Full
 diag.fields_to_plot = Er Ez Et rho rho_electrons
 diag.format = openpmd
-diag.intervals = 10
+diag.intervals = 50
 
 # laser
 lasers.names = laser1
 laser1.direction = 0 0 1
 laser1.do_continuous_injection = 0
-laser1.e_max = 3.214285714285714e+17
+laser1.a0 = 1.
 laser1.polarization = 1 0 0
 laser1.position = 0.0 0.0 -1e-9
 laser1.profile = Gaussian
