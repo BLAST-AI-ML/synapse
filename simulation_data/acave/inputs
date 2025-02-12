@@ -3,12 +3,12 @@ max_step = 1000
 
 # amr
 amr.max_level = 0
-amr.n_cell = 32 256 # TODO: higher longitudinal and transverse resolution
+amr.n_cell = 64 256 # TODO: higher longitudinal and transverse resolution
 
 # geometry
 geometry.dims = RZ
 geometry.prob_hi = 3e-05 0e-05
-geometry.prob_lo = 0 -1e-5
+geometry.prob_lo = 0 -1e-5 # TODO: Longer box, since the laser splips back
 warpx.n_rz_azimuthal_modes = 2
 
 # boundary
