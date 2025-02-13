@@ -1,0 +1,28 @@
+#!/bin/bash -l
+
+#SBATCH -t 00:10:00
+#SBATCH -N 1
+#SBATCH -J WarpX
+#SBATCH -A m558_g
+#SBATCH -C gpu
+#SBATCH -q debug
+#SBATCH --exclusive
+#SBATCH --gpu-bind=none
+#SBATCH --ntasks-per-node=4
+#SBATCH --gpus-per-node=4
+
+cd $SCRATCH/2024_IFE-superfacility/simulation_data/acave
+mkdir sim_1
+cd sim_1
+
+source $HOME/perlmutter_gpu_warpx.profile
+
+export SRUN_CPUS_PER_TASK=16
+export EXE="../templates/warpx.rz"
+export INPUTS="../templates/template_inputs"
+
+# GPU-aware MPI optimizations
+GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
+srun -n 1 --cpu-bind=cores bash -c "
+    export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
+    ${EXE} ${INPUTS} ${GPU_AWARE_MPI}"
