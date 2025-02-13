@@ -1,6 +1,30 @@
-This folder contains files that illustrate how to automate workflows.
+This folder contains files that illustrate how to launch WarpX simulations at NERSC, from a local computer.
 
-# Setting up your environment
+In order for this to run properly, you need to setup your environment at NERSC and on your local computer.
+
+# Setting up your environment at NERSC
+
+- Install WarpX and its dependencies as described [here](https://warpx.readthedocs.io/en/latest/install/hpc/perlmutter.html).
+  In the [Compilation](https://warpx.readthedocs.io/en/latest/install/hpc/perlmutter.html#compilation) section, use the first set of instructions
+  (i.e. the ones for the executable, as opposed to the Python instructions):
+
+```
+cd $HOME/src/warpx
+rm -rf build_pm_gpu
+
+cmake -S . -B build_pm_gpu -DWarpX_COMPUTE=CUDA -DWarpX_DIMS="2"
+cmake --build build_pm_gpu -j 16
+```
+
+- Copy the folder `templates` from this Github repo to `$SCRATCH/warpx_ip2/templates`.
+  (Create the intermediate folder `warpx_ip2` with `mkdir` if needed)
+
+- Copy the warpx executable to that folder:
+```
+cp $HOME/src/warpx/build_pm_gpu/bin/warpx.2d $SCRATCH/warpx_ip2/templates
+```
+
+# Setting up your environment on your local computer
 
 ## Install dependencies
 
