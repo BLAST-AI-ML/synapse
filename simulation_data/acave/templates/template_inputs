@@ -5,6 +5,10 @@ max_step = 1000
 amr.max_level = 0
 amr.n_cell = 64 256 # TODO: higher longitudinal and transverse resolution
 
+# Parameters of the fitted density
+my_constants.n0 = 2.11e+25 # peak molecular density, in m-3
+my_constants.dens_width = 77.45e-6 # width of the density profile, in m
+
 # geometry
 geometry.dims = RZ
 geometry.prob_hi = 3e-05 0e-05
@@ -26,7 +30,6 @@ particles.species_names = electrons atoms
 
 # atoms
 atoms.charge = q_e
-atoms.density = 5e+25 # m-3
 atoms.do_continuous_injection = 1
 atoms.do_field_ionization = 1
 atoms.injection_style = nuniformpercell
@@ -36,8 +39,9 @@ atoms.mass = 2.3258668557839402e-26
 atoms.momentum_distribution_type = constant
 atoms.num_particles_per_cell_each_dim = 2 8 2
 atoms.physical_element = N
-atoms.profile = constant
-atoms.zmax = 100e-06 # Length of the plasma
+atoms.profile = parse_density_function
+atoms.density_function(x,y,z) = 2*n0*exp(-((z-200e-6)/dens_width)**2)
+atoms.zmax = 400e-06 # Length of the plasma
 atoms.zmin = 0.
 
 # electrons
