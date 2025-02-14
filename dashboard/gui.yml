@@ -3,14 +3,15 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
-  - botorch=0.10.0
+  - botorch<0.11.0
   - cpuonly
   - lume-model
   - matplotlib
   - pandas
+  - pip
   - plotly<6
   - pymongo
-  - python=3.12
+  - python<3.13
   - pytorch
   - scipy
   - torchaudio
@@ -18,3 +19,5 @@ dependencies:
   - trame
   - trame-plotly
   - trame-vuetify
+  - pip:
+    - pywebview[qt]

@@ -1,9 +1,11 @@
 ## How to set up and run the GUI
 
-1. Create a conda environment from the available YAML file (only once):
+1. Create a conda environment from the environment file:
 ```console
-conda env create -f gui.yml
+conda env create -f gui-conda-lock.yml
 ```
+Please use the lock file that pins down the exact versions of packages for better stability.
+The minimal environment file `gui.yml` should be used only by maintainers for controlled updates of the lock file.
 
 2. Activate the `gui` conda environment:
 ```console
@@ -13,7 +15,7 @@ conda activate gui
 3. Set the database settings:
 ```console
 export SF_DB_HOST="127.0.0.1"
-export SF_DB_READONLY_PASSWORD='...'  # mind the SINGLE quotes around the PW!
+export SF_DB_READONLY_PASSWORD='...'  # mind the SINGLE quotes around the password!
 ```
 
 4. For local development, open an extra terminal and keep it open while we SSH forward the database connection:
