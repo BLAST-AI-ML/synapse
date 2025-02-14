@@ -39,14 +39,14 @@
     ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
     ```
 
-4. Run the GUI from the `dashboard/` folder.
+4. Run the GUI from the `dashboard/` folder:
     - Via the web browser interface:
     ```console
-    python app.py --port 1234 --model ../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
+    python app.py --port 1234 --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
     ```
     - As a desktop application:
     ```console
-    python app.py --app --model ../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
+    python app.py --app --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
     ```
     If you run the GUI as a desktop application, make sure to set the following environment variable first:
     ```console
@@ -62,11 +62,7 @@
     docker build -t gui .
     ```
 
-2. Run the Docker container:
-    ```console
-    docker run --net=host -p 27017:27017 -v /path/to/ml/NN_training:/app/ml/NN_training gui
-    ```
-    For development inside this `dashboard/` directory:
+2. Run the Docker container from the `dashboard/` folder:
     ```console
     docker run --net=host -p 27017:27017 -v $PWD/../ml:/app/ml gui
     ```
@@ -89,9 +85,7 @@
 
 4. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
     ```console
-    docker image prune
-    docker container prune
-    docker system prune
+    docker system prune -a
     ```
 
 ## How to Create the Conda Environment Lock File (For Maintainers)

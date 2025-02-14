@@ -8,7 +8,8 @@ WORKDIR /app
 COPY . /app
 
 # Install any needed packages specified in the environment file
-RUN conda env create -f gui-conda-lock.yml
+RUN conda install -c conda-forge conda-lock \
+    && conda-lock install --name gui gui-lock.yml
 
 # Activate env in interactive and CMD use
 COPY entrypoint.sh /entrypoint.sh
