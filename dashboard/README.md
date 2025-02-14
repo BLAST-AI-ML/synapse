@@ -1,6 +1,6 @@
 ## How to Run the GUI
 
-### Prerequisites:
+### Prerequisites
 - Ensure you have Conda installed.
 - Ensure you have Docker installed (if you plan to use Docker).
 
@@ -30,8 +30,8 @@
 
 2. Set the database settings:
     ```console
-    export SF_DB_HOST="127.0.0.1"
-    export SF_DB_READONLY_PASSWORD='...'  # Use SINGLE quotes around the password!
+    export SF_DB_HOST='127.0.0.1'
+    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
     ```
 
 3. For local development, open a separate terminal and keep it open while SSH forwarding the database connection:
@@ -64,11 +64,11 @@
 
 2. Run the Docker container from the `dashboard/` folder:
     ```console
-    docker run --net=host -p 27017:27017 -v $PWD/../ml:/app/ml gui
+    docker run --net=host -p 27017:27017 -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' gui
     ```
     For debugging, you can also enter the container without starting the app:
     ```console
-    docker run --net=host -p 27017:27017 -v $PWD/../ml:/app/ml -it gui bash
+    docker run --net=host -p 27017:27017 -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it gui bash
     ```
 
 3. Optional: Publish the container privately to NERSC registry (https://registry.nersc.gov):
