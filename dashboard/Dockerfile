@@ -7,10 +7,10 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install any needed packages specified in environment.yml
-RUN conda env create -f gui.yml
+# Install any needed packages specified in the environment file
+RUN conda env create -f gui-conda-lock.yml
 
-# activate env in interactive and CMD use
+# Activate env in interactive and CMD use
 COPY entrypoint.sh /entrypoint.sh
 RUN echo "source entrypoint.sh" >> ~/.bashrc
 RUN chmod +x /entrypoint.sh
