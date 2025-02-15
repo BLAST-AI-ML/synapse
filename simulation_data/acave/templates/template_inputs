@@ -1,9 +1,9 @@
 # max_step
-max_step = 1000
+max_step = 21000
 
 # amr
 amr.max_level = 0
-amr.n_cell = 64 256 # TODO: higher longitudinal and transverse resolution
+amr.n_cell = 64 2048
 
 # Parameters of the fitted density
 my_constants.n0 = 2.11e+25 # peak molecular density, in m-3
@@ -12,7 +12,7 @@ my_constants.dens_width = 77.45e-6 # width of the density profile, in m
 # geometry
 geometry.dims = RZ
 geometry.prob_hi = 3e-05 0e-05
-geometry.prob_lo = 0 -1e-5 # TODO: Longer box, since the laser splips back
+geometry.prob_lo = 0 -4e-5
 warpx.n_rz_azimuthal_modes = 2
 
 # boundary
@@ -53,7 +53,7 @@ diagnostics.diags_names = diag
 diag.diag_type = Full
 diag.fields_to_plot = Er Ez Et rho rho_electrons
 diag.format = openpmd
-diag.intervals = 50
+diag.intervals = 500
 
 # laser
 lasers.names = laser1
