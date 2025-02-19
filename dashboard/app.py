@@ -8,7 +8,7 @@ from trame.widgets import plotly, vuetify2 as v2
 from model import Model
 from parameters import Parameters
 from objectives import Objectives
-from utils import read_variables, plot
+from utils import read_variables, load_database, plot
 
 # -----------------------------------------------------------------------------
 # Command line parser
@@ -16,18 +16,6 @@ from utils import read_variables, plot
 
 # define parser
 parser = argparse.ArgumentParser()
-# add arguments: path to experimental data
-parser.add_argument(
-    "--experiment",
-    help="path to experimental data file (CSV)",
-    type=str,
-)
-# add arguments: path to simulation data
-parser.add_argument(
-    "--simulation",
-    help="path to simulation data file (CSV)",
-    type=str,
-)
 # add arguments: path to model data
 parser.add_argument(
     "--model",
@@ -55,12 +43,20 @@ input_variables, output_variables = read_variables("variables.yml")
 
 # set file paths
 model_data = args.model
-experimental_file = args.experiment
-simulation_file = args.simulation
 
-# initialize data
-experimental_data = pd.read_csv(experimental_file)
-simulation_data = pd.read_csv(simulation_file)
+# load database
+db_defaults = {
+    "host": "mongodb05.nersc.gov",
+    "port": 27017,
+    "name": "bella_sf",
+    "auth": "bella_sf",
+    "user": "bella_sf_ro",
+    "collection": "ip2",
+}
+experimental_docs, simulation_docs = load_database(db_defaults)
+# convert database documents into pandas DataFrames
+experimental_data = pd.DataFrame(experimental_docs)
+simulation_data = pd.DataFrame(simulation_docs)
 
 # initialize model
 model = Model(server, model_data)
