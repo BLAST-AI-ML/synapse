@@ -138,6 +138,10 @@ def undo_calibration():
         # update state
         state.is_calibrated = False
 
+@ctrl.add("upload_credentials")
+def upload_credentials():
+    pass
+
 # -----------------------------------------------------------------------------
 # GUI
 # -----------------------------------------------------------------------------
@@ -202,8 +206,21 @@ with SinglePageLayout(server) as layout:
                     with v2.VRow():
                         with v2.VCol():
                             with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Control"):
+                                with v2.VCardTitle("Control: Plots"):
                                     with v2.VCardText():
+                                        with v2.VRow():
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "apply calibration",
+                                                    click=apply_calibration,
+                                                    style="width: 200px",
+                                                )
+                                            with v2.VCol():
+                                                v2.VBtn(
+                                                    "undo calibration",
+                                                    click=undo_calibration,
+                                                    style="width: 200px",
+                                                )
                                         with v2.VRow():
                                             with v2.VCol():
                                                 v2.VBtn(
@@ -217,18 +234,17 @@ with SinglePageLayout(server) as layout:
                                                     click=model.optimize,
                                                     style="width: 200px",
                                                 )
+                    with v2.VRow():
+                        with v2.VCol():
+                            with v2.VCard(style="width: 500px"):
+                                with v2.VCardTitle("Control: NERSC"):
+                                    with v2.VCardText():
                                         with v2.VRow():
                                             with v2.VCol():
                                                 v2.VBtn(
-                                                    "apply calibration",
-                                                    click=apply_calibration,
-                                                    style="width: 200px",
-                                                )
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "undo calibration",
-                                                    click=undo_calibration,
-                                                    style="width: 200px",
+                                                    "upload NERSC credentials",
+                                                    click=upload_credentials,
+                                                    style="width: 250px",
                                                 )
                 with v2.VCol():
                     with v2.VCard():
