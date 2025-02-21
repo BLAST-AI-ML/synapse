@@ -16,7 +16,7 @@ geometry.prob_lo = 0 -40e-6
 warpx.n_rz_azimuthal_modes = 2
 
 # boundary
-boundary.field_hi = none damped
+boundary.field_hi = pml damped
 boundary.field_lo = none damped
 boundary.particle_hi = absorbing absorbing
 boundary.particle_lo = none absorbing
