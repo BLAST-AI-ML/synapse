@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+import requests
 import torch
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
@@ -74,6 +75,9 @@ state.opacity = 0.1
 # calibration of simulation data
 state.is_calibrated = False
 
+# terminal output for NERSC control
+state.terminal_output = ""
+
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
@@ -139,10 +143,16 @@ def undo_calibration():
         # update state
         state.is_calibrated = False
 
-# TODO Implement
-@ctrl.add("upload_credentials")
-def upload_credentials():
-    pass
+@ctrl.add("exchange_credentials")
+def exchange_credentials():
+    system = "archive"
+    url = "https://api.nersc.gov/api/v1.2/status/" + system
+    resp = requests.get(url)
+    perlmutter_status = resp.json()
+    output = []
+    output.append("Checking System Status...")
+    output.append(f"{perlmutter_status}")
+    state.terminal_output = "\n".join(output)
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -166,28 +176,28 @@ with RouterViewLayout(server, "/"):
                                 with v2.VRow():
                                     with v2.VCol():
                                         v2.VBtn(
-                                            "apply calibration",
+                                            "Apply Calibration",
                                             click=apply_calibration,
-                                            style="width: 200px",
+                                            style="width: 100%; text-transform: none;",
                                         )
                                     with v2.VCol():
                                         v2.VBtn(
-                                            "undo calibration",
+                                            "Undo Calibration",
                                             click=undo_calibration,
-                                            style="width: 200px",
+                                            style="width: 100%; text-transform: none;",
                                         )
                                 with v2.VRow():
                                     with v2.VCol():
                                         v2.VBtn(
-                                            "recenter",
+                                            "Recenter",
                                             click=parameters.recenter,
-                                            style="width: 200px",
+                                            style="width: 100%; text-transform: none;",
                                         )
                                     with v2.VCol():
                                         v2.VBtn(
-                                            "optimize",
+                                            "Optimize",
                                             click=model.optimize,
-                                            style="width: 200px",
+                                            style="width: 100%; text-transform: none;",
                                         )
         with v2.VCol(cols=8):
             with v2.VCard():
@@ -202,7 +212,7 @@ with RouterViewLayout(server, "/"):
                         v2.VSlider(
                             v_model_number=("opacity",),
                             change="flushState('opacity')",
-                            label="OPACITY",
+                            label="Opacity",
                             min=0.0,
                             max=1.0,
                             step=0.1,
@@ -224,9 +234,17 @@ with RouterViewLayout(server, "/nersc"):
                         with v2.VRow():
                             with v2.VCol():
                                 v2.VBtn(
-                                    "upload NERSC credentials",
-                                    click=upload_credentials,
-                                    style="width: 250px",
+                                    "Exchange Client Credentials for Access Tokens",
+                                    click=exchange_credentials,
+                                    style="width: 100%; text-transform: none;",
+                                )
+                        with v2.VRow():
+                            with v2.VCol():
+                                v2.VTextarea(
+                                    v_model=("terminal_output", ""),
+                                    readonly=True,
+                                    rows=10,
+                                    style="width: 100%",
                                 )
 
 # main page content

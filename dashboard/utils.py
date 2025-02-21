@@ -68,7 +68,7 @@ def plot(
     df_exp = experimental_data
     df_sim = simulation_data
     df_cds = ["blue", "red"]
-    df_leg = ["experiment", "simulation"]
+    df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters_dict), cols=1)
     for i, key in enumerate(parameters_dict.keys()):
@@ -143,7 +143,7 @@ def plot(
             x=input_dict_loc[key.split(maxsplit=1)[0]],
             y=y,
             line=dict(color="orange"),
-            name="ML model",
+            name="ML Model",
             showlegend=(True if i==0 else False),
         )
         # add trace
