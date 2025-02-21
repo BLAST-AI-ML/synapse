@@ -42,7 +42,7 @@ class Parameters:
         self.__state.dirty("parameters")
 
     def card(self):
-        with v2.VCard(style="width: 500px"):
+        with v2.VCard():
             with v2.VCardTitle("Parameters"):
                 with v2.VCardText():
                     for key in self.__state.parameters.keys():

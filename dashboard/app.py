@@ -151,7 +151,7 @@ def upload_credentials():
 # home route
 with RouterViewLayout(server, "/"):
     with v2.VRow():
-        with v2.VCol():
+        with v2.VCol(cols=4):
             with v2.VRow():
                 with v2.VCol():
                     parameters.card()
@@ -160,7 +160,7 @@ with RouterViewLayout(server, "/"):
                     objectives.card()
             with v2.VRow():
                 with v2.VCol():
-                    with v2.VCard(style="width: 500px"):
+                    with v2.VCard():
                         with v2.VCardTitle("Control"):
                             with v2.VCardText():
                                 with v2.VRow():
@@ -189,7 +189,7 @@ with RouterViewLayout(server, "/"):
                                             click=model.optimize,
                                             style="width: 200px",
                                         )
-        with v2.VCol():
+        with v2.VCol(cols=8):
             with v2.VCard():
                 with v2.VCardTitle("Plots"):
                     with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
@@ -217,9 +217,9 @@ with RouterViewLayout(server, "/"):
 # NERSC route
 with RouterViewLayout(server, "/nersc"):
     with v2.VRow():
-        with v2.VCol():
-            with v2.VCard(style="width: 500px"):
-                with v2.VCardTitle("Control: NERSC"):
+        with v2.VCol(cols=4):
+            with v2.VCard():
+                with v2.VCardTitle("Superfacility API"):
                     with v2.VCardText():
                         with v2.VRow():
                             with v2.VCol():
