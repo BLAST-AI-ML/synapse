@@ -25,4 +25,4 @@ export INPUTS="../templates/template_inputs"
 GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
 srun --cpu-bind=cores bash -c "
     export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
-    ${EXE} ${INPUTS} ${GPU_AWARE_MPI} warpx.numprocs=1 4"
+    ${EXE} ${INPUTS} ${GPU_AWARE_MPI} warpx.numprocs=1 4 > output.txt"
