@@ -3,7 +3,7 @@ max_step = 21000
 
 # amr
 amr.max_level = 0
-amr.n_cell = 64 2048
+amr.n_cell = 256 2048
 
 # Parameters of the fitted density
 my_constants.n0 = 2.11e+25 # peak molecular density, in m-3
@@ -11,12 +11,12 @@ my_constants.dens_width = 77.45e-6 # width of the density profile, in m
 
 # geometry
 geometry.dims = RZ
-geometry.prob_hi = 3e-05 0e-05
-geometry.prob_lo = 0 -4e-5
+geometry.prob_hi = 100e-6 0
+geometry.prob_lo = 0 -40e-6
 warpx.n_rz_azimuthal_modes = 2
 
 # boundary
-boundary.field_hi = none damped
+boundary.field_hi = pml damped
 boundary.field_lo = none damped
 boundary.particle_hi = absorbing absorbing
 boundary.particle_lo = none absorbing
