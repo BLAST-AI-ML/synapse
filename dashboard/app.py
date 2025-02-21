@@ -2,8 +2,9 @@ import argparse
 import pandas as pd
 import torch
 from trame.app import get_server
-from trame.ui.vuetify2 import SinglePageLayout
-from trame.widgets import plotly, vuetify2 as v2
+from trame.ui.router import RouterViewLayout
+from trame.ui.vuetify2 import SinglePageWithDrawerLayout
+from trame.widgets import plotly, router, vuetify2 as v2
 
 from model import Model
 from parameters import Parameters
@@ -138,6 +139,7 @@ def undo_calibration():
         # update state
         state.is_calibrated = False
 
+# TODO Implement
 @ctrl.add("upload_credentials")
 def upload_credentials():
     pass
@@ -146,130 +148,121 @@ def upload_credentials():
 # GUI
 # -----------------------------------------------------------------------------
 
-with SinglePageLayout(server) as layout:
+# home route
+with RouterViewLayout(server, "/"):
+    with v2.VRow():
+        with v2.VCol():
+            with v2.VRow():
+                with v2.VCol():
+                    parameters.card()
+            with v2.VRow():
+                with v2.VCol():
+                    objectives.card()
+            with v2.VRow():
+                with v2.VCol():
+                    with v2.VCard(style="width: 500px"):
+                        with v2.VCardTitle("Control"):
+                            with v2.VCardText():
+                                with v2.VRow():
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "apply calibration",
+                                            click=apply_calibration,
+                                            style="width: 200px",
+                                        )
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "undo calibration",
+                                            click=undo_calibration,
+                                            style="width: 200px",
+                                        )
+                                with v2.VRow():
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "recenter",
+                                            click=parameters.recenter,
+                                            style="width: 200px",
+                                        )
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "optimize",
+                                            click=model.optimize,
+                                            style="width: 200px",
+                                        )
+        with v2.VCol():
+            with v2.VCard():
+                with v2.VCardTitle("Plots"):
+                    with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
+                        plotly_figure = plotly.Figure(
+                                display_mode_bar="true", config={"responsive": True}
+                        )
+                        ctrl.plotly_figure_update = plotly_figure.update
+                    # opacity slider
+                    with v2.VCardText():
+                        v2.VSlider(
+                            v_model_number=("opacity",),
+                            change="flushState('opacity')",
+                            label="OPACITY",
+                            min=0.0,
+                            max=1.0,
+                            step=0.1,
+                            classes="align-center",
+                            hide_details=True,
+                            style="width: 200px",
+                            thumb_label="always",
+                            thumb_size=25,
+                            type="number",
+                        )
+
+# NERSC route
+with RouterViewLayout(server, "/nersc"):
+    with v2.VRow():
+        with v2.VCol():
+            with v2.VCard(style="width: 500px"):
+                with v2.VCardTitle("Control: NERSC"):
+                    with v2.VCardText():
+                        with v2.VRow():
+                            with v2.VCol():
+                                v2.VBtn(
+                                    "upload NERSC credentials",
+                                    click=upload_credentials,
+                                    style="width: 250px",
+                                )
+
+# main page content
+with SinglePageWithDrawerLayout(server) as layout:
     layout.title.set_text("IFE Superfacility")
 
+    # add toolbar components
     with layout.toolbar:
-        # toolbar components
         pass
 
     with layout.content:
-        # content components
         with v2.VContainer():
-            with v2.VRow():
-                with v2.VCol():
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Parameters"):
-                                    with v2.VCardText():
-                                        for key in parameters.get().keys():
-                                            pmin = parameters.get_min()[key]
-                                            pmax = parameters.get_max()[key]
-                                            step = (pmax - pmin) / 100.
-                                            # create slider for each parameter
-                                            with v2.VSlider(
-                                                v_model_number=(f"parameters['{key}']",),
-                                                change="flushState('parameters')",
-                                                label=key,
-                                                min=pmin,
-                                                max=pmax,
-                                                step=step,
-                                                classes="align-center",
-                                                hide_details=True,
-                                                type="number",
-                                            ):
-                                                # append text field
-                                                with v2.Template(v_slot_append=True):
-                                                    v2.VTextField(
-                                                        v_model_number=(f"parameters['{key}']",),
-                                                        label=key,
-                                                        density="compact",
-                                                        hide_details=True,
-                                                        readonly=True,
-                                                        single_line=True,
-                                                        style="width: 100px",
-                                                        type="number",
-                                                    )
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Objectives"):
-                                    with v2.VCardText():
-                                        for key in objectives.get().keys():
-                                            v2.VTextField(
-                                                v_model_number=(f"objectives['{key}']",),
-                                                label=key,
-                                                readonly=True,
-                                                type="number",
-                                            )
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Control: Plots"):
-                                    with v2.VCardText():
-                                        with v2.VRow():
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "apply calibration",
-                                                    click=apply_calibration,
-                                                    style="width: 200px",
-                                                )
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "undo calibration",
-                                                    click=undo_calibration,
-                                                    style="width: 200px",
-                                                )
-                                        with v2.VRow():
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "recenter",
-                                                    click=parameters.recenter,
-                                                    style="width: 200px",
-                                                )
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "optimize",
-                                                    click=model.optimize,
-                                                    style="width: 200px",
-                                                )
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Control: NERSC"):
-                                    with v2.VCardText():
-                                        with v2.VRow():
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "upload NERSC credentials",
-                                                    click=upload_credentials,
-                                                    style="width: 250px",
-                                                )
-                with v2.VCol():
-                    with v2.VCard():
-                        with v2.VCardTitle("Plots"):
-                            with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
-                                plotly_figure = plotly.Figure(
-                                        display_mode_bar="true", config={"responsive": True}
-                                )
-                                ctrl.plotly_figure_update = plotly_figure.update
-                            # opacity slider
-                            with v2.VCardText():
-                                v2.VSlider(
-                                    v_model_number=("opacity",),
-                                    change="flushState('opacity')",
-                                    label="OPACITY",
-                                    min=0.0,
-                                    max=1.0,
-                                    step=0.1,
-                                    classes="align-center",
-                                    hide_details=True,
-                                    style="width: 200px",
-                                    thumb_label="always",
-                                    thumb_size=25,
-                                    type="number",
-                                )
+            router.RouterView()
+
+    # add router components to the drawer
+    with layout.drawer:
+        with v2.VList(shaped=True, v_model=("selectedRoute", 0)):
+            v2.VSubheader("")
+
+            with v2.VListItem(to="/"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-home")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("Home")
+
+            with v2.VListItem(to="/nersc"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-lan-connect")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("NERSC")
+
+            with v2.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-github")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("GitHub")
 
 # -----------------------------------------------------------------------------
 # Main

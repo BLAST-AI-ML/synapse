@@ -1,4 +1,7 @@
+from trame.widgets import vuetify2 as v2
+
 class Parameters:
+
     def __init__(self, server, input_variables):
         # Trame state and controller
         self.__state = server.state
@@ -37,3 +40,37 @@ class Parameters:
             self.__state.parameters[key] = (self.__state.parameters_min[key] + self.__state.parameters_max[key]) / 2.
         # push again at flush time
         self.__state.dirty("parameters")
+
+    def card(self):
+        with v2.VCard(style="width: 500px"):
+            with v2.VCardTitle("Parameters"):
+                with v2.VCardText():
+                    for key in self.__state.parameters.keys():
+                        pmin = self.__state.parameters_min[key]
+                        pmax = self.__state.parameters_max[key]
+                        step = (pmax - pmin) / 100.
+                        # create slider for each parameter
+                        with v2.VSlider(
+                            v_model_number=(f"parameters['{key}']",),
+                            change="flushState('parameters')",
+                            label=key,
+                            min=pmin,
+                            max=pmax,
+                            step=step,
+                            classes="align-center",
+                            hide_details=True,
+                            type="number",
+                        ):
+                            # append text field
+                            with v2.Template(v_slot_append=True):
+                                v2.VTextField(
+                                    v_model_number=(f"parameters['{key}']",),
+                                    label=key,
+                                    density="compact",
+                                    hide_details=True,
+                                    readonly=True,
+                                    single_line=True,
+                                    style="width: 100px",
+                                    type="number",
+                                )
+

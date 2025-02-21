@@ -1,3 +1,5 @@
+from trame.widgets import vuetify2 as v2
+
 class Objectives:
     def __init__(self, server, model, output_variables):
         # FIXME generalize for multiple objectives
@@ -21,3 +23,15 @@ class Objectives:
             self.__state.objectives[key] = self.__model.evaluate(self.__state.parameters)
         # push again at flush time
         self.__state.dirty("objectives")
+
+    def card(self):
+        with v2.VCard(style="width: 500px"):
+            with v2.VCardTitle("Objectives"):
+                with v2.VCardText():
+                    for key in self.__state.objectives.keys():
+                        v2.VTextField(
+                            v_model_number=(f"objectives['{key}']",),
+                            label=key,
+                            readonly=True,
+                            type="number",
+                        )
