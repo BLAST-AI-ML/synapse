@@ -13,11 +13,13 @@ dependencies:
   - pymongo
   - python<3.13
   - pytorch
+  - requests
   - scipy
   - torchaudio
   - torchvision
   - trame
   - trame-plotly
+  - trame-router
   - trame-vuetify
   - pip:
     - pywebview[qt]
