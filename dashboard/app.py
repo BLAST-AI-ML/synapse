@@ -76,7 +76,7 @@ state.opacity = 0.1
 state.is_calibrated = False
 
 # terminal output for NERSC control
-state.terminal_output = ""
+state.sfapi_output = ""
 
 # -----------------------------------------------------------------------------
 # Callbacks
@@ -143,8 +143,10 @@ def undo_calibration():
         # update state
         state.is_calibrated = False
 
+# TODO encapsulate in sfapi class?
 @ctrl.add("exchange_credentials")
-def exchange_credentials():
+def exchange_credentials(private_key):
+    # Check status
     system = "archive"
     url = "https://api.nersc.gov/api/v1.2/status/" + system
     resp = requests.get(url)
@@ -152,7 +154,22 @@ def exchange_credentials():
     output = []
     output.append("Checking System Status...")
     output.append(f"{perlmutter_status}")
-    state.terminal_output = "\n".join(output)
+    # Read private key file
+    output.append("\nReading Private Key File...")
+    try:
+        if not private_key:
+            raise ValueError("No Private Key File Uploaded")
+        output.append(f"Client ID: {private_key["content"].decode("utf-8").splitlines()[0]}")
+    except ValueError as e:
+        # Record exception
+        output.append(f"ValueError: {e}")
+        # Update state terminal output
+        state.sfapi_output = "\n".join(output)
+        return
+    # TODO Create session
+    output.append("\nCreating Session...")
+    # Update state terminal output
+    state.sfapi_output = "\n".join(output)
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -233,15 +250,23 @@ with RouterViewLayout(server, "/nersc"):
                     with v2.VCardText():
                         with v2.VRow():
                             with v2.VCol():
+                                v2.VFileInput(
+                                    label="Select Private Key File",
+                                    v_model=("private_key", None),
+                                    accept=".pem",
+                                    __properties=["accept"],
+                                )
+                        with v2.VRow():
+                            with v2.VCol():
                                 v2.VBtn(
-                                    "Exchange Client Credentials for Access Tokens",
-                                    click=exchange_credentials,
+                                    "Access Superfacility API",
+                                    click=lambda:exchange_credentials(state.private_key),
                                     style="width: 100%; text-transform: none;",
                                 )
                         with v2.VRow():
                             with v2.VCol():
                                 v2.VTextarea(
-                                    v_model=("terminal_output", ""),
+                                    v_model=("sfapi_output", ""),
                                     readonly=True,
                                     rows=10,
                                     style="width: 100%",
