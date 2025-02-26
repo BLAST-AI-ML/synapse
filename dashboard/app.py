@@ -52,7 +52,7 @@ db_defaults = {
     "port": 27017,
     "name": "bella_sf",
     "auth": "bella_sf",
-    "user": "bella_sf_ro",
+    "user": "bella_sf_admin",
     "collection": "ip2",
 }
 experimental_docs, simulation_docs = load_database(db_defaults)

@@ -29,9 +29,9 @@ def load_database(db_defaults):
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
     db_collection = os.getenv("SF_DB_COLLECTION", db_defaults["collection"])
     # read database password from environment variable (no default provided)
-    db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+    db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
-        raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
+        raise RuntimeError("Environment variable SF_DB_PASSWORD must be set!")
     # get database instance
     db = pymongo.MongoClient(
         host=db_host,
