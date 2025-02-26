@@ -42,6 +42,10 @@ class CombinedNN(nn.Module):
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
                                            factor=factor, patience=patience, threshold=threshold)
 
+    @torch.jit.export
+    def calibrate(self, x):
+        """Expose sim_to_exp_calibration."""
+        return self.sim_to_exp_calibration(x)
 
     def forward(self, x):
         '''
