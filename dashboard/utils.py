@@ -32,13 +32,20 @@ def load_database(db_defaults):
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
         raise RuntimeError("Environment variable SF_DB_PASSWORD must be set!")
+    # SSH forward?
+    if db_host == "localhost" or db_host == "127.0.0.1":
+        direct_connection = True
+    else:
+        direct_connection = False
     # get database instance
+    print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
     db = pymongo.MongoClient(
         host=db_host,
         port=db_port,
         username=db_user,
         password=db_password,
         authSource=db_auth,
+        directConnection=direct_connection,
     )[db_name]
     # get collection: ip2, acave, config, ...
     collection = db[db_collection]
