@@ -13,10 +13,10 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: edd613873026246403be4dc29c08282a5c4fa9acf1920b0107fec63f2c00953c
-    osx-arm64: 570fe5cba56cfa6931c1105ee1dd6c7196cf2fda83a34b33eca68a4c8e32067d
-    osx-64: 636638bf37290a9336ee819cc6c3af115dbed840b448fcd11c0fbc9ebd6ac17e
-    win-64: 2797e5fc547e30f209fab02fabb9e1fb8efd391b2dfac7037a3d96c50a69595d
+    linux-64: 07d8f0685267be79c710135b7661ddd0df0ff550afff13db2a21dec7961f4016
+    osx-arm64: 613c6b95719aa83158f686f786c140d18bc94e06ed7c225a6a39d5d7bda01c5b
+    osx-64: 22387e0414d33c2757da91f23b8423c3ef30af23582fc1bb04bd2b00efb00869
+    win-64: 8852e29f30d5b6cb54872e42eac2261d14bfd9c6c81130492977d37d8976aab6
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -276,58 +276,6 @@ package:
   hash:
     md5: ae1370588aa6a5157c34c73e9bbb36a0
     sha256: f507b58f77eabc0cc133723cb7fc45c053d551f234df85e70fb3ede082b0cd53
-  category: main
-  optional: false
-- name: annotated-types
-  version: 0.7.0
-  manager: conda
-  platform: linux-64
-  dependencies:
-    python: '>=3.9'
-    typing-extensions: '>=4.0.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
-  hash:
-    md5: 2934f256a8acfe48f6ebb4fce6cde29c
-    sha256: e0ea1ba78fbb64f17062601edda82097fcf815012cf52bb704150a2668110d48
-  category: main
-  optional: false
-- name: annotated-types
-  version: 0.7.0
-  manager: conda
-  platform: osx-64
-  dependencies:
-    python: '>=3.9'
-    typing-extensions: '>=4.0.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
-  hash:
-    md5: 2934f256a8acfe48f6ebb4fce6cde29c
-    sha256: e0ea1ba78fbb64f17062601edda82097fcf815012cf52bb704150a2668110d48
-  category: main
-  optional: false
-- name: annotated-types
-  version: 0.7.0
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    python: '>=3.9'
-    typing-extensions: '>=4.0.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
-  hash:
-    md5: 2934f256a8acfe48f6ebb4fce6cde29c
-    sha256: e0ea1ba78fbb64f17062601edda82097fcf815012cf52bb704150a2668110d48
-  category: main
-  optional: false
-- name: annotated-types
-  version: 0.7.0
-  manager: conda
-  platform: win-64
-  dependencies:
-    python: '>=3.9'
-    typing-extensions: '>=4.0.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/annotated-types-0.7.0-pyhd8ed1ab_1.conda
-  hash:
-    md5: 2934f256a8acfe48f6ebb4fce6cde29c
-    sha256: e0ea1ba78fbb64f17062601edda82097fcf815012cf52bb704150a2668110d48
   category: main
   optional: false
 - name: aom
@@ -2580,10 +2528,10 @@ package:
     libstdcxx: '>=13'
     libzlib: '>=1.3.1,<2.0a0'
     openfst: '>=1.8.3,<1.8.4.0a0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/kaldi-5.5.1112-cpu_hd7b63f8_5.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/kaldi-5.5.1112-cpu_hb028f0a_6.conda
   hash:
-    md5: 8ec1ab2732792ae32ebf097886babcaf
-    sha256: 948f56abd25faf0c6862e4457a181bec5f2d55e5f630c743164b255fb217c188
+    md5: 695bf6102d421a6423b128b50ec13f81
+    sha256: 23cc28b4de61c4810427ab125734a811e0ed3022f11b8576d108c99f691bfa80
   category: main
   optional: false
 - name: kaldi
@@ -2595,17 +2543,17 @@ package:
     icu: '>=75.1,<76.0a0'
     libblas: '>=3.9.0,<4.0a0'
     libcblas: '>=3.9.0,<4.0a0'
-    libcxx: '>=17'
+    libcxx: '>=18'
     libgfortran: 5.*
     libgfortran5: '>=13.2.0'
     liblapack: '>=3.9.0,<4.0a0'
     liblapacke: '>=3.9.0,<4.0a0'
     libzlib: '>=1.3.1,<2.0a0'
     openfst: '>=1.8.3,<1.8.4.0a0'
-  url: https://conda.anaconda.org/conda-forge/osx-64/kaldi-5.5.1112-cpu_h138ed41_5.conda
+  url: https://conda.anaconda.org/conda-forge/osx-64/kaldi-5.5.1112-cpu_h40adab0_6.conda
   hash:
-    md5: 489f8979008cd8ac3fc90c52f38516a9
-    sha256: bd0b5cb77a30dfafcc0562d659e3e3c1a3d294942e850c4dad33d9199c8e28b5
+    md5: 23ec4803746ba37ad488f4b894b89165
+    sha256: ca12f287c9ee060386f561f98a3a65c114b88df85c13184cb12eb5adc0f325be
   category: main
   optional: false
 - name: kaldi
@@ -2617,17 +2565,17 @@ package:
     icu: '>=75.1,<76.0a0'
     libblas: '>=3.9.0,<4.0a0'
     libcblas: '>=3.9.0,<4.0a0'
-    libcxx: '>=17'
+    libcxx: '>=18'
     libgfortran: 5.*
     libgfortran5: '>=13.2.0'
     liblapack: '>=3.9.0,<4.0a0'
     liblapacke: '>=3.9.0,<4.0a0'
     libzlib: '>=1.3.1,<2.0a0'
     openfst: '>=1.8.3,<1.8.4.0a0'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/kaldi-5.5.1112-cpu_hbd54a75_5.conda
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/kaldi-5.5.1112-cpu_h175306b_6.conda
   hash:
-    md5: 1dd03a3bcb4ea88435753e4c474d29c9
-    sha256: 14dc0026048be47782df81db32df962cacb0e2f4836cc643f5afabc4e414d9ec
+    md5: 18cd3547c5e7d8f522e67c3cbc42d995
+    sha256: 7c198a028a0ad90715f4cfd1eb474d5bdf39eb26d26310dcbf25fcd096ec0633
   category: main
   optional: false
 - name: keyutils
@@ -5040,66 +4988,6 @@ package:
     sha256: b92a669f2059874ebdcb69041b6c243d68ffc3fb356ac1339cec44aeb27245d7
   category: main
   optional: false
-- name: lume-model
-  version: 1.7.1
-  manager: conda
-  platform: linux-64
-  dependencies:
-    numpy: ''
-    pydantic: ''
-    python: '>=3.9'
-    pyyaml: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/lume-model-1.7.1-pyhd8ed1ab_1.conda
-  hash:
-    md5: 3ba41c6dd797ba1cacbc8c24c120ccdb
-    sha256: 207645742d8b1e7941da3a378091057f88725d9fe2de986ece861f58d879b6bc
-  category: main
-  optional: false
-- name: lume-model
-  version: 1.7.1
-  manager: conda
-  platform: osx-64
-  dependencies:
-    numpy: ''
-    pyyaml: ''
-    pydantic: ''
-    python: '>=3.9'
-  url: https://conda.anaconda.org/conda-forge/noarch/lume-model-1.7.1-pyhd8ed1ab_1.conda
-  hash:
-    md5: 3ba41c6dd797ba1cacbc8c24c120ccdb
-    sha256: 207645742d8b1e7941da3a378091057f88725d9fe2de986ece861f58d879b6bc
-  category: main
-  optional: false
-- name: lume-model
-  version: 1.7.1
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    numpy: ''
-    pyyaml: ''
-    pydantic: ''
-    python: '>=3.9'
-  url: https://conda.anaconda.org/conda-forge/noarch/lume-model-1.7.1-pyhd8ed1ab_1.conda
-  hash:
-    md5: 3ba41c6dd797ba1cacbc8c24c120ccdb
-    sha256: 207645742d8b1e7941da3a378091057f88725d9fe2de986ece861f58d879b6bc
-  category: main
-  optional: false
-- name: lume-model
-  version: 1.7.1
-  manager: conda
-  platform: win-64
-  dependencies:
-    numpy: ''
-    pyyaml: ''
-    pydantic: ''
-    python: '>=3.9'
-  url: https://conda.anaconda.org/conda-forge/noarch/lume-model-1.7.1-pyhd8ed1ab_1.conda
-  hash:
-    md5: 3ba41c6dd797ba1cacbc8c24c120ccdb
-    sha256: 207645742d8b1e7941da3a378091057f88725d9fe2de986ece861f58d879b6bc
-  category: main
-  optional: false
 - name: markupsafe
   version: 3.0.2
   manager: conda
@@ -6851,133 +6739,6 @@ package:
     sha256: 79db7928d13fab2d892592223d7570f5061c192f27b9febd1a418427b719acc6
   category: main
   optional: false
-- name: pydantic
-  version: 2.10.6
-  manager: conda
-  platform: linux-64
-  dependencies:
-    annotated-types: '>=0.6.0'
-    pydantic-core: 2.27.2
-    python: '>=3.9'
-    typing-extensions: '>=4.6.1'
-    typing_extensions: '>=4.12.2'
-  url: https://conda.anaconda.org/conda-forge/noarch/pydantic-2.10.6-pyh3cfb1c2_0.conda
-  hash:
-    md5: c69f87041cf24dfc8cb6bf64ca7133c7
-    sha256: 9a78801a28959edeb945e8270a4e666577b52fac0cf4e35f88cf122f73d83e75
-  category: main
-  optional: false
-- name: pydantic
-  version: 2.10.6
-  manager: conda
-  platform: osx-64
-  dependencies:
-    python: '>=3.9'
-    typing_extensions: '>=4.12.2'
-    typing-extensions: '>=4.6.1'
-    annotated-types: '>=0.6.0'
-    pydantic-core: 2.27.2
-  url: https://conda.anaconda.org/conda-forge/noarch/pydantic-2.10.6-pyh3cfb1c2_0.conda
-  hash:
-    md5: c69f87041cf24dfc8cb6bf64ca7133c7
-    sha256: 9a78801a28959edeb945e8270a4e666577b52fac0cf4e35f88cf122f73d83e75
-  category: main
-  optional: false
-- name: pydantic
-  version: 2.10.6
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    python: '>=3.9'
-    typing_extensions: '>=4.12.2'
-    typing-extensions: '>=4.6.1'
-    annotated-types: '>=0.6.0'
-    pydantic-core: 2.27.2
-  url: https://conda.anaconda.org/conda-forge/noarch/pydantic-2.10.6-pyh3cfb1c2_0.conda
-  hash:
-    md5: c69f87041cf24dfc8cb6bf64ca7133c7
-    sha256: 9a78801a28959edeb945e8270a4e666577b52fac0cf4e35f88cf122f73d83e75
-  category: main
-  optional: false
-- name: pydantic
-  version: 2.10.6
-  manager: conda
-  platform: win-64
-  dependencies:
-    python: '>=3.9'
-    typing_extensions: '>=4.12.2'
-    typing-extensions: '>=4.6.1'
-    annotated-types: '>=0.6.0'
-    pydantic-core: 2.27.2
-  url: https://conda.anaconda.org/conda-forge/noarch/pydantic-2.10.6-pyh3cfb1c2_0.conda
-  hash:
-    md5: c69f87041cf24dfc8cb6bf64ca7133c7
-    sha256: 9a78801a28959edeb945e8270a4e666577b52fac0cf4e35f88cf122f73d83e75
-  category: main
-  optional: false
-- name: pydantic-core
-  version: 2.27.2
-  manager: conda
-  platform: linux-64
-  dependencies:
-    __glibc: '>=2.17,<3.0.a0'
-    libgcc: '>=13'
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    typing-extensions: '>=4.6.0,!=4.7.0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/pydantic-core-2.27.2-py312h12e396e_0.conda
-  hash:
-    md5: bae01b2563030c085f5158c518b84e86
-    sha256: 81602a4592ad2ac1a1cb57372fd25214e63b1c477d5818b0c21cde0f1f85c001
-  category: main
-  optional: false
-- name: pydantic-core
-  version: 2.27.2
-  manager: conda
-  platform: osx-64
-  dependencies:
-    __osx: '>=10.13'
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    typing-extensions: '>=4.6.0,!=4.7.0'
-  url: https://conda.anaconda.org/conda-forge/osx-64/pydantic-core-2.27.2-py312h0d0de52_0.conda
-  hash:
-    md5: e66079d3a6df307a882cedfe113eb5a1
-    sha256: fce4e1be48137ec2ae8a576671420665c5a3d11b2f79f2f771f0bd96a28418aa
-  category: main
-  optional: false
-- name: pydantic-core
-  version: 2.27.2
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    __osx: '>=11.0'
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    typing-extensions: '>=4.6.0,!=4.7.0'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/pydantic-core-2.27.2-py312hcd83bfe_0.conda
-  hash:
-    md5: dcb307e02f17d38c6e1cbfbf8c602852
-    sha256: cfa7201f890d5d08ce29ff70e65a96787d5793a1718776733666b44bbd4a1205
-  category: main
-  optional: false
-- name: pydantic-core
-  version: 2.27.2
-  manager: conda
-  platform: win-64
-  dependencies:
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    typing-extensions: '>=4.6.0,!=4.7.0'
-    ucrt: '>=10.0.20348.0'
-    vc: '>=14.2,<15'
-    vc14_runtime: '>=14.29.30139'
-  url: https://conda.anaconda.org/conda-forge/win-64/pydantic-core-2.27.2-py312h2615798_0.conda
-  hash:
-    md5: 8ed894b023eef681ce86e4d0fb06ee60
-    sha256: ec6b268b239c9cb62ca2b77b28d011cf356b84386d667970f9d31fd38467e0aa
-  category: main
-  optional: false
 - name: pymongo
   version: '4.11'
   manager: conda
@@ -7773,69 +7534,6 @@ package:
   hash:
     md5: 3eeeeb9e4827ace8c0c1419c85d590ad
     sha256: 1a7d6b233f7e6e3bbcbad054c8fd51e690a67b129a899a056a5e45dd9f00cb41
-  category: main
-  optional: false
-- name: pyyaml
-  version: 6.0.2
-  manager: conda
-  platform: linux-64
-  dependencies:
-    __glibc: '>=2.17,<3.0.a0'
-    libgcc: '>=13'
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    yaml: '>=0.2.5,<0.3.0a0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/pyyaml-6.0.2-py312h178313f_2.conda
-  hash:
-    md5: cf2485f39740de96e2a7f2bb18ed2fee
-    sha256: 159cba13a93b3fe084a1eb9bda0a07afc9148147647f0d437c3c3da60980503b
-  category: main
-  optional: false
-- name: pyyaml
-  version: 6.0.2
-  manager: conda
-  platform: osx-64
-  dependencies:
-    __osx: '>=10.13'
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    yaml: '>=0.2.5,<0.3.0a0'
-  url: https://conda.anaconda.org/conda-forge/osx-64/pyyaml-6.0.2-py312h3520af0_2.conda
-  hash:
-    md5: 4a2d83ac55752681d54f781534ddd209
-    sha256: de96d83b805dba03422d39e855fb33cbeedc8827235d6f76407a3b42dc085910
-  category: main
-  optional: false
-- name: pyyaml
-  version: 6.0.2
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    __osx: '>=11.0'
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    yaml: '>=0.2.5,<0.3.0a0'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/pyyaml-6.0.2-py312h998013c_2.conda
-  hash:
-    md5: 68149ed4d4e9e1c42d2ba1f27f08ca96
-    sha256: ad225ad24bfd60f7719709791345042c3cb32da1692e62bd463b084cf140e00d
-  category: main
-  optional: false
-- name: pyyaml
-  version: 6.0.2
-  manager: conda
-  platform: win-64
-  dependencies:
-    python: '>=3.12,<3.13.0a0'
-    python_abi: 3.12.*
-    ucrt: '>=10.0.20348.0'
-    vc: '>=14.2,<15'
-    vc14_runtime: '>=14.29.30139'
-    yaml: '>=0.2.5,<0.3.0a0'
-  url: https://conda.anaconda.org/conda-forge/win-64/pyyaml-6.0.2-py312h31fea79_2.conda
-  hash:
-    md5: ba00a2e5059c1fde96459858537cc8f5
-    sha256: 76fec03ef7e67e37724873e1f805131fb88efb57f19e9a77b4da616068ef5c28
   category: main
   optional: false
 - name: qhull
@@ -9465,54 +9163,6 @@ package:
     sha256: 5e6a3b92c4f99b7b51c646669ad9dbffd307a788fda0001dc82476de8e67ad67
   category: main
   optional: false
-- name: typing-extensions
-  version: 4.12.2
-  manager: conda
-  platform: linux-64
-  dependencies:
-    typing_extensions: 4.12.2
-  url: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.12.2-hd8ed1ab_1.conda
-  hash:
-    md5: b6a408c64b78ec7b779a3e5c7a902433
-    sha256: c8e9c1c467b5f960b627d7adc1c65fece8e929a3de89967e91ef0f726422fd32
-  category: main
-  optional: false
-- name: typing-extensions
-  version: 4.12.2
-  manager: conda
-  platform: osx-64
-  dependencies:
-    typing_extensions: 4.12.2
-  url: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.12.2-hd8ed1ab_1.conda
-  hash:
-    md5: b6a408c64b78ec7b779a3e5c7a902433
-    sha256: c8e9c1c467b5f960b627d7adc1c65fece8e929a3de89967e91ef0f726422fd32
-  category: main
-  optional: false
-- name: typing-extensions
-  version: 4.12.2
-  manager: conda
-  platform: osx-arm64
-  dependencies:
-    typing_extensions: 4.12.2
-  url: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.12.2-hd8ed1ab_1.conda
-  hash:
-    md5: b6a408c64b78ec7b779a3e5c7a902433
-    sha256: c8e9c1c467b5f960b627d7adc1c65fece8e929a3de89967e91ef0f726422fd32
-  category: main
-  optional: false
-- name: typing-extensions
-  version: 4.12.2
-  manager: conda
-  platform: win-64
-  dependencies:
-    typing_extensions: 4.12.2
-  url: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.12.2-hd8ed1ab_1.conda
-  hash:
-    md5: b6a408c64b78ec7b779a3e5c7a902433
-    sha256: c8e9c1c467b5f960b627d7adc1c65fece8e929a3de89967e91ef0f726422fd32
-  category: main
-  optional: false
 - name: typing_extensions
   version: 4.12.2
   manager: conda
@@ -10350,53 +10000,6 @@ package:
     sha256: 8a4e2ee642f884e6b78c20c0892b85dd9b2a6e64a6044e903297e616be6ca35b
   category: main
   optional: false
-- name: yaml
-  version: 0.2.5
-  manager: conda
-  platform: linux-64
-  dependencies:
-    libgcc-ng: '>=9.4.0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/yaml-0.2.5-h7f98852_2.tar.bz2
-  hash:
-    md5: 4cb3ad778ec2d5a7acbdf254eb1c42ae
-    sha256: a4e34c710eeb26945bdbdaba82d3d74f60a78f54a874ec10d373811a5d217535
-  category: main
-  optional: false
-- name: yaml
-  version: 0.2.5
-  manager: conda
-  platform: osx-64
-  dependencies: {}
-  url: https://conda.anaconda.org/conda-forge/osx-64/yaml-0.2.5-h0d85af4_2.tar.bz2
-  hash:
-    md5: d7e08fcf8259d742156188e8762b4d20
-    sha256: 5301417e2c8dea45b401ffee8df3957d2447d4ce80c83c5ff151fc6bfe1c4148
-  category: main
-  optional: false
-- name: yaml
-  version: 0.2.5
-  manager: conda
-  platform: osx-arm64
-  dependencies: {}
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/yaml-0.2.5-h3422bc3_2.tar.bz2
-  hash:
-    md5: 4bb3f014845110883a3c5ee811fd84b4
-    sha256: 93181a04ba8cfecfdfb162fc958436d868cc37db504c58078eab4c1a3e57fbb7
-  category: main
-  optional: false
-- name: yaml
-  version: 0.2.5
-  manager: conda
-  platform: win-64
-  dependencies:
-    vc: '>=14.1,<15.0a0'
-    vs2015_runtime: '>=14.16.27012'
-  url: https://conda.anaconda.org/conda-forge/win-64/yaml-0.2.5-h8ffe710_2.tar.bz2
-  hash:
-    md5: adbfb9f45d1004a26763652246a33764
-    sha256: 4e2246383003acbad9682c7c63178e2e715ad0eb84f03a8df1fbfba455dfedc5
-  category: main
-  optional: false
 - name: yarl
   version: 1.18.3
   manager: conda
@@ -10588,6 +10191,46 @@ package:
   hash:
     md5: 9a17230f95733c04dc40a2b1e5491d74
     sha256: 768e30dc513568491818fb068ee867c57c514b553915536da09e5d10b4ebf3c3
+  category: main
+  optional: false
+- name: annotated-types
+  version: 0.7.0
+  manager: pip
+  platform: linux-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+  hash:
+    sha256: 1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53
+  category: main
+  optional: false
+- name: annotated-types
+  version: 0.7.0
+  manager: pip
+  platform: osx-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+  hash:
+    sha256: 1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53
+  category: main
+  optional: false
+- name: annotated-types
+  version: 0.7.0
+  manager: pip
+  platform: osx-arm64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+  hash:
+    sha256: 1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53
+  category: main
+  optional: false
+- name: annotated-types
+  version: 0.7.0
+  manager: pip
+  platform: win-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+  hash:
+    sha256: 1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53
   category: main
   optional: false
 - name: anyio
@@ -10925,6 +10568,70 @@ package:
     sha256: d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad
   category: main
   optional: false
+- name: lume-model
+  version: 1.7.2.dev74+g0c62723
+  manager: pip
+  platform: linux-64
+  dependencies:
+    pydantic: '*'
+    numpy: '*'
+    pyyaml: '*'
+  url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  hash:
+    sha256: 0c62723b04b78fe858a9b349433b5aacfd267f50
+  category: main
+  source:
+    type: url
+    url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  optional: false
+- name: lume-model
+  version: 1.7.2.dev74+g0c62723
+  manager: pip
+  platform: osx-64
+  dependencies:
+    pydantic: '*'
+    numpy: '*'
+    pyyaml: '*'
+  url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  hash:
+    sha256: 0c62723b04b78fe858a9b349433b5aacfd267f50
+  category: main
+  source:
+    type: url
+    url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  optional: false
+- name: lume-model
+  version: 1.7.2.dev74+g0c62723
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    pydantic: '*'
+    numpy: '*'
+    pyyaml: '*'
+  url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  hash:
+    sha256: 0c62723b04b78fe858a9b349433b5aacfd267f50
+  category: main
+  source:
+    type: url
+    url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  optional: false
+- name: lume-model
+  version: 1.7.2.dev74+g0c62723
+  manager: pip
+  platform: win-64
+  dependencies:
+    pydantic: '*'
+    numpy: '*'
+    pyyaml: '*'
+  url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  hash:
+    sha256: 0c62723b04b78fe858a9b349433b5aacfd267f50
+  category: main
+  source:
+    type: url
+    url: git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+  optional: false
 - name: proxy-tools
   version: 0.1.0
   manager: pip
@@ -10963,6 +10670,102 @@ package:
   url: https://files.pythonhosted.org/packages/f2/cf/77d3e19b7fabd03895caca7857ef51e4c409e0ca6b37ee6e9f7daa50b642/proxy_tools-0.1.0.tar.gz
   hash:
     sha256: ccb3751f529c047e2d8a58440d86b205303cf0fe8146f784d1cbcd94f0a28010
+  category: main
+  optional: false
+- name: pydantic
+  version: 2.10.6
+  manager: pip
+  platform: linux-64
+  dependencies:
+    annotated-types: '>=0.6.0'
+    pydantic-core: 2.27.2
+    typing-extensions: '>=4.12.2'
+  url: https://files.pythonhosted.org/packages/f4/3c/8cc1cc84deffa6e25d2d0c688ebb80635dfdbf1dbea3e30c541c8cf4d860/pydantic-2.10.6-py3-none-any.whl
+  hash:
+    sha256: 427d664bf0b8a2b34ff5dd0f5a18df00591adcee7198fbd71981054cef37b584
+  category: main
+  optional: false
+- name: pydantic
+  version: 2.10.6
+  manager: pip
+  platform: osx-64
+  dependencies:
+    annotated-types: '>=0.6.0'
+    pydantic-core: 2.27.2
+    typing-extensions: '>=4.12.2'
+  url: https://files.pythonhosted.org/packages/f4/3c/8cc1cc84deffa6e25d2d0c688ebb80635dfdbf1dbea3e30c541c8cf4d860/pydantic-2.10.6-py3-none-any.whl
+  hash:
+    sha256: 427d664bf0b8a2b34ff5dd0f5a18df00591adcee7198fbd71981054cef37b584
+  category: main
+  optional: false
+- name: pydantic
+  version: 2.10.6
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    annotated-types: '>=0.6.0'
+    pydantic-core: 2.27.2
+    typing-extensions: '>=4.12.2'
+  url: https://files.pythonhosted.org/packages/f4/3c/8cc1cc84deffa6e25d2d0c688ebb80635dfdbf1dbea3e30c541c8cf4d860/pydantic-2.10.6-py3-none-any.whl
+  hash:
+    sha256: 427d664bf0b8a2b34ff5dd0f5a18df00591adcee7198fbd71981054cef37b584
+  category: main
+  optional: false
+- name: pydantic
+  version: 2.10.6
+  manager: pip
+  platform: win-64
+  dependencies:
+    annotated-types: '>=0.6.0'
+    pydantic-core: 2.27.2
+    typing-extensions: '>=4.12.2'
+  url: https://files.pythonhosted.org/packages/f4/3c/8cc1cc84deffa6e25d2d0c688ebb80635dfdbf1dbea3e30c541c8cf4d860/pydantic-2.10.6-py3-none-any.whl
+  hash:
+    sha256: 427d664bf0b8a2b34ff5dd0f5a18df00591adcee7198fbd71981054cef37b584
+  category: main
+  optional: false
+- name: pydantic-core
+  version: 2.27.2
+  manager: pip
+  platform: linux-64
+  dependencies:
+    typing-extensions: '>=4.6.0,<4.7.0 || >4.7.0'
+  url: https://files.pythonhosted.org/packages/8d/f0/49129b27c43396581a635d8710dae54a791b17dfc50c70164866bbf865e3/pydantic_core-2.27.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  hash:
+    sha256: 6fb4aadc0b9a0c063206846d603b92030eb6f03069151a625667f982887153e2
+  category: main
+  optional: false
+- name: pydantic-core
+  version: 2.27.2
+  manager: pip
+  platform: osx-64
+  dependencies:
+    typing-extensions: '>=4.6.0,<4.7.0 || >4.7.0'
+  url: https://files.pythonhosted.org/packages/d6/74/51c8a5482ca447871c93e142d9d4a92ead74de6c8dc5e66733e22c9bba89/pydantic_core-2.27.2-cp312-cp312-macosx_10_12_x86_64.whl
+  hash:
+    sha256: 9e0c8cfefa0ef83b4da9588448b6d8d2a2bf1a53c3f1ae5fca39eb3061e2f0b0
+  category: main
+  optional: false
+- name: pydantic-core
+  version: 2.27.2
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    typing-extensions: '>=4.6.0,<4.7.0 || >4.7.0'
+  url: https://files.pythonhosted.org/packages/d3/f3/c97e80721735868313c58b89d2de85fa80fe8dfeeed84dc51598b92a135e/pydantic_core-2.27.2-cp312-cp312-macosx_11_0_arm64.whl
+  hash:
+    sha256: 83097677b8e3bd7eaa6775720ec8e0405f1575015a463285a92bfdfe254529ef
+  category: main
+  optional: false
+- name: pydantic-core
+  version: 2.27.2
+  manager: pip
+  platform: win-64
+  dependencies:
+    typing-extensions: '>=4.6.0,<4.7.0 || >4.7.0'
+  url: https://files.pythonhosted.org/packages/1f/ea/cd7209a889163b8dcca139fe32b9687dd05249161a3edda62860430457a5/pydantic_core-2.27.2-cp312-cp312-win_amd64.whl
+  hash:
+    sha256: cc3f1a99a4f4f9dd1de4fe0312c114e740b5ddead65bb4102884b384c15d8bc9
   category: main
   optional: false
 - name: pydantic-settings
@@ -11471,6 +11274,46 @@ package:
   url: https://files.pythonhosted.org/packages/4c/5a/7af3b9f8fb51d544b31f2f6c12635eac77d1e9a99f72dd12c9364062d59d/pywebview-5.4-py3-none-any.whl
   hash:
     sha256: 0559c47db543556498dd38604a2a0479896c320f86c9b23499b8e580b58b699d
+  category: main
+  optional: false
+- name: pyyaml
+  version: 6.0.2
+  manager: pip
+  platform: linux-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/b9/2b/614b4752f2e127db5cc206abc23a8c19678e92b23c3db30fc86ab731d3bd/PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  hash:
+    sha256: 80bab7bfc629882493af4aa31a4cfa43a4c57c83813253626916b8c7ada83476
+  category: main
+  optional: false
+- name: pyyaml
+  version: 6.0.2
+  manager: pip
+  platform: osx-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/86/0c/c581167fc46d6d6d7ddcfb8c843a4de25bdd27e4466938109ca68492292c/PyYAML-6.0.2-cp312-cp312-macosx_10_9_x86_64.whl
+  hash:
+    sha256: c70c95198c015b85feafc136515252a261a84561b7b1d51e3384e0655ddf25ab
+  category: main
+  optional: false
+- name: pyyaml
+  version: 6.0.2
+  manager: pip
+  platform: osx-arm64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/a8/0c/38374f5bb272c051e2a69281d71cba6fdb983413e6758b84482905e29a5d/PyYAML-6.0.2-cp312-cp312-macosx_11_0_arm64.whl
+  hash:
+    sha256: ce826d6ef20b1bc864f0a68340c8b3287705cae2f8b4b1d932177dcc76721725
+  category: main
+  optional: false
+- name: pyyaml
+  version: 6.0.2
+  manager: pip
+  platform: win-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/0c/e8/4f648c598b17c3d06e8753d7d13d57542b30d56e6c2dedf9c331ae56312e/PyYAML-6.0.2-cp312-cp312-win_amd64.whl
+  hash:
+    sha256: 7e7401d0de89a9a855c839bc697c079a4af81cf878373abd7dc625847d25cbd8
   category: main
   optional: false
 - name: qtpy

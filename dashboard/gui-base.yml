@@ -11,7 +11,6 @@ channels:
 dependencies:
   - botorch<0.11.0
   - cpuonly
-  - lume-model
   - matplotlib
   - pandas
   - pip
@@ -30,3 +29,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
+    - git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50

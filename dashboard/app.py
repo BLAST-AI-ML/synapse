@@ -110,9 +110,9 @@ def pre_calibration():
     output_transformers = model.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
-    # de-normalize simulation data
+    # normalize simulation data
     n_protons_tensor = torch.from_numpy(simulation_data["n_protons"].values)
-    n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+    n_protons_tensor = output_normalization.transform(n_protons_tensor)
     return (output_calibration, output_normalization, n_protons_tensor)
 
 # TODO encapsulate in simulation class?
@@ -121,9 +121,9 @@ def apply_calibration():
     if not state.is_calibrated:
         # prepare
         output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and re-normalize simulation data
-        n_protons_tensor = output_calibration.transform(n_protons_tensor)
-        n_protons_tensor = output_normalization.transform(n_protons_tensor)
+        # calibrate, and denormalize simulation data
+        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
+        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
         simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
         # update plots (TODO plots.update())
         update_plots()
@@ -136,9 +136,9 @@ def undo_calibration():
     if state.is_calibrated:
         # prepare
         output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and re-normalize simulation data
-        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
-        n_protons_tensor = output_normalization.transform(n_protons_tensor)
+        # calibrate, and denormalize simulation data
+        n_protons_tensor = output_calibration.transform(n_protons_tensor)
+        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
         simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
         # update plots (TODO plots.update())
         update_plots()
