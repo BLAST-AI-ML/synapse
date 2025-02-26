@@ -1,3 +1,9 @@
+# Install latest dependencies with
+#   conda create -n gui -f gui-base.yml
+#
+# But we usually create a lockfile from this file:
+#   conda-lock --file gui-base.yml --lockfile gui-lock.yml
+#
 name: gui
 channels:
   - conda-forge
@@ -23,3 +29,4 @@ dependencies:
   - trame-vuetify
   - pip:
     - pywebview[qt]
+    - sfapi_client
