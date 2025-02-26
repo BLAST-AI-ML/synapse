@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import requests
 import torch
+from datetime import datetime, timedelta
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
@@ -151,12 +152,14 @@ def check_status():
     from sfapi_client.compute import Machine
 
     # restore private key from DB
-    sfapi_key_pem = config.find_one({"name": "sfapi"})["key"]
-    #print("sfapi_key_pem from DB=", sfapi_key_pem)
+    sfapi = config.find_one({"name": "sfapi"})
+    sfapi_client_id = sfapi["client_id"]
+    sfapi_key_pem = sfapi["key"]
+    sfapi_expiration = sfapi["expiration"]
 
     # create an authenticated client
     output = []
-    with Client(client_id="3sr4fycectj2i", secret=sfapi_key_pem) as client:  # TODO: remove hard-coded client_id (use db)
+    with Client(client_id=sfapi_client_id, secret=sfapi_key_pem) as client:
         # does not need authentication
         status = client.compute(Machine.perlmutter)
         output += [str(status)]
@@ -172,10 +175,12 @@ def check_status():
 
 # TODO encapsulate in sfapi class?
 @ctrl.add("exchange_credentials")
-def exchange_credentials(private_key):
+def exchange_credentials(state):
     """Read a PEM file and store it in the database"""
 
-    # TODO: ALSO ask for client_id via text field
+    sfapi_client_id = state.client_id
+    private_key = state.private_key
+    sfapi_expiration =  datetime.now() + timedelta(days=int(state.expiration_days))
 
     # Read private key file
     output = []
@@ -186,10 +191,15 @@ def exchange_credentials(private_key):
 
         sfapi_key_pem = private_key["content"].decode("utf-8")
         #output.append(f"sfapi_key_pem: {sfapi_key_pem}")
-        #output.append(f"Client ID: {sfapi_client_id}")
+        output.append(f"Client ID: {sfapi_client_id}")
+        output.append(f"Expiration: {sfapi_expiration}")
 
         # store in DB
-        update_data = {"$set": {"key": sfapi_key_pem}}
+        update_data = {"$set": {
+            "client_id": sfapi_client_id,
+            "key": sfapi_key_pem,
+            "expiration": sfapi_expiration,
+        }}
         config.update_one({"name": "sfapi"}, update_data, upsert=True)
 
     except ValueError as e:
@@ -287,6 +297,28 @@ with RouterViewLayout(server, "/nersc"):
                     with v2.VCardText():
                         with v2.VRow():
                             with v2.VCol():
+                                v2.VSlider(
+                                    v_model_number=("expiration_days", 33),
+                                    label="Expiration (days)",
+                                    min=0,
+                                    max=63,
+                                    step=1,
+                                    classes="align-center",
+                                    hide_details=True,
+                                    #style="width: 200px",
+                                    thumb_label="always",
+                                    thumb_size=25,
+                                    type="number",
+                                )
+                        with v2.VRow():
+                            with v2.VCol():
+                                v2.VTextField(
+                                    label="Client Id",
+                                    v_model=("client_id", None),
+                                    single_line=True,
+                                )
+                        with v2.VRow():
+                            with v2.VCol():
                                 v2.VFileInput(
                                     label="Select Private Key File (PEM)",
                                     v_model=("private_key", None),
@@ -297,7 +329,7 @@ with RouterViewLayout(server, "/nersc"):
                             with v2.VCol():
                                 v2.VBtn(
                                     "Access Superfacility API",
-                                    click=lambda:exchange_credentials(state.private_key),
+                                    click=lambda:exchange_credentials(state),
                                     style="width: 100%; text-transform: none;",
                                 )
                         with v2.VRow():
