@@ -42,11 +42,11 @@
 4. Run the GUI from the `dashboard/` folder:
     - Via the web browser interface:
     ```console
-    python app.py --port 1234 --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
+    python app.py --port 1234 --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_new.yml
     ```
     - As a desktop application:
     ```console
-    python app.py --app --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
+    python app.py --app --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_new.yml
     ```
     If you run the GUI as a desktop application, make sure to set the following environment variable first:
     ```console
