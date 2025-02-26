@@ -40,14 +40,17 @@ def load_database(db_defaults):
         password=db_password,
         authSource=db_auth,
     )[db_name]
-    # get collection
+    # get collection: ip2, acave, config, ...
     collection = db[db_collection]
+    if "config" not in db.list_collection_names():
+        db.create_collection("config")
+    config = db["config"]
     # retrieve all documents
     documents = list(collection.find())
-    # separate experimental and simulation documents
+    # separate documents: experimental and simulation
     experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (experimental_docs, simulation_docs)
+    return (config, experimental_docs, simulation_docs)
 
 # plot experimental, simulation, and ML data
 def plot(

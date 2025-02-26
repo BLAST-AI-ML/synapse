@@ -12,6 +12,7 @@ from parameters import Parameters
 from objectives import Objectives
 from utils import read_variables, load_database, plot
 
+
 # -----------------------------------------------------------------------------
 # Command line parser
 # -----------------------------------------------------------------------------
@@ -55,7 +56,7 @@ db_defaults = {
     "user": "bella_sf_admin",
     "collection": "ip2",
 }
-experimental_docs, simulation_docs = load_database(db_defaults)
+config, experimental_docs, simulation_docs = load_database(db_defaults)
 # convert database documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
 simulation_data = pd.DataFrame(simulation_docs)
@@ -144,30 +145,66 @@ def undo_calibration():
         state.is_calibrated = False
 
 # TODO encapsulate in sfapi class?
+def check_status():
+    # Check status
+    from sfapi_client import Client
+    from sfapi_client.compute import Machine
+
+    # restore private key from DB
+    sfapi_key_pem = config.find_one({"name": "sfapi"})["key"]
+    #print("sfapi_key_pem from DB=", sfapi_key_pem)
+
+    # create an authenticated client
+    output = []
+    with Client(client_id="3sr4fycectj2i", secret=sfapi_key_pem) as client:  # TODO: remove hard-coded client_id (use db)
+        # does not need authentication
+        status = client.compute(Machine.perlmutter)
+        output += [str(status)]
+
+        # needs authentication
+        perlmutter = client.compute(Machine.perlmutter)
+        ls_results = perlmutter.ls("/global/cfs/cdirs/m558")
+        output += ["ls in CFS:"]
+        for x in ls_results:
+            output += [x.name]
+
+    return output
+
+# TODO encapsulate in sfapi class?
 @ctrl.add("exchange_credentials")
 def exchange_credentials(private_key):
-    # Check status
-    system = "archive"
-    url = "https://api.nersc.gov/api/v1.2/status/" + system
-    resp = requests.get(url)
-    perlmutter_status = resp.json()
-    output = []
-    output.append("Checking System Status...")
-    output.append(f"{perlmutter_status}")
+    """Read a PEM file and store it in the database"""
+
+    # TODO: ALSO ask for client_id via text field
+
     # Read private key file
+    output = []
     output.append("\nReading Private Key File...")
     try:
         if not private_key:
             raise ValueError("No Private Key File Uploaded")
-        output.append(f"Client ID: {private_key["content"].decode("utf-8").splitlines()[0]}")
+
+        sfapi_key_pem = private_key["content"].decode("utf-8")
+        #output.append(f"sfapi_key_pem: {sfapi_key_pem}")
+        #output.append(f"Client ID: {sfapi_client_id}")
+
+        # store in DB
+        update_data = {"$set": {"key": sfapi_key_pem}}
+        config.update_one({"name": "sfapi"}, update_data, upsert=True)
+
     except ValueError as e:
         # Record exception
         output.append(f"ValueError: {e}")
         # Update state terminal output
         state.sfapi_output = "\n".join(output)
         return
-    # TODO Create session
+
+    # Create session
     output.append("\nCreating Session...")
+
+    output += check_status()
+    print(output)
+
     # Update state terminal output
     state.sfapi_output = "\n".join(output)
 
@@ -251,7 +288,7 @@ with RouterViewLayout(server, "/nersc"):
                         with v2.VRow():
                             with v2.VCol():
                                 v2.VFileInput(
-                                    label="Select Private Key File",
+                                    label="Select Private Key File (PEM)",
                                     v_model=("private_key", None),
                                     accept=".pem",
                                     __properties=["accept"],
