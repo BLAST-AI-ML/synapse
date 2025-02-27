@@ -20,7 +20,21 @@ def read_variables(yaml_file):
     output_variables = yaml_dict["output_variables"]
     return (input_variables, output_variables)
 
-def load_database(db_defaults):
+db = None
+
+def load_database():
+    global db
+
+    # load database
+    db_defaults = {
+        "host": "mongodb05.nersc.gov",
+        "port": 27017,
+        "name": "bella_sf",
+        "auth": "bella_sf",
+        "user": "bella_sf_admin",
+        "collection": "ip2",
+    }
+
     # read database information from environment variables (if unset, use defaults)
     db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
     db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
@@ -38,15 +52,16 @@ def load_database(db_defaults):
     else:
         direct_connection = False
     # get database instance
-    print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
-    db = pymongo.MongoClient(
-        host=db_host,
-        port=db_port,
-        username=db_user,
-        password=db_password,
-        authSource=db_auth,
-        directConnection=direct_connection,
-    )[db_name]
+    if db is None:
+        print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
+        db = pymongo.MongoClient(
+            host=db_host,
+            port=db_port,
+            username=db_user,
+            password=db_password,
+            authSource=db_auth,
+            directConnection=direct_connection,
+        )[db_name]
     # get collection: ip2, acave, config, ...
     collection = db[db_collection]
     if "config" not in db.list_collection_names():
