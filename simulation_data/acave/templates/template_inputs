@@ -51,9 +51,10 @@ electrons.mass = m_e
 # diagnostics
 diagnostics.diags_names = diag
 diag.diag_type = Full
-diag.fields_to_plot = Er Ez Et rho rho_electrons
+diag.fields_to_plot = Er Et Ez rho_electrons
 diag.format = openpmd
 diag.intervals = 500
+diag.write_species = 0
 
 # laser
 lasers.names = laser1
