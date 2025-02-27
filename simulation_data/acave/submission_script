@@ -15,6 +15,7 @@ cd $SCRATCH/2024_IFE-superfacility/simulation_data/acave
 mkdir sim_1
 cd sim_1
 
+source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
 export SRUN_CPUS_PER_TASK=16
