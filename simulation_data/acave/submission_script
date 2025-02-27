@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH -t 00:30:00
-#SBATCH -N 1
+#SBATCH -N 3
 #SBATCH -J WarpX
 #SBATCH -A m558_g
 #SBATCH -C gpu
@@ -26,4 +26,4 @@ export INPUTS="../templates/template_inputs"
 GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
 srun --cpu-bind=cores bash -c "
     export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
-    ${EXE} ${INPUTS} ${GPU_AWARE_MPI} warpx.numprocs=1 4 > output.txt"
+    ${EXE} ${INPUTS} ${GPU_AWARE_MPI} warpx.numprocs=1 12 > output.txt"

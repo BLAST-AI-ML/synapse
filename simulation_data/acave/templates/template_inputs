@@ -3,7 +3,7 @@ max_step = 21000
 
 # amr
 amr.max_level = 0
-amr.n_cell = 256 2048
+amr.n_cell = 256 6144
 
 # Parameters of the fitted density
 my_constants.n0 = 2.11e+25 # peak molecular density, in m-3
@@ -12,7 +12,7 @@ my_constants.dens_width = 77.45e-6 # width of the density profile, in m
 # geometry
 geometry.dims = RZ
 geometry.prob_hi = 100e-6 0
-geometry.prob_lo = 0 -40e-6
+geometry.prob_lo = 0 -120e-6
 warpx.n_rz_azimuthal_modes = 2
 
 # boundary
@@ -59,15 +59,11 @@ diag.write_species = 0
 # laser
 lasers.names = laser1
 laser1.direction = 0 0 1
-laser1.do_continuous_injection = 0
 laser1.a0 = 1.
+laser1.profile      = from_file
 laser1.polarization = 1 0 0
 laser1.position = 0.0 0.0 -1e-9
-laser1.profile = Gaussian
-laser1.profile_duration = 4e-15
-laser1.profile_focal_distance = 200e-06 + {{kHz_Hexapod_Target ypos}}
-laser1.profile_t_peak = 12e-15
-laser1.profile_waist = 3.5e-06
+laser1.lasy_file_name = "diags/laser_profile_00000.h5"
 laser1.wavelength = 8e-07
 
 # moving window
