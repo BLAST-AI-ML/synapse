@@ -28,10 +28,10 @@
     conda activate gui
     ```
 
-2. Set the database settings:
+2. Set the database settings (read+write):
     ```console
     export SF_DB_HOST='127.0.0.1'
-    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+    export SF_DB_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
     ```
 
 3. For local development, open a separate terminal and keep it open while SSH forwarding the database connection:
@@ -42,11 +42,11 @@
 4. Run the GUI from the `dashboard/` folder:
     - Via the web browser interface:
     ```console
-    python app.py --port 1234 --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
+    python app.py --port 1234 --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_new.yml
     ```
     - As a desktop application:
     ```console
-    python app.py --app --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_calibration.yml
+    python app.py --app --model $PWD/../ml/NN_training/base_simulation_model_with_transformers_new.yml
     ```
     If you run the GUI as a desktop application, make sure to set the following environment variable first:
     ```console
@@ -64,11 +64,11 @@
 
 2. Run the Docker container from the `dashboard/` folder:
     ```console
-    docker run --network=host -p 27017:27017 -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' gui
+    docker run --network=host -p 27017:27017 -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_PASSWORD='your_password_here' gui
     ```
     For debugging, you can also enter the container without starting the app:
     ```console
-    docker run --network=host -p 27017:27017 -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it gui bash
+    docker run --network=host -p 27017:27017 -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_PASSWORD='your_password_here' -it gui bash
     ```
 
 3. Optional: Publish the container privately to NERSC registry (https://registry.nersc.gov):

@@ -20,7 +20,21 @@ def read_variables(yaml_file):
     output_variables = yaml_dict["output_variables"]
     return (input_variables, output_variables)
 
-def load_database(db_defaults):
+db = None
+
+def load_database():
+    global db
+
+    # load database
+    db_defaults = {
+        "host": "mongodb05.nersc.gov",
+        "port": 27017,
+        "name": "bella_sf",
+        "auth": "bella_sf",
+        "user": "bella_sf_admin",
+        "collection": "ip2",
+    }
+
     # read database information from environment variables (if unset, use defaults)
     db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
     db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
@@ -29,25 +43,36 @@ def load_database(db_defaults):
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
     db_collection = os.getenv("SF_DB_COLLECTION", db_defaults["collection"])
     # read database password from environment variable (no default provided)
-    db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+    db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
-        raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
+        raise RuntimeError("Environment variable SF_DB_PASSWORD must be set!")
+    # SSH forward?
+    if db_host == "localhost" or db_host == "127.0.0.1":
+        direct_connection = True
+    else:
+        direct_connection = False
     # get database instance
-    db = pymongo.MongoClient(
-        host=db_host,
-        port=db_port,
-        username=db_user,
-        password=db_password,
-        authSource=db_auth,
-    )[db_name]
-    # get collection
+    if db is None:
+        print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
+        db = pymongo.MongoClient(
+            host=db_host,
+            port=db_port,
+            username=db_user,
+            password=db_password,
+            authSource=db_auth,
+            directConnection=direct_connection,
+        )[db_name]
+    # get collection: ip2, acave, config, ...
     collection = db[db_collection]
+    if "config" not in db.list_collection_names():
+        db.create_collection("config")
+    config = db["config"]
     # retrieve all documents
     documents = list(collection.find())
-    # separate experimental and simulation documents
+    # separate documents: experimental and simulation
     experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (experimental_docs, simulation_docs)
+    return (config, experimental_docs, simulation_docs)
 
 # plot experimental, simulation, and ML data
 def plot(
@@ -68,7 +93,7 @@ def plot(
     df_exp = experimental_data
     df_sim = simulation_data
     df_cds = ["blue", "red"]
-    df_leg = ["experiment", "simulation"]
+    df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters_dict), cols=1)
     for i, key in enumerate(parameters_dict.keys()):
@@ -143,7 +168,7 @@ def plot(
             x=input_dict_loc[key.split(maxsplit=1)[0]],
             y=y,
             line=dict(color="orange"),
-            name="ML model",
+            name="ML Model",
             showlegend=(True if i==0 else False),
         )
         # add trace
