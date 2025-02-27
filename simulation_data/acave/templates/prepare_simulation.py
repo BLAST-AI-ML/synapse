@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from lasy.profiles import CombinedLongitudinalTransverseProfile
 from lasy.profiles.longitudinal import LongitudinalProfileFromData
 from lasy.profiles.transverse import GaussianTransverseProfile
@@ -12,7 +14,7 @@ input_params = {
 }
 
 # Get laser spectral intensity, including phase
-df_specint = pd.read_csv('./retrieval01_spectrum.csv')
+df_specint = pd.read_csv('../templates/retrieval01_spectrum.csv')
 lambda_range = lambda_range = df_specint['Wavelength[nm]'].values * 1e-9
 intensity = np.maximum( df_specint['Intensity[normalized]'].values, 0 ) # Make sure intensity is non-negative
 phase = df_specint['Phase[rad]'].values

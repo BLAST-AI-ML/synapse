@@ -11,12 +11,15 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=4
 
+source $HOME/db.profile
+source $HOME/perlmutter_gpu_warpx.profile
+
 cd $SCRATCH/2024_IFE-superfacility/simulation_data/acave
 mkdir sim_1
 cd sim_1
 
-source $HOME/db.profile
-source $HOME/perlmutter_gpu_warpx.profile
+cp ../templates/prepare_simulation.py .
+./prepare_simulation.py
 
 export SRUN_CPUS_PER_TASK=16
 export EXE="../templates/warpx.rz"
