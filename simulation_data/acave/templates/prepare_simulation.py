@@ -7,11 +7,16 @@ from lasy.laser import Laser
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import json
 
 input_params = {
     'kHz_Hexapod_Target ypos': 0,
     'kHz_Zaber_Compressor Position.Ch1': 50e3,
 }
+
+# Dump input parameters, to be read in analysis file
+with open('input_params.json', 'w') as file:
+    json.dump(input_params, file, indent=4)
 
 # Get laser spectral intensity, including phase
 df_specint = pd.read_csv('../templates/retrieval01_spectrum.csv')
