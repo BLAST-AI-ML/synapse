@@ -3,8 +3,10 @@
 import os
 import json
 import numpy as np
-#import pymongo
+import pymongo
+import matplotlib.pyplot as plt
 from openpmd_viewer.addons import LpaDiagnostics
+from scipy.constants import c
 from datetime import datetime
 
 # Get current directory

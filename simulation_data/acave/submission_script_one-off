@@ -11,22 +11,24 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=4
 
+# Source environment
 source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
+# TODO: adapt directory name
 cd $SCRATCH/2024_IFE-superfacility/simulation_data/acave
 mkdir sim_1
 cd sim_1
 
-cp ../templates/prepare_simulation.py .
-./prepare_simulation.py
+# Execute python script to prepare lasy file
+../templates/prepare_simulation.py
 
+# Launch warpx simulation
 export SRUN_CPUS_PER_TASK=16
-export EXE="../templates/warpx.rz"
-export INPUTS="../templates/template_inputs"
-
-# GPU-aware MPI optimizations
 GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
 srun --cpu-bind=cores bash -c "
     export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
-    ${EXE} ${INPUTS} ${GPU_AWARE_MPI} warpx.numprocs=1 12 > output.txt"
+    ../templates/warpx.rz ../templates/template_inputs ${GPU_AWARE_MPI} warpx.numprocs=1 12 > output.txt"
+
+# Execute analysis script
+../templates/analyze_simulation.py
