@@ -50,8 +50,8 @@ def visualize_iteration(iteration):
     plt.imshow(abs(Ex.T), cmap='gist_heat_r',
                extent=[1e6*info.zmin, 1e6*info.zmax, 1e6*info.rmin, 1e6*info.rmax],
                aspect='auto', alpha=0.5)
-    plt.xlabel('$z [$\mu m$]$')
-    plt.ylabel('$x [$\mu m$]$')
+    plt.xlabel('$z [\mu m]$')
+    plt.ylabel('$x [\mu m]$')
 
     plt.subplot(122)
     # Plot of the laser spectrum
