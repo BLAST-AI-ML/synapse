@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import json
 import numpy as np
 import pymongo
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 from openpmd_viewer.addons import LpaDiagnostics
 from scipy.constants import c
 from datetime import datetime
@@ -45,11 +47,28 @@ collection = db["acave"]
 collection.insert_one(data)
 
 # Create plots of the interation
-
 def visualize_iteration(iteration):
-    plt.clf()
 
-    plt.subplot(121)
+    # Prepare figure
+    plt.clf()
+    fig = plt.gcf()
+    gs = GridSpec(2, 2)
+
+    fig.add_subplot(gs[0,:])
+    # Plot of a0, density as a function of z
+    plt.plot( 1e6*z, 1e-6*n )
+    plt.xlabel('z[$\mu m]$')
+    plt.ylabel('Atomic density [$cm^{-3}$]', color='b')
+    # find laser position at the current iteration
+    z0 = z_laser[ np.argmin(abs(ts.iterations-iteration)) ]
+    plt.axvline(x=1e6*z_laser[ np.argmin(abs(ts.iterations-iteration)) ], 
+               color='k', ls='--')
+    plt.twinx()
+    plt.plot( 1e6*z_laser, a0, 'r' )
+    plt.ylabel('a0', color='r')
+    plt.ylim(0,1)
+    
+    fig.add_subplot(gs[1,0])
     # Plot of the laser + ionized electron density
     rho, info = ts.get_field('rho_electrons', iteration=iteration)
     plt.imshow(abs(rho.T), cmap='Blues',
@@ -62,7 +81,7 @@ def visualize_iteration(iteration):
     plt.xlabel('$z [\mu m]$')
     plt.ylabel('$x [\mu m]$')
 
-    plt.subplot(122)
+    fig.add_subplot(gs[1,1])  
     # Plot of the laser spectrum
     S, info = ts.get_spectrum(iteration=iteration, pol='x')
     lambd = 2*np.pi*c/info.omega[1:]
@@ -74,5 +93,5 @@ def visualize_iteration(iteration):
     plt.grid()
     plt.savefig('diags/plots/iteration_%05d.png' % iteration)
 
-plt.figure(figsize=(8, 4))
+plt.figure(figsize=(8, 8))
 ts.iterate( visualize_iteration )

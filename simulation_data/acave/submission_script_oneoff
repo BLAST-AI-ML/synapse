@@ -2,7 +2,6 @@
 
 #SBATCH -t 00:30:00
 #SBATCH -N 3
-#SBATCH -J WarpX
 #SBATCH -A m558_g
 #SBATCH -C gpu
 #SBATCH -q debug
@@ -17,8 +16,8 @@ source $HOME/perlmutter_gpu_warpx.profile
 
 # TODO: adapt directory name
 cd $SCRATCH/2024_IFE-superfacility/simulation_data/acave
-mkdir sim_1
-cd sim_1
+mkdir oneoff_$SLURM_JOB_ID
+cd oneoff_$SLURM_JOB_ID
 
 # Execute python script to prepare lasy file
 ../templates/prepare_simulation.py
