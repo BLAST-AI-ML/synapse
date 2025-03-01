@@ -2,6 +2,7 @@
 
 import os
 import json
+import numpy as np
 import pymongo
 from openpmd_viewer.addons import LpaDiagnostics
 from datetime import datetime
@@ -21,7 +22,7 @@ data['data_directory'] = data_directory
 # Compute average wavelength at the last iteration and add it
 last_iteration = 3500
 S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
-lambda_avg = np.average( 2*np.pi/info.k[1:], weight=S[1:] )
+lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
 data['kHz_thorlab_spectrometer mean_wavelength'] = lambda_avg
 
 # Write to the data base
@@ -31,3 +32,4 @@ db = pymongo.MongoClient(
     password=os.getenv("SF_DB_ADMIN_PASSWORD"),
     authSource="bella_sf")["bella_sf"]
 collection = db["acave"]
+collection.insert_one(data)
