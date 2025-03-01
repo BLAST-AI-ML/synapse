@@ -7,6 +7,7 @@ from lasy.laser import Laser
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 import json
 
 input_params = {
@@ -78,9 +79,9 @@ laser.propagate( -focal_position )
 # Save the laser profile to a file
 laser.write_to_file('laser_profile')
 
+# Produce a plot of the laser profile
 env = laser.grid.get_temporal_field()
 t = np.linspace(-time_window_fs/2*1e-15, time_window_fs/2*1e-15, num_points[1])
-
 plt.figure(figsize=(5, 6))
 
 plt.subplot(211)
@@ -95,4 +96,5 @@ plt.title('Pulse for kHz_Zaber_Compressor Position.Ch1 = %d' %input_params['kHz_
 plt.subplot(212)
 laser.show(cmap='gist_heat_r')
 
-plt.savefig('Initial_laser.png')
+os.mkdir('diags/plots')
+plt.savefig('diags/plots/initial_laser.png')
