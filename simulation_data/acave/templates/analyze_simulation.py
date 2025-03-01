@@ -31,7 +31,7 @@ with open('warpx_used_inputs') as f:
     n0 = float( re.findall('my_constants\.n0 = (\d+)', text)[0] )
     density_function = re.findall('atoms\.density_function\(x,y,z\) = (.+)', text)[0]
 
-# Compute average wavelength at the last iteration and add it
+# Compute average wavelength at the last iteration and add it to the data
 last_iteration = last_step
 S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
 lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
@@ -47,6 +47,20 @@ collection = db["acave"]
 collection.insert_one(data)
 
 # Create plots of the interation
+
+# First compute quantities across the interaction:
+# - Density
+z = np.linspace(0, 400e-6, 1000)
+exp = np.exp
+n = eval( density_function )
+# - a0
+a0 = ts.iterate( ts.get_a0, pol='x')
+# - Mean laser position
+def get_mean_laser_position(iteration):
+    env, info = ts.get_laser_envelope( pol='x', iteration=iteration, slice_across='r' )
+    return np.average( info.z, weights=env )
+z_laser = ts.iterate( get_mean_laser_position )
+
 def visualize_iteration(iteration):
 
     # Prepare figure
