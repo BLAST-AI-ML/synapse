@@ -21,8 +21,16 @@ data['experiment_flag'] = 0
 data['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 data['data_directory'] = data_directory
 
+# Parse the warpx_used_output
+with open('warpx_used_inputs') as f:
+    text = f.read()
+    last_step = int( re.findall('max_step = (\d+)', text)[0] )
+    dens_width = float( re.findall('my_constants\.dens_width = (\d+)', text)[0] )
+    n0 = float( re.findall('my_constants\.n0 = (\d+)', text)[0] )
+    density_function = re.findall('atoms\.density_function\(x,y,z\) = (.+)', text)[0]
+
 # Compute average wavelength at the last iteration and add it
-last_iteration = 3500
+last_iteration = last_step
 S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
 lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
 data['kHz_thorlab_spectrometer mean_wavelength'] = lambda_avg
@@ -37,6 +45,7 @@ collection = db["acave"]
 collection.insert_one(data)
 
 # Create plots of the interation
+
 def visualize_iteration(iteration):
     plt.clf()
 
@@ -58,8 +67,9 @@ def visualize_iteration(iteration):
     S, info = ts.get_spectrum(iteration=iteration, pol='x')
     lambd = 2*np.pi*c/info.omega[1:]
     plt.xlabel(r'Wavelength[$\mu m$]')
-    plt.plot( 1.e6*lambd, S[1:] )
+    plt.plot( 1.e6*lambd, 1e3*S[1:] )
     plt.xlim(0,3)
+    plt.ylim(0,10)
 
     plt.grid()
     plt.savefig('diags/plots/iteration_%05d.png' % iteration)
