@@ -77,7 +77,7 @@ laser = Laser(dimensions, lo, hi, num_points, laser_profile)
 laser.propagate( -focal_position )
 
 # Save the laser profile to a file
-laser.write_to_file('laser_profile', 'bp')
+laser.write_to_file('laser_profile')
 
 # Produce a plot of the laser profile
 env = laser.grid.get_temporal_field()
