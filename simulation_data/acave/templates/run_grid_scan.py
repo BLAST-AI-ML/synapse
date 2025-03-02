@@ -38,7 +38,8 @@ ev_main = TemplateEvaluator(
     sim_template="../templates/warpx_input_script",
     analysis_func=analysis_func_main,
     executable="../templates/warpx.rz",
-    n_gpus=12,  # GPUs per individual evaluation
+    n_gpus=8,  # GPUs per individual evaluation
+    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL, 
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",

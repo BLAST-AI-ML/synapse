@@ -4,7 +4,7 @@ max_step = 21000
 # amr
 amr.max_level = 0
 amr.n_cell = 256 6144
-warpx.numprocs = 1 12
+warpx.numprocs = 1 8
 
 # Parameters of the fitted density
 my_constants.n0 = 2.11e+25 # peak molecular density, in m-3
