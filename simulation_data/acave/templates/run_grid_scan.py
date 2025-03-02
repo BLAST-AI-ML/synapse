@@ -7,12 +7,12 @@ from optimas.explorations import Exploration
 
 # Specify the analysis function.
 def analysis_func_main(work_dir, output_params):
-    output_params['kHz_thorlab_spectrometer mean_wavelength'] = 0
+    output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("kHz_Hexapod_Target ypos", -0.1, 0.1)
-var_2 = VaryingParameter("kHz_Zaber_Compressor Position.Ch1", 50e3, 100e3)
-obj = Objective("kHz_thorlab_spectrometer mean_wavelength", minimize=False)
+var_1 = VaryingParameter("ypos", -0.1, 0.1)
+var_2 = VaryingParameter("ch1", 50e3, 100e3)
+obj = Objective("f", minimize=False)
 
 n_var_1 = 2
 n_var_2 = 2

@@ -19,6 +19,7 @@ mkdir oneoff_$SLURM_JOB_ID
 cd oneoff_$SLURM_JOB_ID
 
 # Execute python script to prepare lasy file
+cp ../templates/retrieval01_spectrum.csv .
 ../templates/prepare_simulation.py
 
 # Launch warpx simulation

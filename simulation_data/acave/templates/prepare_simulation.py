@@ -16,11 +16,16 @@ try:
 except ImportError:
     rank = 0
 
+input_params = {
+    'kHz_Hexapod_Target ypos': {{ypos}},
+    'kHz_Zaber_Compressor Position.Ch1': {{ch1}},
+}
+
 def create_laser_pulse():
 
     input_params = {
-        'kHz_Hexapod_Target ypos': {{kHz_Hexapod_Target ypos}},
-        'kHz_Zaber_Compressor Position.Ch1': {{kHz_Zaber_Compressor Position.Ch1}},
+        'kHz_Hexapod_Target ypos': {{ypos}},
+        'kHz_Zaber_Compressor Position.Ch1': {{ch1}},
     }
 
     # Dump input parameters, to be read in analysis file
@@ -28,7 +33,7 @@ def create_laser_pulse():
         json.dump(input_params, file, indent=4)
 
     # Get laser spectral intensity, including phase
-    df_specint = pd.read_csv('../templates/retrieval01_spectrum.csv')
+    df_specint = pd.read_csv('retrieval01_spectrum.csv')
     lambda_range = lambda_range = df_specint['Wavelength[nm]'].values * 1e-9
     intensity = np.maximum( df_specint['Intensity[normalized]'].values, 0 ) # Make sure intensity is non-negative
     phase = df_specint['Phase[rad]'].values
