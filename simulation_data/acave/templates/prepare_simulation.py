@@ -19,8 +19,8 @@ except ImportError:
 def create_laser_pulse():
 
     input_params = {
-        'kHz_Hexapod_Target ypos': {{ypos}},
-        'kHz_Zaber_Compressor Position.Ch1': {{ch1}},
+        'kHz_Hexapod_Target ypos': 0,
+        'kHz_Zaber_Compressor Position.Ch1': 75e3,
     }
 
     # Dump input parameters, to be read in analysis file
@@ -82,10 +82,10 @@ def create_laser_pulse():
     laser = Laser(dimensions, lo, hi, num_points, laser_profile)
 
     # Propagate laser to its position of injection in the simulation
-    laser.propagate( -focal_position )
+    laser.propagate( -focal_position, show_progress=False )
 
     # Save the laser profile to a file
-    laser.write_to_file('laser_profile')
+    laser.write_to_file('laser_profile', 'bp')
 
     # Produce a plot of the laser profile
     env = laser.grid.get_temporal_field()
@@ -104,7 +104,7 @@ def create_laser_pulse():
     plt.subplot(212)
     laser.show(cmap='gist_heat_r')
 
-    os.mkdir('diags/plots')
+    os.mkdir('diags/plots', exist_ok=True)
     plt.savefig('diags/plots/initial_laser.png')
 
 if __name__ == '__main__':
@@ -112,5 +112,6 @@ if __name__ == '__main__':
     # When this script is called in optimas
     # it might be run by multiple processes
     # but we only need to run it once
+    print(rank)
     if rank == 0:
         create_laser_pulse()

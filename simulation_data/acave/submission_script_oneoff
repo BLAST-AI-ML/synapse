@@ -27,7 +27,7 @@ export SRUN_CPUS_PER_TASK=16
 GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
 srun --cpu-bind=cores bash -c "
     export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
-    ../templates/warpx.rz ../templates/template_inputs ${GPU_AWARE_MPI} > output.txt"
+    ../templates/warpx.rz ../templates/warpx_input_script ${GPU_AWARE_MPI} > output.txt"
 
 # Execute analysis script
 ../templates/analyze_simulation.py
