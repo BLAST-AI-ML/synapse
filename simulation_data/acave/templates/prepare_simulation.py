@@ -16,11 +16,6 @@ try:
 except ImportError:
     rank = 0
 
-input_params = {
-    'kHz_Hexapod_Target ypos': {{ypos}},
-    'kHz_Zaber_Compressor Position.Ch1': {{ch1}},
-}
-
 def create_laser_pulse():
 
     input_params = {
