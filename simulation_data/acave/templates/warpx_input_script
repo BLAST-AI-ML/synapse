@@ -64,7 +64,7 @@ laser1.a0 = 1.
 laser1.profile      = from_file
 laser1.polarization = 1 0 0
 laser1.position = 0.0 0.0 -1e-9
-laser1.lasy_file_name = "diags/laser_profile_00000.h5"
+laser1.lasy_file_name = "diags/laser_profile_00000.bp"
 laser1.wavelength = 8e-07
 
 # moving window
