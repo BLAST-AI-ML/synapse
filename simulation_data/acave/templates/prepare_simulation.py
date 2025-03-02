@@ -11,8 +11,8 @@ import os
 import json
 
 input_params = {
-    'kHz_Hexapod_Target ypos': 0,
-    'kHz_Zaber_Compressor Position.Ch1': 50e3,
+    'kHz_Hexapod_Target ypos': {{kHz_Hexapod_Target ypos}},
+    'kHz_Zaber_Compressor Position.Ch1': {{kHz_Zaber_Compressor Position.Ch1}},
 }
 
 # Dump input parameters, to be read in analysis file
