@@ -19,8 +19,8 @@ except ImportError:
 def create_laser_pulse():
 
     input_params = {
-        'kHz_Hexapod_Target ypos': -0.1,
-        'kHz_Zaber_Compressor Position.Ch1': 75e3,
+        'kHz_Hexapod_Target ypos': {{ypos}},
+        'kHz_Zaber_Compressor Position.Ch1': {{ch1}},
     }
 
     # Dump input parameters, to be read in analysis file
@@ -112,6 +112,5 @@ if __name__ == '__main__':
     # When this script is called in optimas
     # it might be run by multiple processes
     # but we only need to run it once
-    print(rank)
     if rank == 0:
         create_laser_pulse()

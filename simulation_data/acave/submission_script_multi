@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH -t 00:05:00
+#SBATCH -t 00:10:00
 #SBATCH -N 6
 #SBATCH -A m558_g
 #SBATCH -q debug
