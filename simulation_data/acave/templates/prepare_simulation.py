@@ -19,7 +19,7 @@ except ImportError:
 def create_laser_pulse():
 
     input_params = {
-        'kHz_Hexapod_Target ypos': 0,
+        'kHz_Hexapod_Target ypos': -0.1,
         'kHz_Zaber_Compressor Position.Ch1': 75e3,
     }
 
@@ -85,7 +85,7 @@ def create_laser_pulse():
     laser.propagate( -focal_position, show_progress=False )
 
     # Save the laser profile to a file
-    laser.write_to_file('laser_profile', 'bp')
+    laser.write_to_file('laser_profile', 'h5')
 
     # Produce a plot of the laser profile
     env = laser.grid.get_temporal_field()
@@ -104,7 +104,7 @@ def create_laser_pulse():
     plt.subplot(212)
     laser.show(cmap='gist_heat_r')
 
-    os.mkdir('diags/plots', exist_ok=True)
+    os.makedirs('diags/plots', exist_ok=True)
     plt.savefig('diags/plots/initial_laser.png')
 
 if __name__ == '__main__':

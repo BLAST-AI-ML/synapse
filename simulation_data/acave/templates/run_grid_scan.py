@@ -33,6 +33,7 @@ ev_pre = TemplateEvaluator(
     sim_files=[
         "../templates/retrieval01_spectrum.csv"
     ],
+    n_procs=1
 )
 ev_main = TemplateEvaluator(
     sim_template="../templates/warpx_input_script",
@@ -43,6 +44,7 @@ ev_main = TemplateEvaluator(
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",
+    n_procs=1
 )
 
 # Create chain of evaluators
