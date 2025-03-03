@@ -7,10 +7,11 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install any needed packages specified in environment.yml
-RUN conda env create -f gui.yml
+# Install any needed packages specified in the environment file
+RUN conda install -c conda-forge conda-lock \
+    && conda-lock install --name gui gui-lock.yml
 
-# activate env in interactive and CMD use
+# Activate env in interactive and CMD use
 COPY entrypoint.sh /entrypoint.sh
 RUN echo "source entrypoint.sh" >> ~/.bashrc
 RUN chmod +x /entrypoint.sh
@@ -23,7 +24,5 @@ EXPOSE 8080
 # NOTE The URL http://0.0.0.0:8080/ is used by the application to indicate that
 #      it is listening on all network interfaces inside the container, but you
 #      should access it via http://localhost:8080/ from your host machine
-CMD ["python", "app.py", "--port", "8080", "--host", "0.0.0.0", "--server", \
-     "--experiment", "/app/experimental_data/experimental_data.csv", \
-     "--simulation", "/app/simulation_data/simulation_data.csv", \
-     "--model", "/app/ml/NN_training/base_simulation_model_with_transformers_calibration.yml"]
+CMD ["python", "app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server", \
+     "--model", "/app/ml/NN_training/base_simulation_model_with_transformers_new.yml"]

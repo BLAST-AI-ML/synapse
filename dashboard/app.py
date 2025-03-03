@@ -2,13 +2,16 @@ import argparse
 import pandas as pd
 import torch
 from trame.app import get_server
-from trame.ui.vuetify2 import SinglePageLayout
-from trame.widgets import plotly, vuetify2 as v2
+from trame.ui.router import RouterViewLayout
+from trame.ui.vuetify2 import SinglePageWithDrawerLayout
+from trame.widgets import plotly, router, vuetify2 as v2
 
 from model import Model
 from parameters import Parameters
 from objectives import Objectives
-from utils import read_variables, plot
+from nersc import build_nersc
+from utils import read_variables, load_database, plot
+
 
 # -----------------------------------------------------------------------------
 # Command line parser
@@ -16,18 +19,6 @@ from utils import read_variables, plot
 
 # define parser
 parser = argparse.ArgumentParser()
-# add arguments: path to experimental data
-parser.add_argument(
-    "--experiment",
-    help="path to experimental data file (CSV)",
-    type=str,
-)
-# add arguments: path to simulation data
-parser.add_argument(
-    "--simulation",
-    help="path to simulation data file (CSV)",
-    type=str,
-)
 # add arguments: path to model data
 parser.add_argument(
     "--model",
@@ -55,12 +46,11 @@ input_variables, output_variables = read_variables("variables.yml")
 
 # set file paths
 model_data = args.model
-experimental_file = args.experiment
-simulation_file = args.simulation
 
-# initialize data
-experimental_data = pd.read_csv(experimental_file)
-simulation_data = pd.read_csv(simulation_file)
+config, experimental_docs, simulation_docs = load_database()
+# convert database documents into pandas DataFrames
+experimental_data = pd.DataFrame(experimental_docs)
+simulation_data = pd.DataFrame(simulation_docs)
 
 # initialize model
 model = Model(server, model_data)
@@ -76,6 +66,9 @@ state.opacity = 0.1
 
 # calibration of simulation data
 state.is_calibrated = False
+
+# terminal output for NERSC control
+state.sfapi_output = ""
 
 # -----------------------------------------------------------------------------
 # Callbacks
@@ -107,9 +100,9 @@ def pre_calibration():
     output_transformers = model.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
-    # de-normalize simulation data
+    # normalize simulation data
     n_protons_tensor = torch.from_numpy(simulation_data["n_protons"].values)
-    n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+    n_protons_tensor = output_normalization.transform(n_protons_tensor)
     return (output_calibration, output_normalization, n_protons_tensor)
 
 # TODO encapsulate in simulation class?
@@ -118,9 +111,9 @@ def apply_calibration():
     if not state.is_calibrated:
         # prepare
         output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and re-normalize simulation data
-        n_protons_tensor = output_calibration.transform(n_protons_tensor)
-        n_protons_tensor = output_normalization.transform(n_protons_tensor)
+        # calibrate, and denormalize simulation data
+        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
+        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
         simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
         # update plots (TODO plots.update())
         update_plots()
@@ -133,9 +126,9 @@ def undo_calibration():
     if state.is_calibrated:
         # prepare
         output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and re-normalize simulation data
-        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
-        n_protons_tensor = output_normalization.transform(n_protons_tensor)
+        # calibrate, and denormalize simulation data
+        n_protons_tensor = output_calibration.transform(n_protons_tensor)
+        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
         simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
         # update plots (TODO plots.update())
         update_plots()
@@ -146,118 +139,110 @@ def undo_calibration():
 # GUI
 # -----------------------------------------------------------------------------
 
-with SinglePageLayout(server) as layout:
+# home route
+with RouterViewLayout(server, "/"):
+    with v2.VRow():
+        with v2.VCol(cols=4):
+            with v2.VRow():
+                with v2.VCol():
+                    parameters.card()
+            with v2.VRow():
+                with v2.VCol():
+                    objectives.card()
+            with v2.VRow():
+                with v2.VCol():
+                    with v2.VCard():
+                        with v2.VCardTitle("Control"):
+                            with v2.VCardText():
+                                with v2.VRow():
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "Apply Calibration",
+                                            click=apply_calibration,
+                                            style="width: 100%; text-transform: none;",
+                                        )
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "Undo Calibration",
+                                            click=undo_calibration,
+                                            style="width: 100%; text-transform: none;",
+                                        )
+                                with v2.VRow():
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "Recenter",
+                                            click=parameters.recenter,
+                                            style="width: 100%; text-transform: none;",
+                                        )
+                                    with v2.VCol():
+                                        v2.VBtn(
+                                            "Optimize",
+                                            click=model.optimize,
+                                            style="width: 100%; text-transform: none;",
+                                        )
+        with v2.VCol(cols=8):
+            with v2.VCard():
+                with v2.VCardTitle("Plots"):
+                    with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
+                        plotly_figure = plotly.Figure(
+                                display_mode_bar="true", config={"responsive": True}
+                        )
+                        ctrl.plotly_figure_update = plotly_figure.update
+                    # opacity slider
+                    with v2.VCardText():
+                        v2.VSlider(
+                            v_model_number=("opacity",),
+                            change="flushState('opacity')",
+                            label="Opacity",
+                            min=0.0,
+                            max=1.0,
+                            step=0.1,
+                            classes="align-center",
+                            hide_details=True,
+                            style="width: 200px",
+                            thumb_label="always",
+                            thumb_size=25,
+                            type="number",
+                        )
+
+# NERSC route
+build_nersc()
+
+
+# main page content
+with SinglePageWithDrawerLayout(server) as layout:
     layout.title.set_text("IFE Superfacility")
 
+    # add toolbar components
     with layout.toolbar:
-        # toolbar components
         pass
 
     with layout.content:
-        # content components
         with v2.VContainer():
-            with v2.VRow():
-                with v2.VCol():
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Parameters"):
-                                    with v2.VCardText():
-                                        for key in parameters.get().keys():
-                                            pmin = parameters.get_min()[key]
-                                            pmax = parameters.get_max()[key]
-                                            step = (pmax - pmin) / 100.
-                                            # create slider for each parameter
-                                            with v2.VSlider(
-                                                v_model_number=(f"parameters['{key}']",),
-                                                change="flushState('parameters')",
-                                                label=key,
-                                                min=pmin,
-                                                max=pmax,
-                                                step=step,
-                                                classes="align-center",
-                                                hide_details=True,
-                                                type="number",
-                                            ):
-                                                # append text field
-                                                with v2.Template(v_slot_append=True):
-                                                    v2.VTextField(
-                                                        v_model_number=(f"parameters['{key}']",),
-                                                        label=key,
-                                                        density="compact",
-                                                        hide_details=True,
-                                                        readonly=True,
-                                                        single_line=True,
-                                                        style="width: 100px",
-                                                        type="number",
-                                                    )
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Objectives"):
-                                    with v2.VCardText():
-                                        for key in objectives.get().keys():
-                                            v2.VTextField(
-                                                v_model_number=(f"objectives['{key}']",),
-                                                label=key,
-                                                readonly=True,
-                                                type="number",
-                                            )
-                    with v2.VRow():
-                        with v2.VCol():
-                            with v2.VCard(style="width: 500px"):
-                                with v2.VCardTitle("Control"):
-                                    with v2.VCardText():
-                                        with v2.VRow():
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "recenter",
-                                                    click=parameters.recenter,
-                                                    style="width: 200px",
-                                                )
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "optimize",
-                                                    click=model.optimize,
-                                                    style="width: 200px",
-                                                )
-                                        with v2.VRow():
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "apply calibration",
-                                                    click=apply_calibration,
-                                                    style="width: 200px",
-                                                )
-                                            with v2.VCol():
-                                                v2.VBtn(
-                                                    "undo calibration",
-                                                    click=undo_calibration,
-                                                    style="width: 200px",
-                                                )
-                with v2.VCol():
-                    with v2.VCard():
-                        with v2.VCardTitle("Plots"):
-                            with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
-                                plotly_figure = plotly.Figure(
-                                        display_mode_bar="true", config={"responsive": True}
-                                )
-                                ctrl.plotly_figure_update = plotly_figure.update
-                            # opacity slider
-                            with v2.VCardText():
-                                v2.VSlider(
-                                    v_model_number=("opacity",),
-                                    change="flushState('opacity')",
-                                    label="OPACITY",
-                                    min=0.0,
-                                    max=1.0,
-                                    step=0.1,
-                                    classes="align-center",
-                                    hide_details=True,
-                                    style="width: 200px",
-                                    thumb_label="always",
-                                    thumb_size=25,
-                                    type="number",
-                                )
+            router.RouterView()
+
+    # add router components to the drawer
+    with layout.drawer:
+        with v2.VList(shaped=True, v_model=("selectedRoute", 0)):
+            v2.VSubheader("")
+
+            with v2.VListItem(to="/"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-home")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("Home")
+
+            with v2.VListItem(to="/nersc"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-lan-connect")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("NERSC")
+
+            with v2.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-github")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("GitHub")
 
 # -----------------------------------------------------------------------------
 # Main
