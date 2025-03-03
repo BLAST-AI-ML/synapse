@@ -14,9 +14,9 @@ var_1 = VaryingParameter("ypos", -0.1, 0.1)
 var_2 = VaryingParameter("ch1", 50e3, 100e3)
 obj = Objective("f", minimize=False)
 
-n_var_1 = 2
-n_var_2 = 2
-sim_workers = 2
+n_var_1 = 5
+n_var_2 = 5
+sim_workers = 5
 
 n_total = n_var_1 * n_var_2
 
