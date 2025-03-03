@@ -1,4 +1,5 @@
 ip2:
+
   input_variables:
     input1:
         name: "TOD_fs3"
@@ -38,7 +39,7 @@ acave:
         default: 75e3
         value_range: [0., 150e3]
 
-output_variables:
-  output1:
-    name: "kHz_thorlab_spectrometer mean_wavelength"
-    type: scalar
+  output_variables:
+    output1:
+      name: "kHz_thorlab_spectrometer mean_wavelength"
+      type: scalar
