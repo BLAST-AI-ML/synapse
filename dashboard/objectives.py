@@ -1,4 +1,4 @@
-from trame.widgets import vuetify2 as v2
+from trame.widgets import vuetify3 as vuetify
 
 class Objectives:
     def __init__(self, server, model, output_variables):
@@ -25,11 +25,11 @@ class Objectives:
         self.__state.dirty("objectives")
 
     def card(self):
-        with v2.VCard():
-            with v2.VCardTitle("Objectives"):
-                with v2.VCardText():
+        with vuetify.VCard():
+            with vuetify.VCardTitle("Objectives"):
+                with vuetify.VCardText():
                     for key in self.__state.objectives.keys():
-                        v2.VTextField(
+                        vuetify.VTextField(
                             v_model_number=(f"objectives['{key}']",),
                             label=key,
                             readonly=True,

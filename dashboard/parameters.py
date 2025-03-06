@@ -1,4 +1,4 @@
-from trame.widgets import vuetify2 as v2
+from trame.widgets import vuetify3 as vuetify
 
 class Parameters:
 
@@ -42,15 +42,15 @@ class Parameters:
         self.__state.dirty("parameters")
 
     def card(self):
-        with v2.VCard():
-            with v2.VCardTitle("Parameters"):
-                with v2.VCardText():
+        with vuetify.VCard():
+            with vuetify.VCardTitle("Parameters"):
+                with vuetify.VCardText():
                     for key in self.__state.parameters.keys():
                         pmin = self.__state.parameters_min[key]
                         pmax = self.__state.parameters_max[key]
                         step = (pmax - pmin) / 100.
                         # create slider for each parameter
-                        with v2.VSlider(
+                        with vuetify.VSlider(
                             v_model_number=(f"parameters['{key}']",),
                             change="flushState('parameters')",
                             label=key,
@@ -62,8 +62,8 @@ class Parameters:
                             type="number",
                         ):
                             # append text field
-                            with v2.Template(v_slot_append=True):
-                                v2.VTextField(
+                            with vuetify.Template(v_slot_append=True):
+                                vuetify.VTextField(
                                     v_model_number=(f"parameters['{key}']",),
                                     label=key,
                                     density="compact",
