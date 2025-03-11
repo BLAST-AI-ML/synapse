@@ -1,4 +1,4 @@
-from trame.widgets import vuetify3 as vuetify
+from trame.widgets import client, vuetify3 as vuetify
 
 class Parameters:
 
@@ -45,32 +45,30 @@ class Parameters:
         with vuetify.VCard():
             with vuetify.VCardTitle("Parameters"):
                 with vuetify.VCardText():
-                    for key in self.__state.parameters.keys():
-                        pmin = self.__state.parameters_min[key]
-                        pmax = self.__state.parameters_max[key]
-                        step = (pmax - pmin) / 100.
-                        # create slider for each parameter
-                        with vuetify.VSlider(
-                            v_model_number=(f"parameters['{key}']",),
-                            change="flushState('parameters')",
-                            label=key,
-                            min=pmin,
-                            max=pmax,
-                            step=step,
-                            classes="align-center",
-                            hide_details=True,
-                            type="number",
-                        ):
-                            # append text field
-                            with vuetify.Template(v_slot_append=True):
-                                vuetify.VTextField(
-                                    v_model_number=(f"parameters['{key}']",),
-                                    label=key,
-                                    density="compact",
-                                    hide_details=True,
-                                    readonly=True,
-                                    single_line=True,
-                                    style="width: 100px",
-                                    type="number",
-                                )
-
+                    with client.DeepReactive("parameters") as dr:
+                        for key in self.__state.parameters.keys():
+                            pmin = self.__state.parameters_min[key]
+                            pmax = self.__state.parameters_max[key]
+                            step = (pmax - pmin) / 100.
+                            with vuetify.VSlider(
+                                v_model_number=(f"parameters['{key}']",),
+                                label=key,
+                                min=pmin,
+                                max=pmax,
+                                step=step,
+                                classes="align-center",
+                                hide_details=True,
+                                type="number",
+                            ):
+                                # append text field
+                                with vuetify.Template(v_slot_append=True):
+                                    vuetify.VTextField(
+                                        v_model_number=(f"parameters['{key}']",),
+                                        label=key,
+                                        density="compact",
+                                        hide_details=True,
+                                        readonly=True,
+                                        single_line=True,
+                                        style="width: 100px",
+                                        type="number",
+                                    )
