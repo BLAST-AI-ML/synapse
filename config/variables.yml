@@ -10,8 +10,8 @@ ip2:
     input2:
         name: "GVD"
         type: scalar
-        default: 13.6
-        value_range: [13.2, 14.0]
+        default: 13.5
+        value_range: [13.0, 14.0]
 
     input3:
         name: "z_target_um"
