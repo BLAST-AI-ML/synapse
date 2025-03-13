@@ -50,25 +50,23 @@ class Parameters:
                             pmin = self.__state.parameters_min[key]
                             pmax = self.__state.parameters_max[key]
                             step = (pmax - pmin) / 100.
-                            with vuetify.VSlider(
-                                v_model_number=(f"parameters['{key}']",),
-                                label=key,
-                                min=pmin,
-                                max=pmax,
-                                step=step,
-                                classes="align-center",
-                                hide_details=True,
-                                type="number",
-                            ):
-                                # append text field
-                                with vuetify.Template(v_slot_append=True):
-                                    vuetify.VTextField(
-                                        v_model_number=(f"parameters['{key}']",),
-                                        label=key,
-                                        density="compact",
-                                        hide_details=True,
-                                        readonly=True,
-                                        single_line=True,
-                                        style="width: 100px",
-                                        type="number",
-                                    )
+                            # create a row for the text field
+                            with vuetify.VRow():
+                                vuetify.VTextField(
+                                    v_model_number=(f"parameters['{key}']",),
+                                    label=key,
+                                    readonly=True,
+                                    type="number",
+                                    classes="mt-2 mb-0",
+                                )
+                            # create a row for the slider
+                            with vuetify.VRow(no_gutters=True, classes="py-0"):
+                                vuetify.VSlider(
+                                    v_model_number=(f"parameters['{key}']",),
+                                    min=pmin,
+                                    max=pmax,
+                                    step=step,
+                                    classes="mt-0",
+                                    hide_details=True,
+                                    type="number",
+                                )

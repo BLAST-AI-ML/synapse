@@ -29,9 +29,11 @@ class Objectives:
             with vuetify.VCardTitle("Objectives"):
                 with vuetify.VCardText():
                     for key in self.__state.objectives.keys():
-                        vuetify.VTextField(
-                            v_model_number=(f"objectives['{key}']",),
-                            label=key,
-                            readonly=True,
-                            type="number",
-                        )
+                        with vuetify.VRow():
+                            vuetify.VTextField(
+                                v_model_number=(f"objectives['{key}']",),
+                                label=key,
+                                readonly=True,
+                                type="number",
+                                classes="mt-2",
+                            )
