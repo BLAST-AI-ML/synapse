@@ -1,4 +1,5 @@
 import argparse
+import os
 import pandas as pd
 import torch
 from trame.app import get_server
@@ -19,10 +20,11 @@ from utils import read_variables, load_database, plot
 
 # define parser
 parser = argparse.ArgumentParser()
-# add arguments: path to model data
+# add arguments: path to model file
 parser.add_argument(
     "--model",
-    help="path to model data file (YAML)",
+    help="path to model data file (.yml)",
+    required=True,
     type=str,
 )
 # parse arguments (ignore unknown arguments for internal Trame parser)
@@ -42,7 +44,9 @@ state.trame__title = "IFE Superfacility"
 # -----------------------------------------------------------------------------
 
 # read input and output variables
-input_variables, output_variables = read_variables("variables.yml")
+current_dir = os.getcwd()
+config_file = os.path.join(current_dir, "..", "config", "variables.yml")
+input_variables, output_variables = read_variables(config_file)
 
 # set file paths
 model_data = args.model

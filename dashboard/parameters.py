@@ -73,4 +73,3 @@ class Parameters:
                                     style="width: 100px",
                                     type="number",
                                 )
-

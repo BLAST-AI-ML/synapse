@@ -8,16 +8,17 @@ import pymongo
 import torch
 import yaml
 
-def read_variables(yaml_file):
-    # read YAML file
-    with open(yaml_file) as f:
-        yaml_str = f.read()
-    # load YAML dictionary
-    yaml_dict = yaml.safe_load(yaml_str)
+def read_variables(config_file):
+    # read configuration file
+    with open(config_file) as f:
+        config_str = f.read()
+    # load configuration dictionary
+    config_dict = yaml.safe_load(config_str)
+    config_spec = config_dict["ip2"]  # FIXME pass key as function argument
     # dictionary of input variables (parameters)
-    input_variables = yaml_dict["input_variables"]
+    input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
-    output_variables = yaml_dict["output_variables"]
+    output_variables = config_spec["output_variables"]
     return (input_variables, output_variables)
 
 db = None
