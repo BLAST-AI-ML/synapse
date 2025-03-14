@@ -88,8 +88,12 @@ def plot(
     parameters_min = parameters.get_min()
     parameters_max = parameters.get_max()
     objectives_dict = objectives.get()
-    # FIXME generalize for multiple objectives
-    objective_name = list(objectives_dict.keys())[0]
+    try:
+        # FIXME generalize for multiple objectives
+        objective_name = list(objectives_dict.keys())[0]
+    except Exception as e:
+        print(f"utils.plot: {e}")
+        objective_name = ""
     # load experimental data
     df_exp = experimental_data
     df_sim = simulation_data
@@ -154,30 +158,31 @@ def plot(
             )
         #----------------------------------------------------------------------
         # figure trace from model data
-        input_dict_loc = dict()
-        steps = 1000
-        input_dict_loc[key.split(maxsplit=1)[0]] = torch.linspace(
-            start=parameters_min[key],
-            end=parameters_max[key],
-            steps=steps,
-        )
-        for subkey in [subkey for subkey in parameters_dict.keys() if subkey != key]:
-            input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters_dict[subkey] * torch.ones(steps)
-        y = model.evaluate(input_dict_loc)
-        # scatter plot
-        mod_trace = go.Scatter(
-            x=input_dict_loc[key.split(maxsplit=1)[0]],
-            y=y,
-            line=dict(color="orange"),
-            name="ML Model",
-            showlegend=(True if i==0 else False),
-        )
-        # add trace
-        fig.add_trace(
-            mod_trace,
-            row=this_row,
-            col=this_col,
-        )
+        if model.avail():
+            input_dict_loc = dict()
+            steps = 1000
+            input_dict_loc[key.split(maxsplit=1)[0]] = torch.linspace(
+                start=parameters_min[key],
+                end=parameters_max[key],
+                steps=steps,
+            )
+            for subkey in [subkey for subkey in parameters_dict.keys() if subkey != key]:
+                input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters_dict[subkey] * torch.ones(steps)
+            y = model.evaluate(input_dict_loc)
+            # scatter plot
+            mod_trace = go.Scatter(
+                x=input_dict_loc[key.split(maxsplit=1)[0]],
+                y=y,
+                line=dict(color="orange"),
+                name="ML Model",
+                showlegend=(True if i==0 else False),
+            )
+            # add trace
+            fig.add_trace(
+                mod_trace,
+                row=this_row,
+                col=this_col,
+            )
         #----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(

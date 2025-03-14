@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--model",
     help="path to model data file (.yml)",
-    required=True,
+    default=None,
     type=str,
 )
 # parse arguments (ignore unknown arguments for internal Trame parser)
@@ -112,32 +112,40 @@ def pre_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
-    if not state.is_calibrated:
-        # prepare
-        output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and denormalize simulation data
-        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
-        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-        simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-        # update plots (TODO plots.update())
-        update_plots()
-        # update state
-        state.is_calibrated = True
+    if model.avail():
+        if not state.is_calibrated:
+            # prepare
+            output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+            # calibrate, and denormalize simulation data
+            n_protons_tensor = output_calibration.untransform(n_protons_tensor)
+            n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+            simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
+            # update plots (TODO plots.update())
+            update_plots()
+            # update state
+            state.is_calibrated = True
+    else:
+        print("app.apply_calibration: Model not provided, skip calibration")
+        return
 
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
 def undo_calibration():
-    if state.is_calibrated:
-        # prepare
-        output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and denormalize simulation data
-        n_protons_tensor = output_calibration.transform(n_protons_tensor)
-        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-        simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-        # update plots (TODO plots.update())
-        update_plots()
-        # update state
-        state.is_calibrated = False
+    if model.avail():
+        if state.is_calibrated:
+            # prepare
+            output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+            # calibrate, and denormalize simulation data
+            n_protons_tensor = output_calibration.transform(n_protons_tensor)
+            n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+            simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
+            # update plots (TODO plots.update())
+            update_plots()
+            # update state
+            state.is_calibrated = False
+    else:
+        print("app.undo_calibration: Model not provided, skip calibration")
+        return
 
 # -----------------------------------------------------------------------------
 # GUI

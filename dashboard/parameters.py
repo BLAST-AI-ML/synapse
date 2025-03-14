@@ -18,8 +18,6 @@ class Parameters:
             self.__state.parameters[key] = pval
             self.__state.parameters_min[key] = pmin
             self.__state.parameters_max[key] = pmax
-        ## TODO decorate method 'recenter'?
-        #self.recenter = self.__ctrl.add("recenter")(self.recenter)
 
     def get(self):
         return self.__state.parameters
