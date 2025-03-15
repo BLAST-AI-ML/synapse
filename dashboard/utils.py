@@ -8,13 +8,13 @@ import pymongo
 import torch
 import yaml
 
-def read_variables(config_file):
+def read_variables(config_file, experiment):
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
-    config_spec = config_dict["ip2"]  # FIXME pass key as function argument
+    config_spec = config_dict[experiment]
     # dictionary of input variables (parameters)
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
@@ -33,7 +33,6 @@ def load_database():
         "name": "bella_sf",
         "auth": "bella_sf",
         "user": "bella_sf_admin",
-        "collection": "ip2",
     }
 
     # read database information from environment variables (if unset, use defaults)
@@ -42,7 +41,10 @@ def load_database():
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    db_collection = os.getenv("SF_DB_COLLECTION", db_defaults["collection"])
+    # read database experiment from environment variable (no default provided)
+    db_collection = os.getenv("SF_DB_EXPERIMENT")
+    if db_collection is None:
+        raise RuntimeError("Environment variable SF_DB_EXPERIMENT must be set!")
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
@@ -73,7 +75,7 @@ def load_database():
     # separate documents: experimental and simulation
     experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (config, experimental_docs, simulation_docs)
+    return (config, db_collection, experimental_docs, simulation_docs)
 
 # plot experimental, simulation, and ML data
 def plot(

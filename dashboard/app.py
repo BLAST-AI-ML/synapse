@@ -43,20 +43,20 @@ state.trame__title = "IFE Superfacility"
 # Initialize state
 # -----------------------------------------------------------------------------
 
-# read input and output variables
-current_dir = os.getcwd()
-config_file = os.path.join(current_dir, "..", "config", "variables.yml")
-input_variables, output_variables = read_variables(config_file)
-
-# set file paths
-model_data = args.model
-
-config, experimental_docs, simulation_docs = load_database()
+# initialize database
+# data = DataBase(server)  # TODO
+config, experiment, experimental_docs, simulation_docs = load_database()
 # convert database documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
 simulation_data = pd.DataFrame(simulation_docs)
 
+# read input and output variables
+current_dir = os.getcwd()
+config_file = os.path.join(current_dir, "..", "config", "variables.yml")
+input_variables, output_variables = read_variables(config_file, experiment)
+
 # initialize model
+model_data = args.model
 model = Model(server, model_data)
 
 # initialize parameters

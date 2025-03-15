@@ -15,7 +15,7 @@ state, ctrl = server.state, server.controller
 
 
 def get_sfapi_config():
-    config, _, _ = load_database()
+    config, _, _, _ = load_database()
 
     # restore private key from DB
     sfapi = config.find_one({"name": "sfapi"})
