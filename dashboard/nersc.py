@@ -197,7 +197,7 @@ def build_sfapi_auth():
                                     )
 
 
-def build_nersc():
+def nersc_route():
     if get_sfapi_client() is not None:
         build_sfapi_status()
     else:

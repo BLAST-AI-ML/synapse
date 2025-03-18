@@ -10,7 +10,8 @@ from trame.widgets import plotly, router, vuetify2 as v2
 from model import Model
 from parameters import Parameters
 from objectives import Objectives
-from nersc import build_nersc
+from nersc import nersc_route
+from state_manager import server, state, ctrl, init_state
 from utils import read_variables, load_database, plot
 
 
@@ -31,20 +32,12 @@ parser.add_argument(
 args, _ = parser.parse_known_args()
 
 # -----------------------------------------------------------------------------
-# Trame initialization 
-# -----------------------------------------------------------------------------
-
-server = get_server(client_type="vue2")
-state, ctrl = server.state, server.controller
-
-state.trame__title = "IFE Superfacility"
-
-# -----------------------------------------------------------------------------
 # Initialize state
 # -----------------------------------------------------------------------------
 
+init_state()
+
 # initialize database
-# data = DataBase(server)  # TODO
 config, experiment, experimental_docs, simulation_docs = load_database()
 # convert database documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
@@ -65,13 +58,8 @@ parameters = Parameters(server, input_variables)
 # initialize objectives
 objectives = Objectives(server, model, output_variables)
 
-# initialize opacity controller
-state.opacity = 0.1
-
-# calibration of simulation data
-state.is_calibrated = False
-
 # terminal output for NERSC control
+# TODO move to state_manager module
 state.sfapi_output = ""
 
 # -----------------------------------------------------------------------------
@@ -88,7 +76,7 @@ def update_plots(**kwargs):
         simulation_data,
         state.opacity,
     )
-    ctrl.plotly_figure_update = plotly_figure.update(fig)
+    ctrl.plotly_figure_update(fig)
 
 @state.change("parameters")
 def update_state(**kwargs):
@@ -152,74 +140,75 @@ def undo_calibration():
 # -----------------------------------------------------------------------------
 
 # home route
-with RouterViewLayout(server, "/"):
-    with v2.VRow():
-        with v2.VCol(cols=4):
-            with v2.VRow():
-                with v2.VCol():
-                    parameters.card()
-            with v2.VRow():
-                with v2.VCol():
-                    objectives.card()
-            with v2.VRow():
-                with v2.VCol():
-                    with v2.VCard():
-                        with v2.VCardTitle("Control"):
-                            with v2.VCardText():
-                                with v2.VRow():
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Apply Calibration",
-                                            click=apply_calibration,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Undo Calibration",
-                                            click=undo_calibration,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                with v2.VRow():
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Recenter",
-                                            click=parameters.recenter,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Optimize",
-                                            click=model.optimize,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-        with v2.VCol(cols=8):
-            with v2.VCard():
-                with v2.VCardTitle("Plots"):
-                    with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
-                        plotly_figure = plotly.Figure(
-                                display_mode_bar="true", config={"responsive": True}
-                        )
-                        ctrl.plotly_figure_update = plotly_figure.update
-                    # opacity slider
-                    with v2.VCardText():
-                        v2.VSlider(
-                            v_model_number=("opacity",),
-                            change="flushState('opacity')",
-                            label="Opacity",
-                            min=0.0,
-                            max=1.0,
-                            step=0.1,
-                            classes="align-center",
-                            hide_details=True,
-                            style="width: 200px",
-                            thumb_label="always",
-                            thumb_size=25,
-                            type="number",
-                        )
+def home_route():
+    with RouterViewLayout(server, "/"):
+        with v2.VRow():
+            with v2.VCol(cols=4):
+                with v2.VRow():
+                    with v2.VCol():
+                        parameters.card()
+                with v2.VRow():
+                    with v2.VCol():
+                        objectives.card()
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Apply Calibration",
+                                                click=apply_calibration,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Undo Calibration",
+                                                click=undo_calibration,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Recenter",
+                                                click=parameters.recenter,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Optimize",
+                                                click=model.optimize,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+            with v2.VCol(cols=8):
+                with v2.VCard():
+                    with v2.VCardTitle("Plots"):
+                        with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
+                            plotly_figure = plotly.Figure(
+                                    display_mode_bar="true", config={"responsive": True}
+                            )
+                            ctrl.plotly_figure_update = plotly_figure.update
+                        # opacity slider
+                        with v2.VCardText():
+                            v2.VSlider(
+                                v_model_number=("opacity",),
+                                change="flushState('opacity')",
+                                label="Opacity",
+                                min=0.0,
+                                max=1.0,
+                                step=0.1,
+                                classes="align-center",
+                                hide_details=True,
+                                style="width: 200px",
+                                thumb_label="always",
+                                thumb_size=25,
+                                type="number",
+                            )
 
-# NERSC route
-build_nersc()
-
+# build routes
+home_route()
+nersc_route()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
