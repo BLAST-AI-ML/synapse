@@ -20,8 +20,8 @@ except ImportError:
 def analyze_simulation():
 
     # Get current directory
-    data_directory = os.path.join( os.getcwd(), 'diags/diag' )
-    ts = LpaDiagnostics( data_directory )
+    data_directory = os.path.join( os.getcwd(), 'diags' )
+    ts = LpaDiagnostics( os.path.join(data_directory, 'diag') )
 
     # Load input parameters
     with open('input_params.json') as file:
