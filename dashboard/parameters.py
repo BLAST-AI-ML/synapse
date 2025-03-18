@@ -47,27 +47,28 @@ class Parameters:
                         pmin = self.__state.parameters_min[key]
                         pmax = self.__state.parameters_max[key]
                         step = (pmax - pmin) / 100.
-                        # create slider for each parameter
-                        with v2.VSlider(
-                            v_model_number=(f"parameters['{key}']",),
-                            change="flushState('parameters')",
-                            label=key,
-                            min=pmin,
-                            max=pmax,
-                            step=step,
-                            classes="align-center",
-                            hide_details=True,
-                            type="number",
-                        ):
-                            # append text field
-                            with v2.Template(v_slot_append=True):
-                                v2.VTextField(
-                                    v_model_number=(f"parameters['{key}']",),
-                                    label=key,
-                                    density="compact",
-                                    hide_details=True,
-                                    readonly=True,
-                                    single_line=True,
-                                    style="width: 100px",
-                                    type="number",
-                                )
+                        # create a row for the parameter label
+                        with v2.VRow():
+                            v2.VSubheader(key)
+                        # create a row for the slider and text field
+                        with v2.VRow(no_gutters=True):
+                            with v2.VSlider(
+                                v_model_number=(f"parameters['{key}']",),
+                                change="flushState('parameters')",
+                                classes="align-center",
+                                hide_details=True,
+                                max=pmax,
+                                min=pmin,
+                                step=step,
+                            ):
+                                with v2.Template(v_slot_append=True):
+                                    v2.VTextField(
+                                        v_model_number=(f"parameters['{key}']",),
+                                        classes="mt-0 pt-0",
+                                        density="compact",
+                                        hide_details=True,
+                                        readonly=True,
+                                        single_line=True,
+                                        style="width: 80px",
+                                        type="number",
+                                    )
