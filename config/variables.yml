@@ -1,0 +1,45 @@
+ip2:
+
+  input_variables:
+    input1:
+        name: "TOD_fs3"
+        type: scalar
+        default: 0.
+        value_range: [-80000.0, 80000.0]
+
+    input2:
+        name: "GVD"
+        type: scalar
+        default: 13.5
+        value_range: [13.0, 14.0]
+
+    input3:
+        name: "z_target_um"
+        type: scalar
+        default: 0.
+        value_range: [-150.0, 150.0]
+
+  output_variables:
+    output1:
+      name: "n_protons"
+      type: scalar
+
+acave:
+
+  input_variables:
+    input1:
+        name: "kHz_Hexapod_Target ypos"
+        type: scalar
+        default: 0.
+        value_range: [-0.1, 0.1]
+
+    input2:
+        name: "kHz_Zaber_Compressor Position.Ch1"
+        type: scalar
+        default: 75e3
+        value_range: [0., 150e3]
+
+  output_variables:
+    output1:
+      name: "kHz_thorlab_spectrometer mean_wavelength"
+      type: scalar
