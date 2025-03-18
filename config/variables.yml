@@ -41,5 +41,5 @@ acave:
 
   output_variables:
     output1:
-      name: "kHz_thorlab_spectrometer mean_wavelength"
+      name: "kHz_ThorlabsSpec MeanWavelength"
       type: scalar
