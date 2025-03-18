@@ -35,15 +35,15 @@ def analyze_simulation():
     with open('warpx_used_inputs') as f:
         text = f.read()
         last_step = int( re.findall('max_step = (\d+)', text)[0] )
-        dens_width = float( re.findall('my_constants\.dens_width = (\d+)', text)[0] )
-        n0 = float( re.findall('my_constants\.n0 = (\d+)', text)[0] )
+        dens_width = float( re.findall('my_constants\.dens_width = (.+)', text)[0] )
+        n0 = float( re.findall('my_constants\.n0 = (.+)', text)[0] )
         density_function = re.findall('atoms\.density_function\(x,y,z\) = (.+)', text)[0]
 
     # Compute average wavelength at the last iteration and add it to the data
     last_iteration = last_step
     S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
     lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
-    data['kHz_ThorlabsSpec MeanWavelength'] = lambda_avg*1e3 # convert from micron to nm
+    data['kHz_ThorlabsSpec MeanWavelength'] = lambda_avg*1e9 # convert from m to nm
 
     # Write to the data base
     db = pymongo.MongoClient(
