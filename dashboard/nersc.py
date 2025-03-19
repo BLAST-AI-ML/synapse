@@ -4,18 +4,13 @@ from trame.ui.router import RouterViewLayout
 from trame.widgets import vuetify2 as v2
 from sfapi_client import Client
 from sfapi_client.compute import Machine
+
+from state_manager import server, state, ctrl
 from utils import load_database
-
-# -----------------------------------------------------------------------------
-# Trame initialization
-# -----------------------------------------------------------------------------
-
-server = get_server(client_type="vue2")
-state, ctrl = server.state, server.controller
 
 
 def get_sfapi_config():
-    config, _, _, _ = load_database()
+    config, _, _ = load_database()
 
     # restore private key from DB
     sfapi = config.find_one({"name": "sfapi"})

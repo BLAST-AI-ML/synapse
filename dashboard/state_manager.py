@@ -16,11 +16,11 @@ def init_state():
     state.is_calibrated = False
     # experiment
     state.experiment = None
+    # parameters
+    state.parameters = dict()
+    state.parameters_min = dict()
+    state.parameters_max = dict()
     # TODO
-    ## parameters
-    #state.parameters = dict()
-    #state.parameters_min = dict()
-    #state.parameters_max = dict()
     ## objectives
     #state.objectives = dict()
     ## NERSC

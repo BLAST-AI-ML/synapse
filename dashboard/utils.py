@@ -8,13 +8,15 @@ import pymongo
 import torch
 import yaml
 
-def read_variables(config_file, experiment):
+from state_manager import state
+
+def read_variables(config_file):
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
-    config_spec = config_dict[experiment]
+    config_spec = config_dict[state.experiment]
     # dictionary of input variables (parameters)
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
@@ -75,7 +77,9 @@ def load_database():
     # separate documents: experimental and simulation
     experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (config, db_collection, experimental_docs, simulation_docs)
+    # set state variable 'experiment'
+    state.experiment = db_collection
+    return (config, experimental_docs, simulation_docs)
 
 # plot experimental, simulation, and ML data
 def plot(

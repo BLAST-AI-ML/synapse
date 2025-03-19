@@ -4,11 +4,11 @@ import torch
 
 from lume_model.models.torch_model import TorchModel
 
-class Model:
+from state_manager import state
+
+class ModelManager:
+
     def __init__(self, server, model_data):
-        # Trame state and controller
-        self.__state = server.state
-        self.__ctrl = server.controller
         if model_data is None:
             print(f"Model.__init__: Model not provided, skip initialization")
             self.__model = None
@@ -41,7 +41,7 @@ class Model:
 
     def model_wrapper(self, parameters_array):
         # convert array of parameters to dictionary
-        parameters_dict = dict(zip(self.__state.parameters.keys(), parameters_array))
+        parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
         res = -self.evaluate(parameters_dict)
         return res
@@ -49,11 +49,11 @@ class Model:
     def optimize(self):
         if self.__model is not None:
             # get array of current parameters from state
-            parameters_values = np.array(list(self.__state.parameters.values()))
+            parameters_values = np.array(list(state.parameters.values()))
             # define parameters bounds for optimization
             parameters_bounds = []
-            for key in self.__state.parameters.keys():
-                parameters_bounds.append((self.__state.parameters_min[key], self.__state.parameters_max[key]))
+            for key in state.parameters.keys():
+                parameters_bounds.append((state.parameters_min[key], state.parameters_max[key]))
             # optimize model (maximize output value)
             res = minimize(
                 fun=self.model_wrapper,
@@ -61,9 +61,9 @@ class Model:
                 bounds=parameters_bounds,
             )
             # update parameters in state with optimal values
-            self.__state.parameters = dict(zip(self.__state.parameters.keys(), res.x))
+            state.parameters = dict(zip(state.parameters.keys(), res.x))
             # push again at flush time
-            self.__state.dirty("parameters")
+            state.dirty("parameters")
         else:
             print(f"Model.optimize: Model not provided, skip optimization")
             return

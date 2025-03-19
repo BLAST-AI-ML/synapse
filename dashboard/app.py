@@ -7,9 +7,9 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify2 as v2
 
-from model import Model
-from parameters import Parameters
-from objectives import Objectives
+from model_manager import ModelManager
+from parameters_manager import ParametersManager
+from objectives_manager import ObjectivesManager
 from nersc import nersc_route
 from state_manager import server, state, ctrl, init_state
 from utils import read_variables, load_database, plot
@@ -38,26 +38,25 @@ args, _ = parser.parse_known_args()
 init_state()
 
 # initialize database
-config, experiment, experimental_docs, simulation_docs = load_database()
+config, experimental_docs, simulation_docs = load_database()
 # convert database documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
 simulation_data = pd.DataFrame(simulation_docs)
-state.experiment = experiment
 
 # read input and output variables
 current_dir = os.getcwd()
 config_file = os.path.join(current_dir, "..", "config", "variables.yml")
-input_variables, output_variables = read_variables(config_file, experiment)
+input_variables, output_variables = read_variables(config_file)
 
 # initialize model
 model_data = args.model
-model = Model(server, model_data)
+model_manager = ModelManager(server, model_data)
 
 # initialize parameters
-parameters = Parameters(server, input_variables)
+parameters_manager = ParametersManager(server, input_variables)
 
 # initialize objectives
-objectives = Objectives(server, model, output_variables)
+objectives_manager = ObjectivesManager(server, model_manager, output_variables)
 
 # terminal output for NERSC control
 # TODO move to state_manager module
@@ -67,12 +66,12 @@ state.sfapi_output = ""
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("opacity")
+@state.change("parameters", "opacity")
 def update_plots(**kwargs):
     fig = plot(
-        model,
-        parameters,
-        objectives,
+        model_manager,
+        parameters_manager,
+        objectives_manager,
         experimental_data,
         simulation_data,
         state.opacity,
@@ -82,15 +81,13 @@ def update_plots(**kwargs):
 @state.change("parameters")
 def update_state(**kwargs):
     # update parameters
-    parameters.update()
+    parameters_manager.update()
     # update objectives
-    objectives.update()
-    # update plots (TODO plots.update())
-    update_plots()
+    objectives_manager.update()
 
 def pre_calibration():
     # get calibration and normalization transformers
-    output_transformers = model.get_output_transformers()
+    output_transformers = model_manager.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
     # normalize simulation data
@@ -101,7 +98,7 @@ def pre_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
-    if model.avail():
+    if model_manager.avail():
         if not state.is_calibrated:
             # prepare
             output_calibration, output_normalization, n_protons_tensor = pre_calibration()
@@ -120,7 +117,7 @@ def apply_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
 def undo_calibration():
-    if model.avail():
+    if model_manager.avail():
         if state.is_calibrated:
             # prepare
             output_calibration, output_normalization, n_protons_tensor = pre_calibration()
@@ -147,10 +144,10 @@ def home_route():
             with v2.VCol(cols=4):
                 with v2.VRow():
                     with v2.VCol():
-                        parameters.card()
+                        parameters_manager.card()
                 with v2.VRow():
                     with v2.VCol():
-                        objectives.card()
+                        objectives_manager.card()
                 with v2.VRow():
                     with v2.VCol():
                         with v2.VCard():
@@ -173,19 +170,19 @@ def home_route():
                                         with v2.VCol():
                                             v2.VBtn(
                                                 "Recenter",
-                                                click=parameters.recenter,
+                                                click=parameters_manager.recenter,
                                                 style="width: 100%; text-transform: none;",
                                             )
                                         with v2.VCol():
                                             v2.VBtn(
                                                 "Optimize",
-                                                click=model.optimize,
+                                                click=model_manager.optimize,
                                                 style="width: 100%; text-transform: none;",
                                             )
             with v2.VCol(cols=8):
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
-                        with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
+                        with v2.VContainer(style=f"height: {25*len(parameters_manager.get())}vh"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
@@ -214,11 +211,15 @@ nersc_route()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
-    layout.title.set_text(f"IFE Superfacility: {state.experiment}")
+    layout.title.set_text(state.trame_title)
 
     # add toolbar components
     with layout.toolbar:
-        pass
+        v2.VSpacer()
+        v2.VSelect(
+            v_model=("experiment", state.experiment),
+            items=("experiments", ["ip2", "acave"]),
+        )
 
     with layout.content:
         with v2.VContainer():
