@@ -14,6 +14,8 @@ def init_state():
     state.opacity = 0.1
     # calibration
     state.is_calibrated = False
+    # experiment
+    state.experiment = None
     # TODO
     ## parameters
     #state.parameters = dict()

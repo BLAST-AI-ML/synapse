@@ -42,6 +42,7 @@ config, experiment, experimental_docs, simulation_docs = load_database()
 # convert database documents into pandas DataFrames
 experimental_data = pd.DataFrame(experimental_docs)
 simulation_data = pd.DataFrame(simulation_docs)
+state.experiment = experiment
 
 # read input and output variables
 current_dir = os.getcwd()
@@ -76,7 +77,7 @@ def update_plots(**kwargs):
         simulation_data,
         state.opacity,
     )
-    ctrl.plotly_figure_update(fig)
+    ctrl.figure_update(fig)
 
 @state.change("parameters")
 def update_state(**kwargs):
@@ -185,10 +186,11 @@ def home_route():
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
                         with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
-                            plotly_figure = plotly.Figure(
-                                    display_mode_bar="true", config={"responsive": True}
+                            figure = plotly.Figure(
+                                display_mode_bar="true",
+                                config={"responsive": True},
                             )
-                            ctrl.plotly_figure_update = plotly_figure.update
+                            ctrl.figure_update = figure.update
                         # opacity slider
                         with v2.VCardText():
                             v2.VSlider(
@@ -212,7 +214,7 @@ nersc_route()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
-    layout.title.set_text("IFE Superfacility")
+    layout.title.set_text(f"IFE Superfacility: {state.experiment}")
 
     # add toolbar components
     with layout.toolbar:
