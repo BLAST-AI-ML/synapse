@@ -88,7 +88,6 @@ def plot(
         objectives,
         experimental_data,
         simulation_data,
-        opacity_cutoff,
     ):
     parameters_dict = parameters.get()
     parameters_min = parameters.get_min()
@@ -132,7 +131,7 @@ def plot(
             df_copy["distance"] = np.sqrt(df_copy["distance"])
             # normalize distance in [0,1] and compute opacity
             df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
-            df_copy["opacity"] = np.where(df_copy["distance"] > opacity_cutoff, 0., 1. - df_copy["distance"])
+            df_copy["opacity"] = np.where(df_copy["distance"] > state.opacity, 0., 1. - df_copy["distance"])
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy,

@@ -4,7 +4,7 @@ from state_manager import state
 
 class ParametersManager:
 
-    def __init__(self, server, input_variables):
+    def __init__(self, input_variables):
         # define state variables
         state.parameters = dict()
         state.parameters_min = dict()

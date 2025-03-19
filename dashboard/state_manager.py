@@ -10,20 +10,21 @@ def init_state():
     Helper function to collect and define all state variabes.
     """
     state.trame_title = "IFE Superfacility"
+    # experiment
+    state.experiment = None
     # opacity
     state.opacity = 0.1
     # calibration
     state.is_calibrated = False
-    # experiment
-    state.experiment = None
     # parameters
     state.parameters = dict()
     state.parameters_min = dict()
     state.parameters_max = dict()
+    # objectives
+    state.objectives = dict()
+    # NERSC
+    state.sfapi_output = ""
     # TODO
-    ## objectives
-    #state.objectives = dict()
-    ## NERSC
     #state.client_id = None
     #state.private_key = None
     #state.sfapi_expiration_days = 33
@@ -31,5 +32,4 @@ def init_state():
     #    datetime.now() +
     #    timedelta(days=int(state.sfapi_expiration_days))
     #)
-    #state.sfapi_output = ""
     #state.perlmutter_status = None

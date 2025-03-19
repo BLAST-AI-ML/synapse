@@ -185,7 +185,7 @@ def build_sfapi_auth():
                             with v2.VRow():
                                 with v2.VCol():
                                     v2.VTextarea(
-                                        v_model=("sfapi_output", ""),
+                                        v_model=("sfapi_output",),
                                         readonly=True,
                                         rows=10,
                                         style="width: 100%",

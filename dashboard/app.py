@@ -50,17 +50,13 @@ input_variables, output_variables = read_variables(config_file)
 
 # initialize model
 model_data = args.model
-model_manager = ModelManager(server, model_data)
+model_manager = ModelManager(model_data)
 
 # initialize parameters
-parameters_manager = ParametersManager(server, input_variables)
+parameters_manager = ParametersManager(input_variables)
 
 # initialize objectives
-objectives_manager = ObjectivesManager(server, model_manager, output_variables)
-
-# terminal output for NERSC control
-# TODO move to state_manager module
-state.sfapi_output = ""
+objectives_manager = ObjectivesManager(model_manager, output_variables)
 
 # -----------------------------------------------------------------------------
 # Callbacks
@@ -74,7 +70,6 @@ def update_plots(**kwargs):
         objectives_manager,
         experimental_data,
         simulation_data,
-        state.opacity,
     )
     ctrl.figure_update(fig)
 

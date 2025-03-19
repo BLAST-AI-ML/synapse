@@ -8,7 +8,7 @@ from state_manager import state
 
 class ModelManager:
 
-    def __init__(self, server, model_data):
+    def __init__(self, model_data):
         if model_data is None:
             print(f"Model.__init__: Model not provided, skip initialization")
             self.__model = None

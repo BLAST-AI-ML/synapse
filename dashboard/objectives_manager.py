@@ -4,7 +4,7 @@ from state_manager import state
 
 class ObjectivesManager:
 
-    def __init__(self, server, model, output_variables):
+    def __init__(self, model, output_variables):
         # FIXME generalize for multiple objectives
         assert len(output_variables) == 1, "number of objectives > 1 not supported"
         # save PyTorch model
