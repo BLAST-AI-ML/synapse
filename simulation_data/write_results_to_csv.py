@@ -47,7 +47,7 @@ if __name__ == "__main__":
     df_res = df[select_cols].copy()
     df_res.rename(columns={'z_pos_um': 'z_target_um', 'f' : 'n_protons'}, inplace=True)
     # Rescale the number of protons to take into account differences between 2D and 3D simulations
-    df_res['n_protons'] *= 1e-4
+    df_res['n_protons'] *= 1e-5
     # Also store a default value of the GVD
     df_res['GVD'] = 13.6
 
