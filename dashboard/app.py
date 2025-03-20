@@ -33,27 +33,10 @@ parser.add_argument(
 args, _ = parser.parse_known_args()
 
 # -----------------------------------------------------------------------------
-# Initialize
+# Initialize experiment
 # -----------------------------------------------------------------------------
 
-# initialize state
-init_state()
-# initialize database
-config, exp_docs, sim_docs = load_database()
-# convert database documents into pandas DataFrames
-state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
-state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
-# read input and output variables
-current_dir = os.getcwd()
-config_file = os.path.join(current_dir, "..", "config", "variables.yml")
-input_variables, output_variables = read_variables(config_file)
-# initialize model
-model_file = args.model
-model_manager = ModelManager(model_file)
-# initialize parameters
-parameters_manager = ParametersManager(input_variables)
-# initialize objectives
-objectives_manager = ObjectivesManager(model_manager, output_variables)
+state.experiment = "ip2"
 
 # -----------------------------------------------------------------------------
 # Callbacks
@@ -61,11 +44,11 @@ objectives_manager = ObjectivesManager(model_manager, output_variables)
 
 @state.change("experiment")
 def reload(**kwargs):
-    global model_manager
-    global parameters_manager
-    global objectives_manager
-    # initialize state
-    init_state(state.experiment)
+    global mod_manager
+    global par_manager
+    global obj_manager
+    # initialize state after experiment selection
+    init_state()
     # initialize database
     config, exp_docs, sim_docs = load_database()
     # convert database documents into pandas DataFrames
@@ -80,16 +63,15 @@ def reload(**kwargs):
     # FIXME
     if state.experiment == "acave":
         model_file = None
-    model_manager = ModelManager(model_file)
+    mod_manager = ModelManager(model_file)
     # initialize parameters
-    parameters_manager = ParametersManager(input_variables)
+    par_manager = ParametersManager(input_variables)
     # initialize objectives
-    objectives_manager = ObjectivesManager(model_manager, output_variables)
+    obj_manager = ObjectivesManager(mod_manager, output_variables)
     # reload home route
     home_route()
-    # update everything
-    update_state()
-    update_plots()
+    # update app
+    update()
 
 @state.change(
     "exp_data",
@@ -97,24 +79,22 @@ def reload(**kwargs):
     "parameters",
     "opacity",
 )
-def update_plots(**kwargs):
+def update(**kwargs):
+    # update parameters
+    par_manager.update()
+    # update objectives
+    obj_manager.update()
+    # update plots
     fig = plot(
-        model_manager,
-        parameters_manager,
-        objectives_manager,
+        mod_manager,
+        par_manager,
+        obj_manager,
     )
     ctrl.figure_update(fig)
 
-@state.change("parameters")
-def update_state(**kwargs):
-    # update parameters
-    parameters_manager.update()
-    # update objectives
-    objectives_manager.update()
-
 def pre_calibration():
     # get calibration and normalization transformers
-    output_transformers = model_manager.get_output_transformers()
+    output_transformers = mod_manager.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
     # normalize simulation data
@@ -126,7 +106,7 @@ def pre_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
-    if model_manager.avail():
+    if mod_manager.avail():
         if not state.is_calibrated:
             # prepare
             output_calibration, output_normalization, n_protons_tensor = pre_calibration()
@@ -145,7 +125,7 @@ def apply_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
 def undo_calibration():
-    if model_manager.avail():
+    if mod_manager.avail():
         if state.is_calibrated:
             # prepare
             output_calibration, output_normalization, n_protons_tensor = pre_calibration()
@@ -172,10 +152,10 @@ def home_route():
             with v2.VCol(cols=4):
                 with v2.VRow():
                     with v2.VCol():
-                        parameters_manager.card()
+                        par_manager.card()
                 with v2.VRow():
                     with v2.VCol():
-                        objectives_manager.card()
+                        obj_manager.card()
                 with v2.VRow():
                     with v2.VCol():
                         with v2.VCard():
@@ -198,19 +178,19 @@ def home_route():
                                         with v2.VCol():
                                             v2.VBtn(
                                                 "Recenter",
-                                                click=parameters_manager.recenter,
+                                                click=par_manager.recenter,
                                                 style="width: 100%; text-transform: none;",
                                             )
                                         with v2.VCol():
                                             v2.VBtn(
                                                 "Optimize",
-                                                click=model_manager.optimize,
+                                                click=mod_manager.optimize,
                                                 style="width: 100%; text-transform: none;",
                                             )
             with v2.VCol(cols=8):
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
-                        with v2.VContainer(style=f"height: {40*len(parameters_manager.get())}vh"):
+                        with v2.VContainer(style=f"height: {40*len(par_manager.get())}vh"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
@@ -233,7 +213,6 @@ def home_route():
                                 type="number",
                             )
 
-home_route()
 nersc_route()
 
 # main page content
