@@ -181,7 +181,7 @@ def home_route():
             with v2.VCol(cols=8):
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
-                        with v2.VContainer(style=f"height: {40*len(state.parameters)}vh"):
+                        with v2.VContainer(style=f"height: {400*len(state.parameters)}px"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
