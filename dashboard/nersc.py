@@ -190,10 +190,3 @@ def build_sfapi_auth():
                                         rows=10,
                                         style="width: 100%",
                                     )
-
-
-def nersc_route():
-    if get_sfapi_client() is not None:
-        build_sfapi_status()
-    else:
-        build_sfapi_auth()

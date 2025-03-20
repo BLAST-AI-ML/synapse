@@ -11,7 +11,7 @@ from trame.widgets import plotly, router, vuetify2 as v2
 from model_manager import ModelManager
 from parameters_manager import ParametersManager
 from objectives_manager import ObjectivesManager
-from nersc import nersc_route
+from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
 from state_manager import server, state, ctrl, init_state
 from utils import read_variables, load_database, plot
 
@@ -70,6 +70,8 @@ def reload(**kwargs):
     obj_manager = ObjectivesManager(mod_manager, output_variables)
     # reload home route
     home_route()
+    # reload NERSC route
+    nersc_route()
     # update app
     update()
 
@@ -213,7 +215,12 @@ def home_route():
                                 type="number",
                             )
 
-nersc_route()
+# NERSC route
+def nersc_route():
+    if get_sfapi_client() is not None:
+        build_sfapi_status()
+    else:
+        build_sfapi_auth()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
