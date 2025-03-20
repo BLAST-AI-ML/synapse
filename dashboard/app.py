@@ -217,11 +217,13 @@ with SinglePageWithDrawerLayout(server) as layout:
 
     # add toolbar components
     with layout.toolbar:
-        for _ in range(5):
-            v2.VSpacer()
+        v2.VSpacer()
         v2.VSelect(
             v_model=("experiment",),
             items=("experiments", ["ip2", "acave"]),
+            dense=True,
+            prepend_icon="mdi-atom",
+            style="max-width: 200px",
         )
 
     with layout.content:
