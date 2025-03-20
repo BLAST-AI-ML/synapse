@@ -43,7 +43,16 @@ def analyze_simulation():
     last_iteration = last_step
     S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
     lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
+    # Compute red/blue shift: wavelength such that 13.5%/86.5% of the spectrum energy is below
+    cumulated_S = np.cumsum(S)/np.sum(S)
+    kr = np.argmin(abs(cumulated_S-0.135))
+    kb = np.argmin(abs(cumulated_S-0.865))
+    lambda_r = 2*np.pi/info.k[kr]
+    lambda_b = 2*np.pi/info.k[kb]
+    # Add to the data base
     data['kHz_ThorlabsSpec MeanWavelength'] = lambda_avg*1e9 # convert from m to nm
+    data['kHz_ThorlabsSpec lambda_r'] = lambda_r*1e9 # convert from m to nm
+    data['kHz_ThorlabsSpec lambda_b'] = lambda_b*1e9 # convert from m to nm
 
     # Write to the data base
     db = pymongo.MongoClient(

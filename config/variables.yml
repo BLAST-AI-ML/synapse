@@ -43,3 +43,11 @@ acave:
     output1:
       name: "kHz_ThorlabsSpec MeanWavelength"
       type: scalar
+
+    output1:
+      name: "kHz_ThorlabsSpec lambda_r"
+      type: scalar
+
+    output1:
+      name: "kHz_ThorlabsSpec lambda_b"
+      type: scalar
