@@ -13,7 +13,7 @@ from parameters_manager import ParametersManager
 from objectives_manager import ObjectivesManager
 from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
 from state_manager import server, state, ctrl, init_state
-from utils import read_variables, load_database, plot
+from utils import read_variables, metadata_match, load_database, plot
 
 
 # -----------------------------------------------------------------------------
@@ -36,6 +36,7 @@ args, _ = parser.parse_known_args()
 # Initialize experiment
 # -----------------------------------------------------------------------------
 
+state.trame_title = "IFE Superfacility"
 state.experiment = "ip2"
 
 # -----------------------------------------------------------------------------
@@ -60,8 +61,7 @@ def reload(**kwargs):
     input_variables, output_variables = read_variables(config_file)
     # initialize model
     model_file = args.model
-    # FIXME
-    if state.experiment == "acave":
+    if not metadata_match(config_file, model_file):
         model_file = None
     mod_manager = ModelManager(model_file)
     # initialize parameters

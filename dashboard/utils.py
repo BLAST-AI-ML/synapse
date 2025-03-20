@@ -11,6 +11,9 @@ import yaml
 
 from state_manager import state
 
+# global database variable
+db = None
+
 def read_variables(config_file):
     # read configuration file
     with open(config_file) as f:
@@ -24,7 +27,27 @@ def read_variables(config_file):
     output_variables = config_spec["output_variables"]
     return (input_variables, output_variables)
 
-db = None
+def metadata_match(config_file, model_file):
+    match = False
+    # read configuration file
+    with open(config_file) as f:
+        config_str = f.read()
+    # load configuration dictionary
+    config_dict = yaml.safe_load(config_str)
+    # load configuration input variables list
+    config_vars = [value["name"] for value in config_dict[state.experiment]["input_variables"].values()]
+    config_vars.sort()
+    # read model file
+    with open(model_file) as f:
+        model_str = f.read()
+    # load model dictionary
+    model_dict = yaml.safe_load(model_str)
+    # load model input variables list
+    model_vars = list(model_dict["input_variables"].keys())
+    model_vars.sort()
+    # check if configuration list and model list match
+    match = (config_vars == model_vars)
+    return match
 
 def load_database():
     global db

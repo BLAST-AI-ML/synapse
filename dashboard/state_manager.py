@@ -10,7 +10,6 @@ def init_state():
     """
     Helper function to collect and define all state variabes.
     """
-    state.trame_title = "IFE Superfacility"
     # serialized data
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)
