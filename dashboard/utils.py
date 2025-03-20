@@ -1,3 +1,4 @@
+from io import StringIO
 import numpy as np
 import os
 import pandas as pd
@@ -75,19 +76,17 @@ def load_database():
     # retrieve all documents
     documents = list(collection.find())
     # separate documents: experimental and simulation
-    experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
+    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
     # set state variable 'experiment'
     state.experiment = db_collection
-    return (config, experimental_docs, simulation_docs)
+    return (config, exp_docs, sim_docs)
 
 # plot experimental, simulation, and ML data
 def plot(
         model,
         parameters,
         objectives,
-        experimental_data,
-        simulation_data,
     ):
     parameters_dict = parameters.get()
     parameters_min = parameters.get_min()
@@ -100,8 +99,8 @@ def plot(
         print(f"utils.plot: {e}")
         objective_name = ""
     # load experimental data
-    df_exp = experimental_data
-    df_sim = simulation_data
+    df_exp = pd.read_json(StringIO(state.exp_data))
+    df_sim = pd.read_json(StringIO(state.sim_data))
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot

@@ -1,4 +1,5 @@
 import argparse
+from io import StringIO
 import os
 import pandas as pd
 import torch
@@ -38,10 +39,10 @@ args, _ = parser.parse_known_args()
 init_state()
 
 # initialize database
-config, experimental_docs, simulation_docs = load_database()
+config, exp_docs, sim_docs = load_database()
 # convert database documents into pandas DataFrames
-experimental_data = pd.DataFrame(experimental_docs)
-simulation_data = pd.DataFrame(simulation_docs)
+state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
+state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
 # read input and output variables
 current_dir = os.getcwd()
@@ -62,14 +63,17 @@ objectives_manager = ObjectivesManager(model_manager, output_variables)
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("parameters", "opacity")
+@state.change(
+    "exp_data",
+    "sim_data",
+    "parameters",
+    "opacity",
+)
 def update_plots(**kwargs):
     fig = plot(
         model_manager,
         parameters_manager,
         objectives_manager,
-        experimental_data,
-        simulation_data,
     )
     ctrl.figure_update(fig)
 
@@ -86,7 +90,8 @@ def pre_calibration():
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
     # normalize simulation data
-    n_protons_tensor = torch.from_numpy(simulation_data["n_protons"].values)
+    sim_data = pd.read_json(StringIO(state.sim_data))
+    n_protons_tensor = torch.from_numpy(sim_data["n_protons"].values)
     n_protons_tensor = output_normalization.transform(n_protons_tensor)
     return (output_calibration, output_normalization, n_protons_tensor)
 
@@ -100,10 +105,11 @@ def apply_calibration():
             # calibrate, and denormalize simulation data
             n_protons_tensor = output_calibration.untransform(n_protons_tensor)
             n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-            simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-            # update plots (TODO plots.update())
-            update_plots()
+            sim_data = pd.read_json(StringIO(state.sim_data))
+            sim_data["n_protons"] = n_protons_tensor.numpy()[0]
             # update state
+            state.sim_data = sim_data.to_json(default_handler=str)
+            state.dirty("sim_data")
             state.is_calibrated = True
     else:
         print("app.apply_calibration: Model not provided, skip calibration")
@@ -119,10 +125,11 @@ def undo_calibration():
             # calibrate, and denormalize simulation data
             n_protons_tensor = output_calibration.transform(n_protons_tensor)
             n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-            simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-            # update plots (TODO plots.update())
-            update_plots()
+            sim_data = pd.read_json(StringIO(state.sim_data))
+            sim_data["n_protons"] = n_protons_tensor.numpy()[0]
             # update state
+            state.sim_data = sim_data.to_json(default_handler=str)
+            state.dirty("sim_data")
             state.is_calibrated = False
     else:
         print("app.undo_calibration: Model not provided, skip calibration")

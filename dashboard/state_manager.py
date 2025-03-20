@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import pandas as pd
 from trame.app import get_server
 
 server = get_server(client_type="vue2")
@@ -12,6 +13,9 @@ def init_state():
     state.trame_title = "IFE Superfacility"
     # experiment
     state.experiment = None
+    # serialized data
+    state.exp_data = pd.DataFrame().to_json(default_handler=str)
+    state.sim_data = pd.DataFrame().to_json(default_handler=str)
     # opacity
     state.opacity = 0.1
     # calibration
