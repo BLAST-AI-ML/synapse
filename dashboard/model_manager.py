@@ -34,8 +34,6 @@ class ModelManager:
             if res.numel() == 1:
                 res = float(res)
             return res
-        else:
-            return None
 
     def model_wrapper(self, parameters_array):
         # convert array of parameters to dictionary
@@ -62,11 +60,7 @@ class ModelManager:
             state.parameters = dict(zip(state.parameters.keys(), res.x))
             # push again at flush time
             state.dirty("parameters")
-        else:
-            return
 
     def get_output_transformers(self):
         if self.__model is not None:
             return self.__model.output_transformers
-        else:
-            return None

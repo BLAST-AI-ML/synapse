@@ -18,15 +18,6 @@ class ParametersManager:
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
 
-    def get(self):
-        return state.parameters
-
-    def get_min(self):
-        return state.parameters_min
-
-    def get_max(self):
-        return state.parameters_max
-
     def update(self):
         for key in state.parameters.keys():
             state.parameters[key] = float(state.parameters[key])

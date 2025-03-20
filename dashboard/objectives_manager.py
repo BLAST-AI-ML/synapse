@@ -18,9 +18,6 @@ class ObjectivesManager:
             else:
                 state.objectives[key] = None
 
-    def get(self):
-        return state.objectives
-
     def update(self):
         for key in state.objectives.keys():
             if self.__model.avail():

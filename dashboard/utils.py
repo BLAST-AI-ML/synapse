@@ -102,18 +102,14 @@ def load_database():
     return (config, exp_docs, sim_docs)
 
 # plot experimental, simulation, and ML data
-def plot(
-        model,
-        parameters,
-        objectives,
-    ):
-    parameters_dict = parameters.get()
-    parameters_min = parameters.get_min()
-    parameters_max = parameters.get_max()
-    objectives_dict = objectives.get()
+def plot(model):
+    parameters = state.parameters
+    parameters_min = state.parameters_min
+    parameters_max = state.parameters_max
+    objectives = state.objectives
     try:
         # FIXME generalize for multiple objectives
-        objective_name = list(objectives_dict.keys())[0]
+        objective_name = list(objectives.keys())[0]
     except Exception as e:
         print(f"utils.plot: {e}")
         objective_name = ""
@@ -123,8 +119,8 @@ def plot(
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
-    fig = make_subplots(rows=len(parameters_dict), cols=1)
-    for i, key in enumerate(parameters_dict.keys()):
+    fig = make_subplots(rows=len(parameters), cols=1)
+    for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
         this_col = 1
@@ -140,9 +136,9 @@ def plot(
                 continue
             df_copy["distance"] = 0.
             # loop over all inputs except the current one
-            for subkey in [subkey for subkey in parameters_dict.keys() if (subkey != key and subkey in df_copy.columns)]:
+            for subkey in [subkey for subkey in parameters.keys() if (subkey != key and subkey in df_copy.columns)]:
                 pname_loc = subkey
-                pval_loc = parameters_dict[subkey]
+                pval_loc = parameters[subkey]
                 pmin_loc = parameters_min[subkey]
                 pmax_loc = parameters_max[subkey]
                 df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
@@ -189,8 +185,8 @@ def plot(
                 end=parameters_max[key],
                 steps=steps,
             )
-            for subkey in [subkey for subkey in parameters_dict.keys() if subkey != key]:
-                input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters_dict[subkey] * torch.ones(steps)
+            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
+                input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters[subkey] * torch.ones(steps)
             y = model.evaluate(input_dict_loc)
             # scatter plot
             mod_trace = go.Scatter(
@@ -209,7 +205,7 @@ def plot(
         #----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
-            x=parameters_dict[key],
+            x=parameters[key],
             line_dash="dash",
             row=this_row,
             col=this_col,

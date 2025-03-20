@@ -87,11 +87,7 @@ def update(**kwargs):
     # update objectives
     obj_manager.update()
     # update plots
-    fig = plot(
-        mod_manager,
-        par_manager,
-        obj_manager,
-    )
+    fig = plot(mod_manager)
     ctrl.figure_update(fig)
 
 def pre_calibration():
@@ -121,8 +117,6 @@ def apply_calibration():
             state.sim_data = sim_data.to_json(default_handler=str)
             state.dirty("sim_data")
             state.is_calibrated = True
-    else:
-        return
 
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
@@ -140,8 +134,6 @@ def undo_calibration():
             state.sim_data = sim_data.to_json(default_handler=str)
             state.dirty("sim_data")
             state.is_calibrated = False
-    else:
-        return
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -192,7 +184,7 @@ def home_route():
             with v2.VCol(cols=8):
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
-                        with v2.VContainer(style=f"height: {40*len(par_manager.get())}vh"):
+                        with v2.VContainer(style=f"height: {40*len(state.parameters)}vh"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
