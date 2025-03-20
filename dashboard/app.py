@@ -33,35 +33,63 @@ parser.add_argument(
 args, _ = parser.parse_known_args()
 
 # -----------------------------------------------------------------------------
-# Initialize state
+# Initialize
 # -----------------------------------------------------------------------------
 
+# initialize state
 init_state()
-
 # initialize database
 config, exp_docs, sim_docs = load_database()
 # convert database documents into pandas DataFrames
 state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
 state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
-
 # read input and output variables
 current_dir = os.getcwd()
 config_file = os.path.join(current_dir, "..", "config", "variables.yml")
 input_variables, output_variables = read_variables(config_file)
-
 # initialize model
-model_data = args.model
-model_manager = ModelManager(model_data)
-
+model_file = args.model
+model_manager = ModelManager(model_file)
 # initialize parameters
 parameters_manager = ParametersManager(input_variables)
-
 # initialize objectives
 objectives_manager = ObjectivesManager(model_manager, output_variables)
 
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
+
+@state.change("experiment")
+def reload(**kwargs):
+    global model_manager
+    global parameters_manager
+    global objectives_manager
+    # initialize state
+    init_state(state.experiment)
+    # initialize database
+    config, exp_docs, sim_docs = load_database()
+    # convert database documents into pandas DataFrames
+    state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
+    state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
+    # read input and output variables
+    current_dir = os.getcwd()
+    config_file = os.path.join(current_dir, "..", "config", "variables.yml")
+    input_variables, output_variables = read_variables(config_file)
+    # initialize model
+    model_file = args.model
+    # FIXME
+    if state.experiment == "acave":
+        model_file = None
+    model_manager = ModelManager(model_file)
+    # initialize parameters
+    parameters_manager = ParametersManager(input_variables)
+    # initialize objectives
+    objectives_manager = ObjectivesManager(model_manager, output_variables)
+    # reload home route
+    home_route()
+    # update everything
+    update_state()
+    update_plots()
 
 @state.change(
     "exp_data",
@@ -112,7 +140,6 @@ def apply_calibration():
             state.dirty("sim_data")
             state.is_calibrated = True
     else:
-        print("app.apply_calibration: Model not provided, skip calibration")
         return
 
 # TODO encapsulate in simulation class?
@@ -132,7 +159,6 @@ def undo_calibration():
             state.dirty("sim_data")
             state.is_calibrated = False
     else:
-        print("app.undo_calibration: Model not provided, skip calibration")
         return
 
 # -----------------------------------------------------------------------------
@@ -140,72 +166,74 @@ def undo_calibration():
 # -----------------------------------------------------------------------------
 
 # home route
-with RouterViewLayout(server, "/"):
-    with v2.VRow():
-        with v2.VCol(cols=4):
-            with v2.VRow():
-                with v2.VCol():
-                    parameters_manager.card()
-            with v2.VRow():
-                with v2.VCol():
-                    objectives_manager.card()
-            with v2.VRow():
-                with v2.VCol():
-                    with v2.VCard():
-                        with v2.VCardTitle("Control"):
-                            with v2.VCardText():
-                                with v2.VRow():
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Apply Calibration",
-                                            click=apply_calibration,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Undo Calibration",
-                                            click=undo_calibration,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                with v2.VRow():
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Recenter",
-                                            click=parameters_manager.recenter,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Optimize",
-                                            click=model_manager.optimize,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-        with v2.VCol(cols=8):
-            with v2.VCard():
-                with v2.VCardTitle("Plots"):
-                    with v2.VContainer(style=f"height: {40*len(parameters_manager.get())}vh"):
-                        figure = plotly.Figure(
-                            display_mode_bar="true",
-                            config={"responsive": True},
-                        )
-                        ctrl.figure_update = figure.update
-                    # opacity slider
-                    with v2.VCardText():
-                        v2.VSlider(
-                            v_model_number=("opacity",),
-                            change="flushState('opacity')",
-                            label="Opacity",
-                            min=0.0,
-                            max=1.0,
-                            step=0.1,
-                            classes="align-center",
-                            hide_details=True,
-                            style="width: 200px",
-                            thumb_label="always",
-                            thumb_size=25,
-                            type="number",
-                        )
+def home_route():
+    with RouterViewLayout(server, "/"):
+        with v2.VRow():
+            with v2.VCol(cols=4):
+                with v2.VRow():
+                    with v2.VCol():
+                        parameters_manager.card()
+                with v2.VRow():
+                    with v2.VCol():
+                        objectives_manager.card()
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Apply Calibration",
+                                                click=apply_calibration,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Undo Calibration",
+                                                click=undo_calibration,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Recenter",
+                                                click=parameters_manager.recenter,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Optimize",
+                                                click=model_manager.optimize,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+            with v2.VCol(cols=8):
+                with v2.VCard():
+                    with v2.VCardTitle("Plots"):
+                        with v2.VContainer(style=f"height: {40*len(parameters_manager.get())}vh"):
+                            figure = plotly.Figure(
+                                display_mode_bar="true",
+                                config={"responsive": True},
+                            )
+                            ctrl.figure_update = figure.update
+                        # opacity slider
+                        with v2.VCardText():
+                            v2.VSlider(
+                                v_model_number=("opacity",),
+                                change="flushState('opacity')",
+                                label="Opacity",
+                                min=0.0,
+                                max=1.0,
+                                step=0.1,
+                                classes="align-center",
+                                hide_details=True,
+                                style="width: 200px",
+                                thumb_label="always",
+                                thumb_size=25,
+                                type="number",
+                            )
 
+home_route()
 nersc_route()
 
 # main page content
@@ -214,7 +242,12 @@ with SinglePageWithDrawerLayout(server) as layout:
 
     # add toolbar components
     with layout.toolbar:
-        pass
+        for _ in range(5):
+            v2.VSpacer()
+        v2.VSelect(
+            v_model=("experiment",),
+            items=("experiments", ["ip2", "acave"]),
+        )
 
     with layout.content:
         with v2.VContainer():

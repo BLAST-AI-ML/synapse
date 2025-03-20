@@ -16,8 +16,6 @@ class ObjectivesManager:
             if model.avail():
                 state.objectives[key] = model.evaluate(state.parameters)
             else:
-                print(f"Objectives.__init__: Model not provided, skip initialization")
-                print(f"Objectives.__init__: Could not compute state.objectives[{key}]")
                 state.objectives[key] = None
 
     def get(self):
@@ -27,8 +25,6 @@ class ObjectivesManager:
         for key in state.objectives.keys():
             if self.__model.avail():
                 state.objectives[key] = self.__model.evaluate(state.parameters)
-            else:
-                print(f"Objectives.update: Model not provided, skip update")
         # push again at flush time
         state.dirty("objectives")
 

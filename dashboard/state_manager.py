@@ -6,13 +6,13 @@ server = get_server(client_type="vue2")
 state = server.state
 ctrl = server.controller
 
-def init_state():
+def init_state(experiment="ip2"):
     """
     Helper function to collect and define all state variabes.
     """
     state.trame_title = "IFE Superfacility"
     # experiment
-    state.experiment = None
+    state.experiment = experiment
     # serialized data
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)

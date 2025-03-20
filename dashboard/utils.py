@@ -45,9 +45,7 @@ def load_database():
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
     # read database experiment from environment variable (no default provided)
-    db_collection = os.getenv("SF_DB_EXPERIMENT")
-    if db_collection is None:
-        raise RuntimeError("Environment variable SF_DB_EXPERIMENT must be set!")
+    db_collection = state.experiment
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
@@ -78,8 +76,6 @@ def load_database():
     # separate documents: experimental and simulation
     exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # set state variable 'experiment'
-    state.experiment = db_collection
     return (config, exp_docs, sim_docs)
 
 # plot experimental, simulation, and ML data

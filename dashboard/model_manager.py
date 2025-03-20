@@ -10,13 +10,12 @@ class ModelManager:
 
     def __init__(self, model_data):
         if model_data is None:
-            print(f"Model.__init__: Model not provided, skip initialization")
             self.__model = None
         else:
             try:
                 self.__model = TorchModel(model_data)
             except Exception as e:
-                print(f"Model.__init__: {e}")
+                print(f"ModelManager.__init__: {e}")
                 sys.exit(1)
 
     def avail(self):
@@ -36,7 +35,6 @@ class ModelManager:
                 res = float(res)
             return res
         else:
-            print(f"Model.evaluate: Model not provided, skip evaluation")
             return None
 
     def model_wrapper(self, parameters_array):
@@ -65,12 +63,10 @@ class ModelManager:
             # push again at flush time
             state.dirty("parameters")
         else:
-            print(f"Model.optimize: Model not provided, skip optimization")
             return
 
     def get_output_transformers(self):
         if self.__model is not None:
             return self.__model.output_transformers
         else:
-            print(f"Model.get_output_transformers: Model not provided, skip transformers")
             return None
