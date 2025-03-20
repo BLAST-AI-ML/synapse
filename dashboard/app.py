@@ -149,9 +149,6 @@ def home_route():
                         par_manager.card()
                 with v2.VRow():
                     with v2.VCol():
-                        obj_manager.card()
-                with v2.VRow():
-                    with v2.VCol():
                         with v2.VCard():
                             with v2.VCardTitle("Control"):
                                 with v2.VCardText():

@@ -24,23 +24,3 @@ class ObjectivesManager:
                 state.objectives[key] = self.__model.evaluate(state.parameters)
         # push again at flush time
         state.dirty("objectives")
-
-    def card(self):
-        with v2.VCard():
-            with v2.VCardTitle("Objectives"):
-                with v2.VCardText():
-                    for key in state.objectives.keys():
-                        # create a row for the objective label
-                        with v2.VRow():
-                            v2.VSubheader(key)
-                        # create a row for the text field
-                        with v2.VRow(no_gutters=True):
-                            v2.VTextField(
-                                v_model_number=(f"objectives['{key}']",),
-                                classes="mt-0 pt-0",
-                                density="compact",
-                                hide_details=True,
-                                readonly=True,
-                                single_line=True,
-                                type="number",
-                            )
