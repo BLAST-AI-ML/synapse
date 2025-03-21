@@ -65,7 +65,7 @@ def reload(**kwargs):
         model_file = None
     mod_manager = ModelManager(model_file)
     # initialize parameters
-    par_manager = ParametersManager(input_variables)
+    par_manager = ParametersManager(mod_manager, input_variables)
     # initialize objectives
     obj_manager = ObjectivesManager(mod_manager, output_variables)
     # reload home route
@@ -163,19 +163,6 @@ def home_route():
                                             v2.VBtn(
                                                 "Undo Calibration",
                                                 click=undo_calibration,
-                                                style="width: 100%; text-transform: none;",
-                                            )
-                                    with v2.VRow():
-                                        with v2.VCol():
-                                            v2.VBtn(
-                                                "Recenter",
-                                                click=par_manager.recenter,
-                                                style="width: 100%; text-transform: none;",
-                                            )
-                                        with v2.VCol():
-                                            v2.VBtn(
-                                                "Optimize",
-                                                click=mod_manager.optimize,
                                                 style="width: 100%; text-transform: none;",
                                             )
             with v2.VCol(cols=8):
