@@ -155,7 +155,7 @@ def build_sfapi_auth():
                                         step=1,
                                         classes="align-center",
                                         hide_details=True,
-                                        # style="width: 200px",
+                                        #style="width: 200px;",
                                         thumb_label="always",
                                         thumb_size=25,
                                         type="number",
@@ -188,5 +188,5 @@ def build_sfapi_auth():
                                         v_model=("sfapi_output",),
                                         readonly=True,
                                         rows=10,
-                                        style="width: 100%",
+                                        style="width: 100%;",
                                     )

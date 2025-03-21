@@ -91,6 +91,6 @@ class ParametersManager:
                                         hide_details=True,
                                         readonly=True,
                                         single_line=True,
-                                        style="width: 80px",
+                                        style="width: 80px;",
                                         type="number",
                                     )

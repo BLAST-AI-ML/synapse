@@ -191,7 +191,7 @@ def home_route():
             with v2.VCol(cols=8):
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
-                        with v2.VContainer(style=f"height: {400*len(state.parameters)}px"):
+                        with v2.VContainer(style=f"height: {400*len(state.parameters)}px;"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
@@ -208,7 +208,7 @@ def home_route():
                                 step=0.1,
                                 classes="align-center",
                                 hide_details=True,
-                                style="width: 200px",
+                                style="width: 200px;",
                                 thumb_label="always",
                                 thumb_size=25,
                                 type="number",
@@ -233,7 +233,7 @@ with SinglePageWithDrawerLayout(server) as layout:
             items=("experiments", ["ip2", "acave"]),
             dense=True,
             prepend_icon="mdi-atom",
-            style="max-width: 200px",
+            style="max-width: 200px;",
         )
 
     with layout.content:
