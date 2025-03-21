@@ -154,30 +154,38 @@ def home_route():
                                 with v2.VCardText():
                                     with v2.VRow():
                                         with v2.VCol():
-                                            v2.VBtn(
+                                            with v2.VBtn(
                                                 "Reset Parameters",
                                                 click=par_manager.recenter,
                                                 style="width: 100%; text-transform: none;",
-                                            )
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-restart")
                                         with v2.VCol():
-                                            v2.VBtn(
+                                            with v2.VBtn(
                                                 "Optimize Parameters",
                                                 click=par_manager.optimize,
                                                 style="width: 100%; text-transform: none;",
-                                            )
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-laptop")
                                     with v2.VRow():
                                         with v2.VCol():
-                                            v2.VBtn(
+                                            with v2.VBtn(
                                                 "Apply Calibration",
                                                 click=apply_calibration,
                                                 style="width: 100%; text-transform: none;",
-                                            )
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-redo")
                                         with v2.VCol():
-                                            v2.VBtn(
+                                            with v2.VBtn(
                                                 "Undo Calibration",
                                                 click=undo_calibration,
                                                 style="width: 100%; text-transform: none;",
-                                            )
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-undo")
             with v2.VCol(cols=8):
                 with v2.VCard():
                     with v2.VCardTitle("Plots"):
