@@ -38,31 +38,31 @@ class ParametersManager:
     def card(self):
         with v2.VCard():
             with v2.VCardTitle("Parameters"):
-                v2.VSpacer()
-                # create icon with tooltip to reset parameters
-                with v2.VTooltip(top=True):
-                    with v2.Template(v_slot_activator="{ on, attrs }"):
-                        with v2.VBtn(
-                            icon=True,
-                            click=self.recenter,
-                            target="_blank",
-                            v_bind="attrs",
-                            v_on="on",
-                        ):
-                            v2.VIcon("mdi-restart")
-                    v2.Template("Reset parameters")
-                # create icon with tooltip to optimize parameters
-                with v2.VTooltip(top=True):
-                    with v2.Template(v_slot_activator="{ on, attrs }"):
-                        with v2.VBtn(
-                            icon=True,
-                            click=self.optimize,
-                            target="_blank",
-                            v_bind="attrs",
-                            v_on="on",
-                        ):
-                            v2.VIcon("mdi-laptop")
-                    v2.Template("Optimize parameters")
+                #v2.VSpacer()
+                ## create icon with tooltip to reset parameters
+                #with v2.VTooltip(top=True):
+                #    with v2.Template(v_slot_activator="{ on, attrs }"):
+                #        with v2.VBtn(
+                #            icon=True,
+                #            click=self.recenter,
+                #            target="_blank",
+                #            v_bind="attrs",
+                #            v_on="on",
+                #        ):
+                #            v2.VIcon("mdi-restart")
+                #    v2.Template("Reset parameters")
+                ## create icon with tooltip to optimize parameters
+                #with v2.VTooltip(top=True):
+                #    with v2.Template(v_slot_activator="{ on, attrs }"):
+                #        with v2.VBtn(
+                #            icon=True,
+                #            click=self.optimize,
+                #            target="_blank",
+                #            v_bind="attrs",
+                #            v_on="on",
+                #        ):
+                #            v2.VIcon("mdi-laptop")
+                #    v2.Template("Optimize parameters")
                 # create parameters sliders and text fields
                 with v2.VCardText():
                     for key in state.parameters.keys():

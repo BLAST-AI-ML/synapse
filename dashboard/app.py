@@ -155,6 +155,19 @@ def home_route():
                                     with v2.VRow():
                                         with v2.VCol():
                                             v2.VBtn(
+                                                "Reset Parameters",
+                                                click=par_manager.recenter,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                        with v2.VCol():
+                                            v2.VBtn(
+                                                "Optimize Parameters",
+                                                click=par_manager.optimize,
+                                                style="width: 100%; text-transform: none;",
+                                            )
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VBtn(
                                                 "Apply Calibration",
                                                 click=apply_calibration,
                                                 style="width: 100%; text-transform: none;",
