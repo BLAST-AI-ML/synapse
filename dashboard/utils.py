@@ -1,3 +1,5 @@
+import inspect
+from io import StringIO
 import numpy as np
 import os
 import pandas as pd
@@ -8,19 +10,50 @@ import pymongo
 import torch
 import yaml
 
-def read_variables(yaml_file):
-    # read YAML file
-    with open(yaml_file) as f:
-        yaml_str = f.read()
-    # load YAML dictionary
-    yaml_dict = yaml.safe_load(yaml_str)
+from state_manager import state
+
+# global database variable
+db = None
+
+def read_variables(config_file):
+    # read configuration file
+    with open(config_file) as f:
+        config_str = f.read()
+    # load configuration dictionary
+    config_dict = yaml.safe_load(config_str)
+    config_spec = config_dict[state.experiment]
     # dictionary of input variables (parameters)
-    input_variables = yaml_dict["input_variables"]
+    input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
-    output_variables = yaml_dict["output_variables"]
+    output_variables = config_spec["output_variables"]
     return (input_variables, output_variables)
 
-db = None
+def metadata_match(config_file, model_file):
+    # inspect current function and module names
+    cfunct = inspect.currentframe().f_code.co_name
+    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    match = False
+    # read configuration file
+    with open(config_file) as f:
+        config_str = f.read()
+    # load configuration dictionary
+    config_dict = yaml.safe_load(config_str)
+    # load configuration input variables list
+    config_vars = [value["name"] for value in config_dict[state.experiment]["input_variables"].values()]
+    config_vars.sort()
+    # read model file
+    with open(model_file) as f:
+        model_str = f.read()
+    # load model dictionary
+    model_dict = yaml.safe_load(model_str)
+    # load model input variables list
+    model_vars = list(model_dict["input_variables"].keys())
+    model_vars.sort()
+    # check if configuration list and model list match
+    match = (config_vars == model_vars)
+    if not match:
+        print(f"{cmodul}:{cfunct}: Input variables in configuration file and model file do not match")
+    return match
 
 def load_database():
     global db
@@ -32,7 +65,6 @@ def load_database():
         "name": "bella_sf",
         "auth": "bella_sf",
         "user": "bella_sf_admin",
-        "collection": "ip2",
     }
 
     # read database information from environment variables (if unset, use defaults)
@@ -41,7 +73,8 @@ def load_database():
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    db_collection = os.getenv("SF_DB_COLLECTION", db_defaults["collection"])
+    # read database experiment from environment variable (no default provided)
+    db_collection = state.experiment
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
@@ -70,33 +103,34 @@ def load_database():
     # retrieve all documents
     documents = list(collection.find())
     # separate documents: experimental and simulation
-    experimental_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    simulation_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (config, experimental_docs, simulation_docs)
+    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
+    return (config, exp_docs, sim_docs)
 
 # plot experimental, simulation, and ML data
-def plot(
-        model,
-        parameters,
-        objectives,
-        experimental_data,
-        simulation_data,
-        opacity_cutoff,
-    ):
-    parameters_dict = parameters.get()
-    parameters_min = parameters.get_min()
-    parameters_max = parameters.get_max()
-    objectives_dict = objectives.get()
-    # FIXME generalize for multiple objectives
-    objective_name = list(objectives_dict.keys())[0]
+def plot(model):
+    # inspect current function and module names
+    cfunct = inspect.currentframe().f_code.co_name
+    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    # local aliases
+    parameters = state.parameters
+    parameters_min = state.parameters_min
+    parameters_max = state.parameters_max
+    objectives = state.objectives
+    try:
+        # FIXME generalize for multiple objectives
+        objective_name = list(objectives.keys())[0]
+    except Exception as e:
+        print(f"{cmodul}:{cfunct}: {e}")
+        objective_name = ""
     # load experimental data
-    df_exp = experimental_data
-    df_sim = simulation_data
+    df_exp = pd.read_json(StringIO(state.exp_data))
+    df_sim = pd.read_json(StringIO(state.sim_data))
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
-    fig = make_subplots(rows=len(parameters_dict), cols=1)
-    for i, key in enumerate(parameters_dict.keys()):
+    fig = make_subplots(rows=len(parameters), cols=1)
+    for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
         this_col = 1
@@ -112,16 +146,16 @@ def plot(
                 continue
             df_copy["distance"] = 0.
             # loop over all inputs except the current one
-            for subkey in [subkey for subkey in parameters_dict.keys() if (subkey != key and subkey in df_copy.columns)]:
+            for subkey in [subkey for subkey in parameters.keys() if (subkey != key and subkey in df_copy.columns)]:
                 pname_loc = subkey
-                pval_loc = parameters_dict[subkey]
+                pval_loc = parameters[subkey]
                 pmin_loc = parameters_min[subkey]
                 pmax_loc = parameters_max[subkey]
                 df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
             df_copy["distance"] = np.sqrt(df_copy["distance"])
             # normalize distance in [0,1] and compute opacity
             df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
-            df_copy["opacity"] = np.where(df_copy["distance"] > opacity_cutoff, 0., 1. - df_copy["distance"])
+            df_copy["opacity"] = np.where(df_copy["distance"] > state.opacity, 0., 1. - df_copy["distance"])
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy,
@@ -153,34 +187,35 @@ def plot(
             )
         #----------------------------------------------------------------------
         # figure trace from model data
-        input_dict_loc = dict()
-        steps = 1000
-        input_dict_loc[key.split(maxsplit=1)[0]] = torch.linspace(
-            start=parameters_min[key],
-            end=parameters_max[key],
-            steps=steps,
-        )
-        for subkey in [subkey for subkey in parameters_dict.keys() if subkey != key]:
-            input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters_dict[subkey] * torch.ones(steps)
-        y = model.evaluate(input_dict_loc)
-        # scatter plot
-        mod_trace = go.Scatter(
-            x=input_dict_loc[key.split(maxsplit=1)[0]],
-            y=y,
-            line=dict(color="orange"),
-            name="ML Model",
-            showlegend=(True if i==0 else False),
-        )
-        # add trace
-        fig.add_trace(
-            mod_trace,
-            row=this_row,
-            col=this_col,
-        )
+        if model.avail():
+            input_dict_loc = dict()
+            steps = 1000
+            input_dict_loc[key.split(maxsplit=1)[0]] = torch.linspace(
+                start=parameters_min[key],
+                end=parameters_max[key],
+                steps=steps,
+            )
+            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
+                input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters[subkey] * torch.ones(steps)
+            y = model.evaluate(input_dict_loc)
+            # scatter plot
+            mod_trace = go.Scatter(
+                x=input_dict_loc[key.split(maxsplit=1)[0]],
+                y=y,
+                line=dict(color="orange"),
+                name="ML Model",
+                showlegend=(True if i==0 else False),
+            )
+            # add trace
+            fig.add_trace(
+                mod_trace,
+                row=this_row,
+                col=this_col,
+            )
         #----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
-            x=parameters_dict[key],
+            x=parameters[key],
             line_dash="dash",
             row=this_row,
             col=this_col,
