@@ -161,6 +161,7 @@ def home_route():
                                             ):
                                                 v2.VSpacer()
                                                 v2.VIcon("mdi-restart")
+                                    with v2.VRow():
                                         with v2.VCol():
                                             with v2.VBtn(
                                                 "Optimize Parameters",
@@ -178,6 +179,7 @@ def home_route():
                                             ):
                                                 v2.VSpacer()
                                                 v2.VIcon("mdi-redo")
+                                    with v2.VRow():
                                         with v2.VCol():
                                             with v2.VBtn(
                                                 "Undo Calibration",
