@@ -6,7 +6,7 @@ import pandas as pd
 if __name__ == "__main__":
 
     # Directory containing exploration history
-    exp_dir = '/global/cfs/cdirs/m3239/ip2data/simulations/scan_TODs_and_positions_3cppwl_optimas/014_try_3/exploration'
+    exp_dir = '/global/cfs/cdirs/m3239/ip2data/simulations/scan_TODs_and_positions_3cppwl_optimas_pulse_from_spectrum_fixed_laser_transverse_pos/032_run_fixed_scan_with_tan_corrected/exploration'
 
     # History file prefix to match
     prefix = 'exploration_history_after_sim_'
@@ -47,12 +47,13 @@ if __name__ == "__main__":
     df_res = df[select_cols].copy()
     df_res.rename(columns={'z_pos_um': 'z_target_um', 'f' : 'n_protons'}, inplace=True)
     # Rescale the number of protons to take into account differences between 2D and 3D simulations
-    df_res['n_protons'] *= 1e-4
+    df_res['n_protons'] *= 1e-5
     # Also store a default value of the GVD
     df_res['GVD'] = 13.6
 
     res_file = './simulation_results.csv'
-    df_res.to_csv(res_file)
+    # write results to CSV without the index column
+    df_res.to_csv(res_file, index=False)
 
     abs_res_path = os.path.abspath(res_file)
     print(f"Results written to {abs_res_path}.")
