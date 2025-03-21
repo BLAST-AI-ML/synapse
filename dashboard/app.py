@@ -150,12 +150,12 @@ def home_route():
                 with v2.VRow():
                     with v2.VCol():
                         with v2.VCard():
-                            with v2.VCardTitle("Control"):
+                            with v2.VCardTitle("Control: Parameters"):
                                 with v2.VCardText():
                                     with v2.VRow():
                                         with v2.VCol():
                                             with v2.VBtn(
-                                                "Reset Parameters",
+                                                "Recenter",
                                                 click=par_manager.recenter,
                                                 style="width: 100%; text-transform: none;",
                                             ):
@@ -164,12 +164,36 @@ def home_route():
                                     with v2.VRow():
                                         with v2.VCol():
                                             with v2.VBtn(
-                                                "Optimize Parameters",
+                                                "Optimize",
                                                 click=par_manager.optimize,
                                                 style="width: 100%; text-transform: none;",
                                             ):
                                                 v2.VSpacer()
                                                 v2.VIcon("mdi-laptop")
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control: Plots"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            pass
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VSlider(
+                                                v_model_number=("opacity",),
+                                                change="flushState('opacity')",
+                                                label="Opacity",
+                                                min=0.0,
+                                                max=1.0,
+                                                step=0.1,
+                                                classes="align-center",
+                                                hide_details=True,
+                                                style="width: 100%;",
+                                                thumb_label="always",
+                                                thumb_size=25,
+                                                type="number",
+                                            )
                                     with v2.VRow():
                                         with v2.VCol():
                                             with v2.VBtn(
@@ -197,22 +221,6 @@ def home_route():
                                 config={"responsive": True},
                             )
                             ctrl.figure_update = figure.update
-                        # opacity slider
-                        with v2.VCardText():
-                            v2.VSlider(
-                                v_model_number=("opacity",),
-                                change="flushState('opacity')",
-                                label="Opacity",
-                                min=0.0,
-                                max=1.0,
-                                step=0.1,
-                                classes="align-center",
-                                hide_details=True,
-                                style="width: 200px;",
-                                thumb_label="always",
-                                thumb_size=25,
-                                type="number",
-                            )
 
 # NERSC route
 def nersc_route():
