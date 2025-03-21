@@ -1,14 +1,8 @@
 model_class: TorchModel
 input_variables:
-  z_target_um:
-    variable_class: ScalarVariable
-    default_value: 0.1
-    is_constant: false
-    value_range: [-150.0, 150.0]
-    value_range_tolerance: 1.0e-08
   TOD_fs3:
     variable_class: ScalarVariable
-    default_value: 0.1
+    default_value: 0.0
     is_constant: false
     value_range: [-80000.0, 80000.0]
     value_range_tolerance: 1.0e-08
@@ -18,13 +12,14 @@ input_variables:
     is_constant: false
     value_range: [13.0, 14.0]
     value_range_tolerance: 1.0e-08
-output_variables:
-  n_protons:
+  z_target_um:
     variable_class: ScalarVariable
     default_value: 0.0
     is_constant: false
-    value_range: [0.0, 80000000000.0]
+    value_range: [-150.0, 150.0]
     value_range_tolerance: 1.0e-08
+output_variables:
+  n_protons: {variable_class: ScalarVariable, is_constant: false, value_range_tolerance: 1.0e-08}
 input_validation_config: null
 output_validation_config: null
 model: base_simulation_model_with_transformers_new_model.pt
