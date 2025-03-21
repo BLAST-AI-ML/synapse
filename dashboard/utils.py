@@ -1,3 +1,4 @@
+import inspect
 from io import StringIO
 import numpy as np
 import os
@@ -28,6 +29,9 @@ def read_variables(config_file):
     return (input_variables, output_variables)
 
 def metadata_match(config_file, model_file):
+    # inspect current function and module names
+    cfunct = inspect.currentframe().f_code.co_name
+    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
     match = False
     # read configuration file
     with open(config_file) as f:
@@ -47,6 +51,8 @@ def metadata_match(config_file, model_file):
     model_vars.sort()
     # check if configuration list and model list match
     match = (config_vars == model_vars)
+    if not match:
+        print(f"{cmodul}:{cfunct}: Input variables in configuration file and model file do not match")
     return match
 
 def load_database():
@@ -103,6 +109,10 @@ def load_database():
 
 # plot experimental, simulation, and ML data
 def plot(model):
+    # inspect current function and module names
+    cfunct = inspect.currentframe().f_code.co_name
+    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    # local aliases
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
@@ -111,7 +121,7 @@ def plot(model):
         # FIXME generalize for multiple objectives
         objective_name = list(objectives.keys())[0]
     except Exception as e:
-        print(f"utils.plot: {e}")
+        print(f"{cmodul}:{cfunct}: {e}")
         objective_name = ""
     # load experimental data
     df_exp = pd.read_json(StringIO(state.exp_data))

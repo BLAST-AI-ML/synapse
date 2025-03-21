@@ -1,4 +1,6 @@
+import inspect
 import numpy as np
+import os
 from scipy.optimize import minimize
 import torch
 
@@ -9,13 +11,16 @@ from state_manager import state
 class ModelManager:
 
     def __init__(self, model_data):
+        # inspect current function and module names
+        cfunct = inspect.currentframe().f_code.co_name
+        cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
         if model_data is None:
             self.__model = None
         else:
             try:
                 self.__model = TorchModel(model_data)
             except Exception as e:
-                print(f"ModelManager.__init__: {e}")
+                print(f"{cmodul}:{self.__class__.__name__}.{cfunct}: {e}")
                 sys.exit(1)
 
     def avail(self):
