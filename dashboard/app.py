@@ -1,4 +1,6 @@
 import argparse
+from io import StringIO
+import os
 import pandas as pd
 import torch
 from trame.app import get_server
@@ -6,11 +8,12 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify2 as v2
 
-from model import Model
-from parameters import Parameters
-from objectives import Objectives
-from nersc import build_nersc
-from utils import read_variables, load_database, plot
+from model_manager import ModelManager
+from parameters_manager import ParametersManager
+from objectives_manager import ObjectivesManager
+from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
+from state_manager import server, state, ctrl, init_state
+from utils import read_variables, metadata_match, load_database, plot
 
 
 # -----------------------------------------------------------------------------
@@ -19,203 +22,230 @@ from utils import read_variables, load_database, plot
 
 # define parser
 parser = argparse.ArgumentParser()
-# add arguments: path to model data
+# add arguments: path to model file
 parser.add_argument(
     "--model",
-    help="path to model data file (YAML)",
+    help="path to model data file (.yml)",
+    default=None,
     type=str,
 )
 # parse arguments (ignore unknown arguments for internal Trame parser)
 args, _ = parser.parse_known_args()
 
 # -----------------------------------------------------------------------------
-# Trame initialization 
+# Initialize experiment
 # -----------------------------------------------------------------------------
 
-server = get_server(client_type="vue2")
-state, ctrl = server.state, server.controller
-
-state.trame__title = "IFE Superfacility"
-
-# -----------------------------------------------------------------------------
-# Initialize state
-# -----------------------------------------------------------------------------
-
-# read input and output variables
-input_variables, output_variables = read_variables("variables.yml")
-
-# set file paths
-model_data = args.model
-
-config, experimental_docs, simulation_docs = load_database()
-# convert database documents into pandas DataFrames
-experimental_data = pd.DataFrame(experimental_docs)
-simulation_data = pd.DataFrame(simulation_docs)
-
-# initialize model
-model = Model(server, model_data)
-
-# initialize parameters
-parameters = Parameters(server, input_variables)
-
-# initialize objectives
-objectives = Objectives(server, model, output_variables)
-
-# initialize opacity controller
-state.opacity = 0.1
-
-# calibration of simulation data
-state.is_calibrated = False
-
-# terminal output for NERSC control
-state.sfapi_output = ""
+state.trame_title = "IFE Superfacility"
+state.experiment = "ip2"
 
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("opacity")
-def update_plots(**kwargs):
-    fig = plot(
-        model,
-        parameters,
-        objectives,
-        experimental_data,
-        simulation_data,
-        state.opacity,
-    )
-    ctrl.plotly_figure_update = plotly_figure.update(fig)
+@state.change("experiment")
+def reload(**kwargs):
+    global mod_manager
+    global par_manager
+    global obj_manager
+    # initialize state after experiment selection
+    init_state()
+    # initialize database
+    config, exp_docs, sim_docs = load_database()
+    # convert database documents into pandas DataFrames
+    state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
+    state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
+    # read input and output variables
+    current_dir = os.getcwd()
+    config_file = os.path.join(current_dir, "..", "config", "variables.yml")
+    input_variables, output_variables = read_variables(config_file)
+    # initialize model
+    model_file = args.model
+    if not metadata_match(config_file, model_file):
+        model_file = None
+    mod_manager = ModelManager(model_file)
+    # initialize parameters
+    par_manager = ParametersManager(mod_manager, input_variables)
+    # initialize objectives
+    obj_manager = ObjectivesManager(mod_manager, output_variables)
+    # reload home route
+    home_route()
+    # reload NERSC route
+    nersc_route()
+    # update app
+    update()
 
-@state.change("parameters")
-def update_state(**kwargs):
+@state.change(
+    "exp_data",
+    "sim_data",
+    "parameters",
+    "opacity",
+)
+def update(**kwargs):
     # update parameters
-    parameters.update()
+    par_manager.update()
     # update objectives
-    objectives.update()
-    # update plots (TODO plots.update())
-    update_plots()
+    obj_manager.update()
+    # update plots
+    fig = plot(mod_manager)
+    ctrl.figure_update(fig)
 
 def pre_calibration():
     # get calibration and normalization transformers
-    output_transformers = model.get_output_transformers()
+    output_transformers = mod_manager.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
     # normalize simulation data
-    n_protons_tensor = torch.from_numpy(simulation_data["n_protons"].values)
+    sim_data = pd.read_json(StringIO(state.sim_data))
+    n_protons_tensor = torch.from_numpy(sim_data["n_protons"].values)
     n_protons_tensor = output_normalization.transform(n_protons_tensor)
     return (output_calibration, output_normalization, n_protons_tensor)
 
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
-    if not state.is_calibrated:
-        # prepare
-        output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and denormalize simulation data
-        n_protons_tensor = output_calibration.untransform(n_protons_tensor)
-        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-        simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-        # update plots (TODO plots.update())
-        update_plots()
-        # update state
-        state.is_calibrated = True
+    if mod_manager.avail():
+        if not state.is_calibrated:
+            # prepare
+            output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+            # calibrate, and denormalize simulation data
+            n_protons_tensor = output_calibration.untransform(n_protons_tensor)
+            n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+            sim_data = pd.read_json(StringIO(state.sim_data))
+            sim_data["n_protons"] = n_protons_tensor.numpy()[0]
+            # update state
+            state.sim_data = sim_data.to_json(default_handler=str)
+            state.dirty("sim_data")
+            state.is_calibrated = True
 
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
 def undo_calibration():
-    if state.is_calibrated:
-        # prepare
-        output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-        # calibrate, and denormalize simulation data
-        n_protons_tensor = output_calibration.transform(n_protons_tensor)
-        n_protons_tensor = output_normalization.untransform(n_protons_tensor)
-        simulation_data["n_protons"] = n_protons_tensor.numpy()[0]
-        # update plots (TODO plots.update())
-        update_plots()
-        # update state
-        state.is_calibrated = False
+    if mod_manager.avail():
+        if state.is_calibrated:
+            # prepare
+            output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+            # calibrate, and denormalize simulation data
+            n_protons_tensor = output_calibration.transform(n_protons_tensor)
+            n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+            sim_data = pd.read_json(StringIO(state.sim_data))
+            sim_data["n_protons"] = n_protons_tensor.numpy()[0]
+            # update state
+            state.sim_data = sim_data.to_json(default_handler=str)
+            state.dirty("sim_data")
+            state.is_calibrated = False
 
 # -----------------------------------------------------------------------------
 # GUI
 # -----------------------------------------------------------------------------
 
 # home route
-with RouterViewLayout(server, "/"):
-    with v2.VRow():
-        with v2.VCol(cols=4):
-            with v2.VRow():
-                with v2.VCol():
-                    parameters.card()
-            with v2.VRow():
-                with v2.VCol():
-                    objectives.card()
-            with v2.VRow():
-                with v2.VCol():
-                    with v2.VCard():
-                        with v2.VCardTitle("Control"):
-                            with v2.VCardText():
-                                with v2.VRow():
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Apply Calibration",
-                                            click=apply_calibration,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Undo Calibration",
-                                            click=undo_calibration,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                with v2.VRow():
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Recenter",
-                                            click=parameters.recenter,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-                                    with v2.VCol():
-                                        v2.VBtn(
-                                            "Optimize",
-                                            click=model.optimize,
-                                            style="width: 100%; text-transform: none;",
-                                        )
-        with v2.VCol(cols=8):
-            with v2.VCard():
-                with v2.VCardTitle("Plots"):
-                    with v2.VContainer(style=f"height: {25*len(parameters.get())}vh"):
-                        plotly_figure = plotly.Figure(
-                                display_mode_bar="true", config={"responsive": True}
-                        )
-                        ctrl.plotly_figure_update = plotly_figure.update
-                    # opacity slider
-                    with v2.VCardText():
-                        v2.VSlider(
-                            v_model_number=("opacity",),
-                            change="flushState('opacity')",
-                            label="Opacity",
-                            min=0.0,
-                            max=1.0,
-                            step=0.1,
-                            classes="align-center",
-                            hide_details=True,
-                            style="width: 200px",
-                            thumb_label="always",
-                            thumb_size=25,
-                            type="number",
-                        )
+def home_route():
+    with RouterViewLayout(server, "/"):
+        with v2.VRow():
+            with v2.VCol(cols=4):
+                with v2.VRow():
+                    with v2.VCol():
+                        par_manager.card()
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control: Parameters"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
+                                                "Recenter",
+                                                click=par_manager.recenter,
+                                                style="width: 100%; text-transform: none;",
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-restart")
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
+                                                "Optimize",
+                                                click=par_manager.optimize,
+                                                style="width: 100%; text-transform: none;",
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-laptop")
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control: Plots"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            pass
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VSlider(
+                                                v_model_number=("opacity",),
+                                                change="flushState('opacity')",
+                                                label="Opacity",
+                                                min=0.0,
+                                                max=1.0,
+                                                step=0.1,
+                                                classes="align-center",
+                                                hide_details=True,
+                                                style="width: 100%;",
+                                                thumb_label="always",
+                                                thumb_size=25,
+                                                type="number",
+                                            )
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
+                                                "Apply Calibration",
+                                                click=apply_calibration,
+                                                style="width: 100%; text-transform: none;",
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-redo")
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
+                                                "Undo Calibration",
+                                                click=undo_calibration,
+                                                style="width: 100%; text-transform: none;",
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-undo")
+            with v2.VCol(cols=8):
+                with v2.VCard():
+                    with v2.VCardTitle("Plots"):
+                        with v2.VContainer(style=f"height: {400*len(state.parameters)}px;"):
+                            figure = plotly.Figure(
+                                display_mode_bar="true",
+                                config={"responsive": True},
+                            )
+                            ctrl.figure_update = figure.update
 
 # NERSC route
-build_nersc()
+def nersc_route():
+    if get_sfapi_client() is not None:
+        build_sfapi_status()
+    else:
+        build_sfapi_auth()
 
+# trigger first reload manually (FIXME fix reload to wait for server response?)
+reload()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
-    layout.title.set_text("IFE Superfacility")
+    layout.title.set_text(state.trame_title)
 
     # add toolbar components
     with layout.toolbar:
-        pass
+        v2.VSpacer()
+        v2.VSelect(
+            v_model=("experiment",),
+            items=("experiments", ["ip2", "acave"]),
+            dense=True,
+            prepend_icon="mdi-atom",
+            style="max-width: 200px;",
+        )
 
     with layout.content:
         with v2.VContainer():
