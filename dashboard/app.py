@@ -229,6 +229,9 @@ def nersc_route():
     else:
         build_sfapi_auth()
 
+# trigger first reload manually (FIXME fix reload to wait for server response?)
+reload()
+
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
     layout.title.set_text(state.trame_title)
