@@ -1,0 +1,26 @@
+model_class: TorchModel
+input_variables:
+  kHz_Hexapod_Target ypos:
+    variable_class: ScalarVariable
+    default_value: 0.0
+    is_constant: false
+    value_range: [-0.1, 0.1]
+    value_range_tolerance: 1.0e-08
+  kHz_Zaber_Compressor Position.Ch1:
+    variable_class: ScalarVariable
+    default_value: 75000.0
+    is_constant: false
+    value_range: [0.0, 150000.0]
+    value_range_tolerance: 1.0e-08
+output_variables:
+  kHz_ThorlabsSpec MeanWavelength: {variable_class: ScalarVariable, is_constant: false,
+    value_range_tolerance: 1.0e-08}
+input_validation_config: null
+output_validation_config: null
+model: acave_model.pt
+input_transformers: [acave_input_transformers_0.pt]
+output_transformers: [acave_output_transformers_0.pt, acave_output_transformers_1.pt]
+output_format: tensor
+device: cpu
+fixed_model: true
+precision: double

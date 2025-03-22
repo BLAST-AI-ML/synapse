@@ -36,8 +36,8 @@ acave:
     input2:
         name: "kHz_Zaber_Compressor Position.Ch1"
         type: scalar
-        default: 75e3
-        value_range: [0., 150e3]
+        default: 75000
+        value_range: [0., 150000]
 
   output_variables:
     output1:
