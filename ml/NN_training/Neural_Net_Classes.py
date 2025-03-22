@@ -31,7 +31,12 @@ class CombinedNN(nn.Module):
         self.relu = nn.ReLU()
 
         self.sim_to_exp_calibration = nn.Linear(1, 1)
-
+        with torch.no_grad():
+            # Initialize to reasonable value, so that, 
+            # if there is no experimental data this stays as is
+            self.sim_to_exp_calibration.weight[...] = 1.
+            self.sim_to_exp_calibration.bias[...] = 0.
+        
         self.loss_data = {
             'loss':[],
             'epoch_count':[]
