@@ -190,17 +190,17 @@ def plot(model):
         if model.avail():
             input_dict_loc = dict()
             steps = 1000
-            input_dict_loc[key.split(maxsplit=1)[0]] = torch.linspace(
+            input_dict_loc[key] = torch.linspace(
                 start=parameters_min[key],
                 end=parameters_max[key],
                 steps=steps,
             )
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
-                input_dict_loc[subkey.split(maxsplit=1)[0]] = parameters[subkey] * torch.ones(steps)
+                input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
             y = model.evaluate(input_dict_loc)
             # scatter plot
             mod_trace = go.Scatter(
-                x=input_dict_loc[key.split(maxsplit=1)[0]],
+                x=input_dict_loc[key],
                 y=y,
                 line=dict(color="orange"),
                 name="ML Model",
