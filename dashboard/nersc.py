@@ -4,14 +4,9 @@ from trame.ui.router import RouterViewLayout
 from trame.widgets import vuetify3 as vuetify
 from sfapi_client import Client
 from sfapi_client.compute import Machine
+
+from state_manager import server, state, ctrl
 from utils import load_database
-
-# -----------------------------------------------------------------------------
-# Trame initialization
-# -----------------------------------------------------------------------------
-
-server = get_server(client_type="vue3")
-state, ctrl = server.state, server.controller
 
 
 def get_sfapi_config():
@@ -160,7 +155,7 @@ def build_sfapi_auth():
                                         step=1,
                                         classes="align-center",
                                         hide_details=True,
-                                        # style="width: 200px",
+                                        #style="width: 200px;",
                                         thumb_label="always",
                                         thumb_size=25,
                                         type="number",
@@ -190,15 +185,8 @@ def build_sfapi_auth():
                             with vuetify.VRow():
                                 with vuetify.VCol():
                                     vuetify.VTextarea(
-                                        v_model=("sfapi_output", ""),
+                                        v_model=("sfapi_output",),
                                         readonly=True,
                                         rows=10,
-                                        style="width: 100%",
+                                        style="width: 100%;",
                                     )
-
-
-def build_nersc():
-    if get_sfapi_client() is not None:
-        build_sfapi_status()
-    else:
-        build_sfapi_auth()
