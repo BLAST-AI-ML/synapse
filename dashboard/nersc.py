@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import inspect
+import os
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
 from trame.widgets import vuetify2 as v2
@@ -99,9 +101,13 @@ def exchange_credentials(state):
 
 
 def build_sfapi_status():
+    # inspect current function and module names
+    cfunct = inspect.currentframe().f_code.co_name
+    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    # get SFAPI configuration parameters (client ID, private key, expiration)
     sfapi_client_id, sfapi_key_pem, sfapi_expiration = get_sfapi_config()
     print(sfapi_expiration)
-
+    # route
     with RouterViewLayout(server, "/nersc"):
         with v2.VRow():
             with v2.VCol(cols=4):
@@ -109,12 +115,18 @@ def build_sfapi_status():
                     with v2.VCardTitle("Superfacility API"):
                         with get_sfapi_client() as client:
                             # does not need authentication
-                            pm_status = client.compute(Machine.perlmutter)
+                            try:
+                                pm_status = client.compute(Machine.perlmutter)
+                                pm_status_description = pm_status.description
+                            except Exception as e:
+                                print(f"{cmodul}:{cfunct}: {e}")
+                                pm_status = None
+                                pm_status_description = "N/A"
                             with v2.VRow():
                                 with v2.VCol():
                                     with v2.VCardText():
                                         v2.VTextField(
-                                            v_model=("perlmutter_status", pm_status.description),
+                                            v_model=("perlmutter_status", pm_status_description),
                                             label="Perlmutter Status",
                                             readonly=True,
                                         )
@@ -127,9 +139,7 @@ def build_sfapi_status():
                                             label="API Key Expiration",
                                             readonly=True,
                                         )
-
                         # test = check_status() != []
-
                         with v2.VRow():
                             with v2.VCol():
                                 v2.VBtn(
