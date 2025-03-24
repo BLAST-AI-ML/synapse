@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 # add arguments: path to model file
 parser.add_argument(
     "--model",
-    help="path to model data file (.yml)",
+    help="path to folder containing data file (.yml)",
     default=None,
     type=str,
 )
@@ -60,7 +60,7 @@ def reload(**kwargs):
     config_file = os.path.join(current_dir, "..", "config", "variables.yml")
     input_variables, output_variables = read_variables(config_file)
     # initialize model
-    model_file = args.model
+    model_file = os.path.join(args.model, state.experiment+".yml")
     if not metadata_match(config_file, model_file):
         model_file = None
     mod_manager = ModelManager(model_file)
