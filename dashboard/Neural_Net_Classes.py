@@ -10,8 +10,8 @@ class CombinedNN(nn.Module):
     """
     Model that trains a 5 layer neural network and a calibration layer
     """
-    def __init__(self, hidden_size=20, learning_rate=0.001,
-                 patience=100, factor=0.5, threshold=1e-4):
+    def __init__(self, input_size, output_size, hidden_size=20, 
+                 learning_rate=0.001, patience=100, factor=0.5, threshold=1e-4):
         '''
         args:
             float learning_rate: how much should NN correct when it guesses wrong
@@ -22,16 +22,21 @@ class CombinedNN(nn.Module):
         '''
         super(CombinedNN, self).__init__()
 
-        self.hidden1 = nn.Linear(3, hidden_size)
+        self.hidden1 = nn.Linear(input_size, hidden_size)
         self.hidden2 = nn.Linear(hidden_size, hidden_size)
         self.hidden3 = nn.Linear(hidden_size, hidden_size)
         self.hidden4 = nn.Linear(hidden_size, hidden_size)
         self.hidden5 = nn.Linear(hidden_size, hidden_size)
-        self.output = nn.Linear(hidden_size, 1)
+        self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
         self.sim_to_exp_calibration = nn.Linear(1, 1)
-
+        with torch.no_grad():
+            # Initialize to reasonable value, so that, 
+            # if there is no experimental data this stays as is
+            self.sim_to_exp_calibration.weight[...] = 1.
+            self.sim_to_exp_calibration.bias[...] = 0.
+        
         self.loss_data = {
             'loss':[],
             'epoch_count':[]
@@ -42,6 +47,10 @@ class CombinedNN(nn.Module):
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
                                            factor=factor, patience=patience, threshold=threshold)
 
+    @torch.jit.export
+    def calibrate(self, x):
+        """Expose sim_to_exp_calibration."""
+        return self.sim_to_exp_calibration(x)
 
     def forward(self, x):
         '''
@@ -66,9 +75,13 @@ class CombinedNN(nn.Module):
         for epoch in range(num_epochs):
             self.optimizer.zero_grad()
 
-            sim_outputs = self(sim_inputs)
-            exp_outputs = self.sim_to_exp_calibration( self(exp_inputs) )
-            loss = self.criterion( sim_targets, sim_outputs ) + self.criterion( exp_targets, exp_outputs )
+            loss = 0
+            if len(sim_inputs) > 0:
+                sim_outputs = self(sim_inputs)
+                loss += self.criterion( sim_targets, sim_outputs )
+            if len(exp_inputs) > 0:
+                exp_outputs = self.sim_to_exp_calibration( self(exp_inputs) )
+                loss += self.criterion( exp_targets, exp_outputs )
             loss.backward()
 
             self.optimizer.step()
