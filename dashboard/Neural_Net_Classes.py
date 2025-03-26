@@ -34,6 +34,8 @@ class CombinedNN(nn.Module):
         with torch.no_grad():
             # Initialize to reasonable value, so that, 
             # if there is no experimental data this stays as is
+            # Warning: this might affect uncertainty estimates of the 
+            # calibration constants when training ensembles of neural networks
             self.sim_to_exp_calibration.weight[...] = 1.
             self.sim_to_exp_calibration.bias[...] = 0.
         
