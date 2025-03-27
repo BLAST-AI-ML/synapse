@@ -1,7 +1,7 @@
-import argparse
 from io import StringIO
 import os
 import pandas as pd
+import sys
 import torch
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
@@ -15,22 +15,6 @@ from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
 from state_manager import server, state, ctrl, init_state
 from utils import read_variables, metadata_match, load_database, plot
 
-
-# -----------------------------------------------------------------------------
-# Command line parser
-# -----------------------------------------------------------------------------
-
-# define parser
-parser = argparse.ArgumentParser()
-# add arguments: path to model file
-parser.add_argument(
-    "--model",
-    help="path to folder containing data file (.yml)",
-    default=None,
-    type=str,
-)
-# parse arguments (ignore unknown arguments for internal Trame parser)
-args, _ = parser.parse_known_args()
 
 # -----------------------------------------------------------------------------
 # Initialize experiment
@@ -56,11 +40,18 @@ def reload(**kwargs):
     state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
     state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
     # read input and output variables
-    current_dir = os.getcwd()
-    config_file = os.path.join(current_dir, "..", "config", "variables.yml")
+    config_dir  = os.path.join(os.getcwd(), "config")
+    config_file = os.path.join(config_dir, "variables.yml")
+    if not os.path.isfile(config_file):
+        raise ValueError(f"Configuration file {config_file} not found")
     input_variables, output_variables = read_variables(config_file)
     # initialize model
-    model_file = os.path.join(args.model, state.experiment+".yml")
+    model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
+    model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
+    model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
+    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+    if not os.path.isfile(model_file):
+        raise ValueError(f"Model file {model_file} not found")
     if not metadata_match(config_file, model_file):
         model_file = None
     mod_manager = ModelManager(model_file)
