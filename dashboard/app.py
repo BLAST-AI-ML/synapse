@@ -1,7 +1,6 @@
 from io import StringIO
 import os
 import pandas as pd
-import sys
 import torch
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
