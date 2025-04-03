@@ -18,6 +18,7 @@ dependencies:
   - pymongo
   - python<3.13
   - pytorch
+  - pyyaml
   - scipy
   - torchaudio
   - torchvision
