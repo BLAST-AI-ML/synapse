@@ -1,4 +1,4 @@
-from trame.widgets import vuetify2 as v2
+from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
 
@@ -36,19 +36,19 @@ class ParametersManager:
         self.__model.optimize()
 
     def card(self):
-        with v2.VCard():
-            with v2.VCardTitle("Parameters"):
-                with v2.VCardText():
+        with vuetify.VCard():
+            with vuetify.VCardTitle("Parameters"):
+                with vuetify.VCardText():
                     for key in state.parameters.keys():
                         pmin = state.parameters_min[key]
                         pmax = state.parameters_max[key]
                         step = (pmax - pmin) / 100.
                         # create a row for the parameter label
-                        with v2.VRow():
-                            v2.VSubheader(key)
+                        with vuetify.VRow():
+                            vuetify.VSubheader(key)
                         # create a row for the slider and text field
-                        with v2.VRow(no_gutters=True):
-                            with v2.VSlider(
+                        with vuetify.VRow(no_gutters=True):
+                            with vuetify.VSlider(
                                 v_model_number=(f"parameters['{key}']",),
                                 change="flushState('parameters')",
                                 classes="align-center",
@@ -57,8 +57,8 @@ class ParametersManager:
                                 min=pmin,
                                 step=step,
                             ):
-                                with v2.Template(v_slot_append=True):
-                                    v2.VTextField(
+                                with vuetify.Template(v_slot_append=True):
+                                    vuetify.VTextField(
                                         v_model_number=(f"parameters['{key}']",),
                                         classes="mt-0 pt-0",
                                         density="compact",

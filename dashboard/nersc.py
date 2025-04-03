@@ -3,7 +3,7 @@ import inspect
 import os
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
-from trame.widgets import vuetify2 as v2
+from trame.widgets import vuetify2 as vuetify
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 
@@ -109,10 +109,10 @@ def build_sfapi_status():
     print(sfapi_expiration)
     # route
     with RouterViewLayout(server, "/nersc"):
-        with v2.VRow():
-            with v2.VCol(cols=4):
-                with v2.VCard():
-                    with v2.VCardTitle("Superfacility API"):
+        with vuetify.VRow():
+            with vuetify.VCol(cols=4):
+                with vuetify.VCard():
+                    with vuetify.VCardTitle("Superfacility API"):
                         with get_sfapi_client() as client:
                             # does not need authentication
                             try:
@@ -122,27 +122,27 @@ def build_sfapi_status():
                                 print(f"{cmodul}:{cfunct}: {e}")
                                 pm_status = None
                                 pm_status_description = "N/A"
-                            with v2.VRow():
-                                with v2.VCol():
-                                    with v2.VCardText():
-                                        v2.VTextField(
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    with vuetify.VCardText():
+                                        vuetify.VTextField(
                                             v_model=("perlmutter_status", pm_status_description),
                                             label="Perlmutter Status",
                                             readonly=True,
                                         )
 
-                            with v2.VRow():
-                                with v2.VCol():
-                                    with v2.VCardText():
-                                        v2.VTextField(
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    with vuetify.VCardText():
+                                        vuetify.VTextField(
                                             v_model=("sfapi_expiration", str(sfapi_expiration)),
                                             label="API Key Expiration",
                                             readonly=True,
                                         )
                         # test = check_status() != []
-                        with v2.VRow():
-                            with v2.VCol():
-                                v2.VBtn(
+                        with vuetify.VRow():
+                            with vuetify.VCol():
+                                vuetify.VBtn(
                                     "Refresh SFAPI Credentials",
                                     click=lambda: build_sfapi_auth(),
                                     style="width: 100%; text-transform: none;",
@@ -150,14 +150,14 @@ def build_sfapi_status():
 
 def build_sfapi_auth():
     with RouterViewLayout(server, "/nersc"):
-        with v2.VRow():
-            with v2.VCol(cols=4):
-                with v2.VCard():
-                    with v2.VCardTitle("Superfacility API"):
-                        with v2.VCardText():
-                            with v2.VRow():
-                                with v2.VCol():
-                                    v2.VSlider(
+        with vuetify.VRow():
+            with vuetify.VCol(cols=4):
+                with vuetify.VCard():
+                    with vuetify.VCardTitle("Superfacility API"):
+                        with vuetify.VCardText():
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    vuetify.VSlider(
                                         v_model_number=("expiration_days", 33),
                                         label="Expiration (days)",
                                         min=0,
@@ -170,31 +170,31 @@ def build_sfapi_auth():
                                         thumb_size=25,
                                         type="number",
                                     )
-                            with v2.VRow():
-                                with v2.VCol():
-                                    v2.VTextField(
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    vuetify.VTextField(
                                         label="Client Id",
                                         v_model=("client_id", None),
                                         single_line=True,
                                     )
-                            with v2.VRow():
-                                with v2.VCol():
-                                    v2.VFileInput(
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    vuetify.VFileInput(
                                         label="Select Private Key File (PEM)",
                                         v_model=("private_key", None),
                                         accept=".pem",
                                         __properties=["accept"],
                                     )
-                            with v2.VRow():
-                                with v2.VCol():
-                                    v2.VBtn(
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    vuetify.VBtn(
                                         "Connect Superfacility API",
                                         click=lambda: exchange_credentials(state),
                                         style="width: 100%; text-transform: none;",
                                     )
-                            with v2.VRow():
-                                with v2.VCol():
-                                    v2.VTextarea(
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    vuetify.VTextarea(
                                         v_model=("sfapi_output",),
                                         readonly=True,
                                         rows=10,
