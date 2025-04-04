@@ -62,8 +62,6 @@ def reload(**kwargs):
     home_route()
     # reload NERSC route
     nersc_route()
-    # update app
-    update()
 
 @state.change(
     "exp_data",
@@ -72,8 +70,6 @@ def reload(**kwargs):
     "opacity",
 )
 def update(**kwargs):
-    # update parameters
-    par_manager.update()
     # update objectives
     obj_manager.update()
     # update plots
