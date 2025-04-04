@@ -20,10 +20,6 @@ class ParametersManager:
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
 
-    def update(self):
-        for key in state.parameters.keys():
-            state.parameters[key] = float(state.parameters[key])
-
     def recenter(self):
         # recenter parameters
         for key in state.parameters.keys():
