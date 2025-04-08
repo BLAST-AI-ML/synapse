@@ -1,6 +1,7 @@
 from io import StringIO
 import os
 import pandas as pd
+from plotly import graph_objects as go
 import torch
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
@@ -63,6 +64,9 @@ def reload(**kwargs):
     # reload NERSC route
     nersc_route()
 
+def plot_click():
+    print(">>>>> click <<<<<")
+
 @state.change(
     "exp_data",
     "sim_data",
@@ -74,6 +78,8 @@ def update(**kwargs):
     obj_manager.update()
     # update plots
     fig = plot(mod_manager)
+    fig_widget = go.FigureWidget(data=fig.data, layout=fig.layout)
+    fig.data[0].on_click(plot_click)
     ctrl.figure_update(fig)
 
 def pre_calibration():
