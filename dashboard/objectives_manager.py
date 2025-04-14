@@ -1,5 +1,3 @@
-from trame.widgets import vuetify2 as v2
-
 from state_manager import state
 
 class ObjectivesManager:
