@@ -17,7 +17,7 @@ output_variables:
     value_range_tolerance: 1.0e-08}
 input_validation_config: null
 output_validation_config: null
-model: acave_model.pt
+model: acave_model.jit
 input_transformers: [acave_input_transformers_0.pt]
 output_transformers: [acave_output_transformers_0.pt, acave_output_transformers_1.pt]
 output_format: tensor
