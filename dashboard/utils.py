@@ -234,5 +234,5 @@ def plot(model):
             row=this_row,
             col=this_col,
         )
-    fig.update_layout()
+    fig.update_layout(clickmode="event")
     return fig

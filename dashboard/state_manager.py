@@ -23,8 +23,6 @@ def init_state():
     state.parameters_max = dict()
     # objectives
     state.objectives = dict()
-    # interactive plots
-    state.plotly_click = 0
     # NERSC
     state.sfapi_output = ""
     # TODO
