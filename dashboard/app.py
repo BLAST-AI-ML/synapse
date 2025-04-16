@@ -121,8 +121,10 @@ def undo_calibration():
             state.dirty("sim_data")
             state.is_calibrated = False
 
-def handle_click(**kwargs):
-    print(f"handle_click...")
+def on_click(event):
+    x = event["points"][0]["x"]
+    y = event["points"][0]["y"]
+    print(f"Clicked on: x = {x}, y = {y}")
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -208,7 +210,7 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=handle_click,
+                                click=(on_click, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
 
