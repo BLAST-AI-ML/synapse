@@ -64,8 +64,12 @@ def reload(**kwargs):
     # reload NERSC route
     nersc_route()
 
-def plot_click():
-    print(">>>>> click <<<<<")
+@state.change("plotly_click")
+def interactive_plot(**kwargs):
+    print(f"state.plotly_click = {state.plotly_click}")
+
+def record_click():
+    state.plotly_click += 1
 
 @state.change(
     "exp_data",
@@ -78,8 +82,11 @@ def update(**kwargs):
     obj_manager.update()
     # update plots
     fig = plot(mod_manager)
-    fig_widget = go.FigureWidget(data=fig.data, layout=fig.layout)
-    fig.data[0].on_click(plot_click)
+    fig_widget = go.FigureWidget(data=fig.data)
+    fig_widget.layout.hovermode = "closest"
+    print(f"len(fig_widget.data) = {len(fig_widget.data)}")
+    print(f"fig_widget.data = {fig_widget.data}")
+    fig_widget.data[0].on_click(record_click)
     ctrl.figure_update(fig)
 
 def pre_calibration():
