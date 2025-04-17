@@ -35,6 +35,27 @@ class ParametersManager:
     def card(self):
         with vuetify.VCard():
             with vuetify.VCardTitle("Parameters"):
+                vuetify.VSpacer()
+                with vuetify.VTooltip(bottom=True):
+                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
+                        with vuetify.VBtn(
+                            icon=True,
+                            click=self.optimize,
+                            v_on="on",
+                            v_bind="attrs",
+                        ):
+                            vuetify.VIcon("mdi-laptop")
+                    vuetify.Template("Optimize")
+                with vuetify.VTooltip(bottom=True):
+                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
+                        with vuetify.VBtn(
+                            icon=True,
+                            click=self.reset,
+                            v_on="on",
+                            v_bind="attrs",
+                        ):
+                            vuetify.VIcon("mdi-restart")
+                    vuetify.Template("Reset")
                 with vuetify.VCardText():
                     for key in state.parameters.keys():
                         pmin = state.parameters_min[key]
