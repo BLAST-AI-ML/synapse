@@ -18,6 +18,7 @@ dependencies:
   - pymongo
   - python<3.13
   - pytorch
+  - pyyaml
   - scipy
   - torchaudio
   - torchvision
@@ -28,4 +29,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - git+https://github.com/slaclab/lume-model.git@0c62723b04b78fe858a9b349433b5aacfd267f50
+    - lume-model
