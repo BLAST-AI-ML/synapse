@@ -1,3 +1,4 @@
+import copy
 from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
@@ -19,11 +20,11 @@ class ParametersManager:
             state.parameters[key] = pval
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
+        state.parameters_init = copy.deepcopy(state.parameters)
 
-    def recenter(self):
-        # recenter parameters
-        for key in state.parameters.keys():
-            state.parameters[key] = (state.parameters_min[key] + state.parameters_max[key]) / 2.
+    def reset(self):
+        # reset parameters to initial values
+        state.parameters = copy.deepcopy(state.parameters_init)
         # push again at flush time
         state.dirty("parameters")
 

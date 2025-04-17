@@ -141,8 +141,8 @@ def home_route():
                                     with vuetify.VRow():
                                         with vuetify.VCol():
                                             with vuetify.VBtn(
-                                                "Recenter",
-                                                click=par_manager.recenter,
+                                                "Reset",
+                                                click=par_manager.reset,
                                                 style="width: 100%; text-transform: none;",
                                             ):
                                                 vuetify.VSpacer()
