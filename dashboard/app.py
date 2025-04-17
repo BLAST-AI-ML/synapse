@@ -124,7 +124,23 @@ def undo_calibration():
 def on_click(event):
     x = event["points"][0]["x"]
     y = event["points"][0]["y"]
-    print(f"Clicked on: x = {x}, y = {y}")
+    x_label = "x"
+    y_label = "y"
+    try:
+        parameters_list = state.parameters.keys()
+        objectives_list = state.objectives.keys()
+        hover_template = event["points"][0]["data"]["hovertemplate"]
+        try:
+            x_label = [key for key in parameters_list if key in hover_template][0]
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        try:
+            y_label = [key for key in objectives_list if key in hover_template][0]
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    print(f"Clicked on: ({x_label}={x}, {y_label}={y})")
 
 # -----------------------------------------------------------------------------
 # GUI
