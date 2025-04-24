@@ -8,14 +8,15 @@ from sfapi_client import Client
 from sfapi_client.compute import Machine
 
 from state_manager import server, state, ctrl
-from utils import load_database
+from utils import load_database, load_collection
 
 
 def get_sfapi_config():
-    config, _, _ = load_database()
+    db = load_database()
+    collection_config = load_collection(db, "config")
 
     # restore private key from DB
-    sfapi = config.find_one({"name": "sfapi"})
+    sfapi = collection_config.find_one({"name": "sfapi"})
     sfapi_client_id = sfapi["client_id"]
     sfapi_key_pem = sfapi["key"]
     sfapi_expiration = sfapi["expiration"]
@@ -55,7 +56,8 @@ def check_status():
 @ctrl.add("exchange_credentials")
 def exchange_credentials(state):
     """Read a PEM file and store it in the database"""
-    config, _, _ = load_database()
+    db = load_database()
+    collection_config = load_collection(db, "config")
 
     sfapi_client_id = state.client_id
     private_key = state.private_key
@@ -79,7 +81,7 @@ def exchange_credentials(state):
             "key": sfapi_key_pem,
             "expiration": sfapi_expiration,
         }}
-        config.update_one({"name": "sfapi"}, update_data, upsert=True)
+        collection_config.update_one({"name": "sfapi"}, update_data, upsert=True)
 
     except ValueError as e:
         # Record exception

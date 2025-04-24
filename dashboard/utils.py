@@ -57,7 +57,6 @@ def metadata_match(config_file, model_file):
 
 def load_database():
     global db
-
     # load database
     db_defaults = {
         "host": "mongodb05.nersc.gov",
@@ -66,15 +65,12 @@ def load_database():
         "auth": "bella_sf",
         "user": "bella_sf_admin",
     }
-
     # read database information from environment variables (if unset, use defaults)
     db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
     db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    # read database experiment from environment variable (no default provided)
-    db_collection = state.experiment
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
@@ -95,17 +91,13 @@ def load_database():
             authSource=db_auth,
             directConnection=direct_connection,
         )[db_name]
-    # get collection: ip2, acave, config, ...
+    return db
+
+def load_collection(db, collection_key):
+    # get collection
+    db_collection = collection_key
     collection = db[db_collection]
-    if "config" not in db.list_collection_names():
-        db.create_collection("config")
-    config = db["config"]
-    # retrieve all documents
-    documents = list(collection.find())
-    # separate documents: experimental and simulation
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (config, exp_docs, sim_docs)
+    return collection
 
 # plot experimental, simulation, and ML data
 def plot(model):

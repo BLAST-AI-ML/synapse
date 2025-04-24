@@ -12,7 +12,7 @@ from parameters_manager import ParametersManager
 from objectives_manager import ObjectivesManager
 from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
 from state_manager import server, state, ctrl, init_state
-from utils import read_variables, metadata_match, load_database, plot
+from utils import read_variables, metadata_match, load_database, load_collection, plot
 
 
 # -----------------------------------------------------------------------------
@@ -34,7 +34,11 @@ def reload(**kwargs):
     # initialize state after experiment selection
     init_state()
     # initialize database
-    config, exp_docs, sim_docs = load_database()
+    db = load_database()
+    collection_experiment = load_collection(db, state.experiment)
+    documents_list = list(collection_experiment.find())
+    exp_docs = [doc for doc in documents_list if doc["experiment_flag"] == 1]
+    sim_docs = [doc for doc in documents_list if doc["experiment_flag"] == 0]
     # convert database documents into pandas DataFrames
     state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
     state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
