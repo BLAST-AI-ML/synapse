@@ -19,7 +19,6 @@ from utils import read_variables, metadata_match, load_database, plot
 # Initialize experiment
 # -----------------------------------------------------------------------------
 
-state.trame_title = "IFE Superfacility"
 state.experiment = "ip2"
 
 # -----------------------------------------------------------------------------
@@ -220,7 +219,7 @@ reload()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
-    layout.title.set_text(state.trame_title)
+    layout.title.set_text("BELLA Superfacility")
 
     # add toolbar components
     with layout.toolbar:
