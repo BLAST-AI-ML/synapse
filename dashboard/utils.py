@@ -42,10 +42,13 @@ def metadata_match(config_file, model_file):
     config_vars = [value["name"] for value in config_dict[state.experiment]["input_variables"].values()]
     config_vars.sort()
     # read model file
+    print('---- model_file = ', model_file)
     with open(model_file) as f:
         model_str = f.read()
+        print('model_str ==== ', model_str)
+
     # load model dictionary
-    model_dict = yaml.safe_load(model_str)
+    model_dict = yaml.safe_load(model_str) ## = torch.load("../ml/GP_training/saved_models/gp_model_metadata.pt") #yaml.safe_load(model_str)
     # load model input variables list
     model_vars = list(model_dict["input_variables"].keys())
     model_vars.sort()
@@ -197,9 +200,35 @@ def plot(model):
                 end=parameters_max[key],
                 steps=steps,
             )
+
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
-            y = model.evaluate(input_dict_loc)
+
+            tensor_list = [input_dict_loc[subkey] for subkey in ['TOD_fs3', 'GVD', 'z_target_um']]
+            combined_tensor  = torch.stack(tensor_list, dim=0).T
+            y,l,u = model.posterior(combined_tensor)
+            #y = model.evaluate(input_dict_loc)
+
+            # Upper bound
+            upper_bound = go.Scatter(
+            x=input_dict_loc[key],
+            y=u,
+            line=dict(color='orange', width=0.3),
+            showlegend=False,
+            hoverinfo="skip",
+            name='Upper Bound',
+        )
+            # Lower bound (must be before upper bound in the list for 'tonexty' to work)
+            lower_bound = go.Scatter(
+            x=input_dict_loc[key],
+            y=l,
+            fill='tonexty',  # fill area between this trace and the next one
+            fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
+            line=dict(color='orange', width=0.3),
+            showlegend=False,
+            hoverinfo="skip",
+            name='Lower Bound',
+        )
             # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict_loc[key],
@@ -214,6 +243,17 @@ def plot(model):
                 row=this_row,
                 col=this_col,
             )
+            fig.add_trace(
+                upper_bound,
+                row=this_row,
+                col=this_col,
+            )
+            fig.add_trace(
+                lower_bound,
+                row=this_row,
+                col=this_col,
+            )
+
         #----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(

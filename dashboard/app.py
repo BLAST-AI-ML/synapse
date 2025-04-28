@@ -5,7 +5,7 @@ import torch
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify2 as vuetify
+from trame.widgets import plotly, router, vuetify2 as v2
 
 from model_manager import ModelManager
 from parameters_manager import ParametersManager
@@ -37,30 +37,42 @@ def reload(**kwargs):
     # convert database documents into pandas DataFrames
     state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
     state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
+
     # read input and output variables
     config_dir  = os.path.join(os.getcwd(), "config")
     config_file = os.path.join(config_dir, "variables.yml")
+
     if not os.path.isfile(config_file):
         raise ValueError(f"Configuration file {config_file} not found")
     input_variables, output_variables = read_variables(config_file)
+
     # initialize model
-    model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
-    model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
+    #model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
+    #model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
+
+    model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "GP_training", "saved_models")
+    model_dir_docker = os.path.join("/", "app", "ml", "GP_training", "saved_models")
+
     model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
-    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-    if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
-        model_file = None
+
+    model_file = os.path.join(model_dir, f"{state.experiment}.pth")
+    # if not os.path.isfile(model_file):
+    #     raise ValueError(f"Model file {model_file} not found")
+    # if not metadata_match(config_file, model_file):
+    #     model_file = None
+
     mod_manager = ModelManager(model_file)
     # initialize parameters
     par_manager = ParametersManager(mod_manager, input_variables)
     # initialize objectives
     obj_manager = ObjectivesManager(mod_manager, output_variables)
+
     # reload home route
     home_route()
     # reload NERSC route
     nersc_route()
+    # update app
+    update()
 
 @state.change(
     "exp_data",
@@ -69,6 +81,8 @@ def reload(**kwargs):
     "opacity",
 )
 def update(**kwargs):
+    # update parameters
+    #par_manager.update()
     # update objectives
     obj_manager.update()
     # update plots
@@ -127,22 +141,45 @@ def undo_calibration():
 # home route
 def home_route():
     with RouterViewLayout(server, "/"):
-        with vuetify.VRow():
-            with vuetify.VCol(cols=4):
-                with vuetify.VRow():
-                    with vuetify.VCol():
+        with v2.VRow():
+            with v2.VCol(cols=4):
+                with v2.VRow():
+                    with v2.VCol():
                         par_manager.card()
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Plots"):
-                                with vuetify.VCardText():
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control: Parameters"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
+                                                "Recenter",
+                                                click=par_manager.recenter,
+                                                style="width: 100%; text-transform: none;",
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-restart")
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
+                                                "Optimize",
+                                                click=par_manager.optimize,
+                                                style="width: 100%; text-transform: none;",
+                                            ):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-laptop")
+                with v2.VRow():
+                    with v2.VCol():
+                        with v2.VCard():
+                            with v2.VCardTitle("Control: Plots"):
+                                with v2.VCardText():
+                                    with v2.VRow():
+                                        with v2.VCol():
                                             pass
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            vuetify.VSlider(
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            v2.VSlider(
                                                 v_model_number=("opacity",),
                                                 change="flushState('opacity')",
                                                 label="Opacity",
@@ -156,28 +193,28 @@ def home_route():
                                                 thumb_size=25,
                                                 type="number",
                                             )
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
                                                 "Apply Calibration",
                                                 click=apply_calibration,
                                                 style="width: 100%; text-transform: none;",
                                             ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-redo")
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-redo")
+                                    with v2.VRow():
+                                        with v2.VCol():
+                                            with v2.VBtn(
                                                 "Undo Calibration",
                                                 click=undo_calibration,
                                                 style="width: 100%; text-transform: none;",
                                             ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-undo")
-            with vuetify.VCol(cols=8):
-                with vuetify.VCard():
-                    with vuetify.VCardTitle("Plots"):
-                        with vuetify.VContainer(style=f"height: {400*len(state.parameters)}px;"):
+                                                v2.VSpacer()
+                                                v2.VIcon("mdi-undo")
+            with v2.VCol(cols=8):
+                with v2.VCard():
+                    with v2.VCardTitle("Plots"):
+                        with v2.VContainer(style=f"height: {400*len(state.parameters)}px;"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
@@ -200,8 +237,8 @@ with SinglePageWithDrawerLayout(server) as layout:
 
     # add toolbar components
     with layout.toolbar:
-        vuetify.VSpacer()
-        vuetify.VSelect(
+        v2.VSpacer()
+        v2.VSelect(
             v_model=("experiment",),
             items=("experiments", ["ip2", "acave"]),
             dense=True,
@@ -210,31 +247,31 @@ with SinglePageWithDrawerLayout(server) as layout:
         )
 
     with layout.content:
-        with vuetify.VContainer():
+        with v2.VContainer():
             router.RouterView()
 
     # add router components to the drawer
     with layout.drawer:
-        with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
-            vuetify.VSubheader("")
+        with v2.VList(shaped=True, v_model=("selectedRoute", 0)):
+            v2.VSubheader("")
 
-            with vuetify.VListItem(to="/"):
-                with vuetify.VListItemIcon():
-                    vuetify.VIcon("mdi-home")
-                with vuetify.VListItemContent():
-                    vuetify.VListItemTitle("Home")
+            with v2.VListItem(to="/"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-home")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("Home")
 
-            with vuetify.VListItem(to="/nersc"):
-                with vuetify.VListItemIcon():
-                    vuetify.VIcon("mdi-lan-connect")
-                with vuetify.VListItemContent():
-                    vuetify.VListItemTitle("NERSC")
+            with v2.VListItem(to="/nersc"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-lan-connect")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("NERSC")
 
-            with vuetify.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
-                with vuetify.VListItemIcon():
-                    vuetify.VIcon("mdi-github")
-                with vuetify.VListItemContent():
-                    vuetify.VListItemTitle("GitHub")
+            with v2.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
+                with v2.VListItemIcon():
+                    v2.VIcon("mdi-github")
+                with v2.VListItemContent():
+                    v2.VListItemTitle("GitHub")
 
 # -----------------------------------------------------------------------------
 # Main
