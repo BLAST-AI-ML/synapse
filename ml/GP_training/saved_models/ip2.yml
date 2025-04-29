@@ -23,6 +23,5 @@ output_validation_config: null
 device: cpu
 precision: double
 model: ip2_model.pt
-input_transformers: []
-output_transformers: []
-jitter: 0.0001
+input_transformers: [ip2_input_transformers_0.pt]
+output_transformers: [ip2_output_transformers_0.pt]
