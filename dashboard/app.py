@@ -49,17 +49,16 @@ def reload(**kwargs):
     # initialize model
     #model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
     #model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
-
     model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "GP_training", "saved_models")
     model_dir_docker = os.path.join("/", "app", "ml", "GP_training", "saved_models")
 
     model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
 
-    model_file = os.path.join(model_dir, f"{state.experiment}.pth")
-    # if not os.path.isfile(model_file):
-    #     raise ValueError(f"Model file {model_file} not found")
-    # if not metadata_match(config_file, model_file):
-    #     model_file = None
+    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+    if not os.path.isfile(model_file):
+        raise ValueError(f"Model file {model_file} not found")
+    if not metadata_match(config_file, model_file):
+        model_file = None
 
     mod_manager = ModelManager(model_file)
     # initialize parameters

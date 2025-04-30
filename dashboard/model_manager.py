@@ -5,8 +5,11 @@ from scipy.optimize import minimize
 import sys
 import torch
 from lume_model.models.torch_model import TorchModel
+from lume_model.variables import ScalarVariable, DistributionVariable
+from lume_model.models.gp_model import GPModel
 from state_manager import state
 import os
+
 class ModelManager:
 
     def __init__(self, model_data):
@@ -18,8 +21,7 @@ class ModelManager:
         else:
             try:
                 #self.__model = TorchModel(model_data)
-                self.__model = torch.load(model_data)
-                self.__model.eval()
+                self.__model = GPModel.from_yaml(model_data)
             except Exception as e:
                 print(f"{cmodul}:{self.__class__.__name__}.{cfunct}: {e}")
                 sys.exit(1)
@@ -37,35 +39,33 @@ class ModelManager:
                 variance = predictions.variance
 
             res = mean[:,1].detach().cpu().numpy().tolist()
-            #res = list(output_dict.values())[0]
             return res, l[:,1].detach().cpu().numpy().tolist(), u[:,1].detach().cpu().numpy().tolist()
 
     def evaluate(self, parameters_model):
         if self.__model is not None:
 
             # evaluate model
-            #output_dict = self.__model.evaluate(parameters_model)
+            output_dict = self.__model.evaluate(parameters_model)
 
-            # Convert parameters to tensors with correct shape
-            x = torch.tensor([[parameters_model['TOD_fs3']]])
-            y = torch.tensor([[parameters_model['GVD']]])
-            z = torch.tensor([[parameters_model['z_target_um']]])
-            predictions = self.__model.posterior(torch.cat([x, y, z], dim=1))
+            mean = output_dict['n_protons_exp_task'].mean
+            l, u = (
+                mean - 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
+                mean + 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
+            )
 
-            with torch.no_grad():
-                mean = predictions.mean
-                l,u = predictions.mvn.confidence_region()
-                variance = predictions.variance
-
-            # expected only one value
+            #expected only one value
             # if len(output_dict.values()) != 1:
             #     raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
-            res = mean[:,1].detach().cpu().numpy().tolist()
+            #res = mean[:,1].detach().cpu().numpy().tolist()
+
             #res = list(output_dict.values())[0]
-            # convert to Python float if tensor has only one element (more elements for line plots)
+ 
+            #convert to Python float if tensor has only one element (more elements for line plots)
             # if res.numel() == 1:
             #     res = float(res)
-            return res
+            #res = float(res)
+            #return res
+            return mean.detach().numpy().tolist(), l.detach().numpy().tolist(), u.detach().numpy().tolist() #res
 
     def model_wrapper(self, parameters_array):
         # convert array of parameters to dictionary

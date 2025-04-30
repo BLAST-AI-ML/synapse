@@ -9,7 +9,7 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
-  - botorch<0.11.0
+  - botorch==0.11.0
   - cpuonly
   - matplotlib
   - pandas
@@ -29,4 +29,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - lume-model
+    - git+https://github.com/slaclab/lume-model.git@079a758db388487b5d211bef245f74f025c384ab

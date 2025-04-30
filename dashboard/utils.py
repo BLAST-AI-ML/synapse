@@ -9,7 +9,6 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
-
 from state_manager import state
 
 # global database variable
@@ -42,13 +41,11 @@ def metadata_match(config_file, model_file):
     config_vars = [value["name"] for value in config_dict[state.experiment]["input_variables"].values()]
     config_vars.sort()
     # read model file
-    print('---- model_file = ', model_file)
     with open(model_file) as f:
         model_str = f.read()
-        print('model_str ==== ', model_str)
 
     # load model dictionary
-    model_dict = yaml.safe_load(model_str) ## = torch.load("../ml/GP_training/saved_models/gp_model_metadata.pt") #yaml.safe_load(model_str)
+    model_dict = yaml.safe_load(model_str)
     # load model input variables list
     model_vars = list(model_dict["input_variables"].keys())
     model_vars.sort()
@@ -204,10 +201,13 @@ def plot(model):
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
 
-            tensor_list = [input_dict_loc[subkey] for subkey in ['TOD_fs3', 'GVD', 'z_target_um']]
-            combined_tensor  = torch.stack(tensor_list, dim=0).T
-            y,l,u = model.posterior(combined_tensor)
-            #y = model.evaluate(input_dict_loc)
+            # Desired key order
+            key_order = ['TOD_fs3', 'GVD', 'z_target_um']
+            # Reorder the dictionary
+            ordered_input_dict_loc = {k: input_dict_loc[k] for k in key_order if k in input_dict_loc}
+
+            with gpytorch.settings.cholesky_jitter(1e-4):
+                y,l,u = model.evaluate(ordered_input_dict_loc)
 
             # Upper bound
             upper_bound = go.Scatter(
@@ -232,7 +232,7 @@ def plot(model):
             # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict_loc[key],
-                y=y,
+                y=y, #y.detach().numpy(),
                 line=dict(color="orange"),
                 name="ML Model",
                 showlegend=(True if i==0 else False),
