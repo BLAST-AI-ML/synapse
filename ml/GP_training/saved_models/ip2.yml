@@ -1,0 +1,27 @@
+model_class: GPModel
+input_variables:
+  TOD_fs3:
+    variable_class: ScalarVariable
+    is_constant: false
+    value_range: [-.inf, .inf]
+    value_range_tolerance: 1.0e-08
+  GVD:
+    variable_class: ScalarVariable
+    is_constant: false
+    value_range: [-.inf, .inf]
+    value_range_tolerance: 1.0e-08
+  z_target_um:
+    variable_class: ScalarVariable
+    is_constant: false
+    value_range: [-.inf, .inf]
+    value_range_tolerance: 1.0e-08
+output_variables:
+  n_protons_sim_task: {variable_class: DistributionVariable, distribution_type: MultiVariateNormal}
+  n_protons_exp_task: {variable_class: DistributionVariable, distribution_type: MultiVariateNormal}
+input_validation_config: null
+output_validation_config: null
+device: cpu
+precision: double
+model: ip2_model.pt
+input_transformers: [ip2_input_transformers_0.pt]
+output_transformers: [ip2_output_transformers_0.pt]
