@@ -1,3 +1,4 @@
+import inspect
 from io import StringIO
 import os
 import pandas as pd
@@ -87,14 +88,14 @@ def pre_calibration():
     return (output_calibration, output_normalization, n_protons_tensor)
 
 # TODO encapsulate in simulation class?
-@ctrl.add("apply_calibration")
 def apply_calibration():
     if mod_manager.avail():
         if not state.is_calibrated:
             # prepare
             output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-            # calibrate, and denormalize simulation data
+            # apply calibration
             n_protons_tensor = output_calibration.untransform(n_protons_tensor)
+            # denormalize simulation data
             n_protons_tensor = output_normalization.untransform(n_protons_tensor)
             sim_data = pd.read_json(StringIO(state.sim_data))
             sim_data["n_protons"] = n_protons_tensor.numpy()[0]
@@ -104,14 +105,14 @@ def apply_calibration():
             state.is_calibrated = True
 
 # TODO encapsulate in simulation class?
-@ctrl.add("undo_calibration")
 def undo_calibration():
     if mod_manager.avail():
         if state.is_calibrated:
             # prepare
             output_calibration, output_normalization, n_protons_tensor = pre_calibration()
-            # calibrate, and denormalize simulation data
+            # undo calibration
             n_protons_tensor = output_calibration.transform(n_protons_tensor)
+            # denormalize simulation data
             n_protons_tensor = output_normalization.untransform(n_protons_tensor)
             sim_data = pd.read_json(StringIO(state.sim_data))
             sim_data["n_protons"] = n_protons_tensor.numpy()[0]
@@ -119,6 +120,13 @@ def undo_calibration():
             state.sim_data = sim_data.to_json(default_handler=str)
             state.dirty("sim_data")
             state.is_calibrated = False
+
+@state.change("calibration")
+def update_calibration(**kwargs):
+    if state.calibration:
+        apply_calibration()
+    else:
+        undo_calibration()
 
 # -----------------------------------------------------------------------------
 # GUI
@@ -156,27 +164,15 @@ def home_route():
                                                 thumb_size=25,
                                                 type="number",
                                             )
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
-                                                "Apply Calibration",
-                                                click=apply_calibration,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-redo")
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
-                                                "Undo Calibration",
-                                                click=undo_calibration,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-undo")
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
+                        vuetify.VSpacer()
+                        vuetify.VSwitch(
+                            v_model=("calibration",),
+                            label="Calibration",
+                            color="primary",
+                        )
                         with vuetify.VContainer(style=f"height: {400*len(state.parameters)}px;"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",

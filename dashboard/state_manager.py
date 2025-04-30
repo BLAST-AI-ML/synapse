@@ -16,6 +16,7 @@ def init_state():
     # opacity
     state.opacity = 0.1
     # calibration
+    state.calibration = True
     state.is_calibrated = False
     # parameters
     state.parameters = dict()
