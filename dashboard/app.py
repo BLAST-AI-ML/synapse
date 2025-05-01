@@ -5,7 +5,7 @@ import torch
 from trame.app import get_server
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify2 as v2
+from trame.widgets import plotly, router, vuetify2 as vuetify
 
 from model_manager import ModelManager
 from parameters_manager import ParametersManager
@@ -140,45 +140,22 @@ def undo_calibration():
 # home route
 def home_route():
     with RouterViewLayout(server, "/"):
-        with v2.VRow():
-            with v2.VCol(cols=4):
-                with v2.VRow():
-                    with v2.VCol():
+        with vuetify.VRow():
+            with vuetify.VCol(cols=4):
+                with vuetify.VRow():
+                    with vuetify.VCol():
                         par_manager.card()
-                with v2.VRow():
-                    with v2.VCol():
-                        with v2.VCard():
-                            with v2.VCardTitle("Control: Parameters"):
-                                with v2.VCardText():
-                                    with v2.VRow():
-                                        with v2.VCol():
-                                            with v2.VBtn(
-                                                "Recenter",
-                                                click=par_manager.recenter,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                v2.VSpacer()
-                                                v2.VIcon("mdi-restart")
-                                    with v2.VRow():
-                                        with v2.VCol():
-                                            with v2.VBtn(
-                                                "Optimize",
-                                                click=par_manager.optimize,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                v2.VSpacer()
-                                                v2.VIcon("mdi-laptop")
-                with v2.VRow():
-                    with v2.VCol():
-                        with v2.VCard():
-                            with v2.VCardTitle("Control: Plots"):
-                                with v2.VCardText():
-                                    with v2.VRow():
-                                        with v2.VCol():
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        with vuetify.VCard():
+                            with vuetify.VCardTitle("Control: Plots"):
+                                with vuetify.VCardText():
+                                    with vuetify.VRow():
+                                        with vuetify.VCol():
                                             pass
-                                    with v2.VRow():
-                                        with v2.VCol():
-                                            v2.VSlider(
+                                    with vuetify.VRow():
+                                        with vuetify.VCol():
+                                            vuetify.VSlider(
                                                 v_model_number=("opacity",),
                                                 change="flushState('opacity')",
                                                 label="Opacity",
@@ -192,28 +169,28 @@ def home_route():
                                                 thumb_size=25,
                                                 type="number",
                                             )
-                                    with v2.VRow():
-                                        with v2.VCol():
-                                            with v2.VBtn(
+                                    with vuetify.VRow():
+                                        with vuetify.VCol():
+                                            with vuetify.VBtn(
                                                 "Apply Calibration",
                                                 click=apply_calibration,
                                                 style="width: 100%; text-transform: none;",
                                             ):
-                                                v2.VSpacer()
-                                                v2.VIcon("mdi-redo")
-                                    with v2.VRow():
-                                        with v2.VCol():
-                                            with v2.VBtn(
+                                                vuetify.VSpacer()
+                                                vuetify.VIcon("mdi-redo")
+                                    with vuetify.VRow():
+                                        with vuetify.VCol():
+                                            with vuetify.VBtn(
                                                 "Undo Calibration",
                                                 click=undo_calibration,
                                                 style="width: 100%; text-transform: none;",
                                             ):
-                                                v2.VSpacer()
-                                                v2.VIcon("mdi-undo")
-            with v2.VCol(cols=8):
-                with v2.VCard():
-                    with v2.VCardTitle("Plots"):
-                        with v2.VContainer(style=f"height: {400*len(state.parameters)}px;"):
+                                                vuetify.VSpacer()
+                                                vuetify.VIcon("mdi-undo")
+            with vuetify.VCol(cols=8):
+                with vuetify.VCard():
+                    with vuetify.VCardTitle("Plots"):
+                        with vuetify.VContainer(style=f"height: {400*len(state.parameters)}px;"):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
@@ -236,8 +213,8 @@ with SinglePageWithDrawerLayout(server) as layout:
 
     # add toolbar components
     with layout.toolbar:
-        v2.VSpacer()
-        v2.VSelect(
+        vuetify.VSpacer()
+        vuetify.VSelect(
             v_model=("experiment",),
             items=("experiments", ["ip2", "acave"]),
             dense=True,
@@ -246,31 +223,31 @@ with SinglePageWithDrawerLayout(server) as layout:
         )
 
     with layout.content:
-        with v2.VContainer():
+        with vuetify.VContainer():
             router.RouterView()
 
     # add router components to the drawer
     with layout.drawer:
-        with v2.VList(shaped=True, v_model=("selectedRoute", 0)):
-            v2.VSubheader("")
+        with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
+            vuetify.VSubheader("")
 
-            with v2.VListItem(to="/"):
-                with v2.VListItemIcon():
-                    v2.VIcon("mdi-home")
-                with v2.VListItemContent():
-                    v2.VListItemTitle("Home")
+            with vuetify.VListItem(to="/"):
+                with vuetify.VListItemIcon():
+                    vuetify.VIcon("mdi-home")
+                with vuetify.VListItemContent():
+                    vuetify.VListItemTitle("Home")
 
-            with v2.VListItem(to="/nersc"):
-                with v2.VListItemIcon():
-                    v2.VIcon("mdi-lan-connect")
-                with v2.VListItemContent():
-                    v2.VListItemTitle("NERSC")
+            with vuetify.VListItem(to="/nersc"):
+                with vuetify.VListItemIcon():
+                    vuetify.VIcon("mdi-lan-connect")
+                with vuetify.VListItemContent():
+                    vuetify.VListItemTitle("NERSC")
 
-            with v2.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
-                with v2.VListItemIcon():
-                    v2.VIcon("mdi-github")
-                with v2.VListItemContent():
-                    v2.VListItemTitle("GitHub")
+            with vuetify.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
+                with vuetify.VListItemIcon():
+                    vuetify.VIcon("mdi-github")
+                with vuetify.VListItemContent():
+                    vuetify.VListItemTitle("GitHub")
 
 # -----------------------------------------------------------------------------
 # Main

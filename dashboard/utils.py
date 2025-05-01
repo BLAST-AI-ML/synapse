@@ -206,8 +206,7 @@ def plot(model):
             # Reorder the dictionary
             ordered_input_dict_loc = {k: input_dict_loc[k] for k in key_order if k in input_dict_loc}
 
-            with gpytorch.settings.cholesky_jitter(1e-4):
-                y,l,u = model.evaluate(ordered_input_dict_loc)
+            y,l,u = model.evaluate(ordered_input_dict_loc)
 
             # Upper bound
             upper_bound = go.Scatter(
