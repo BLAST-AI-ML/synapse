@@ -156,12 +156,14 @@ def plot(model):
             # normalize distance in [0,1] and compute opacity
             df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
             df_copy["opacity"] = np.where(df_copy["distance"] > state.opacity, 0., 1. - df_copy["distance"])
+            # filter out data with zero opacity
+            df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
             # scatter plot with opacity
             exp_fig = px.scatter(
-                df_copy,
+                df_copy_filtered,
                 x=key,
                 y=objective_name,
-                opacity=df_copy["opacity"],
+                opacity=df_copy_filtered["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
             )
             # do now show default legend affected by opacity map

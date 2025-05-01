@@ -19,7 +19,6 @@ from utils import read_variables, metadata_match, load_database, plot
 # Initialize experiment
 # -----------------------------------------------------------------------------
 
-state.trame_title = "IFE Superfacility"
 state.experiment = "ip2"
 
 # -----------------------------------------------------------------------------
@@ -136,29 +135,6 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Parameters"):
-                                with vuetify.VCardText():
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
-                                                "Recenter",
-                                                click=par_manager.recenter,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-restart")
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
-                                                "Optimize",
-                                                click=par_manager.optimize,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-laptop")
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        with vuetify.VCard():
                             with vuetify.VCardTitle("Control: Plots"):
                                 with vuetify.VCardText():
                                     with vuetify.VRow():
@@ -220,7 +196,7 @@ reload()
 
 # main page content
 with SinglePageWithDrawerLayout(server) as layout:
-    layout.title.set_text(state.trame_title)
+    layout.title.set_text("BELLA Superfacility")
 
     # add toolbar components
     with layout.toolbar:
