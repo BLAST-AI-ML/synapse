@@ -20,8 +20,12 @@ class ModelManager:
             self.__model = None
         else:
             try:
-                #self.__model = TorchModel(model_data)
-                self.__model = GPModel.from_yaml(model_data)
+                if state.model_type == "NN":
+                    self.__model = TorchModel(model_data)
+                elif state.model_type == "GP":
+                    self.__model = GPModel.from_yaml(model_data)
+                else:
+                    raise ValueError(f"Unsupported model_type: {state.model_type}")
             except Exception as e:
                 print(f"{cmodul}:{self.__class__.__name__}.{cfunct}: {e}")
                 sys.exit(1)
@@ -46,26 +50,24 @@ class ModelManager:
 
             # evaluate model
             output_dict = self.__model.evaluate(parameters_model)
-
-            mean = output_dict['n_protons_exp_task'].mean
-            l, u = (
-                mean - 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
-                mean + 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
-            )
-
-            #expected only one value
-            # if len(output_dict.values()) != 1:
-            #     raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
-            #res = mean[:,1].detach().cpu().numpy().tolist()
-
-            #res = list(output_dict.values())[0]
- 
-            #convert to Python float if tensor has only one element (more elements for line plots)
-            # if res.numel() == 1:
-            #     res = float(res)
-            #res = float(res)
-            #return res
-            return mean.detach().numpy().tolist(), l.detach().numpy().tolist(), u.detach().numpy().tolist() #res
+            if state.model_type == "NN":
+                #expected only one value
+                if len(output_dict.values()) != 1:
+                    raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
+                res = list(output_dict.values())[0]
+                #convert to Python float if tensor has only one element (more elements for line plots)
+                if res.numel() == 1:
+                    res = float(res)
+                return res
+            elif state.model_type == "GP":
+                mean = output_dict['n_protons_exp_task'].mean
+                l, u = (
+                    mean - 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
+                    mean + 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
+                )
+                return mean.detach().numpy().tolist(), l.detach().numpy().tolist(), u.detach().numpy().tolist()
+            else:
+                raise ValueError(f"Unsupported model_type: {state.model_type}")
 
     def model_wrapper(self, parameters_array):
         # convert array of parameters to dictionary

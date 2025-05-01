@@ -201,37 +201,53 @@ def plot(model):
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
 
-            # Desired key order
-            key_order = ['TOD_fs3', 'GVD', 'z_target_um']
-            # Reorder the dictionary
-            ordered_input_dict_loc = {k: input_dict_loc[k] for k in key_order if k in input_dict_loc}
+            if state.model_type == "GP":
+                # Desired key order (do not change — depends on how the GP model was trained).
+                # TODO: Check if this can be generalized
+                key_order = ['TOD_fs3', 'GVD', 'z_target_um']
+                # Reorder the dictionary with respect to the key_order
+                ordered_input_dict_loc = {k: input_dict_loc[k] for k in key_order if k in input_dict_loc}
+                result = model.evaluate(ordered_input_dict_loc)
+                y, l, u = result
 
-            y,l,u = model.evaluate(ordered_input_dict_loc)
+                # Upper bound
+                upper_bound = go.Scatter(
+                x=input_dict_loc[key],
+                y=u,
+                line=dict(color='orange', width=0.3),
+                showlegend=False,
+                hoverinfo="skip",
+                name='Upper Bound',
+            )
+                # Lower bound
+                lower_bound = go.Scatter(
+                x=input_dict_loc[key],
+                y=l,
+                fill='tonexty',  # fill area between this trace and the next one
+                fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
+                line=dict(color='orange', width=0.3),
+                showlegend=False,
+                hoverinfo="skip",
+                name='Lower Bound',
+            )
+                fig.add_trace(
+                upper_bound,
+                row=this_row,
+                col=this_col,
+            )
+                fig.add_trace(
+                lower_bound,
+                row=this_row,
+                col=this_col,
+            )
+            else:
+                result = model.evaluate(input_dict_loc)
+                y = result
 
-            # Upper bound
-            upper_bound = go.Scatter(
-            x=input_dict_loc[key],
-            y=u,
-            line=dict(color='orange', width=0.3),
-            showlegend=False,
-            hoverinfo="skip",
-            name='Upper Bound',
-        )
-            # Lower bound (must be before upper bound in the list for 'tonexty' to work)
-            lower_bound = go.Scatter(
-            x=input_dict_loc[key],
-            y=l,
-            fill='tonexty',  # fill area between this trace and the next one
-            fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
-            line=dict(color='orange', width=0.3),
-            showlegend=False,
-            hoverinfo="skip",
-            name='Lower Bound',
-        )
             # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict_loc[key],
-                y=y, #y.detach().numpy(),
+                y=y,
                 line=dict(color="orange"),
                 name="ML Model",
                 showlegend=(True if i==0 else False),
@@ -239,16 +255,6 @@ def plot(model):
             # add trace
             fig.add_trace(
                 mod_trace,
-                row=this_row,
-                col=this_col,
-            )
-            fig.add_trace(
-                upper_bound,
-                row=this_row,
-                col=this_col,
-            )
-            fig.add_trace(
-                lower_bound,
                 row=this_row,
                 col=this_col,
             )

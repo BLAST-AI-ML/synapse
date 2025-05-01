@@ -18,13 +18,11 @@ from utils import read_variables, metadata_match, load_database, plot
 # -----------------------------------------------------------------------------
 # Initialize experiment
 # -----------------------------------------------------------------------------
-
 state.experiment = "ip2"
-
+state.model_type = "NN"
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
-
 @state.change("experiment")
 def reload(**kwargs):
     global mod_manager
@@ -47,14 +45,11 @@ def reload(**kwargs):
     input_variables, output_variables = read_variables(config_file)
 
     # initialize model
-    #model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
-    #model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
-    model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "GP_training", "saved_models")
-    model_dir_docker = os.path.join("/", "app", "ml", "GP_training", "saved_models")
-
+    model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{state.model_type}_training", "saved_models")
+    model_dir_docker = os.path.join("/", "app", "ml", f"{state.model_type}_training", "saved_models")
     model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
-
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+
     if not os.path.isfile(model_file):
         raise ValueError(f"Model file {model_file} not found")
     if not metadata_match(config_file, model_file):
@@ -72,6 +67,10 @@ def reload(**kwargs):
     nersc_route()
     # update app
     update()
+
+@state.change("model_type")
+def switch_model_type(**kwargs):
+    reload()
 
 @state.change(
     "exp_data",
@@ -148,6 +147,18 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
+                            with vuetify.VCardTitle("Control: Models"):
+                                with vuetify.VCardText():
+                                    vuetify.VSelect(
+                                                v_model=("model_type",),
+                                                items=("Models", ["NN", "GP"]),
+                                                dense=True,
+                                                prepend_icon="mdi-brain",
+                                                style="max-width: 200px;",
+                                            )
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        with vuetify.VCard():
                             with vuetify.VCardTitle("Control: Plots"):
                                 with vuetify.VCardText():
                                     with vuetify.VRow():
@@ -187,6 +198,7 @@ def home_route():
                                             ):
                                                 vuetify.VSpacer()
                                                 vuetify.VIcon("mdi-undo")
+
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
