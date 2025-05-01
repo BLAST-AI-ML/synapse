@@ -16,10 +16,11 @@ from utils import read_variables, metadata_match, load_database, plot
 
 
 # -----------------------------------------------------------------------------
-# Initialize experiment
+# Initialize experiment and state variables
 # -----------------------------------------------------------------------------
 
 state.experiment = "ip2"
+init_state()
 
 # -----------------------------------------------------------------------------
 # Callbacks
