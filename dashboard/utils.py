@@ -130,6 +130,7 @@ def plot(model):
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
+    parameters_key_order_list = list(parameters.keys())
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
@@ -202,11 +203,8 @@ def plot(model):
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
 
             if state.model_type == "GP":
-                # Desired key order (do not change — depends on how the GP model was trained).
-                # TODO: Check if this can be generalized
-                key_order = ['TOD_fs3', 'GVD', 'z_target_um']
-                # Reorder the dictionary with respect to the key_order
-                ordered_input_dict_loc = {k: input_dict_loc[k] for k in key_order if k in input_dict_loc}
+                # Reorder the dictionary with respect to the parameterd_key_order_list
+                ordered_input_dict_loc = {k: input_dict_loc[k] for k in parameters_key_order_list if k in input_dict_loc}
                 result = model.evaluate(ordered_input_dict_loc)
                 y, l, u = result
 
