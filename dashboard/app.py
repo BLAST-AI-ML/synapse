@@ -79,8 +79,6 @@ def switch_model_type(**kwargs):
     "opacity",
 )
 def update(**kwargs):
-    # update parameters
-    #par_manager.update()
     # update objectives
     obj_manager.update()
     # update plots
