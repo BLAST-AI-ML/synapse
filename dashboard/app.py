@@ -1,3 +1,4 @@
+import inspect
 from io import StringIO
 import os
 import pandas as pd
@@ -15,36 +16,34 @@ from state_manager import server, state, ctrl, init_state
 from utils import read_variables, metadata_match, load_database, plot
 
 
+# global module name
+current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
+
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
 
 @state.change("experiment")
 def reload(**kwargs):
-    print(f"Executing reload...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     global mod_manager
     global par_manager
     global obj_manager
     # initialize state after experiment selection
-    print("Calling init_state...")
     init_state()
     # initialize database
-    print("Calling load_database...")
     config, exp_docs, sim_docs = load_database()
     # convert database documents into pandas DataFrames
-    print("Setting exp_data, sim_data...")
     state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
     state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
     # read input and output variables
-    print("Setting config_dir, config_file...")
     config_dir  = os.path.join(os.getcwd(), "config")
     config_file = os.path.join(config_dir, "variables.yml")
     if not os.path.isfile(config_file):
         raise ValueError(f"Configuration file {config_file} not found")
-    print("Calling read_variables...")
     input_variables, output_variables = read_variables(config_file)
     # initialize model
-    print("Setting model_dir, model_file...")
     model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
     model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
     model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
@@ -53,24 +52,17 @@ def reload(**kwargs):
         raise ValueError(f"Model file {model_file} not found")
     if not metadata_match(config_file, model_file):
         model_file = None
-    print("Initializing mod_manager...")
     mod_manager = ModelManager(model_file)
     # initialize parameters
-    print("Initializing par_manager...")
     par_manager = ParametersManager(mod_manager, input_variables)
     # initialize objectives
-    print("Initializing obj_manager...")
     obj_manager = ObjectivesManager(mod_manager, output_variables)
     # reload home route
-    print("Calling home_route...")
     home_route()
     # reload NERSC route
-    print("Calling nersc_route...")
     nersc_route()
     # setup GUI components
-    print("Calling gui_setup...")
     gui_setup()
-    print("Exiting reload...")
 
 @state.change(
     "exp_data",
@@ -79,29 +71,29 @@ def reload(**kwargs):
     "opacity",
 )
 def update(**kwargs):
-    print(f"Executing update...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     # update objectives
-    print("Calling update... (ObjectivesManager)")
     obj_manager.update()
     # update plots
-    print("Calling plot...")
     fig = plot(mod_manager)
     ctrl.figure_update(fig)
-    print("Exiting update...")
 
 @ctrl.add("on_server_ready")
 def initialize(**kwargs):
-    print("Executing initialize...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     state.experiment = "ip2"
     # Flush state to trigger 'reload' right now
     state.flush()
-    print("Exiting initialize...")
 
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
 
 def pre_calibration(objective_name):
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     # get calibration and normalization transformers
     output_transformers = mod_manager.get_output_transformers()
     output_calibration = output_transformers[0]
@@ -115,6 +107,8 @@ def pre_calibration(objective_name):
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     if mod_manager.avail():
         if not state.is_calibrated:
             #FIXME generalize for multiple objectives
@@ -134,6 +128,8 @@ def apply_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
 def undo_calibration():
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     if mod_manager.avail():
         if state.is_calibrated:
             #FIXME generalize for multiple objectives
@@ -156,7 +152,8 @@ def undo_calibration():
 
 # home route
 def home_route():
-    print("Executing home_route...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
@@ -217,17 +214,17 @@ def home_route():
 
 # NERSC route
 def nersc_route():
-    print("Executing nersc_route...")
-    print("Calling get_sfapi_client...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     if get_sfapi_client() is not None:
         build_sfapi_status()
     else:
         build_sfapi_auth()
-    print("Exiting nersc_route...")
 
 # GUI layout
 def gui_setup():
-    print("Executing gui_setup...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     with SinglePageWithDrawerLayout(server) as layout:
         layout.title.set_text("BELLA Superfacility")
         # add toolbar components
@@ -266,7 +263,6 @@ def gui_setup():
                         vuetify.VIcon("mdi-github")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("GitHub")
-    print("Exiting gui_setup...")
 
 # -----------------------------------------------------------------------------
 # Main

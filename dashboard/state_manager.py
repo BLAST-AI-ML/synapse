@@ -1,6 +1,11 @@
 #from datetime import datetime, timedelta
+import inspect
+import os
 import pandas as pd
 from trame.app import get_server
+
+# global module name
+current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
 
 server = get_server(client_type="vue2")
 state = server.state
@@ -10,6 +15,8 @@ def init_state():
     """
     Helper function to collect and define all state variabes.
     """
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     # serialized data
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)

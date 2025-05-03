@@ -12,11 +12,15 @@ import yaml
 
 from state_manager import state
 
+# global module name
+current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
+
 # global database variable
 db = None
 
 def read_variables(config_file):
-    print("Executing read_variables...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
@@ -30,9 +34,8 @@ def read_variables(config_file):
     return (input_variables, output_variables)
 
 def metadata_match(config_file, model_file):
-    # inspect current function and module names
-    cfunct = inspect.currentframe().f_code.co_name
-    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     match = False
     # read configuration file
     with open(config_file) as f:
@@ -53,12 +56,13 @@ def metadata_match(config_file, model_file):
     # check if configuration list and model list match
     match = (config_vars == model_vars)
     if not match:
-        print(f"{cmodul}:{cfunct}: Input variables in configuration file and model file do not match")
+        print(f"Input variables in configuration file and model file do not match")
     return match
 
 def load_database():
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     global db
-    print("Executing load_database...")
     # load database
     db_defaults = {
         "host": "mongodb05.nersc.gov",
@@ -109,12 +113,9 @@ def load_database():
 
 # plot experimental, simulation, and ML data
 def plot(model):
-    print("Executing plot...")
-    # inspect current function and module names
-    cfunct = inspect.currentframe().f_code.co_name
-    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     # local aliases
-    print(f"state.parameters = {state.parameters}")
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
@@ -123,7 +124,7 @@ def plot(model):
         # FIXME generalize for multiple objectives
         objective_name = list(objectives.keys())[0]
     except Exception as e:
-        print(f"{cmodul}:{cfunct}: {e}")
+        print(f"An unexpected error occurred: {e}")
         objective_name = ""
     # load experimental data
     df_exp = pd.read_json(StringIO(state.exp_data))

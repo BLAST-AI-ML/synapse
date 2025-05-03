@@ -10,23 +10,25 @@ from sfapi_client.compute import Machine
 from state_manager import server, state, ctrl
 from utils import load_database
 
+# global module name
+current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
 
 def get_sfapi_config():
-    print("Executing get_sfapi_client...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     config, _, _ = load_database()
-
     # restore private key from DB
     sfapi = config.find_one({"name": "sfapi"})
     sfapi_client_id = sfapi["client_id"]
     sfapi_key_pem = sfapi["key"]
     sfapi_expiration = sfapi["expiration"]
-
     return sfapi_client_id, sfapi_key_pem, sfapi_expiration
 
 
 def get_sfapi_client():
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     sfapi_client_id, sfapi_key_pem, sfapi_expiration = get_sfapi_config()
-
     if (sfapi_client_id is None or
         sfapi_key_pem is None or
         sfapi_expiration < datetime.now() is None):
@@ -37,43 +39,41 @@ def get_sfapi_client():
 
 
 def check_status():
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     output = []
     with get_sfapi_client() as client:
         # does not need authentication
         status = client.compute(Machine.perlmutter)
         output += [str(status)]
-
         # needs authentication
         perlmutter = client.compute(Machine.perlmutter)
         ls_results = perlmutter.ls("/global/cfs/cdirs/m558")
         output += ["ls in CFS:"]
         for x in ls_results:
             output += [x.name]
-
     return output
 
 
 @ctrl.add("exchange_credentials")
 def exchange_credentials(state):
     """Read a PEM file and store it in the database"""
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     config, _, _ = load_database()
-
     sfapi_client_id = state.client_id
     private_key = state.private_key
     sfapi_expiration =  datetime.now() + timedelta(days=int(state.expiration_days))
-
     # Read private key file
     output = []
     output.append("\nReading Private Key File...")
     try:
         if not private_key:
             raise ValueError("No Private Key File Uploaded")
-
         sfapi_key_pem = private_key["content"].decode("utf-8")
         #output.append(f"sfapi_key_pem: {sfapi_key_pem}")
         output.append(f"Client ID: {sfapi_client_id}")
         output.append(f"Expiration: {sfapi_expiration}")
-
         # store in DB
         update_data = {"$set": {
             "client_id": sfapi_client_id,
@@ -81,34 +81,26 @@ def exchange_credentials(state):
             "expiration": sfapi_expiration,
         }}
         config.update_one({"name": "sfapi"}, update_data, upsert=True)
-
     except ValueError as e:
         # Record exception
         output.append(f"ValueError: {e}")
         # Update state terminal output
         state.sfapi_output = "\n".join(output)
         return
-
     # Create session
     output.append("\nCreating Session...")
-
     output += check_status()
     print(output)
-
     # Update state terminal output
     state.sfapi_output = "\n".join(output)
-
     build_sfapi_status()
 
 
 def build_sfapi_status():
-    print("Executing build_sfapi_status...")
-    # inspect current function and module names
-    cfunct = inspect.currentframe().f_code.co_name
-    cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     # get SFAPI configuration parameters (client ID, private key, expiration)
     sfapi_client_id, sfapi_key_pem, sfapi_expiration = get_sfapi_config()
-    print(sfapi_expiration)
     # route
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
@@ -121,7 +113,7 @@ def build_sfapi_status():
                                 pm_status = client.compute(Machine.perlmutter)
                                 pm_status_description = pm_status.description
                             except Exception as e:
-                                print(f"{cmodul}:{cfunct}: {e}")
+                                print(f"An unexpected error occurred: {e}")
                                 pm_status = None
                                 pm_status_description = "N/A"
                             with vuetify.VRow():
@@ -151,7 +143,8 @@ def build_sfapi_status():
                                 )
 
 def build_sfapi_auth():
-    print("Executing build_sfapi_auth...")
+    current_function = inspect.currentframe().f_code.co_name
+    print(f"Executing {current_module}.{current_function}...")
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
