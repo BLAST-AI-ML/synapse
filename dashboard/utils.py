@@ -16,6 +16,7 @@ from state_manager import state
 db = None
 
 def read_variables(config_file):
+    print("Executing read_variables...")
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
@@ -57,7 +58,7 @@ def metadata_match(config_file, model_file):
 
 def load_database():
     global db
-
+    print("Executing load_database...")
     # load database
     db_defaults = {
         "host": "mongodb05.nersc.gov",
@@ -66,7 +67,6 @@ def load_database():
         "auth": "bella_sf",
         "user": "bella_sf_admin",
     }
-
     # read database information from environment variables (if unset, use defaults)
     db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
     db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
@@ -109,10 +109,12 @@ def load_database():
 
 # plot experimental, simulation, and ML data
 def plot(model):
+    print("Executing plot...")
     # inspect current function and module names
     cfunct = inspect.currentframe().f_code.co_name
     cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
     # local aliases
+    print(f"state.parameters = {state.parameters}")
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max

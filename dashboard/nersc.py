@@ -12,6 +12,7 @@ from utils import load_database
 
 
 def get_sfapi_config():
+    print("Executing get_sfapi_client...")
     config, _, _ = load_database()
 
     # restore private key from DB
@@ -101,6 +102,7 @@ def exchange_credentials(state):
 
 
 def build_sfapi_status():
+    print("Executing build_sfapi_status...")
     # inspect current function and module names
     cfunct = inspect.currentframe().f_code.co_name
     cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
@@ -149,6 +151,7 @@ def build_sfapi_status():
                                 )
 
 def build_sfapi_auth():
+    print("Executing build_sfapi_auth...")
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):

@@ -17,8 +17,10 @@ class ObjectivesManager:
                 state.objectives[key] = None
 
     def update(self):
+        print("Executing update... (ObjectivesManager)")
         for key in state.objectives.keys():
             if self.__model.avail():
                 state.objectives[key] = self.__model.evaluate(state.parameters)
         # push again at flush time
         state.dirty("objectives")
+        print("Exiting update... (ObjectivesManager)")
