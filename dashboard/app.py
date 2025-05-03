@@ -95,7 +95,6 @@ def initialize(**kwargs):
     state.experiment = "ip2"
     # Flush state so that listener 'reload' runs right now
     state.flush()
-    init_state()
     print("Exiting initialize...")
 
 # -----------------------------------------------------------------------------
