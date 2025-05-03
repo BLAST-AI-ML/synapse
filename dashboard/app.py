@@ -93,7 +93,7 @@ def update(**kwargs):
 def initialize(**kwargs):
     print("Executing initialize...")
     state.experiment = "ip2"
-    # Flush state so that listener 'reload' runs right now
+    # Flush state to trigger 'reload' right now
     state.flush()
     print("Exiting initialize...")
 
