@@ -16,10 +16,12 @@ from utils import read_variables, metadata_match, load_database, plot
 
 
 # -----------------------------------------------------------------------------
-# Initialize experiment
+# Initialize experiment and state variables
 # -----------------------------------------------------------------------------
 state.experiment = "ip2"
 state.model_type = "NN"
+init_state()
+
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
@@ -85,29 +87,31 @@ def update(**kwargs):
     fig = plot(mod_manager)
     ctrl.figure_update(fig)
 
-def pre_calibration():
+def pre_calibration(objective_name):
     # get calibration and normalization transformers
     output_transformers = mod_manager.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
     # normalize simulation data
     sim_data = pd.read_json(StringIO(state.sim_data))
-    n_protons_tensor = torch.from_numpy(sim_data["n_protons"].values)
-    n_protons_tensor = output_normalization.transform(n_protons_tensor)
-    return (output_calibration, output_normalization, n_protons_tensor)
+    objective_tensor = torch.from_numpy(sim_data[objective_name].values)
+    objective_tensor = output_normalization.transform(objective_tensor)
+    return (output_calibration, output_normalization, objective_tensor)
 
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
     if mod_manager.avail():
         if not state.is_calibrated:
+            #FIXME generalize for multiple objectives
+            objective_name = list(state.objectives.keys())[0]
             # prepare
-            output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+            output_calibration, output_normalization, objective_tensor = pre_calibration(objective_name)
             # calibrate, and denormalize simulation data
-            n_protons_tensor = output_calibration.untransform(n_protons_tensor)
-            n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+            objective_tensor = output_calibration.untransform(objective_tensor)
+            objective_tensor = output_normalization.untransform(objective_tensor)
             sim_data = pd.read_json(StringIO(state.sim_data))
-            sim_data["n_protons"] = n_protons_tensor.numpy()[0]
+            sim_data[objective_name] = objective_tensor.numpy()[0]
             # update state
             state.sim_data = sim_data.to_json(default_handler=str)
             state.dirty("sim_data")
@@ -118,13 +122,15 @@ def apply_calibration():
 def undo_calibration():
     if mod_manager.avail():
         if state.is_calibrated:
+            #FIXME generalize for multiple objectives
+            objective_name = list(state.objectives.keys())[0]
             # prepare
-            output_calibration, output_normalization, n_protons_tensor = pre_calibration()
+            output_calibration, output_normalization, objective_tensor = pre_calibration(objective_name)
             # calibrate, and denormalize simulation data
-            n_protons_tensor = output_calibration.transform(n_protons_tensor)
-            n_protons_tensor = output_normalization.untransform(n_protons_tensor)
+            objective_tensor = output_calibration.transform(objective_tensor)
+            objective_tensor = output_normalization.untransform(objective_tensor)
             sim_data = pd.read_json(StringIO(state.sim_data))
-            sim_data["n_protons"] = n_protons_tensor.numpy()[0]
+            sim_data[objective_name] = objective_tensor.numpy()[0]
             # update state
             state.sim_data = sim_data.to_json(default_handler=str)
             state.dirty("sim_data")
