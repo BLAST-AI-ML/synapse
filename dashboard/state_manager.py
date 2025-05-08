@@ -5,9 +5,6 @@ import os
 import pandas as pd
 from trame.app import get_server
 
-# global module name
-current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
-
 server = get_server(client_type="vue2")
 state = server.state
 ctrl = server.controller
@@ -16,6 +13,7 @@ def init_startup():
     """
     Helper function to initialize state variabes needed at startup.
     """
+    print(f"Initializing state variables at startup...")
     state.nersc_route_built = False
     state.ui_layout_built = False
     # need a separate variable to track changes in state.experiment,
@@ -30,8 +28,7 @@ def init_runtime():
     """
     Helper function to (re-)initialize state variabes at runtime.
     """
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print(f"Initializing state variables at runtime...")
     # serialized data
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)

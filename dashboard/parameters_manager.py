@@ -7,8 +7,7 @@ from state_manager import state
 class ParametersManager:
 
     def __init__(self, model, input_variables):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Initializing parameters manager...")
         # save PyTorch model
         self.__model = model
         # define state variables
@@ -26,22 +25,19 @@ class ParametersManager:
         state.parameters_init = copy.deepcopy(state.parameters)
 
     def reset(self):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Resetting parameters to default values...")
         # reset parameters to initial values
         state.parameters = copy.deepcopy(state.parameters_init)
         # push again at flush time
         state.dirty("parameters")
 
     def optimize(self):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Optimizing parameters...")
         # optimize parameters through model
         self.__model.optimize()
 
     def card(self):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Setting parameters card...")
         with vuetify.VCard():
             with vuetify.VCardTitle("Parameters"):
                 vuetify.VSpacer()

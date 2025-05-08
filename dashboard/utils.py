@@ -12,15 +12,11 @@ import yaml
 
 from state_manager import state
 
-# global module name
-current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
-
 # global database variable
 db = None
 
 def read_variables(config_file):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Reading configuration file...")
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
@@ -34,8 +30,7 @@ def read_variables(config_file):
     return (input_variables, output_variables)
 
 def metadata_match(config_file, model_file):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Checking model consistency...")
     match = False
     # read configuration file
     with open(config_file) as f:
@@ -60,8 +55,7 @@ def metadata_match(config_file, model_file):
     return match
 
 def load_database():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Loading database...")
     global db
     # load database
     db_defaults = {
@@ -113,8 +107,7 @@ def load_database():
 
 # plot experimental, simulation, and ML data
 def plot(model):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Plotting...")
     # local aliases
     parameters = state.parameters
     parameters_min = state.parameters_min

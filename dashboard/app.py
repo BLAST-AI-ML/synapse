@@ -16,12 +16,10 @@ from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
 from state_manager import server, state, ctrl, init_startup, init_runtime
 from utils import read_variables, metadata_match, load_database, plot
 
-
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
 
-current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
 mod_manager = None
 par_manager = None
 obj_manager = None
@@ -40,8 +38,7 @@ obj_manager = None
     "opacity",
 )
 def update(initialize=False, **kwargs):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Updating...")
     global mod_manager
     global par_manager
     global obj_manager
@@ -101,8 +98,7 @@ def update(initialize=False, **kwargs):
 # -----------------------------------------------------------------------------
 
 def pre_calibration(objective_name):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Preparing calibration...")
     # get calibration and normalization transformers
     output_transformers = mod_manager.get_output_transformers()
     output_calibration = output_transformers[0]
@@ -116,8 +112,7 @@ def pre_calibration(objective_name):
 # TODO encapsulate in simulation class?
 @ctrl.add("apply_calibration")
 def apply_calibration():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Applying calibration...")
     if mod_manager.avail():
         if not state.is_calibrated:
             #FIXME generalize for multiple objectives
@@ -137,8 +132,7 @@ def apply_calibration():
 # TODO encapsulate in simulation class?
 @ctrl.add("undo_calibration")
 def undo_calibration():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Undoing calibration...")
     if mod_manager.avail():
         if state.is_calibrated:
             #FIXME generalize for multiple objectives
@@ -161,8 +155,7 @@ def undo_calibration():
 
 # home route
 def home_route():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Setting GUI home route...")
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
@@ -223,8 +216,7 @@ def home_route():
 
 # NERSC route
 def nersc_route():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Setting GUI NERSC route...")
     if get_sfapi_client() is not None:
         build_sfapi_status()
     else:
@@ -232,8 +224,7 @@ def nersc_route():
 
 # GUI layout
 def gui_setup():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Setting GUI layout...")
     with SinglePageWithDrawerLayout(server) as layout:
         layout.title.set_text("BELLA Superfacility")
         # add toolbar components

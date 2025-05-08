@@ -11,8 +11,7 @@ from state_manager import state
 class ModelManager:
 
     def __init__(self, model_data):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print(f"Initializing model manager...")
         if model_data is None:
             self.__model = None
         else:
@@ -23,14 +22,12 @@ class ModelManager:
                 sys.exit(1)
 
     def avail(self):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Checking model availability...")
         model_avail = True if self.__model is not None else False
         return model_avail
 
     def evaluate(self, parameters_model):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
             output_dict = self.__model.evaluate(parameters_model)
@@ -44,8 +41,7 @@ class ModelManager:
             return res
 
     def model_wrapper(self, parameters_array):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Wrapping model...")
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
@@ -53,8 +49,7 @@ class ModelManager:
         return res
 
     def optimize(self):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        # info print statement skipped to avoid redundancy
         if self.__model is not None:
             # get array of current parameters from state
             parameters_values = np.array(list(state.parameters.values()))
@@ -74,7 +69,6 @@ class ModelManager:
             state.dirty("parameters")
 
     def get_output_transformers(self):
-        current_function = inspect.currentframe().f_code.co_name
-        print(f"Executing {self.__class__.__name__}.{current_function}...")
+        print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers

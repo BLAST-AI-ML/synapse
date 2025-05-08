@@ -10,12 +10,8 @@ from sfapi_client.compute import Machine
 from state_manager import server, state, ctrl
 from utils import load_database
 
-# global module name
-current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
-
 def get_sfapi_config():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Getting SFAPI configuration...")
     config, _, _ = load_database()
     # restore private key from DB
     sfapi = config.find_one({"name": "sfapi"})
@@ -26,8 +22,7 @@ def get_sfapi_config():
 
 
 def get_sfapi_client():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Getting SFAPI client...")
     sfapi_client_id, sfapi_key_pem, sfapi_expiration = get_sfapi_config()
     if (sfapi_client_id is None or
         sfapi_key_pem is None or
@@ -39,8 +34,7 @@ def get_sfapi_client():
 
 
 def check_status():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Checking SFAPI status...")
     output = []
     with get_sfapi_client() as client:
         # does not need authentication
@@ -58,8 +52,7 @@ def check_status():
 @ctrl.add("exchange_credentials")
 def exchange_credentials(state):
     """Read a PEM file and store it in the database"""
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    print("Exchanging SFAPI credentials...")
     config, _, _ = load_database()
     sfapi_client_id = state.client_id
     private_key = state.private_key
@@ -97,8 +90,6 @@ def exchange_credentials(state):
 
 
 def build_sfapi_status():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
     # get SFAPI configuration parameters (client ID, private key, expiration)
     sfapi_client_id, sfapi_key_pem, sfapi_expiration = get_sfapi_config()
     # route
@@ -143,8 +134,6 @@ def build_sfapi_status():
                                 )
 
 def build_sfapi_auth():
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
