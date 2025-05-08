@@ -1,4 +1,5 @@
 #from datetime import datetime, timedelta
+import copy
 import inspect
 import os
 import pandas as pd
@@ -11,9 +12,24 @@ server = get_server(client_type="vue2")
 state = server.state
 ctrl = server.controller
 
-def init_state():
+def init_startup():
     """
-    Helper function to collect and define all state variabes.
+    Helper function to initialize state variabes needed at startup.
+    """
+    state.nersc_route_built = False
+    state.ui_layout_built = False
+    state.experiment = "ip2"
+    # need a separate variable to track changes in state.experiment,
+    # which trigger re-initialization, to avoid multiple reactive functions
+    # listening to changes in state.experiment, as the order of execution of
+    # such reactive functions cannot be prescribed
+    state.experiment_old = copy.deepcopy(state.experiment)
+    state.experiment_changed = False
+    state.initialized = False
+
+def init_runtime():
+    """
+    Helper function to (re-)initialize state variabes at runtime.
     """
     current_function = inspect.currentframe().f_code.co_name
     print(f"Executing {current_module}.{current_function}...")

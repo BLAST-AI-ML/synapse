@@ -13,7 +13,7 @@ from model_manager import ModelManager
 from parameters_manager import ParametersManager
 from objectives_manager import ObjectivesManager
 from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
-from state_manager import server, state, ctrl, init_state
+from state_manager import server, state, ctrl, init_startup, init_runtime
 from utils import read_variables, metadata_match, load_database, plot
 
 
@@ -22,11 +22,16 @@ from utils import read_variables, metadata_match, load_database, plot
 # -----------------------------------------------------------------------------
 
 current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
+mod_manager = None
+par_manager = None
+obj_manager = None
 
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
 
+# Triggered automatically also on server ready,
+# internal checks avoid redundant function calls.
 @state.change(
     "experiment",
     "exp_data",
@@ -34,7 +39,7 @@ current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_c
     "parameters",
     "opacity",
 )
-def reload(**kwargs):
+def update(**kwargs):
     current_function = inspect.currentframe().f_code.co_name
     print(f"Executing {current_module}.{current_function}...")
     global mod_manager
@@ -43,17 +48,18 @@ def reload(**kwargs):
     initialize = False
     state.experiment_changed = not (state.experiment == state.experiment_old)
     if state.experiment_changed:
+        print("Loading new experiment...")
         initialize = True
         # reset state variables
         state.experiment_old = copy.deepcopy(state.experiment)
         state.experiment_changed = False
-    elif state.initialize:
+    elif not state.initialized:
         initialize = True
         # reset state variables
-        state.initialize = False
+        state.initialized = True
     if initialize:
         # initialize state after experiment selection
-        init_state()
+        init_runtime()
         # initialize database
         config, exp_docs, sim_docs = load_database()
         # convert database documents into pandas DataFrames
@@ -277,11 +283,9 @@ def gui_setup():
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    state.nersc_route_built = False
-    state.ui_layout_built = False
-    state.experiment = "ip2"
-    state.experiment_old = copy.deepcopy(state.experiment)
-    state.initialize = True
-    reload()
+    # initialize state variables needed at startup
+    init_startup()
+    # initialize remaining state variables, GUI routes, etc.
+    update()
     print("Starting server...")
     server.start()
