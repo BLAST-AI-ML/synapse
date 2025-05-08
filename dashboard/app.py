@@ -16,7 +16,10 @@ from state_manager import server, state, ctrl, init_state
 from utils import read_variables, metadata_match, load_database, plot
 
 
-# global module name
+# -----------------------------------------------------------------------------
+# Globals
+# -----------------------------------------------------------------------------
+
 current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_code.co_filename))
 
 # -----------------------------------------------------------------------------
@@ -57,12 +60,16 @@ def reload(**kwargs):
     par_manager = ParametersManager(mod_manager, input_variables)
     # initialize objectives
     obj_manager = ObjectivesManager(mod_manager, output_variables)
-    # reload home route
+    # set up home route (reload components, e.g., parameters card)
     home_route()
-    # reload NERSC route
-    nersc_route()
-    # setup GUI components
-    gui_setup()
+    if not state.nersc_route_built:
+        # set up NERSC route (only once at startup)
+        nersc_route()
+        state.nersc_route_built = True
+    if not state.ui_layout_built:
+        # set up GUI components (only once at startup)
+        gui_setup()
+        state.ui_layout_built = True
 
 @state.change(
     "exp_data",
@@ -78,14 +85,6 @@ def update(**kwargs):
     # update plots
     fig = plot(mod_manager)
     ctrl.figure_update(fig)
-
-@ctrl.add("on_server_ready")
-def initialize(**kwargs):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
-    state.experiment = "ip2"
-    # Flush state to trigger 'reload' right now
-    state.flush()
 
 # -----------------------------------------------------------------------------
 # Helper functions
@@ -231,7 +230,7 @@ def gui_setup():
         with layout.toolbar:
             vuetify.VSpacer()
             vuetify.VSelect(
-                v_model=("experiment",state.experiment),
+                v_model=("experiment",),
                 items=("experiments", ["ip2", "acave"]),
                 dense=True,
                 prepend_icon="mdi-atom",
@@ -269,5 +268,9 @@ def gui_setup():
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    state.nersc_route_built = False
+    state.ui_layout_built = False
+    state.experiment = "ip2"
+    reload()
     print("Starting server...")
     server.start()
