@@ -1,3 +1,4 @@
+import copy
 import inspect
 from io import StringIO
 import os
@@ -26,60 +27,68 @@ current_module, _ = os.path.splitext(os.path.basename(inspect.currentframe().f_c
 # Callbacks
 # -----------------------------------------------------------------------------
 
-@state.change("experiment")
+@state.change(
+    "experiment",
+    "exp_data",
+    "sim_data",
+    "parameters",
+    "opacity",
+)
 def reload(**kwargs):
     current_function = inspect.currentframe().f_code.co_name
     print(f"Executing {current_module}.{current_function}...")
     global mod_manager
     global par_manager
     global obj_manager
-    # initialize state after experiment selection
-    init_state()
-    # initialize database
-    config, exp_docs, sim_docs = load_database()
-    # convert database documents into pandas DataFrames
-    state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
-    # read input and output variables
-    config_dir  = os.path.join(os.getcwd(), "config")
-    config_file = os.path.join(config_dir, "variables.yml")
-    if not os.path.isfile(config_file):
-        raise ValueError(f"Configuration file {config_file} not found")
-    input_variables, output_variables = read_variables(config_file)
-    # initialize model
-    model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
-    model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
-    model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
-    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-    if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
-        model_file = None
-    mod_manager = ModelManager(model_file)
-    # initialize parameters
-    par_manager = ParametersManager(mod_manager, input_variables)
-    # initialize objectives
-    obj_manager = ObjectivesManager(mod_manager, output_variables)
-    # set up home route (reload components, e.g., parameters card)
-    home_route()
-    if not state.nersc_route_built:
-        # set up NERSC route (only once at startup)
-        nersc_route()
-        state.nersc_route_built = True
-    if not state.ui_layout_built:
-        # set up GUI components (only once at startup)
-        gui_setup()
-        state.ui_layout_built = True
-
-@state.change(
-    "exp_data",
-    "sim_data",
-    "parameters",
-    "opacity",
-)
-def update(**kwargs):
-    current_function = inspect.currentframe().f_code.co_name
-    print(f"Executing {current_module}.{current_function}...")
+    initialize = False
+    state.experiment_changed = not (state.experiment == state.experiment_old)
+    if state.experiment_changed:
+        initialize = True
+        # reset state variables
+        state.experiment_old = copy.deepcopy(state.experiment)
+        state.experiment_changed = False
+    elif state.initialize:
+        initialize = True
+        # reset state variables
+        state.initialize = False
+    if initialize:
+        # initialize state after experiment selection
+        init_state()
+        # initialize database
+        config, exp_docs, sim_docs = load_database()
+        # convert database documents into pandas DataFrames
+        state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
+        state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
+        # read input and output variables
+        config_dir  = os.path.join(os.getcwd(), "config")
+        config_file = os.path.join(config_dir, "variables.yml")
+        if not os.path.isfile(config_file):
+            raise ValueError(f"Configuration file {config_file} not found")
+        input_variables, output_variables = read_variables(config_file)
+        # initialize model
+        model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
+        model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
+        model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
+        model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+        if not os.path.isfile(model_file):
+            raise ValueError(f"Model file {model_file} not found")
+        if not metadata_match(config_file, model_file):
+            model_file = None
+        mod_manager = ModelManager(model_file)
+        # initialize parameters
+        par_manager = ParametersManager(mod_manager, input_variables)
+        # initialize objectives
+        obj_manager = ObjectivesManager(mod_manager, output_variables)
+        # set up home route (reload components, e.g., parameters card)
+        home_route()
+        if not state.nersc_route_built:
+            # set up NERSC route (only once at startup)
+            nersc_route()
+            state.nersc_route_built = True
+        if not state.ui_layout_built:
+            # set up GUI components (only once at startup)
+            gui_setup()
+            state.ui_layout_built = True
     # update objectives
     obj_manager.update()
     # update plots
@@ -271,6 +280,8 @@ if __name__ == "__main__":
     state.nersc_route_built = False
     state.ui_layout_built = False
     state.experiment = "ip2"
+    state.experiment_old = copy.deepcopy(state.experiment)
+    state.initialize = True
     reload()
     print("Starting server...")
     server.start()
