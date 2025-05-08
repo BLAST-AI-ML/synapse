@@ -18,14 +18,13 @@ def init_startup():
     """
     state.nersc_route_built = False
     state.ui_layout_built = False
-    state.experiment = "ip2"
     # need a separate variable to track changes in state.experiment,
     # which trigger re-initialization, to avoid multiple reactive functions
     # listening to changes in state.experiment, as the order of execution of
     # such reactive functions cannot be prescribed
+    state.experiment = "ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
-    state.initialized = False
 
 def init_runtime():
     """

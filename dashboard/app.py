@@ -39,13 +39,12 @@ obj_manager = None
     "parameters",
     "opacity",
 )
-def update(**kwargs):
+def update(initialize=False, **kwargs):
     current_function = inspect.currentframe().f_code.co_name
     print(f"Executing {current_module}.{current_function}...")
     global mod_manager
     global par_manager
     global obj_manager
-    initialize = False
     state.experiment_changed = not (state.experiment == state.experiment_old)
     if state.experiment_changed:
         print("Loading new experiment...")
@@ -53,10 +52,6 @@ def update(**kwargs):
         # reset state variables
         state.experiment_old = copy.deepcopy(state.experiment)
         state.experiment_changed = False
-    elif not state.initialized:
-        initialize = True
-        # reset state variables
-        state.initialized = True
     if initialize:
         # initialize state after experiment selection
         init_runtime()
@@ -285,7 +280,7 @@ def gui_setup():
 if __name__ == "__main__":
     # initialize state variables needed at startup
     init_startup()
-    # initialize remaining state variables, GUI routes, etc.
-    update()
+    # initialize all other variables and components
+    update(initialize=True)
     print("Starting server...")
     server.start()
