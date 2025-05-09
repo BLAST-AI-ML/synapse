@@ -63,10 +63,6 @@ output_transform = AffineInputTransform(
     coefficient=y.std(axis=0),
     offset=y.mean(axis=0)
 )
-if (min(X.mean(axis=0)) == 0):
-    print("Mean value used for normalization is 0. This will lead to NaNs ",X.mean(axis=0))
-if (min(X.std(axis=0)) == 0):
-    print("RMS value used for normalization is 0. This will lead to NaNs ", X.std(axis=0))
 
 # Apply normalization to the data set
 norm_df = df.copy()
