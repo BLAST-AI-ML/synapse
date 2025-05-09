@@ -1,4 +1,5 @@
-from trame.widgets import vuetify2 as v2
+import copy
+from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
 
@@ -19,15 +20,11 @@ class ParametersManager:
             state.parameters[key] = pval
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
+        state.parameters_init = copy.deepcopy(state.parameters)
 
-    def update(self):
-        for key in state.parameters.keys():
-            state.parameters[key] = float(state.parameters[key])
-
-    def recenter(self):
-        # recenter parameters
-        for key in state.parameters.keys():
-            state.parameters[key] = (state.parameters_min[key] + state.parameters_max[key]) / 2.
+    def reset(self):
+        # reset parameters to initial values
+        state.parameters = copy.deepcopy(state.parameters_init)
         # push again at flush time
         state.dirty("parameters")
 
@@ -36,19 +33,40 @@ class ParametersManager:
         self.__model.optimize()
 
     def card(self):
-        with v2.VCard():
-            with v2.VCardTitle("Parameters"):
-                with v2.VCardText():
+        with vuetify.VCard():
+            with vuetify.VCardTitle("Parameters"):
+                vuetify.VSpacer()
+                with vuetify.VTooltip(bottom=True):
+                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
+                        with vuetify.VBtn(
+                            icon=True,
+                            click=self.optimize,
+                            v_on="on",
+                            v_bind="attrs",
+                        ):
+                            vuetify.VIcon("mdi-laptop")
+                    vuetify.Template("Optimize")
+                with vuetify.VTooltip(bottom=True):
+                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
+                        with vuetify.VBtn(
+                            icon=True,
+                            click=self.reset,
+                            v_on="on",
+                            v_bind="attrs",
+                        ):
+                            vuetify.VIcon("mdi-restart")
+                    vuetify.Template("Reset")
+                with vuetify.VCardText():
                     for key in state.parameters.keys():
                         pmin = state.parameters_min[key]
                         pmax = state.parameters_max[key]
                         step = (pmax - pmin) / 100.
                         # create a row for the parameter label
-                        with v2.VRow():
-                            v2.VSubheader(key)
+                        with vuetify.VRow():
+                            vuetify.VSubheader(key)
                         # create a row for the slider and text field
-                        with v2.VRow(no_gutters=True):
-                            with v2.VSlider(
+                        with vuetify.VRow(no_gutters=True):
+                            with vuetify.VSlider(
                                 v_model_number=(f"parameters['{key}']",),
                                 change="flushState('parameters')",
                                 classes="align-center",
@@ -57,8 +75,8 @@ class ParametersManager:
                                 min=pmin,
                                 step=step,
                             ):
-                                with v2.Template(v_slot_append=True):
-                                    v2.VTextField(
+                                with vuetify.Template(v_slot_append=True):
+                                    vuetify.VTextField(
                                         v_model_number=(f"parameters['{key}']",),
                                         classes="mt-0 pt-0",
                                         density="compact",

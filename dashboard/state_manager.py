@@ -21,6 +21,7 @@ def init_state():
     state.parameters = dict()
     state.parameters_min = dict()
     state.parameters_max = dict()
+    state.parameters_init = dict()
     # objectives
     state.objectives = dict()
     # NERSC
