@@ -60,10 +60,14 @@ class ModelManager:
                     res = float(res)
                 return res
             elif state.model_type == "GP":
-                mean = output_dict['n_protons_exp_task'].mean
+                if state.experiment == 'ip2':
+                    output_key = next((key for key in output_dict if 'exp' in key), None)
+                elif state.experiment == 'acave':
+                    output_key = next((key for key in output_dict if 'sim' in key), None)
+                mean = output_dict[output_key].mean
                 l, u = (
-                    mean - 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
-                    mean + 2. * output_dict['n_protons_exp_task'].variance.sqrt(),
+                    mean - 2. * output_dict[output_key].variance.sqrt(),
+                    mean + 2. * output_dict[output_key].variance.sqrt(),
                 )
                 return mean.detach().numpy().tolist(), l.detach().numpy().tolist(), u.detach().numpy().tolist()
             else:
