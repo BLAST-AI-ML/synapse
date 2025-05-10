@@ -15,8 +15,6 @@ input_variables:
 output_variables:
   kHz_ThorlabsSpec MeanWavelength_sim_task: {variable_class: DistributionVariable,
     distribution_type: MultiVariateNormal}
-  kHz_ThorlabsSpec MeanWavelength_exp_task: {variable_class: DistributionVariable,
-    distribution_type: MultiVariateNormal}
 input_validation_config: null
 output_validation_config: null
 device: cpu
