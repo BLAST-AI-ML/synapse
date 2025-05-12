@@ -232,7 +232,7 @@ def gui_setup():
             vuetify.VSpacer()
             vuetify.VSelect(
                 v_model=("experiment",),
-                items=("experiments", ["ip2", "acave"]),
+                items=("experiments", ["qed_ip2", "ip2", "acave"]),
                 dense=True,
                 prepend_icon="mdi-atom",
                 style="max-width: 200px;",

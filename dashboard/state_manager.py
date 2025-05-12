@@ -20,7 +20,7 @@ def init_startup():
     # which trigger re-initialization, to avoid multiple reactive functions
     # listening to changes in state.experiment, as the order of execution of
     # such reactive functions cannot be prescribed
-    state.experiment = "ip2"
+    state.experiment = "qed_ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
 
