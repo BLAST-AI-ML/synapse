@@ -19,7 +19,7 @@ from utils import read_variables, metadata_match, load_database, plot
 # Initialize experiment and state variables
 # -----------------------------------------------------------------------------
 
-state.experiment = "ip2"
+state.experiment = "qed_ip2"
 init_state()
 
 # -----------------------------------------------------------------------------
@@ -208,7 +208,7 @@ with SinglePageWithDrawerLayout(server) as layout:
         vuetify.VSpacer()
         vuetify.VSelect(
             v_model=("experiment",),
-            items=("experiments", ["ip2", "acave"]),
+            items=("experiments", ["qed_ip2", "ip2", "acave"]),
             dense=True,
             prepend_icon="mdi-atom",
             style="max-width: 200px;",
