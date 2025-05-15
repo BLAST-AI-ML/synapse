@@ -18,7 +18,7 @@ from lume_model.variables import ScalarVariable
 import sys
 
 # Select experimental setup for which we are training a model
-setup = "ip2"
+setup = "qed_ip2"
 
 # Open credential file for database
 with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
@@ -102,5 +102,5 @@ model = TorchModel(
     input_transformers=[input_transform],
     output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
 )
-model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/NN_training/saved_models', setup+'trial.yml'), save_jit=True )
+model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/NN_training/saved_models', setup+'.yml'), save_jit=True )
 
