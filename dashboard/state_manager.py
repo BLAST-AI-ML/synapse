@@ -33,7 +33,7 @@ def init_runtime():
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)
     # opacity
-    state.opacity = 0.1
+    state.opacity = 0.05
     # calibration
     state.is_calibrated = False
     # parameters

@@ -167,25 +167,31 @@ def home_route():
                         with vuetify.VCard():
                             with vuetify.VCardTitle("Control: Plots"):
                                 with vuetify.VCardText():
+                                    # create a row for the slider label
                                     with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            pass
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            vuetify.VSlider(
-                                                v_model_number=("opacity",),
-                                                change="flushState('opacity')",
-                                                label="Opacity",
-                                                min=0.0,
-                                                max=1.0,
-                                                step=0.1,
-                                                classes="align-center",
-                                                hide_details=True,
-                                                style="width: 100%;",
-                                                thumb_label="always",
-                                                thumb_size=25,
-                                                type="number",
-                                            )
+                                        vuetify.VSubheader("Projected Data Depth")
+                                    # create a row for the slider and text field
+                                    with vuetify.VRow(no_gutters=True):
+                                        with vuetify.VSlider(
+                                            v_model_number=("opacity",),
+                                            change="flushState('opacity')",
+                                            classes="align-center",
+                                            hide_details=True,
+                                            max=1.0,
+                                            min=0.0,
+                                            step=0.025,
+                                        ):
+                                            with vuetify.Template(v_slot_append=True):
+                                                vuetify.VTextField(
+                                                    v_model_number=("opacity",),
+                                                    classes="mt-0 pt-0",
+                                                    density="compact",
+                                                    hide_details=True,
+                                                    readonly=True,
+                                                    single_line=True,
+                                                    style="width: 80px;",
+                                                    type="number",
+                                                )
                                     with vuetify.VRow():
                                         with vuetify.VCol():
                                             with vuetify.VBtn(
