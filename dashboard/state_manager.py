@@ -23,6 +23,7 @@ def init_startup():
     state.experiment = "qed_ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
+    state.model_type = "NN"
 
 def init_runtime():
     """
