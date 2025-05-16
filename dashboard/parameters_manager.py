@@ -1,5 +1,4 @@
 import copy
-import inspect
 from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
