@@ -2,7 +2,7 @@ model_class: GPModel
 input_variables:
   kHz_Hexapod_Target ypos:
     variable_class: ScalarVariable
-    default_value: 0.0
+    default_value: 1.0e-08
     is_constant: false
     value_range: [-0.1, 0.1]
     value_range_tolerance: 1.0e-08
