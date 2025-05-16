@@ -1,8 +1,11 @@
+import inspect
+
 from state_manager import state
 
 class ObjectivesManager:
 
     def __init__(self, model, output_variables):
+        print("Initializing objectives manager...")
         # FIXME generalize for multiple objectives
         assert len(output_variables) == 1, "number of objectives > 1 not supported"
         # save PyTorch model
@@ -17,6 +20,7 @@ class ObjectivesManager:
                 state.objectives[key] = None
 
     def update(self):
+        print("Updating objectives...")
         for key in state.objectives.keys():
             if self.__model.avail():
                 state.objectives[key] = self.__model.evaluate(state.parameters)

@@ -1,4 +1,5 @@
 import copy
+import inspect
 from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
@@ -6,6 +7,7 @@ from state_manager import state
 class ParametersManager:
 
     def __init__(self, model, input_variables):
+        print("Initializing parameters manager...")
         # save PyTorch model
         self.__model = model
         # define state variables
@@ -23,16 +25,19 @@ class ParametersManager:
         state.parameters_init = copy.deepcopy(state.parameters)
 
     def reset(self):
+        print("Resetting parameters to default values...")
         # reset parameters to initial values
         state.parameters = copy.deepcopy(state.parameters_init)
         # push again at flush time
         state.dirty("parameters")
 
     def optimize(self):
+        print("Optimizing parameters...")
         # optimize parameters through model
         self.__model.optimize()
 
     def card(self):
+        print("Setting parameters card...")
         with vuetify.VCard():
             with vuetify.VCardTitle("Parameters"):
                 vuetify.VSpacer()

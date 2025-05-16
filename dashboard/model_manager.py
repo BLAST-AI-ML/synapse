@@ -13,9 +13,7 @@ import os
 class ModelManager:
 
     def __init__(self, model_data):
-        # inspect current function and module names
-        cfunct = inspect.currentframe().f_code.co_name
-        cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+        print(f"Initializing model manager...")
         if model_data is None:
             self.__model = None
         else:
@@ -27,10 +25,11 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model_type: {state.model_type}")
             except Exception as e:
-                print(f"{cmodul}:{self.__class__.__name__}.{cfunct}: {e}")
+                print(f"An unexpected error occurred: {e}")
                 sys.exit(1)
 
     def avail(self):
+        print("Checking model availability...")
         model_avail = True if self.__model is not None else False
         return model_avail
 
@@ -46,6 +45,7 @@ class ModelManager:
             return res, l[:,1].detach().cpu().numpy().tolist(), u[:,1].detach().cpu().numpy().tolist()
 
     def evaluate(self, parameters_model):
+        print("Evaluating model...")
         if self.__model is not None:
 
             # evaluate model
@@ -74,6 +74,7 @@ class ModelManager:
                 raise ValueError(f"Unsupported model_type: {state.model_type}")
 
     def model_wrapper(self, parameters_array):
+        print("Wrapping model...")
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
@@ -81,6 +82,7 @@ class ModelManager:
         return res
 
     def optimize(self):
+        # info print statement skipped to avoid redundancy
         if self.__model is not None:
             # get array of current parameters from state
             parameters_values = np.array(list(state.parameters.values()))
@@ -100,5 +102,6 @@ class ModelManager:
             state.dirty("parameters")
 
     def get_output_transformers(self):
+        print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers

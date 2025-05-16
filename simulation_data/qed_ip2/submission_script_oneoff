@@ -1,0 +1,29 @@
+#!/bin/bash -l
+
+#SBATCH -t 00:30:00
+#SBATCH -N 4
+#SBATCH -A m558_g
+#SBATCH -C gpu
+#SBATCH -q debug
+#SBATCH --exclusive
+#SBATCH --gpu-bind=none
+#SBATCH --ntasks-per-node=4
+#SBATCH --gpus-per-node=4
+
+# Source environment
+source $HOME/db.profile
+source $HOME/perlmutter_gpu_warpx.profile
+
+# Create new directory
+mkdir oneoff_$SLURM_JOB_ID
+cd oneoff_$SLURM_JOB_ID
+
+# Launch warpx simulation
+export SRUN_CPUS_PER_TASK=16
+GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
+srun --cpu-bind=cores bash -c "
+    export CUDA_VISIBLE_DEVICES=\$((3-SLURM_LOCALID));
+    ../templates/warpx ../templates/warpx_input_script ${GPU_AWARE_MPI} > output.txt"
+
+# Execute analysis script
+# ../templates/analyze_simulation.py
