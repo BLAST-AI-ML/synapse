@@ -50,6 +50,13 @@ def update(initialize=False, **kwargs):
         # reset state variables
         state.experiment_old = copy.deepcopy(state.experiment)
         state.experiment_changed = False
+    state.model_type_changed = not (state.model_type == state.model_type_old)
+    if state.model_type_changed:
+        print("Loading new model...")
+        initialize = True
+        # reset state variables
+        state.model_type_old = copy.deepcopy(state.model_type)
+        state.model_type_changed = False
     if initialize:
         # initialize state after experiment selection
         init_runtime()

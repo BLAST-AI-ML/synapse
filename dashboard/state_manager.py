@@ -24,6 +24,8 @@ def init_startup():
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
     state.model_type = "NN"
+    state.model_type_changed = False
+    state.model_type_old = copy.deepcopy(state.model_type)
 
 def init_runtime():
     """
