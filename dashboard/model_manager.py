@@ -56,13 +56,13 @@ class ModelManager:
                     raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
                 res = list(output_dict.values())[0]
                 #convert to Python float if tensor has only one element (more elements for line plots)
-                if res.numel() == 1:
+                if isinstance(res, torch.Tensor) and res.numel() == 1:
                     res = float(res)
                 return res
             elif state.model_type == "GP":
                 if state.experiment == 'ip2':
                     output_key = next((key for key in output_dict if 'exp' in key), None)
-                elif state.experiment == 'acave':
+                elif state.experiment in ['acave', 'qed_ip2']:
                     output_key = next((key for key in output_dict if 'sim' in key), None)
                 mean = output_dict[output_key].mean
                 l, u = (
