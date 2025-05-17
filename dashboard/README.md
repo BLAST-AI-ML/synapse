@@ -1,10 +1,27 @@
-## How to Run the GUI
+## GUI how-to guide for users and developers
 
 ### Prerequisites
 - Ensure you have Conda installed.
 - Ensure you have Docker installed (if you plan to use Docker).
 
-### Setting Up the Conda Environment
+### How to create a new conda environment lock file
+
+1. Activate the `base` conda environment:
+    ```console
+    conda activate base
+    ```
+
+2. Install `conda-lock` (if not already installed):
+    ```console
+    conda install -c conda-forge conda-lock
+    ```
+
+3. Create the lock file starting from the existing minimal environment file:
+    ```console
+    conda-lock --file gui-base.yml --lockfile gui-lock.yml
+    ```
+
+### How to set up the conda environment
 
 1. Activate the `base` conda environment:
     ```console
@@ -21,7 +38,7 @@
     conda-lock install --name gui gui-lock.yml
     ```
 
-### Running the GUI
+### How to run the GUI
 
 1. Activate the `gui` conda environment:
     ```console
@@ -55,7 +72,7 @@
 
 5. Terminate the GUI via `Ctrl` + `C`.
 
-## How to Build and Run the Docker Container
+### How to build and run the Docker container
 
 1. Build the Docker image based on `Dockerfile`:
     ```console
@@ -88,19 +105,26 @@
     docker system prune -a
     ```
 
-## How to Create the Conda Environment Lock File (For Maintainers)
+### How to get the Superfacility API credentials
 
-1. Activate the `base` conda environment:
-    ```console
-    conda activate base
+Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#client](https://docs.nersc.gov/services/sfapi/authentication/#client):
+
+1. Log in to your profile page at [iris.nersc.gov/profile](https://iris.nersc.gov/profile).
+
+2. Click the icon with your username in the upper right of the profile page.
+
+3. Scroll down to the section "Superfacility API Clients" and click "New Client".
+
+4. Enter a client name (e.g., "BELLA Superfacility"), choose "Red" security level, and select "Your IP" from the "IP Presets" menu.
+
+5. Download your private key file (in pem format).
+
+6. Copy your client ID and add it on the first line of your private key file as described in the instructions at [nersc.github.io/sfapi_client/quickstart/#storing-keys-in-files](https://nersc.github.io/sfapi_client/quickstart/#storing-keys-in-files):
+    ```
+    randmstrgz
+    -----BEGIN RSA PRIVATE KEY-----
+    ...
+    -----END RSA PRIVATE KEY-----
     ```
 
-2. Install `conda-lock` (if not already installed):
-    ```console
-    conda install -c conda-forge conda-lock
-    ```
-
-3. Create the lock file starting from the existing minimal environment file:
-    ```console
-    conda-lock --file gui-base.yml --lockfile gui-lock.yml
-    ```
+7. Run `chmod 600 priv_key.pem` to change the permissions of your private key file to read/write only.
