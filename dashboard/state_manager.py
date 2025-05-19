@@ -23,8 +23,9 @@ def init_startup():
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
     # Superfacility API
-    state.sfapi_key_dict = None
     state.sfapi_key = ""
+    state.sfapi_key_dict = None
+    state.sfapi_key_expiration = ""
     state.sfapi_client_id = ""
     state.perlmutter_status = ""
 

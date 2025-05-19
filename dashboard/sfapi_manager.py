@@ -1,9 +1,29 @@
+from datetime import datetime
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
 from utils import load_database
+
+def sfapi_info(client):
+    print("Updating Superfacility API info...")
+    status = client.compute(Machine.perlmutter)
+    # see https://docs.python.org/3/library/datetime.html#format-codes
+    # for all format codes accepted by the methods strftime and strptime
+    sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
+    user_format = "%A, %B %d, %Y, %H:%M %Z"
+    # update Perlmutter status
+    state.perlmutter_status = f"{status.description}"
+    # get the user object
+    user = client.user()
+    # get API clients associated with the user
+    credential_clients = user.clients()
+    # loop over API clients (only one client expected)
+    for credential_client in credential_clients:
+        # update key expiration date
+        state.sfapi_key_expiration = datetime.strptime(
+            credential_client.expiresAt, sfapi_format).strftime(user_format)
 
 def sfapi_init():
     print("Initializing Superfacility API...")
@@ -14,10 +34,9 @@ def sfapi_init():
         state.sfapi_client_id = sfapi_config["client_id"]
         state.sfapi_key = sfapi_config["key"]
         try:
-            # create an authenticated client and update Perlmutter status
+            # create an authenticated client and update info
             with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
-                status = client.compute(Machine.perlmutter)
-                state.perlmutter_status = f"{status.description} (updated at {str(status.updated_at)})"
+                sfapi_info(client)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
@@ -47,10 +66,9 @@ def load_credentials(sfapi_key_dict, **kwargs):
     }
     config.update_one({"name": "sfapi"}, sfapi_config, upsert=True)
     try:
-        # create an authenticated client and update Perlmutter status
+        # create an authenticated client and update info
         with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
-            status = client.compute(Machine.perlmutter)
-            state.perlmutter_status = f"{status.description} (updated at {str(status.updated_at)})"
+            sfapi_info(client)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
@@ -73,5 +91,13 @@ def sfapi_card():
                         vuetify.VTextField(
                             v_model=("perlmutter_status",),
                             label="Perlmutter Status",
+                            readonly=True,
+                        )
+                # row with text field to display key expiration date
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        vuetify.VTextField(
+                            v_model=("sfapi_key_expiration",),
+                            label="Key Expiration Date",
                             readonly=True,
                         )
