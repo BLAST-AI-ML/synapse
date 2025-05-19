@@ -6,22 +6,30 @@ from trame.widgets import vuetify2 as vuetify
 from state_manager import state
 from utils import load_database
 
-def sfapi_info(client):
+
+# TODO make this a reactive listener, if needed
+def sfapi_info():
     print("Updating Superfacility API info...")
-    # update Perlmutter status
-    status = client.compute(Machine.perlmutter)
-    state.perlmutter_status = f"{status.description}"
-    # get the user object
-    user = client.user()
-    # get client associated with the user and the client ID stored in the key file
-    credential_client = [this_client for this_client in user.clients() if this_client.clientId == state.sfapi_client_id][0]
-    # update key expiration date
-    # (see https://docs.python.org/3/library/datetime.html#format-codes
-    # for all format codes accepted by the methods strftime and strptime)
-    sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
-    user_format = "%A, %B %d, %Y, %H:%M %Z"
-    state.sfapi_key_expiration = datetime.strptime(
-        credential_client.expiresAt, sfapi_format).strftime(user_format)
+    try:
+        # create an authenticated client and update info
+        with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
+            # update Perlmutter status
+            status = client.compute(Machine.perlmutter)
+            state.perlmutter_status = f"{status.description}"
+            # get the user object
+            user = client.user()
+            # get client associated with the user and the client ID stored in the key file
+            credential_client = [this_client for this_client in user.clients() if this_client.clientId == state.sfapi_client_id][0]
+            # update key expiration date
+            # (see https://docs.python.org/3/library/datetime.html#format-codes
+            # for all format codes accepted by the methods strftime and strptime)
+            sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
+            user_format = "%A, %B %d, %Y, %H:%M %Z"
+            state.sfapi_key_expiration = datetime.strptime(
+                credential_client.expiresAt, sfapi_format).strftime(user_format)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
 
 def sfapi_init():
     print("Initializing Superfacility API...")
@@ -31,12 +39,8 @@ def sfapi_init():
     if sfapi_config is not None:
         state.sfapi_client_id = sfapi_config["client_id"]
         state.sfapi_key = sfapi_config["key"]
-        try:
-            # create an authenticated client and update info
-            with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
-                sfapi_info(client)
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+        sfapi_info()
+
 
 @state.change("sfapi_key_dict")
 def load_credentials(sfapi_key_dict, **kwargs):
@@ -63,12 +67,8 @@ def load_credentials(sfapi_key_dict, **kwargs):
         }
     }
     config.update_one({"name": "sfapi"}, sfapi_config, upsert=True)
-    try:
-        # create an authenticated client and update info
-        with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
-            sfapi_info(client)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    sfapi_info()
+
 
 def sfapi_card():
     print("Setting Superfacility API card...")
@@ -88,7 +88,7 @@ def sfapi_card():
                     with vuetify.VCol():
                         vuetify.VTextField(
                             v_model=("perlmutter_status",),
-                            label="Perlmutter Status",
+                            label="Perlmutter Status (if unavailable, please upload a valid key file)",
                             readonly=True,
                         )
                 # row with text field to display key expiration date
@@ -96,6 +96,6 @@ def sfapi_card():
                     with vuetify.VCol():
                         vuetify.VTextField(
                             v_model=("sfapi_key_expiration",),
-                            label="Key Expiration Date",
+                            label="Key Expiration Date (if unavailable, please upload a valid key file)" ,
                             readonly=True,
                         )

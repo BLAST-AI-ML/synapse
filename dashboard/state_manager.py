@@ -25,9 +25,9 @@ def init_startup():
     # Superfacility API
     state.sfapi_key = None
     state.sfapi_key_dict = None
-    state.sfapi_key_expiration = "n/a"
+    state.sfapi_key_expiration = "Unavailable"
     state.sfapi_client_id = None
-    state.perlmutter_status = "n/a"
+    state.perlmutter_status = "Unavailable"
 
 def init_runtime():
     """
