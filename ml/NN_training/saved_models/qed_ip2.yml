@@ -8,7 +8,7 @@ input_variables:
     value_range_tolerance: 1.0e-08
   target_position:
     variable_class: ScalarVariable
-    default_value: 1.0e-08
+    default_value: 0.0
     is_constant: false
     value_range: [-1.0, 1.0]
     value_range_tolerance: 1.0e-08
