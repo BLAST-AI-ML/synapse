@@ -43,6 +43,7 @@ def update(initialize=False, **kwargs):
     global mod_manager
     global par_manager
     global obj_manager
+    # check if experiment changed
     state.experiment_changed = not (state.experiment == state.experiment_old)
     if state.experiment_changed:
         print("Loading new experiment...")
@@ -50,6 +51,7 @@ def update(initialize=False, **kwargs):
         # reset state variables
         state.experiment_old = copy.deepcopy(state.experiment)
         state.experiment_changed = False
+    # check if model changed
     state.model_type_changed = not (state.model_type == state.model_type_old)
     if state.model_type_changed:
         print("Loading new model...")
@@ -72,8 +74,6 @@ def update(initialize=False, **kwargs):
             raise ValueError(f"Configuration file {config_file} not found")
         input_variables, output_variables = read_variables(config_file)
         # initialize model
-        #model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
-        #model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
         model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{state.model_type}_training", "saved_models")
         model_dir_docker = os.path.join("/", "app", "ml", f"{state.model_type}_training", "saved_models")
         model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
@@ -232,7 +232,6 @@ def home_route():
                                             ):
                                                 vuetify.VSpacer()
                                                 vuetify.VIcon("mdi-undo")
-
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
