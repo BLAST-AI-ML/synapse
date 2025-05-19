@@ -19,7 +19,8 @@ def sfapi_info(client):
     user = client.user()
     # get API clients associated with the user
     credential_clients = user.clients()
-    # loop over API clients (only one client expected)
+    # loop over API clients
+    # FIXME filter based on client name (e.g., "bella") if more than one client
     for credential_client in credential_clients:
         # update key expiration date
         state.sfapi_key_expiration = datetime.strptime(
