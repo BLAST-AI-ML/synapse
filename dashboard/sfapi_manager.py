@@ -8,23 +8,20 @@ from utils import load_database
 
 def sfapi_info(client):
     print("Updating Superfacility API info...")
-    status = client.compute(Machine.perlmutter)
-    # see https://docs.python.org/3/library/datetime.html#format-codes
-    # for all format codes accepted by the methods strftime and strptime
-    sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
-    user_format = "%A, %B %d, %Y, %H:%M %Z"
     # update Perlmutter status
+    status = client.compute(Machine.perlmutter)
     state.perlmutter_status = f"{status.description}"
     # get the user object
     user = client.user()
-    # get API clients associated with the user
-    credential_clients = user.clients()
-    # loop over API clients
-    # FIXME filter based on client name (e.g., "bella") if more than one client
-    for credential_client in credential_clients:
-        # update key expiration date
-        state.sfapi_key_expiration = datetime.strptime(
-            credential_client.expiresAt, sfapi_format).strftime(user_format)
+    # get client associated with the user and the client ID stored in the key file
+    credential_client = [this_client for this_client in user.clients() if this_client.clientId == state.sfapi_client_id][0]
+    # update key expiration date
+    # (see https://docs.python.org/3/library/datetime.html#format-codes
+    # for all format codes accepted by the methods strftime and strptime)
+    sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
+    user_format = "%A, %B %d, %Y, %H:%M %Z"
+    state.sfapi_key_expiration = datetime.strptime(
+        credential_client.expiresAt, sfapi_format).strftime(user_format)
 
 def sfapi_init():
     print("Initializing Superfacility API...")
