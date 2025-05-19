@@ -33,17 +33,6 @@ class ModelManager:
         model_avail = True if self.__model is not None else False
         return model_avail
 
-    def posterior(self, tensor_combined):
-        if self.__model is not None:
-            predictions = self.__model.posterior(tensor_combined)
-            with torch.no_grad():
-                mean = predictions.mean
-                l,u = predictions.mvn.confidence_region()
-                variance = predictions.variance
-
-            res = mean[:,1].detach().cpu().numpy().tolist()
-            return res, l[:,1].detach().cpu().numpy().tolist(), u[:,1].detach().cpu().numpy().tolist()
-
     def evaluate(self, parameters_model):
         print("Evaluating model...")
         if self.__model is not None:
