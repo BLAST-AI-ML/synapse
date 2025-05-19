@@ -1,3 +1,5 @@
+
+
 # Install latest dependencies with
 #   conda create -n gui -f gui-base.yml
 #
@@ -29,4 +31,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - git+https://github.com/slaclab/lume-model.git@079a758db388487b5d211bef245f74f025c384ab
+    - git+https://github.com/slaclab/lume-model.git@e586dd661af27d715cf8e6cabc96384b4f7e48c8
