@@ -31,4 +31,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - git+https://github.com/slaclab/lume-model.git@e586dd661af27d715cf8e6cabc96384b4f7e48c8
+    - git+https://github.com/pluflou/lume-model.git@add-gps
