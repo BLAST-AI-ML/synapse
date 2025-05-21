@@ -1,5 +1,4 @@
 import copy
-import inspect
 from io import StringIO
 import os
 import pandas as pd
@@ -10,9 +9,9 @@ from trame.ui.vuetify2 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify2 as vuetify
 
 from model_manager import ModelManager
-from parameters_manager import ParametersManager
 from objectives_manager import ObjectivesManager
-from nersc import get_sfapi_client, build_sfapi_status, build_sfapi_auth
+from parameters_manager import ParametersManager
+from sfapi_manager import sfapi_init, sfapi_card
 from state_manager import server, state, ctrl, init_startup, init_runtime
 from utils import read_variables, metadata_match, load_database, plot
 
@@ -223,10 +222,12 @@ def home_route():
 # NERSC route
 def nersc_route():
     print("Setting GUI NERSC route...")
-    if get_sfapi_client() is not None:
-        build_sfapi_status()
-    else:
-        build_sfapi_auth()
+    with RouterViewLayout(server, "/nersc"):
+        with vuetify.VRow():
+            with vuetify.VCol(cols=4):
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        sfapi_card()
 
 # GUI layout
 def gui_setup():
@@ -277,6 +278,8 @@ def gui_setup():
 if __name__ == "__main__":
     # initialize state variables needed at startup
     init_startup()
+    # initialize Superfacility API
+    sfapi_init()
     # initialize all other variables and components
     update(initialize=True)
     print("Starting server...")
