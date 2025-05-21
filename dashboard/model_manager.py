@@ -56,24 +56,23 @@ class ModelManager:
                 # expected only one value
                 if len(output_dict.values()) != 1:
                     raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
+                # compute mean and mean error
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
-                lower = mean - mean_error
-                upper = mean + mean_error
             elif self.__is_gaussian_process:
                 # TODO use "exp" only once experimental data is available for all experiments
                 task_tag = "exp" if state.experiment == "ip2" else "sim"
                 output_key = [key for key in output_dict.keys() if task_tag in key][0]
-                mean = output_dict[output_key].mean
-                mean_error = 2.*output_dict[output_key].variance.sqrt()
-                lower = mean - mean_error
-                upper = mean + mean_error
-                # detach gradients from tensor
-                mean = mean.detach()
-                lower = lower.detach()
-                upper = upper.detach()
+                # compute mean, standard deviation and mean error
+                # (call detach method to detach gradients from tensors)
+                mean = output_dict[output_key].mean.detach()
+                std_dev = output_dict[output_key].variance.sqrt().detach()
+                mean_error = 2.0 * std_dev
             else:
                 raise ValueError(f"Unsupported model type: {state.model_type}")
+            # compute lower/upper bounds for error range
+            lower = mean - mean_error
+            upper = mean + mean_error
             # convert to Python float if tensor has only one element
             # because Trame state variables must be serializable
             if mean.numel() == 1:
