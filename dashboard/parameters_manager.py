@@ -8,7 +8,7 @@ class ParametersManager:
 
     def __init__(self, model, input_variables):
         print("Initializing parameters manager...")
-        # save PyTorch model
+        # save model
         self.__model = model
         # define state variables
         state.parameters = dict()
@@ -23,6 +23,14 @@ class ParametersManager:
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
         state.parameters_init = copy.deepcopy(state.parameters)
+
+    @property
+    def model(self):
+        return self.__model
+
+    @model.setter
+    def model(self, model):
+        self.__model = model
 
     def reset(self):
         print("Resetting parameters to default values...")

@@ -26,26 +26,21 @@ def init_startup():
     state.model_type = "Neural Network"
     state.model_type_changed = False
     state.model_type_old = copy.deepcopy(state.model_type)
+    # opacity
+    state.opacity = 0.05
 
 def init_runtime():
     """
-    Helper function to (re-)initialize state variabes at runtime.
+    Helper function to (re-)initialize state variables at runtime.
     """
     print(f"Initializing state variables at runtime...")
     # serialized data
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)
-    # opacity
-    state.opacity = 0.05
     # calibration
     state.is_calibrated = False
-    # parameters
-    state.parameters = dict()
-    state.parameters_min = dict()
-    state.parameters_max = dict()
-    state.parameters_init = dict()
-    # objectives
-    state.objectives = dict()
+    # NOTE parameters state variables initialized in parameters manager constructor
+    # NOTE objectives state variables initialized in objectives manager constructor
     # NERSC
     state.sfapi_output = ""
     # TODO

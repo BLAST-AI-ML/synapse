@@ -6,15 +6,14 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from state_manager import state
 
-
 class ModelManager:
-
 
     def __init__(self, model_data):
         print(f"Initializing model manager...")
         if model_data is None:
             self.__model = None
         else:
+            # save model and model type
             self.__is_neural_network = False
             self.__is_gaussian_process = False
             try:
@@ -30,28 +29,24 @@ class ModelManager:
                 print(f"An unexpected error occurred: {e}")
                 sys.exit(1)
 
-
     def avail(self):
         print("Checking model availability...")
         model_avail = True if self.__model is not None else False
         return model_avail
 
-
     @property
     def is_neural_network(self):
         return self.__is_neural_network
-
 
     @property
     def is_gaussian_process(self):
         return self.__is_gaussian_process
 
-
-    def evaluate(self, parameters_model):
+    def evaluate(self, parameters):
         print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
-            output_dict = self.__model.evaluate(parameters_model)
+            output_dict = self.__model.evaluate(parameters)
             if self.__is_neural_network:
                 # expected only one value
                 if len(output_dict.values()) != 1:
@@ -79,7 +74,6 @@ class ModelManager:
                 mean = float(mean)
             return (mean, lower, upper)
 
-
     def model_wrapper(self, parameters_array):
         print("Wrapping model...")
         # convert array of parameters to dictionary
@@ -88,7 +82,6 @@ class ModelManager:
         mean, lower, upper = self.evaluate(parameters_dict)
         res = -mean
         return res
-
 
     def optimize(self):
         # info print statement skipped to avoid redundancy
@@ -109,7 +102,6 @@ class ModelManager:
             state.parameters = dict(zip(state.parameters.keys(), res.x))
             # push again at flush time
             state.dirty("parameters")
-
 
     def get_output_transformers(self):
         print("Getting output transformers...")
