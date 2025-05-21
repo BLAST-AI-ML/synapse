@@ -1,5 +1,3 @@
-import inspect
-
 from state_manager import state
 
 class ObjectivesManager:

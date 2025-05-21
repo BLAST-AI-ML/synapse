@@ -1,6 +1,5 @@
 #from datetime import datetime, timedelta
 import copy
-import inspect
 import os
 import pandas as pd
 from trame.app import get_server
@@ -16,10 +15,10 @@ def init_startup():
     print(f"Initializing state variables at startup...")
     state.nersc_route_built = False
     state.ui_layout_built = False
-    # need a separate variable to track changes in state.experiment,
-    # which trigger re-initialization, to avoid multiple reactive functions
-    # listening to changes in state.experiment, as the order of execution of
-    # such reactive functions cannot be prescribed
+    # need separate variables to track changes in state.experiment and
+    # state.model_type, which trigger re-initialization, to avoid multiple
+    # reactive functions listening to changes in those variables (the order
+    # of execution of such reactive functions cannot be prescribed)
     state.experiment = "qed_ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
@@ -28,6 +27,12 @@ def init_startup():
     state.model_type_old = copy.deepcopy(state.model_type)
     # opacity
     state.opacity = 0.05
+    # Superfacility API
+    state.sfapi_key = None
+    state.sfapi_key_dict = None
+    state.sfapi_key_expiration = "Unavailable"
+    state.sfapi_client_id = None
+    state.perlmutter_status = "Unavailable"
 
 def init_runtime():
     """
@@ -39,16 +44,5 @@ def init_runtime():
     state.sim_data = pd.DataFrame().to_json(default_handler=str)
     # calibration
     state.is_calibrated = False
-    # NOTE parameters state variables initialized in parameters manager constructor
-    # NOTE objectives state variables initialized in objectives manager constructor
-    # NERSC
-    state.sfapi_output = ""
-    # TODO
-    #state.client_id = None
-    #state.private_key = None
-    #state.sfapi_expiration_days = 33
-    #state.sfapi_expiration = str(
-    #    datetime.now() +
-    #    timedelta(days=int(state.sfapi_expiration_days))
-    #)
-    #state.perlmutter_status = None
+    # parameters and objectives state variables are initialized
+    # in the respective manager class constructors
