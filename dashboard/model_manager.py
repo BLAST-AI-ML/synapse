@@ -1,13 +1,10 @@
 import inspect
 import numpy as np
-import os
 from scipy.optimize import minimize
 import sys
 from lume_model.models.torch_model import TorchModel
-from lume_model.variables import ScalarVariable, DistributionVariable
 from lume_model.models.gp_model import GPModel
 from state_manager import state
-import os
 
 
 class ModelManager:
