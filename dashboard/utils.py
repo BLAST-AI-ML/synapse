@@ -194,54 +194,47 @@ def plot(model):
                 end=parameters_max[key],
                 steps=steps,
             )
-
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
-
-            if state.model_type == "GP":
-                # Reorder the dictionary with respect to the parameterd_key_order_list
-                ordered_input_dict_loc = {k: input_dict_loc[k] for k in parameters_key_order_list if k in input_dict_loc}
-                result = model.evaluate(ordered_input_dict_loc)
-                y, l, u = result
-
-                # Upper bound
-                upper_bound = go.Scatter(
+            # reorder the dictionary with respect to the parameters_key_order_list
+            # TODO currently needed for GP model, see if this can be worked around
+            ordered_input_dict_loc = {k: input_dict_loc[k] for k in parameters_key_order_list if k in input_dict_loc}
+            # get mean and lower/upper bounds for uncertainty prediction
+            # (when lower/upper bounds are not predicted by the model,
+            # their values are set to zero to collapse the error range)
+            mean, lower, upper = model.evaluate(ordered_input_dict_loc)
+            # upper bound
+            upper_bound = go.Scatter(
                 x=input_dict_loc[key],
-                y=u,
+                y=upper,
                 line=dict(color='orange', width=0.3),
                 showlegend=False,
                 hoverinfo="skip",
-                name='Upper Bound',
             )
-                # Lower bound
-                lower_bound = go.Scatter(
+            fig.add_trace(
+                upper_bound,
+                row=this_row,
+                col=this_col,
+            )
+            # lower bound
+            lower_bound = go.Scatter(
                 x=input_dict_loc[key],
-                y=l,
+                y=lower,
                 fill='tonexty',  # fill area between this trace and the next one
                 fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
                 line=dict(color='orange', width=0.3),
                 showlegend=False,
                 hoverinfo="skip",
-                name='Lower Bound',
             )
-                fig.add_trace(
-                upper_bound,
-                row=this_row,
-                col=this_col,
-            )
-                fig.add_trace(
+            fig.add_trace(
                 lower_bound,
                 row=this_row,
                 col=this_col,
             )
-            else:
-                result = model.evaluate(input_dict_loc)
-                y = result
-
             # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict_loc[key],
-                y=y,
+                y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
                 showlegend=(True if i==0 else False),
@@ -252,7 +245,6 @@ def plot(model):
                 row=this_row,
                 col=this_col,
             )
-
         #----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(

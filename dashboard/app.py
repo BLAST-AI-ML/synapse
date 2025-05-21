@@ -123,7 +123,7 @@ def pre_calibration(objective_name):
 @ctrl.add("apply_calibration")
 def apply_calibration():
     print("Applying calibration...")
-    if mod_manager.avail():
+    if mod_manager.avail() and state.model_type != "GP":
         if not state.is_calibrated:
             #FIXME generalize for multiple objectives
             objective_name = list(state.objectives.keys())[0]
@@ -143,7 +143,7 @@ def apply_calibration():
 @ctrl.add("undo_calibration")
 def undo_calibration():
     print("Undoing calibration...")
-    if mod_manager.avail():
+    if mod_manager.avail() and state.model_type != "GP":
         if state.is_calibrated:
             #FIXME generalize for multiple objectives
             objective_name = list(state.objectives.keys())[0]
