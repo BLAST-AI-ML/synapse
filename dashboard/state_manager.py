@@ -1,6 +1,5 @@
 #from datetime import datetime, timedelta
 import copy
-import inspect
 import os
 import pandas as pd
 from trame.app import get_server
@@ -23,6 +22,12 @@ def init_startup():
     state.experiment = "qed_ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
+    # Superfacility API
+    state.sfapi_key = None
+    state.sfapi_key_dict = None
+    state.sfapi_key_expiration = "Unavailable"
+    state.sfapi_client_id = None
+    state.perlmutter_status = "Unavailable"
 
 def init_runtime():
     """
@@ -43,14 +48,3 @@ def init_runtime():
     state.parameters_init = dict()
     # objectives
     state.objectives = dict()
-    # NERSC
-    state.sfapi_output = ""
-    # TODO
-    #state.client_id = None
-    #state.private_key = None
-    #state.sfapi_expiration_days = 33
-    #state.sfapi_expiration = str(
-    #    datetime.now() +
-    #    timedelta(days=int(state.sfapi_expiration_days))
-    #)
-    #state.perlmutter_status = None
