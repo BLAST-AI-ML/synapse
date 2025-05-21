@@ -3,7 +3,6 @@ import numpy as np
 import os
 from scipy.optimize import minimize
 import sys
-import torch
 from lume_model.models.torch_model import TorchModel
 from lume_model.variables import ScalarVariable, DistributionVariable
 from lume_model.models.gp_model import GPModel
