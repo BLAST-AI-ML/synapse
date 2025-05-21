@@ -23,7 +23,7 @@ def init_startup():
     state.experiment = "qed_ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
-    state.model_type = "NN"
+    state.model_type = "Neural Network"
     state.model_type_changed = False
     state.model_type_old = copy.deepcopy(state.model_type)
 

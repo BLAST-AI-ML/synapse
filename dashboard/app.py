@@ -23,6 +23,17 @@ from utils import read_variables, metadata_match, load_database, plot
 mod_manager = None
 par_manager = None
 obj_manager = None
+# list of all available model types
+model_type_list = [
+    "Neural Network",
+    "Gaussian Process",
+]
+# list of all available experiments (TODO parse automatically)
+experiment_list = [
+    "qed_ip2",
+    "ip2",
+    "acave",
+]
 
 # -----------------------------------------------------------------------------
 # Callbacks
@@ -74,8 +85,15 @@ def update(initialize=False, **kwargs):
             raise ValueError(f"Configuration file {config_file} not found")
         input_variables, output_variables = read_variables(config_file)
         # initialize model
-        model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{state.model_type}_training", "saved_models")
-        model_dir_docker = os.path.join("/", "app", "ml", f"{state.model_type}_training", "saved_models")
+        model_type_tag = ""
+        if state.model_type == "Neural Network":
+            model_type_tag = "NN"
+        elif state.model_type == "Gaussian Process":
+            model_type_tag =  "GP"
+        else:
+            raise ValueError(f"Unsupported model type: {state.model_type}")
+        model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
+        model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
         model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
         model_file = os.path.join(model_dir, f"{state.experiment}.yml")
         if not os.path.isfile(model_file):
@@ -123,7 +141,7 @@ def pre_calibration(objective_name):
 @ctrl.add("apply_calibration")
 def apply_calibration():
     print("Applying calibration...")
-    if mod_manager.avail() and state.model_type != "GP":
+    if mod_manager.avail() and not mod_manager.is_gaussian_process:
         if not state.is_calibrated:
             #FIXME generalize for multiple objectives
             objective_name = list(state.objectives.keys())[0]
@@ -143,7 +161,7 @@ def apply_calibration():
 @ctrl.add("undo_calibration")
 def undo_calibration():
     print("Undoing calibration...")
-    if mod_manager.avail() and state.model_type != "GP":
+    if mod_manager.avail() and not mod_manager.is_gaussian_process:
         if state.is_calibrated:
             #FIXME generalize for multiple objectives
             objective_name = list(state.objectives.keys())[0]
@@ -178,12 +196,12 @@ def home_route():
                             with vuetify.VCardTitle("Control: Models"):
                                 with vuetify.VCardText():
                                     vuetify.VSelect(
-                                                v_model=("model_type",),
-                                                items=("Models", ["NN", "GP"]),
-                                                dense=True,
-                                                prepend_icon="mdi-brain",
-                                                style="max-width: 200px;",
-                                            )
+                                        v_model=("model_type",),
+                                        items=("Models", model_type_list),
+                                        dense=True,
+                                        prepend_icon="mdi-brain",
+                                        style="max-width: 210px;",
+                                    )
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -260,10 +278,10 @@ def gui_setup():
             vuetify.VSpacer()
             vuetify.VSelect(
                 v_model=("experiment",),
-                items=("experiments", ["qed_ip2", "ip2", "acave"]),
+                items=("experiments", experiment_list),
                 dense=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 200px;",
+                style="max-width: 210px;",
             )
         # set up router view
         with layout.content:
