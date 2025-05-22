@@ -87,7 +87,7 @@
     ```console
     docker run --network=host -p 27017:27017 -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_PASSWORD='your_password_here' -it gui bash
     ```
-    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the timezone in the container with the host machine.
+    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
 3. Optional: Publish the container privately to NERSC registry (https://registry.nersc.gov):
     ```console
