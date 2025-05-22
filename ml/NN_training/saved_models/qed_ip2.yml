@@ -2,7 +2,7 @@ model_class: TorchModel
 input_variables:
   gradient_length:
     variable_class: ScalarVariable
-    default_value: 0.125
+    default_value: 0.142857
     is_constant: false
     value_range: [0.0, 1.0]
     value_range_tolerance: 1.0e-08

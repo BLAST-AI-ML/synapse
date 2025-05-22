@@ -146,11 +146,11 @@ algo.field_gathering = energy-conserving
 
 algo.maxwell_solver = psatd
 psatd.nox = 100
-psatd.nx_guard = 8
+psatd.nx_guard = 32
 psatd.noy = 100
-psatd.ny_guard = 8
+psatd.ny_guard = 32
 psatd.noz = 100
-psatd.nz_guard = 8
+psatd.nz_guard = 32
 
 psatd.update_with_rho = 1
 
