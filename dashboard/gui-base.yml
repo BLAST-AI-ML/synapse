@@ -1,3 +1,5 @@
+
+
 # Install latest dependencies with
 #   conda create -n gui -f gui-base.yml
 #
@@ -9,7 +11,7 @@ channels:
   - conda-forge
   - pytorch
 dependencies:
-  - botorch<0.11.0
+  - botorch==0.11.0
   - cpuonly
   - matplotlib
   - pandas
@@ -29,4 +31,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - lume-model
+    - git+https://github.com/pluflou/lume-model.git@add-gps

@@ -8,7 +8,6 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
-
 from state_manager import state
 
 # global database variable
@@ -42,6 +41,7 @@ def metadata_match(config_file, model_file):
     # read model file
     with open(model_file) as f:
         model_str = f.read()
+
     # load model dictionary
     model_dict = yaml.safe_load(model_str)
     # load model input variables list
@@ -125,6 +125,7 @@ def plot(model):
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
+    parameters_key_order_list = list(parameters.keys())
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i+1
@@ -194,11 +195,45 @@ def plot(model):
             )
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
-            y = model.evaluate(input_dict_loc)
+            # reorder the dictionary with respect to the parameters_key_order_list
+            # TODO currently needed for GP model, see if this can be worked around
+            ordered_input_dict_loc = {k: input_dict_loc[k] for k in parameters_key_order_list if k in input_dict_loc}
+            # get mean and lower/upper bounds for uncertainty prediction
+            # (when lower/upper bounds are not predicted by the model,
+            # their values are set to zero to collapse the error range)
+            mean, lower, upper = model.evaluate(ordered_input_dict_loc)
+            # upper bound
+            upper_bound = go.Scatter(
+                x=input_dict_loc[key],
+                y=upper,
+                line=dict(color='orange', width=0.3),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+            fig.add_trace(
+                upper_bound,
+                row=this_row,
+                col=this_col,
+            )
+            # lower bound
+            lower_bound = go.Scatter(
+                x=input_dict_loc[key],
+                y=lower,
+                fill='tonexty',  # fill area between this trace and the next one
+                fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
+                line=dict(color='orange', width=0.3),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+            fig.add_trace(
+                lower_bound,
+                row=this_row,
+                col=this_col,
+            )
             # scatter plot
             mod_trace = go.Scatter(
                 x=input_dict_loc[key],
-                y=y,
+                y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
                 showlegend=(True if i==0 else False),

@@ -15,13 +15,18 @@ def init_startup():
     print(f"Initializing state variables at startup...")
     state.nersc_route_built = False
     state.ui_layout_built = False
-    # need a separate variable to track changes in state.experiment,
-    # which trigger re-initialization, to avoid multiple reactive functions
-    # listening to changes in state.experiment, as the order of execution of
-    # such reactive functions cannot be prescribed
+    # need separate variables to track changes in state.experiment and
+    # state.model_type, which trigger re-initialization, to avoid multiple
+    # reactive functions listening to changes in those variables (the order
+    # of execution of such reactive functions cannot be prescribed)
     state.experiment = "qed_ip2"
     state.experiment_old = copy.deepcopy(state.experiment)
     state.experiment_changed = False
+    state.model_type = "Neural Network"
+    state.model_type_changed = False
+    state.model_type_old = copy.deepcopy(state.model_type)
+    # opacity
+    state.opacity = 0.05
     # Superfacility API
     state.sfapi_key = None
     state.sfapi_key_dict = None
@@ -31,20 +36,13 @@ def init_startup():
 
 def init_runtime():
     """
-    Helper function to (re-)initialize state variabes at runtime.
+    Helper function to (re-)initialize state variables at runtime.
     """
     print(f"Initializing state variables at runtime...")
     # serialized data
     state.exp_data = pd.DataFrame().to_json(default_handler=str)
     state.sim_data = pd.DataFrame().to_json(default_handler=str)
-    # opacity
-    state.opacity = 0.05
     # calibration
     state.is_calibrated = False
-    # parameters
-    state.parameters = dict()
-    state.parameters_min = dict()
-    state.parameters_max = dict()
-    state.parameters_init = dict()
-    # objectives
-    state.objectives = dict()
+    # parameters and objectives state variables are initialized
+    # in the respective manager class constructors

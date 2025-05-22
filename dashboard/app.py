@@ -23,6 +23,23 @@ mod_manager = None
 par_manager = None
 obj_manager = None
 
+# list of all available model types
+model_type_list = [
+    "Gaussian Process",
+    "Neural Network",
+]
+# dict of auxiliary model types tags
+model_type_tag_dict = {
+    "Gaussian Process": "GP",
+    "Neural Network": "NN",
+}
+# list of all available experiments (TODO parse automatically)
+experiment_list = [
+    "acave",
+    "ip2",
+    "qed_ip2",
+]
+
 # -----------------------------------------------------------------------------
 # Callbacks
 # -----------------------------------------------------------------------------
@@ -30,6 +47,7 @@ obj_manager = None
 # Triggered automatically also on server ready,
 # internal checks avoid redundant function calls.
 @state.change(
+    "model_type",
     "experiment",
     "exp_data",
     "sim_data",
@@ -41,17 +59,19 @@ def update(initialize=False, **kwargs):
     global mod_manager
     global par_manager
     global obj_manager
+    # check if experiment and/or model changed
     state.experiment_changed = not (state.experiment == state.experiment_old)
+    state.model_type_changed = not (state.model_type == state.model_type_old)
     if state.experiment_changed:
-        print("Loading new experiment...")
+        print("Experiment changed...")
         initialize = True
-        # reset state variables
-        state.experiment_old = copy.deepcopy(state.experiment)
-        state.experiment_changed = False
+    if state.model_type_changed:
+        print("Model type changed...")
+        initialize = True
     if initialize:
-        # initialize state after experiment selection
+        # (re-)initialize state after experiment selection
         init_runtime()
-        # initialize database
+        # (re-)initialize database
         config, exp_docs, sim_docs = load_database()
         # convert database documents into pandas DataFrames
         state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
@@ -62,9 +82,10 @@ def update(initialize=False, **kwargs):
         if not os.path.isfile(config_file):
             raise ValueError(f"Configuration file {config_file} not found")
         input_variables, output_variables = read_variables(config_file)
-        # initialize model
-        model_dir_local  = os.path.join(os.getcwd(), "..", "ml", "NN_training", "saved_models")
-        model_dir_docker = os.path.join("/", "app", "ml", "NN_training", "saved_models")
+        # (re-)initialize model
+        model_type_tag = model_type_tag_dict[state.model_type]
+        model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
+        model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
         model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
         model_file = os.path.join(model_dir, f"{state.experiment}.yml")
         if not os.path.isfile(model_file):
@@ -72,9 +93,17 @@ def update(initialize=False, **kwargs):
         if not metadata_match(config_file, model_file):
             model_file = None
         mod_manager = ModelManager(model_file)
-        # initialize parameters
-        par_manager = ParametersManager(mod_manager, input_variables)
-        # initialize objectives
+        # (re-)initialize parameters
+        if state.model_type_changed:
+            # If the update is triggered by a change in the model type,
+            # reset the model attribute in the parameters class
+            # but leave the values of the parameters unchanged
+            par_manager.model = mod_manager
+        else:
+            # If the update is triggered by anything other than a change in
+            # the model type, (re)-initialize the parameters class altogether
+            par_manager = ParametersManager(mod_manager, input_variables)
+        # (re-)initialize objectives
         obj_manager = ObjectivesManager(mod_manager, output_variables)
         # set up home route (reload components, e.g., parameters card)
         home_route()
@@ -91,6 +120,14 @@ def update(initialize=False, **kwargs):
     # update plots
     fig = plot(mod_manager)
     ctrl.figure_update(fig)
+    # reset state variables if experiment changed
+    if state.experiment_changed:
+        state.experiment_old = copy.deepcopy(state.experiment)
+        state.experiment_changed = False
+    # reset state variables if model changed
+    if state.model_type_changed:
+        state.model_type_old = copy.deepcopy(state.model_type)
+        state.model_type_changed = False
 
 # -----------------------------------------------------------------------------
 # Helper functions
@@ -112,7 +149,7 @@ def pre_calibration(objective_name):
 @ctrl.add("apply_calibration")
 def apply_calibration():
     print("Applying calibration...")
-    if mod_manager.avail():
+    if mod_manager.avail() and not mod_manager.is_gaussian_process:
         if not state.is_calibrated:
             #FIXME generalize for multiple objectives
             objective_name = list(state.objectives.keys())[0]
@@ -132,7 +169,7 @@ def apply_calibration():
 @ctrl.add("undo_calibration")
 def undo_calibration():
     print("Undoing calibration...")
-    if mod_manager.avail():
+    if mod_manager.avail() and not mod_manager.is_gaussian_process:
         if state.is_calibrated:
             #FIXME generalize for multiple objectives
             objective_name = list(state.objectives.keys())[0]
@@ -161,6 +198,18 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.card()
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        with vuetify.VCard():
+                            with vuetify.VCardTitle("Control: Models"):
+                                with vuetify.VCardText():
+                                    vuetify.VSelect(
+                                        v_model=("model_type",),
+                                        items=("Models", model_type_list),
+                                        dense=True,
+                                        prepend_icon="mdi-brain",
+                                        style="max-width: 210px;",
+                                    )
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -239,10 +288,10 @@ def gui_setup():
             vuetify.VSpacer()
             vuetify.VSelect(
                 v_model=("experiment",),
-                items=("experiments", ["qed_ip2", "ip2", "acave"]),
+                items=("experiments", experiment_list),
                 dense=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 200px;",
+                style="max-width: 210px;",
             )
         # set up router view
         with layout.content:
