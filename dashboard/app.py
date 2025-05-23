@@ -44,18 +44,6 @@ experiment_list = [
 # Functions and callbacks
 # -----------------------------------------------------------------------------
 
-def pre_calibration(sim_data, objective_name):
-    print("Preparing calibration...")
-    # get calibration and normalization transformers
-    output_transformers = mod_manager.get_output_transformers()
-    output_calibration = output_transformers[0]
-    output_normalization = output_transformers[1]
-    # normalize simulation data
-    sim_data = pd.read_json(StringIO(sim_data))
-    objective_tensor = torch.from_numpy(sim_data[objective_name].values)
-    objective_tensor = output_normalization.transform(objective_tensor)
-    return (output_calibration, output_normalization, objective_tensor)
-
 def load_data():
     print("Loading data from database...")
     config, exp_docs, sim_docs = load_database()
@@ -88,14 +76,43 @@ def load_variables():
     input_variables, output_variables = read_variables(config_file)
     return (input_variables, output_variables)
 
-def initialize(
+def calibrate_data(sim_data):
+    print("Calibrating data...")
+    global mod_manager
+    global par_manager
+    global obj_manager
+    sim_data_df = pd.read_json(StringIO(sim_data))
+    if mod_manager.avail() and not mod_manager.is_gaussian_process:
+        # FIXME generalize for multiple objectives
+        objective_name = list(state.objectives.keys())[0]
+        # prepare
+        # get calibration and normalization transformers
+        output_transformers = mod_manager.get_output_transformers()
+        output_calibration = output_transformers[0]
+        output_normalization = output_transformers[1]
+        # normalize simulation data
+        objective_tensor = torch.from_numpy(sim_data_df[objective_name].values)
+        objective_tensor = output_normalization.transform(objective_tensor)
+        if state.calibrate:
+            objective_tensor = output_calibration.untransform(objective_tensor)
+            objective_tensor = output_normalization.untransform(objective_tensor)
+        else:
+            objective_tensor = output_calibration.transform(objective_tensor)
+            objective_tensor = output_normalization.untransform(objective_tensor)
+        sim_data_df[objective_name] = objective_tensor.numpy()[0]
+        # update state
+        sim_data = sim_data_df.to_json(default_handler=str)
+
+def update(
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
     reset_gui_layout=True,
     reset_parameters=True,
-    reset_model_attr=False,
+    reset_objectives=True,
+    reset_plots=True,
+    **kwargs,
 ):
-    print("Initializing...")
+    print("Updating...")
     global mod_manager
     global par_manager
     global obj_manager
@@ -106,85 +123,79 @@ def initialize(
     mod_manager = ModelManager(model_file)
     # load input and output variables
     input_variables, output_variables = load_variables()
+    # reset parameters
     if reset_parameters:
-        # initialize parameters
         par_manager = ParametersManager(mod_manager, input_variables)
-    elif reset_model_attr:
-        # reset model attribute in the parameters class
+    else:
         par_manager.model = mod_manager
-    # initialize objectives
-    obj_manager = ObjectivesManager(mod_manager, output_variables)
+    # reset objectives
+    if reset_objectives:
+        obj_manager = ObjectivesManager(mod_manager, output_variables)
+    else:
+        obj_manager.update()
+    ## FIXME calibration
+    #sim_data = calibrate_data(sim_data)
+    # reset GUI home route
     if reset_gui_route_home:
-        # set up home route
         home_route()
+    # reset GUI NERSC route
     if reset_gui_route_nersc:
-        # set up NERSC route
         nersc_route()
+    # reset GUI layout
     if reset_gui_layout:
-        # set up GUI layout
         gui_setup()
-    # initialize plots
-    fig = plot(exp_data, sim_data, mod_manager)
-    ctrl.figure_update(fig)
+    # reset plots
+    if reset_plots:
+        fig = plot(exp_data, sim_data, mod_manager)
+        ctrl.figure_update(fig)
 
 @state.change(
+    "model_type",
     "parameters",
     "opacity",
     "calibrate",
 )
 def update_objectives_and_plots(**kwargs):
-    print(f"Updating objectives and plots...")
-    global obj_manager
-    # load data
-    exp_data, sim_data = load_data()
-    # initialize model
-    model_file = load_model_file()
-    mod_manager = ModelManager(model_file)
-    # calibration
-    if mod_manager.avail() and not mod_manager.is_gaussian_process:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
-        # prepare
-        output_calibration, output_normalization, objective_tensor = pre_calibration(sim_data, objective_name)
-        if state.calibrate:
-            objective_tensor = output_calibration.untransform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        else:
-            objective_tensor = output_calibration.transform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        sim_data = pd.read_json(StringIO(sim_data))
-        sim_data[objective_name] = objective_tensor.numpy()[0]
-        # update state
-        sim_data = sim_data.to_json(default_handler=str)
-    # update objectives
-    obj_manager.update()
-    # update plots
-    fig = plot(exp_data, sim_data, mod_manager)
-    ctrl.figure_update(fig)
+    change_variables = {
+        "model_type",
+        "parameters",
+        "opacity",
+        "calibrate",
+    }
+    single_change = (
+        len(state.modified_keys) == 1 and
+        any(key in state.modified_keys for key in change_variables)
+    )
+    if single_change:
+        print(f"Updating objectives and plots...")
+        update(
+            reset_gui_route_home=False,
+            reset_gui_route_nersc=False,
+            reset_gui_layout=False,
+            reset_parameters=False,
+            reset_objectives=False,
+            reset_plots=True,
+        )
 
 @state.change("experiment")
 def update_on_experiment_change(**kwargs):
-    print("Experiment changed...")
-    print("Initializing again...")
-    initialize(
-        reset_gui_route_home=True,
-        reset_gui_route_nersc=False,
-        reset_gui_layout=False,
-        reset_parameters=True,
-        reset_model_attr=False,
+    change_variables = {
+        "experiment",
+    }
+    single_change = (
+        len(state.modified_keys) == 1 and
+        any(key in state.modified_keys for key in change_variables)
     )
-
-@state.change("model_type")
-def update_on_model_change(**kwargs):
-    print("Model type changed...")
-    print("Initializing again...")
-    initialize(
-        reset_gui_route_home=True,
-        reset_gui_route_nersc=False,
-        reset_gui_layout=False,
-        reset_parameters=False,
-        reset_model_attr=True,
-    )
+    if single_change:
+        print("Experiment changed...")
+        update(
+            reset_gui_route_home=True,
+            reset_gui_route_nersc=False,
+            reset_gui_layout=False,
+            reset_parameters=True,
+            reset_objectives=True,
+            reset_plots=True,
+        )
 
 # -----------------------------------------------------------------------------
 # GUI components
@@ -319,8 +330,8 @@ if __name__ == "__main__":
     initialize_state()
     # initialize Superfacility API
     initialize_sfapi()
-    # initialize
-    initialize()
+    # update for the first time
+    update()
     # start server
     print("Starting server...")
     server.start()
