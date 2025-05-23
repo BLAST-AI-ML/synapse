@@ -11,8 +11,8 @@ from trame.widgets import plotly, router, vuetify2 as vuetify
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
-from sfapi_manager import sfapi_init, sfapi_card
-from state_manager import server, state, ctrl, init_startup, init_runtime
+from sfapi_manager import initialize_sfapi, load_sfapi_card
+from state_manager import server, state, ctrl, initialize_state
 from utils import read_variables, metadata_match, load_database, plot
 
 # -----------------------------------------------------------------------------
@@ -41,149 +41,150 @@ experiment_list = [
 ]
 
 # -----------------------------------------------------------------------------
-# Callbacks
+# Functions and callbacks
 # -----------------------------------------------------------------------------
 
-# Triggered automatically also on server ready,
-# internal checks avoid redundant function calls.
-@state.change(
-    "model_type",
-    "experiment",
-    "exp_data",
-    "sim_data",
-    "parameters",
-    "opacity",
-)
-def update(initialize=False, **kwargs):
-    print("Updating...")
-    global mod_manager
-    global par_manager
-    global obj_manager
-    # check if experiment and/or model changed
-    state.experiment_changed = not (state.experiment == state.experiment_old)
-    state.model_type_changed = not (state.model_type == state.model_type_old)
-    if state.experiment_changed:
-        print("Experiment changed...")
-        initialize = True
-    if state.model_type_changed:
-        print("Model type changed...")
-        initialize = True
-    if initialize:
-        # (re-)initialize state after experiment selection
-        init_runtime()
-        # (re-)initialize database
-        config, exp_docs, sim_docs = load_database()
-        # convert database documents into pandas DataFrames
-        state.exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
-        state.sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
-        # read input and output variables
-        config_dir  = os.path.join(os.getcwd(), "config")
-        config_file = os.path.join(config_dir, "variables.yml")
-        if not os.path.isfile(config_file):
-            raise ValueError(f"Configuration file {config_file} not found")
-        input_variables, output_variables = read_variables(config_file)
-        # (re-)initialize model
-        model_type_tag = model_type_tag_dict[state.model_type]
-        model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
-        model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
-        model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
-        model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-        if not os.path.isfile(model_file):
-            raise ValueError(f"Model file {model_file} not found")
-        if not metadata_match(config_file, model_file):
-            model_file = None
-        mod_manager = ModelManager(model_file)
-        # (re-)initialize parameters
-        if state.model_type_changed:
-            # If the update is triggered by a change in the model type,
-            # reset the model attribute in the parameters class
-            # but leave the values of the parameters unchanged
-            par_manager.model = mod_manager
-        else:
-            # If the update is triggered by anything other than a change in
-            # the model type, (re)-initialize the parameters class altogether
-            par_manager = ParametersManager(mod_manager, input_variables)
-        # (re-)initialize objectives
-        obj_manager = ObjectivesManager(mod_manager, output_variables)
-        # set up home route (reload components, e.g., parameters card)
-        home_route()
-        if not state.nersc_route_built:
-            # set up NERSC route (only once at startup)
-            nersc_route()
-            state.nersc_route_built = True
-        if not state.ui_layout_built:
-            # set up GUI components (only once at startup)
-            gui_setup()
-            state.ui_layout_built = True
-    # update objectives
-    obj_manager.update()
-    # update plots
-    fig = plot(mod_manager)
-    ctrl.figure_update(fig)
-    # reset state variables if experiment changed
-    if state.experiment_changed:
-        state.experiment_old = copy.deepcopy(state.experiment)
-        state.experiment_changed = False
-    # reset state variables if model changed
-    if state.model_type_changed:
-        state.model_type_old = copy.deepcopy(state.model_type)
-        state.model_type_changed = False
-
-# -----------------------------------------------------------------------------
-# Helper functions
-# -----------------------------------------------------------------------------
-
-def pre_calibration(objective_name):
+def pre_calibration(sim_data, objective_name):
     print("Preparing calibration...")
     # get calibration and normalization transformers
     output_transformers = mod_manager.get_output_transformers()
     output_calibration = output_transformers[0]
     output_normalization = output_transformers[1]
     # normalize simulation data
-    sim_data = pd.read_json(StringIO(state.sim_data))
+    sim_data = pd.read_json(StringIO(sim_data))
     objective_tensor = torch.from_numpy(sim_data[objective_name].values)
     objective_tensor = output_normalization.transform(objective_tensor)
     return (output_calibration, output_normalization, objective_tensor)
 
-# TODO encapsulate in simulation class?
-@ctrl.add("apply_calibration")
-def apply_calibration():
-    print("Applying calibration...")
+def load_data():
+    print("Loading data from database...")
+    config, exp_docs, sim_docs = load_database()
+    exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
+    sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
+    return (exp_data, sim_data)
+
+def load_config_file():
+    config_dir = os.path.join(os.getcwd(), "config")
+    config_file = os.path.join(config_dir, "variables.yml")
+    if not os.path.isfile(config_file):
+        raise ValueError(f"Configuration file {config_file} not found")
+    return config_file
+
+def load_model_file():
+    config_file = load_config_file()
+    model_type_tag = model_type_tag_dict[state.model_type]
+    model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
+    model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
+    model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
+    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+    if not os.path.isfile(model_file):
+        raise ValueError(f"Model file {model_file} not found")
+    if not metadata_match(config_file, model_file):
+        model_file = None
+    return model_file
+
+def load_variables():
+    config_file = load_config_file()
+    input_variables, output_variables = read_variables(config_file)
+    return (input_variables, output_variables)
+
+def initialize(
+    reset_gui_route_home=True,
+    reset_gui_route_nersc=True,
+    reset_gui_layout=True,
+    reset_parameters=True,
+    reset_model_attr=False,
+):
+    print("Initializing...")
+    global mod_manager
+    global par_manager
+    global obj_manager
+    # load data
+    exp_data, sim_data = load_data()
+    # initialize model
+    model_file = load_model_file()
+    mod_manager = ModelManager(model_file)
+    # load input and output variables
+    input_variables, output_variables = load_variables()
+    if reset_parameters:
+        # initialize parameters
+        par_manager = ParametersManager(mod_manager, input_variables)
+    elif reset_model_attr:
+        # reset model attribute in the parameters class
+        par_manager.model = mod_manager
+    # initialize objectives
+    obj_manager = ObjectivesManager(mod_manager, output_variables)
+    if reset_gui_route_home:
+        # set up home route
+        home_route()
+    if reset_gui_route_nersc:
+        # set up NERSC route
+        nersc_route()
+    if reset_gui_layout:
+        # set up GUI layout
+        gui_setup()
+    # initialize plots
+    fig = plot(exp_data, sim_data, mod_manager)
+    ctrl.figure_update(fig)
+
+@state.change(
+    "parameters",
+    "opacity",
+    "calibrate",
+)
+def update_objectives_and_plots(**kwargs):
+    print(f"Updating objectives and plots...")
+    global obj_manager
+    # load data
+    exp_data, sim_data = load_data()
+    # initialize model
+    model_file = load_model_file()
+    mod_manager = ModelManager(model_file)
+    # calibration
     if mod_manager.avail() and not mod_manager.is_gaussian_process:
-        if not state.is_calibrated:
-            #FIXME generalize for multiple objectives
-            objective_name = list(state.objectives.keys())[0]
-            # prepare
-            output_calibration, output_normalization, objective_tensor = pre_calibration(objective_name)
-            # calibrate, and denormalize simulation data
+        # FIXME generalize for multiple objectives
+        objective_name = list(state.objectives.keys())[0]
+        # prepare
+        output_calibration, output_normalization, objective_tensor = pre_calibration(sim_data, objective_name)
+        if state.calibrate:
             objective_tensor = output_calibration.untransform(objective_tensor)
             objective_tensor = output_normalization.untransform(objective_tensor)
-            sim_data = pd.read_json(StringIO(state.sim_data))
-            sim_data[objective_name] = objective_tensor.numpy()[0]
-            # update state
-            state.sim_data = sim_data.to_json(default_handler=str)
-            state.dirty("sim_data")
-            state.is_calibrated = True
-
-# TODO encapsulate in simulation class?
-@ctrl.add("undo_calibration")
-def undo_calibration():
-    print("Undoing calibration...")
-    if mod_manager.avail() and not mod_manager.is_gaussian_process:
-        if state.is_calibrated:
-            #FIXME generalize for multiple objectives
-            objective_name = list(state.objectives.keys())[0]
-            # prepare
-            output_calibration, output_normalization, objective_tensor = pre_calibration(objective_name)
-            # calibrate, and denormalize simulation data
+        else:
             objective_tensor = output_calibration.transform(objective_tensor)
             objective_tensor = output_normalization.untransform(objective_tensor)
-            sim_data = pd.read_json(StringIO(state.sim_data))
-            sim_data[objective_name] = objective_tensor.numpy()[0]
-            # update state
-            state.sim_data = sim_data.to_json(default_handler=str)
-            state.dirty("sim_data")
-            state.is_calibrated = False
+        sim_data = pd.read_json(StringIO(sim_data))
+        sim_data[objective_name] = objective_tensor.numpy()[0]
+        # update state
+        sim_data = sim_data.to_json(default_handler=str)
+    # update objectives
+    obj_manager.update()
+    # update plots
+    fig = plot(exp_data, sim_data, mod_manager)
+    ctrl.figure_update(fig)
+
+@state.change("experiment")
+def update_on_experiment_change(**kwargs):
+    print("Experiment changed...")
+    print("Initializing again...")
+    initialize(
+        reset_gui_route_home=True,
+        reset_gui_route_nersc=False,
+        reset_gui_layout=False,
+        reset_parameters=True,
+        reset_model_attr=False,
+    )
+
+@state.change("model_type")
+def update_on_model_change(**kwargs):
+    print("Model type changed...")
+    print("Initializing again...")
+    initialize(
+        reset_gui_route_home=True,
+        reset_gui_route_nersc=False,
+        reset_gui_layout=False,
+        reset_parameters=False,
+        reset_model_attr=True,
+    )
 
 # -----------------------------------------------------------------------------
 # GUI components
@@ -240,24 +241,13 @@ def home_route():
                                                     style="width: 80px;",
                                                     type="number",
                                                 )
+                                    # create a row for the calibration switch
                                     with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
-                                                "Apply Calibration",
-                                                click=apply_calibration,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-redo")
-                                    with vuetify.VRow():
-                                        with vuetify.VCol():
-                                            with vuetify.VBtn(
-                                                "Undo Calibration",
-                                                click=undo_calibration,
-                                                style="width: 100%; text-transform: none;",
-                                            ):
-                                                vuetify.VSpacer()
-                                                vuetify.VIcon("mdi-undo")
+                                        vuetify.VSwitch(
+                                            v_model=("calibrate",),
+                                            label="Calibration",
+                                            color="primary",
+                                        )
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
@@ -276,7 +266,7 @@ def nersc_route():
             with vuetify.VCol(cols=4):
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        sfapi_card()
+                        load_sfapi_card()
 
 # GUI layout
 def gui_setup():
@@ -326,10 +316,11 @@ def gui_setup():
 
 if __name__ == "__main__":
     # initialize state variables needed at startup
-    init_startup()
+    initialize_state()
     # initialize Superfacility API
-    sfapi_init()
-    # initialize all other variables and components
-    update(initialize=True)
+    initialize_sfapi()
+    # initialize
+    initialize()
+    # start server
     print("Starting server...")
     server.start()

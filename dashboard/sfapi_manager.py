@@ -11,7 +11,7 @@ from utils import load_database
     "sfapi_client_id",
     "sfapi_key",
 )
-def sfapi_info(**kwargs):
+def update_sfapi_info(**kwargs):
     # return if no client ID or key have been set
     if state.sfapi_client_id is None or state.sfapi_key is None:
         return
@@ -49,7 +49,7 @@ def sfapi_info(**kwargs):
         state.perlmutter_status = "Unavailable"
 
 
-def sfapi_init():
+def initialize_sfapi():
     print("Initializing Superfacility API...")
     config, _, _ = load_database()
     # get existing configuration from the database, if any
@@ -60,7 +60,7 @@ def sfapi_init():
 
 
 @state.change("sfapi_key_dict")
-def load_credentials(**kwargs):
+def load_sfapi_credentials(**kwargs):
     # return if no key file has been uploaded
     if state.sfapi_key_dict is not None:
         print("Loading Superfacility API credentials...")
@@ -85,7 +85,7 @@ def load_credentials(**kwargs):
         config.update_one({"name": "sfapi"}, sfapi_config, upsert=True)
 
 
-def sfapi_card():
+def load_sfapi_card():
     print("Setting Superfacility API card...")
     with vuetify.VCard():
         with vuetify.VCardTitle("Superfacility API"):

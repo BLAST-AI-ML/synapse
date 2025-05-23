@@ -46,7 +46,7 @@ class ParametersManager:
     def card(self):
         print("Setting parameters card...")
         with vuetify.VCard():
-            with vuetify.VCardTitle("Parameters"):
+            with vuetify.VCardTitle("Control: Parameters"):
                 vuetify.VSpacer()
                 with vuetify.VTooltip(bottom=True):
                     with vuetify.Template(v_slot_activator="{ on, attrs }"):

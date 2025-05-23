@@ -105,7 +105,7 @@ def load_database():
     return (config, exp_docs, sim_docs)
 
 # plot experimental, simulation, and ML data
-def plot(model):
+def plot(exp_data, sim_data, model_manager):
     print("Plotting...")
     # local aliases
     parameters = state.parameters
@@ -119,8 +119,8 @@ def plot(model):
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
     # load experimental data
-    df_exp = pd.read_json(StringIO(state.exp_data))
-    df_sim = pd.read_json(StringIO(state.sim_data))
+    df_exp = pd.read_json(StringIO(exp_data))
+    df_sim = pd.read_json(StringIO(sim_data))
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
@@ -185,7 +185,7 @@ def plot(model):
             )
         #----------------------------------------------------------------------
         # figure trace from model data
-        if model.avail():
+        if model_manager.avail():
             input_dict_loc = dict()
             steps = 1000
             input_dict_loc[key] = torch.linspace(
@@ -201,7 +201,7 @@ def plot(model):
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
-            mean, lower, upper = model.evaluate(ordered_input_dict_loc)
+            mean, lower, upper = model_manager.evaluate(ordered_input_dict_loc)
             # upper bound
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
