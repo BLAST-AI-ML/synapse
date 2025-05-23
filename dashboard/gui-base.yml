@@ -14,6 +14,7 @@ dependencies:
   - botorch==0.11.0
   - cpuonly
   - matplotlib
+  - mlflow
   - pandas
   - pip
   - plotly<6
@@ -31,4 +32,4 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - git+https://github.com/pluflou/lume-model.git@add-gps
+    - git+https://github.com/slaclab/lume-model.git@v1.9.0
