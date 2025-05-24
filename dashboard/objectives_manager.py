@@ -16,11 +16,3 @@ class ObjectivesManager:
                 state.objectives[key], lower, upper = model.evaluate(state.parameters)
             else:
                 state.objectives[key] = None
-
-    def update(self):
-        print("Updating objectives...")
-        for key in state.objectives.keys():
-            if self.__model.avail():
-                state.objectives[key], lower, upper = self.__model.evaluate(state.parameters)
-        # push again at flush time
-        state.dirty("objectives")

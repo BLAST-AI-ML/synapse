@@ -90,7 +90,6 @@ def calibrate_data():
     if mod_manager.avail() and not mod_manager.is_gaussian_process:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
-        # prepare
         # get calibration and normalization transformers
         output_transformers = mod_manager.get_output_transformers()
         output_calibration = output_transformers[0]
@@ -111,12 +110,13 @@ def calibrate_data():
         state.sim_data_serialized = sim_data.to_json(default_handler=str)
 
 def update(
-    reset_gui_route_home=True,
-    reset_gui_route_nersc=True,
-    reset_gui_layout=True,
+    reset_model=True,
     reset_parameters=True,
     reset_objectives=True,
     reset_plots=True,
+    reset_gui_route_home=True,
+    reset_gui_route_nersc=True,
+    reset_gui_layout=True,
     **kwargs,
 ):
     print("Updating...")
@@ -125,21 +125,21 @@ def update(
     global obj_manager
     # load data
     load_data()
-    # initialize model
-    model_file = load_model_file()
-    mod_manager = ModelManager(model_file)
+    # reset model
+    if reset_model:
+        model_file = load_model_file()
+        mod_manager = ModelManager(model_file)
     # load input and output variables
     input_variables, output_variables = load_variables()
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
-    else:
+    elif reset_model:
+        # if resetting only model, model attribute must be updated
         par_manager.model = mod_manager
     # reset objectives
     if reset_objectives:
         obj_manager = ObjectivesManager(mod_manager, output_variables)
-    else:
-        obj_manager.update()
     # calibration
     calibrate_data()
     # reset GUI home route
@@ -157,32 +157,47 @@ def update(
         ctrl.figure_update(fig)
 
 @state.change(
+    "experiment",
     "model_type",
     "parameters",
     "opacity",
     "calibrate",
 )
-def update_objectives_and_plots(**kwargs):
-    change_variables = {
-        "model_type",
-        "parameters",
-        "opacity",
-        "calibrate",
-    }
-    single_change = (
-        len(state.modified_keys) == 1 and
-        any(key in state.modified_keys for key in change_variables)
-    )
-    if single_change:
-        print(f"Updating objectives and plots...")
-        update(
-            reset_gui_route_home=False,
-            reset_gui_route_nersc=False,
-            reset_gui_layout=False,
-            reset_parameters=False,
-            reset_objectives=False,
-            reset_plots=True,
-        )
+def update_on_change(**kwargs):
+    # skip if triggered on server ready (all state variables marked as modified)
+    if len(state.modified_keys) == 1:
+        if "experiment" in state.modified_keys:
+            print("Experiment changed...")
+            update(
+                reset_model=True,
+                reset_parameters=True,
+                reset_objectives=True,
+                reset_plots=True,
+                reset_gui_route_home=True,
+                reset_gui_route_nersc=False,
+                reset_gui_layout=False,
+            )
+        elif "model_type" in state.modified_keys:
+            print("Model type changed...")
+            update(
+                reset_model=True,
+                reset_parameters=False,
+                reset_objectives=False,
+                reset_plots=True,
+                reset_gui_route_home=True,
+                reset_gui_route_nersc=False,
+                reset_gui_layout=False,
+            )
+        else:
+            update(
+                reset_model=False,
+                reset_parameters=False,
+                reset_objectives=False,
+                reset_plots=True,
+                reset_gui_route_home=False,
+                reset_gui_route_nersc=False,
+                reset_gui_layout=False,
+            )
 
 @state.change("experiment")
 def update_on_experiment_change(**kwargs):

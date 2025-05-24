@@ -96,10 +96,9 @@ def plot(model_manager):
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
-    objectives = state.objectives
     try:
         # FIXME generalize for multiple objectives
-        objective_name = list(objectives.keys())[0]
+        objective_name = list(state.objectives.keys())[0]
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
