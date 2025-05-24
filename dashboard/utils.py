@@ -10,9 +10,6 @@ import torch
 import yaml
 from state_manager import state
 
-# global database variable
-db = None
-
 def read_variables(config_file):
     print("Reading configuration file...")
     # read configuration file
@@ -55,7 +52,6 @@ def metadata_match(config_file, model_file):
 
 def load_database():
     print("Loading database...")
-    global db
     # load database
     db_defaults = {
         "host": "mongodb05.nersc.gov",
@@ -70,8 +66,8 @@ def load_database():
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    # read database experiment from environment variable (no default provided)
-    db_collection = state.experiment
+    ## read database experiment from environment variable (no default provided)
+    #db_collection = state.experiment
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
@@ -82,27 +78,16 @@ def load_database():
     else:
         direct_connection = False
     # get database instance
-    if db is None:
-        print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
-        db = pymongo.MongoClient(
-            host=db_host,
-            port=db_port,
-            username=db_user,
-            password=db_password,
-            authSource=db_auth,
-            directConnection=direct_connection,
-        )[db_name]
-    # get collection: ip2, acave, config, ...
-    collection = db[db_collection]
-    if "config" not in db.list_collection_names():
-        db.create_collection("config")
-    config = db["config"]
-    # retrieve all documents
-    documents = list(collection.find())
-    # separate documents: experimental and simulation
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (config, exp_docs, sim_docs)
+    print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
+    db = pymongo.MongoClient(
+        host=db_host,
+        port=db_port,
+        username=db_user,
+        password=db_password,
+        authSource=db_auth,
+        directConnection=direct_connection,
+    )[db_name]
+    return db
 
 # plot experimental, simulation, and ML data
 def plot(model_manager):

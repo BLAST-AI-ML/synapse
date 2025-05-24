@@ -54,9 +54,10 @@ def update_sfapi_info(**kwargs):
 
 def initialize_sfapi():
     print("Initializing Superfacility API...")
-    config, _, _ = load_database()
+    # load database
+    db = load_database()
     # get existing configuration from the database, if any
-    sfapi_config = config.find_one({"name": "sfapi"})
+    sfapi_config = db["config"].find_one({"name": "sfapi"})
     if sfapi_config is not None:
         state.sfapi_client_id = sfapi_config["client_id"]
         state.sfapi_key = sfapi_config["key"]
@@ -78,14 +79,14 @@ def load_sfapi_credentials(**kwargs):
         # store remaining file lines
         state.sfapi_key = "".join(key_lines)
         # update configuration in the database
-        config, _, _ = load_database()
+        db = load_database()
         sfapi_config = {
             "$set": {
                 "client_id": state.sfapi_client_id,
                 "key": state.sfapi_key,
             }
         }
-        config.update_one({"name": "sfapi"}, sfapi_config, upsert=True)
+        db["config"].update_one({"name": "sfapi"}, sfapi_config, upsert=True)
 
 
 def load_sfapi_card():

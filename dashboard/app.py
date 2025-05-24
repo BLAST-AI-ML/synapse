@@ -46,7 +46,14 @@ experiment_list = [
 
 def load_data():
     print("Loading data from database...")
-    config, exp_docs, sim_docs = load_database()
+    # load database
+    db = load_database()
+    # find all documents from experiment collection
+    documents = list(db[state.experiment].find())
+    # separate experiment and simulation documents
+    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
+    # load pandas dataframes and serialize to JSON strings
     state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
     state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
