@@ -7,49 +7,39 @@ from state_manager import state
 from utils import load_database
 
 
-@state.change(
-    "sfapi_client_id",
-    "sfapi_key",
-)
-def update_sfapi_info(**kwargs):
-    # FIXME
-    single_change = (
-        len(state.modified_keys) == 1 and
-        any(key in state.modified_keys for key in {"sfapi_client_id", "sfapi_key"})
-    )
-    if single_change:
-        print("Updating Superfacility API info...")
-        try:
-            # create an authenticated client and update info
-            with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
-                # get the user object
-                user = client.user()
-                # get client associated with the user and the client ID stored in the key file
-                credential_client = [this_client for this_client in user.clients() if this_client.clientId == state.sfapi_client_id][0]
-                # (see https://docs.python.org/3/library/datetime.html#format-codes
-                # for all format codes accepted by the methods strftime and strptime)
-                sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
-                user_format = "%B %d, %Y, %H:%M %Z"
-                # parse key expiration date from string
-                expiration = datetime.strptime(credential_client.expiresAt, sfapi_format)
-                # if key is not expired, update info, else set to expired/unavailable
-                if expiration.replace(tzinfo=None) > datetime.now():
-                    # update key expiration date
-                    state.sfapi_key_expiration = f"Valid Until {expiration.strftime(user_format)}"
-                    # update Perlmutter status
-                    status = client.compute(Machine.perlmutter)
-                    state.perlmutter_status = f"{status.description}"
-                else:
-                    # reset key expiration date
-                    state.sfapi_key_expiration = f"Expired On {expiration.strftime(user_format)}"
-                    # reset Perlmutter status
-                    state.perlmutter_status = "Unavailable"
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            # reset key expiration date
-            state.sfapi_key_expiration = "Unavailable"
-            # reset Perlmutter status
-            state.perlmutter_status = "Unavailable"
+def update_sfapi_info():
+    print("Updating Superfacility API info...")
+    try:
+        # create an authenticated client and update info
+        with Client(client_id=state.sfapi_client_id, secret=state.sfapi_key) as client:
+            # get the user object
+            user = client.user()
+            # get client associated with the user and the client ID stored in the key file
+            credential_client = [this_client for this_client in user.clients() if this_client.clientId == state.sfapi_client_id][0]
+            # (see https://docs.python.org/3/library/datetime.html#format-codes
+            # for all format codes accepted by the methods strftime and strptime)
+            sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
+            user_format = "%B %d, %Y, %H:%M %Z"
+            # parse key expiration date from string
+            expiration = datetime.strptime(credential_client.expiresAt, sfapi_format)
+            # if key is not expired, update info, else set to expired/unavailable
+            if expiration.replace(tzinfo=None) > datetime.now():
+                # update key expiration date
+                state.sfapi_key_expiration = f"Valid Until {expiration.strftime(user_format)}"
+                # update Perlmutter status
+                status = client.compute(Machine.perlmutter)
+                state.perlmutter_status = f"{status.description}"
+            else:
+                # reset key expiration date
+                state.sfapi_key_expiration = f"Expired On {expiration.strftime(user_format)}"
+                # reset Perlmutter status
+                state.perlmutter_status = "Unavailable"
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        # reset key expiration date
+        state.sfapi_key_expiration = "Unavailable"
+        # reset Perlmutter status
+        state.perlmutter_status = "Unavailable"
 
 
 def initialize_sfapi():
@@ -59,8 +49,12 @@ def initialize_sfapi():
     # get existing configuration from the database, if any
     sfapi_config = db["config"].find_one({"name": "sfapi"})
     if sfapi_config is not None:
+        # set client ID
         state.sfapi_client_id = sfapi_config["client_id"]
+        # set key
         state.sfapi_key = sfapi_config["key"]
+        # update Superfacility API info
+        update_sfapi_info()
 
 
 @state.change("sfapi_key_dict")
@@ -74,10 +68,12 @@ def load_sfapi_credentials(**kwargs):
         # check that the RSA key begins on the second line
         if key_lines[0].rstrip() == "-----BEGIN RSA PRIVATE KEY-----":
             raise ValueError("Key file must include client ID in the first line")
-        # get the client ID from the first line, remove it from the file lines
+        # reset client ID from the first line, remove it from the file lines
         state.sfapi_client_id = key_lines.pop(0).rstrip()
-        # store remaining file lines
+        # reset key from the remaining lines in the file
         state.sfapi_key = "".join(key_lines)
+        # update Superfacility API info
+        update_sfapi_info()
         # update configuration in the database
         db = load_database()
         sfapi_config = {
