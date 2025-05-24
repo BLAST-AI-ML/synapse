@@ -38,7 +38,6 @@ def metadata_match(config_file, model_file):
     # read model file
     with open(model_file) as f:
         model_str = f.read()
-
     # load model dictionary
     model_dict = yaml.safe_load(model_str)
     # load model input variables list
@@ -66,8 +65,6 @@ def load_database():
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    ## read database experiment from environment variable (no default provided)
-    #db_collection = state.experiment
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
