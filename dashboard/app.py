@@ -47,9 +47,8 @@ experiment_list = [
 def load_data():
     print("Loading data from database...")
     config, exp_docs, sim_docs = load_database()
-    exp_data = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    sim_data = pd.DataFrame(sim_docs).to_json(default_handler=str)
-    return (exp_data, sim_data)
+    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
+    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
 def load_config_file():
     config_dir = os.path.join(os.getcwd(), "config")
@@ -76,12 +75,11 @@ def load_variables():
     input_variables, output_variables = read_variables(config_file)
     return (input_variables, output_variables)
 
-def calibrate_data(sim_data):
+def calibrate_data():
     print("Calibrating data...")
     global mod_manager
     global par_manager
     global obj_manager
-    sim_data_df = pd.read_json(StringIO(sim_data))
     if mod_manager.avail() and not mod_manager.is_gaussian_process:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
@@ -90,8 +88,10 @@ def calibrate_data(sim_data):
         output_transformers = mod_manager.get_output_transformers()
         output_calibration = output_transformers[0]
         output_normalization = output_transformers[1]
+        # read simulation data back from JSON string
+        sim_data = pd.read_json(StringIO(state.sim_data_serialized))
         # normalize simulation data
-        objective_tensor = torch.from_numpy(sim_data_df[objective_name].values)
+        objective_tensor = torch.from_numpy(sim_data[objective_name].values)
         objective_tensor = output_normalization.transform(objective_tensor)
         if state.calibrate:
             objective_tensor = output_calibration.untransform(objective_tensor)
@@ -99,9 +99,9 @@ def calibrate_data(sim_data):
         else:
             objective_tensor = output_calibration.transform(objective_tensor)
             objective_tensor = output_normalization.untransform(objective_tensor)
-        sim_data_df[objective_name] = objective_tensor.numpy()[0]
-        # update state
-        sim_data = sim_data_df.to_json(default_handler=str)
+        sim_data[objective_name] = objective_tensor.numpy()[0]
+        # serialize simulation data to JSON string
+        state.sim_data_serialized = sim_data.to_json(default_handler=str)
 
 def update(
     reset_gui_route_home=True,
@@ -117,7 +117,7 @@ def update(
     global par_manager
     global obj_manager
     # load data
-    exp_data, sim_data = load_data()
+    load_data()
     # initialize model
     model_file = load_model_file()
     mod_manager = ModelManager(model_file)
@@ -133,8 +133,8 @@ def update(
         obj_manager = ObjectivesManager(mod_manager, output_variables)
     else:
         obj_manager.update()
-    ## FIXME calibration
-    #sim_data = calibrate_data(sim_data)
+    # calibration
+    calibrate_data()
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
@@ -146,7 +146,7 @@ def update(
         gui_setup()
     # reset plots
     if reset_plots:
-        fig = plot(exp_data, sim_data, mod_manager)
+        fig = plot(mod_manager)
         ctrl.figure_update(fig)
 
 @state.change(

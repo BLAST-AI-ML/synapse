@@ -105,7 +105,7 @@ def load_database():
     return (config, exp_docs, sim_docs)
 
 # plot experimental, simulation, and ML data
-def plot(exp_data, sim_data, model_manager):
+def plot(model_manager):
     print("Plotting...")
     # local aliases
     parameters = state.parameters
@@ -119,8 +119,8 @@ def plot(exp_data, sim_data, model_manager):
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
     # load experimental data
-    df_exp = pd.read_json(StringIO(exp_data))
-    df_sim = pd.read_json(StringIO(sim_data))
+    df_exp = pd.read_json(StringIO(state.exp_data_serialized))
+    df_sim = pd.read_json(StringIO(state.sim_data_serialized))
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot

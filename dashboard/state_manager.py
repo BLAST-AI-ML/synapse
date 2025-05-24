@@ -11,10 +11,10 @@ def initialize_state():
     Helper function to initialize state variabes needed at startup.
     """
     print(f"Initializing state variables at startup...")
-    # need separate variables to track changes in state.experiment and
-    # state.model_type, which trigger re-initialization, to avoid multiple
-    # reactive functions listening to changes in those variables (the order
-    # of execution of such reactive functions cannot be prescribed)
+    # experiment and simulation data (pandas dataframes serialized)
+    state.exp_data_serialized = pd.DataFrame().to_json(default_handler=str)
+    state.sim_data_serialized = pd.DataFrame().to_json(default_handler=str)
+    # experiment and model type
     state.experiment = "qed_ip2"
     state.model_type = "Neural Network"
     # opacity
