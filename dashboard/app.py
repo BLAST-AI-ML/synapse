@@ -87,6 +87,7 @@ def calibrate_data():
     global mod_manager
     global par_manager
     global obj_manager
+    # TODO simplify if condition once calibration is available for GP data
     if mod_manager.avail() and not mod_manager.is_gaussian_process:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
@@ -259,6 +260,7 @@ def home_route():
                                         vuetify.VSwitch(
                                             v_model=("calibrate",),
                                             label="Calibration",
+                                            classes="ml-4",
                                             color="primary",
                                         )
             with vuetify.VCol(cols=8):
