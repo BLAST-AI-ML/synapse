@@ -188,7 +188,7 @@ def update_on_change(**kwargs):
                 reset_gui_route_nersc=False,
                 reset_gui_layout=False,
             )
-        else:
+        else:  # either of parameters, opacity, calibrate changed
             update(
                 reset_model=False,
                 reset_parameters=False,
@@ -198,26 +198,6 @@ def update_on_change(**kwargs):
                 reset_gui_route_nersc=False,
                 reset_gui_layout=False,
             )
-
-@state.change("experiment")
-def update_on_experiment_change(**kwargs):
-    change_variables = {
-        "experiment",
-    }
-    single_change = (
-        len(state.modified_keys) == 1 and
-        any(key in state.modified_keys for key in change_variables)
-    )
-    if single_change:
-        print("Experiment changed...")
-        update(
-            reset_gui_route_home=True,
-            reset_gui_route_nersc=False,
-            reset_gui_layout=False,
-            reset_parameters=True,
-            reset_objectives=True,
-            reset_plots=True,
-        )
 
 # -----------------------------------------------------------------------------
 # GUI components
