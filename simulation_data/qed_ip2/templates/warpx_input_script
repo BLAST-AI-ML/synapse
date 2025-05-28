@@ -14,7 +14,8 @@ my_constants.duration_FWHM = 40e-15
 my_constants.laser_energy  = 20 # Joules
 
 my_constants.prepulse_delay = {{prepulse_delay}} # in mm, this is actually the motion of a stage
-my_constants.prepulse_delay_in_ps = "2 * prepulse_delay * 1e-3 / clight / 1e-12"
+# Zero delay is 71.41 mm ; going to the left, the delay is increasing
+my_constants.prepulse_delay_in_ps = "2 * (71.41 - prepulse_delay) * 1e-3 / clight / 1e-12"
 # Model for the gradient length:
 # The prepulse is obtained with a 1cm hole in a 20cm beam, so it contains 1/400 of the energy
 # i.e. 20 J / 400 = 0.05 J ; its waist will be 20 x 2.7 microns at focus, i.e. 54 microns.

@@ -10,7 +10,7 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("prepulse_delay", 0, 4)
+var_1 = VaryingParameter("prepulse_delay", 67.41, 71.41)
 var_2 = VaryingParameter("target_focus", -56.81, -56.87)
 obj = Objective("f", minimize=False)
 
