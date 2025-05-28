@@ -131,7 +131,7 @@ def plot(model_manager):
                 df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
             df_copy["distance"] = np.sqrt(df_copy["distance"])
             # normalize distance in [0,1] and compute opacity
-            df_copy["distance"] = df_copy["distance"] / df_copy["distance"].max()
+            df_copy["distance"] = df_copy["distance"]
             df_copy["opacity"] = np.where(df_copy["distance"] > state.opacity, 0., 1. - df_copy["distance"]/state.opacity)
             # filter out data with zero opacity
             df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
