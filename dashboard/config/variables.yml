@@ -8,7 +8,7 @@ qed_ip2:
       value_range: [0, 4]
 
     input2:
-      name: "TapeDrive Z"
+      name: "Target focus"
       type: scalar
       default: -56.84
       value_range: [-56.87, -56.81]
