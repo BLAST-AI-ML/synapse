@@ -57,7 +57,7 @@ def load_database():
         "port": 27017,
         "name": "bella_sf",
         "auth": "bella_sf",
-        "user": "bella_sf_admin",
+        "user": "bella_sf_ro",
     }
     # read database information from environment variables (if unset, use defaults)
     db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
@@ -66,9 +66,9 @@ def load_database():
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
     # read database password from environment variable (no default provided)
-    db_password = os.getenv("SF_DB_PASSWORD")
+    db_password = os.getenv("SF_DB_READONLY_PASSWORD")
     if db_password is None:
-        raise RuntimeError("Environment variable SF_DB_PASSWORD must be set!")
+        raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
     # SSH forward?
     if db_host == "localhost" or db_host == "127.0.0.1":
         direct_connection = True
