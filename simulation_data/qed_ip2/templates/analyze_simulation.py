@@ -21,9 +21,9 @@ def analyze_simulation():
     # Get current directory
     data_directory = os.path.join( os.getcwd(), 'diags' )
     ts = OpenPMDTimeSeries( os.path.join(data_directory, 'out') )
-    
+
     # Additional metadata
-    data = {}    
+    data = {}
     data['experiment_flag'] = 0
     data['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data['data_directory'] = data_directory
@@ -31,8 +31,8 @@ def analyze_simulation():
     # Parse the warpx_used_output
     with open('warpx_used_inputs') as f:
         text = f.read()
-        data['gradient_length'] = float( re.findall('my_constants\.n_ll\s+= (.+)', text)[0] )
-        data['target_position'] = float( re.findall('my_constants\.n_defoc\s+= (.+)', text)[0] )
+        data['Prepulse Delay'] = float( re.findall('my_constants\.prepulse_delay\s+= (.+)', text)[0] )
+        data['Target focus'] = float( re.findall('my_constants\.target_focus\s+= (.+)', text)[0] )
 
     # Compute energy in the harmonics, above harmonic `min_harmonic`
     min_harmonic = 9

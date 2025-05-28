@@ -176,13 +176,10 @@ def plot(model_manager):
             )
             for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
-            # reorder the dictionary with respect to the parameters_key_order_list
-            # TODO currently needed for GP model, see if this can be worked around
-            ordered_input_dict_loc = {k: input_dict_loc[k] for k in parameters_key_order_list if k in input_dict_loc}
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
-            mean, lower, upper = model_manager.evaluate(ordered_input_dict_loc)
+            mean, lower, upper = model_manager.evaluate(input_dict_loc)
             # upper bound
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],

@@ -2,16 +2,16 @@ qed_ip2:
 
   input_variables:
     input1:
-      name: "gradient_length"
+      name: "Prepulse Delay"
       type: scalar
-      default: 0.142857
-      value_range: [0, 1]
+      default: 1
+      value_range: [0, 4]
 
     input2:
-      name: "target_position"
+      name: "Target focus"
       type: scalar
-      default: 0
-      value_range: [-1, 1]
+      default: -56.84
+      value_range: [-56.87, -56.81]
 
   output_variables:
     output1:

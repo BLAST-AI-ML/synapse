@@ -10,8 +10,8 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("gradient_length", 0, 0.5)
-var_2 = VaryingParameter("target_position", -1, 1)
+var_1 = VaryingParameter("prepulse_delay", 0, 4)
+var_2 = VaryingParameter("target_focus", -56.81, -56.87)
 obj = Objective("f", minimize=False)
 
 n_var_1 = 8
@@ -32,7 +32,7 @@ ev_main = TemplateEvaluator(
     analysis_func=analysis_func_main,
     executable="../templates/warpx",
     n_gpus=16,  # GPUs per individual evaluation
-    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL, 
+    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",

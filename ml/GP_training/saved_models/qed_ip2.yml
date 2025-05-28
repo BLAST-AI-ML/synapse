@@ -1,16 +1,16 @@
 model_class: GPModel
 input_variables:
-  gradient_length:
+  Prepulse Delay:
     variable_class: ScalarVariable
-    default_value: 0.142857
+    default_value: 1.0
     is_constant: false
-    value_range: [0.0, 1.0]
+    value_range: [0.0, 4.0]
     value_range_tolerance: 1.0e-08
-  target_position:
+  Target focus:
     variable_class: ScalarVariable
-    default_value: 0.0
+    default_value: -56.84
     is_constant: false
-    value_range: [-1.0, 1.0]
+    value_range: [-56.87, -56.81]
     value_range_tolerance: 1.0e-08
 output_variables:
   energy_in_harmonics_sim_task: {variable_class: DistributionVariable, distribution_type: MultiVariateNormal}
