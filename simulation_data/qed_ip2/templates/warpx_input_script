@@ -235,10 +235,10 @@ DBB.profile                = "Gaussian"
 DBB.profile_duration       = tau
 DBB.profile_t_peak         = 2.0*tau
 DBB.profile_waist          = w0
-# Per meeting notes on 2025-05-22, tape_drive_z is in mm and the origin is at 56.84 mm
-# Increasing tape_drive_z moves the target toward the parabola, i.e. the distance is decreasing
-my_constants.tape_drive_z = {{tape_drive_z}}
-DBB.profile_focal_distance = "-laser_start - (tape_drive_z + 56.84) * 1e-3"
+# Per meeting notes on 2025-05-22, target_focus is in mm and the origin is at 56.84 mm
+# Increasing target_focus moves the target toward the parabola, i.e. the distance is decreasing
+my_constants.target_focus = {{target_focus}}
+DBB.profile_focal_distance = "-laser_start - (target_focus + 56.84) * 1e-3"
 
 # Diagnostics
 diagnostics.diags_names = out low_res_out

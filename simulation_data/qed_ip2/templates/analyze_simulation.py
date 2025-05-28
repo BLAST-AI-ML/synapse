@@ -32,7 +32,7 @@ def analyze_simulation():
     with open('warpx_used_inputs') as f:
         text = f.read()
         data['Prepulse Delay'] = float( re.findall('my_constants\.prepulse_delay\s+= (.+)', text)[0] )
-        data['TapeDrive Z'] = float( re.findall('my_constants\.tape_drive_z\s+= (.+)', text)[0] )
+        data['Target focus'] = float( re.findall('my_constants\.target_focus\s+= (.+)', text)[0] )
 
     # Compute energy in the harmonics, above harmonic `min_harmonic`
     min_harmonic = 9

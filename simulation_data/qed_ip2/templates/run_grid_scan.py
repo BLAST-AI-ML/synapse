@@ -11,7 +11,7 @@ def analysis_func_main(work_dir, output_params):
 
 # Create varying parameters and objectives.
 var_1 = VaryingParameter("prepulse_delay", 0, 4)
-var_2 = VaryingParameter("tape_drive_z", -56.81, -56.87)
+var_2 = VaryingParameter("target_focus", -56.81, -56.87)
 obj = Objective("f", minimize=False)
 
 n_var_1 = 8
