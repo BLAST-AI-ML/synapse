@@ -118,7 +118,8 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 4. Enter a client name (e.g., "BELLA Superfacility"), choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
 
-5. Download your private key file (in pem format).
+5. Download the private key file (in pem format) and save it as `priv_key.pem` in the root directory of the GUI.
+   Each time the GUI is launched, it will automatically find the existing key file and load the corresponding credentials.
 
 6. Copy your client ID and add it on the first line of your private key file as described in the instructions at [nersc.github.io/sfapi_client/quickstart/#storing-keys-in-files](https://nersc.github.io/sfapi_client/quickstart/#storing-keys-in-files):
     ```
