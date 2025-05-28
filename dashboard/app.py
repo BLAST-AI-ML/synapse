@@ -67,6 +67,7 @@ def load_config_file():
 def load_model_file():
     config_file = load_config_file()
     model_type_tag = model_type_tag_dict[state.model_type]
+    # find model directory in the local file system
     model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
     model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
     model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
@@ -79,6 +80,7 @@ def load_model_file():
 
 def load_variables():
     config_file = load_config_file()
+    # load information about input and output variables from the configuration file
     input_variables, output_variables = read_variables(config_file)
     return (input_variables, output_variables)
 
@@ -157,9 +159,37 @@ def update(
         fig = plot(mod_manager)
         ctrl.figure_update(fig)
 
+@state.change("experiment")
+def update_on_change_experiment(**kwargs):
+    # skip if triggered on server ready (all state variables marked as modified)
+    if len(state.modified_keys) == 1:
+        print("Experiment changed...")
+        update(
+            reset_model=True,
+            reset_parameters=True,
+            reset_objectives=True,
+            reset_plots=True,
+            reset_gui_route_home=True,
+            reset_gui_route_nersc=False,
+            reset_gui_layout=False,
+        )
+
+@state.change("model_type")
+def update_on_change(**kwargs):
+    # skip if triggered on server ready (all state variables marked as modified)
+    if len(state.modified_keys) == 1:
+        print("Model type changed...")
+        update(
+            reset_model=True,
+            reset_parameters=False,
+            reset_objectives=False,
+            reset_plots=True,
+            reset_gui_route_home=True,
+            reset_gui_route_nersc=False,
+            reset_gui_layout=False,
+        )
+
 @state.change(
-    "experiment",
-    "model_type",
     "parameters",
     "opacity",
     "calibrate",
@@ -167,38 +197,16 @@ def update(
 def update_on_change(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        if "experiment" in state.modified_keys:
-            print("Experiment changed...")
-            update(
-                reset_model=True,
-                reset_parameters=True,
-                reset_objectives=True,
-                reset_plots=True,
-                reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
-                reset_gui_layout=False,
-            )
-        elif "model_type" in state.modified_keys:
-            print("Model type changed...")
-            update(
-                reset_model=True,
-                reset_parameters=False,
-                reset_objectives=False,
-                reset_plots=True,
-                reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
-                reset_gui_layout=False,
-            )
-        else:  # either of parameters, opacity, calibrate changed
-            update(
-                reset_model=False,
-                reset_parameters=False,
-                reset_objectives=False,
-                reset_plots=True,
-                reset_gui_route_home=False,
-                reset_gui_route_nersc=False,
-                reset_gui_layout=False,
-            )
+        print("Parameters, opacity, or calibration changed...")
+        update(
+            reset_model=False,
+            reset_parameters=False,
+            reset_objectives=False,
+            reset_plots=True,
+            reset_gui_route_home=False,
+            reset_gui_route_nersc=False,
+            reset_gui_layout=False,
+        )
 
 # -----------------------------------------------------------------------------
 # GUI components
