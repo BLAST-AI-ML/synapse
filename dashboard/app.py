@@ -218,13 +218,21 @@ def home_route():
                         with vuetify.VCard():
                             with vuetify.VCardTitle("Control: Models"):
                                 with vuetify.VCardText():
-                                    vuetify.VSelect(
-                                        v_model=("model_type",),
-                                        items=("Models", model_type_list),
-                                        dense=True,
-                                        prepend_icon="mdi-brain",
-                                        style="max-width: 210px;",
-                                    )
+                                    with vuetify.VRow():
+                                        vuetify.VSelect(
+                                            v_model=("model_type",),
+                                            items=("Models", model_type_list),
+                                            dense=True,
+                                            prepend_icon="mdi-brain",
+                                            style="max-width: 210px;",
+                                        )
+                                        vuetify.VSpacer()
+                                        vuetify.VSwitch(
+                                            v_model=("calibrate",),
+                                            label="Calibration",
+                                            classes="mt-1",
+                                            color="primary",
+                                        )
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -255,14 +263,6 @@ def home_route():
                                                     style="width: 80px;",
                                                     type="number",
                                                 )
-                                    # create a row for the calibration switch
-                                    with vuetify.VRow():
-                                        vuetify.VSwitch(
-                                            v_model=("calibrate",),
-                                            label="Calibration",
-                                            classes="ml-4",
-                                            color="primary",
-                                        )
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
