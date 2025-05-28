@@ -48,7 +48,7 @@
 2. Set the database settings (read+write):
     ```console
     export SF_DB_HOST='127.0.0.1'
-    export SF_DB_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
     ```
 
 3. For local development, open a separate terminal and keep it open while SSH forwarding the database connection:
@@ -81,11 +81,11 @@
 
 2. Run the Docker container from the `dashboard/` folder:
     ```console
-    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_PASSWORD='your_password_here' gui
+    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' gui
     ```
     For debugging, you can also enter the container without starting the app:
     ```console
-    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_PASSWORD='your_password_here' -it gui bash
+    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it gui bash
     ```
     Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
