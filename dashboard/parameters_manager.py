@@ -56,7 +56,7 @@ class ParametersManager:
                             v_on="on",
                             v_bind="attrs",
                         ):
-                            vuetify.VIcon("mdi-laptop")
+                            vuetify.VIcon("mdi-calculator-variant")
                     vuetify.Template("Optimize")
                 with vuetify.VTooltip(bottom=True):
                     with vuetify.Template(v_slot_activator="{ on, attrs }"):
