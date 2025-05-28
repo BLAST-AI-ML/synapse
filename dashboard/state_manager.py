@@ -22,8 +22,8 @@ def initialize_state():
     # calibration
     state.calibrate = True
     # Superfacility API
+    state.sfapi_client_id = None
     state.sfapi_key = None
     state.sfapi_key_dict = None
     state.sfapi_key_expiration = "Unavailable"
-    state.sfapi_client_id = None
     state.perlmutter_status = "Unavailable"
