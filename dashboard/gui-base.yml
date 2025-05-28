@@ -13,7 +13,9 @@ channels:
 dependencies:
   - botorch==0.11.0
   - cpuonly
+  - lume-model
   - matplotlib
+  - mlflow
   - pandas
   - pip
   - plotly<6
@@ -31,4 +33,3 @@ dependencies:
   - pip:
     - pywebview[qt]
     - sfapi_client
-    - git+https://github.com/pluflou/lume-model.git@add-gps
