@@ -4,8 +4,8 @@ qed_ip2:
     input1:
       name: "Prepulse Delay"
       type: scalar
-      default: 1
-      value_range: [0, 4]
+      default: 70
+      value_range: [67.41, 71.41]
 
     input2:
       name: "Target focus"
