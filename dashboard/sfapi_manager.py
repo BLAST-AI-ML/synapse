@@ -86,9 +86,6 @@ def load_sfapi_credentials(**kwargs):
             parse_sfapi_key(key_str)
             # update Superfacility API info
             update_sfapi_info()
-            # save key file to file in the local file system
-            with open("priv_key_local.pem", "w") as file:
-                file.write(key_str)
 
 
 def load_sfapi_card():
