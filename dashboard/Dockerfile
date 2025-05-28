@@ -1,3 +1,10 @@
+# syntax=docker/dockerfile:1.7-labs
+# Declare the syntax version to use for the build,
+# as the --exclude flag in the COPY command is not
+# yet available in stable syntax:
+# - https://docs.docker.com/reference/dockerfile/#syntax
+# - https://docs.docker.com/reference/dockerfile/#copy---exclude
+
 # Use an official Python runtime as a parent image
 FROM continuumio/miniconda3:latest
 
@@ -5,7 +12,7 @@ FROM continuumio/miniconda3:latest
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app
-COPY . /app
+COPY --exclude=*.pem . /app
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
@@ -21,7 +28,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 8080
 
 # Run app.py when the container launches
-# NOTE The URL http://0.0.0.0:8080/ is used by the application to indicate that
-#      it is listening on all network interfaces inside the container, but you
-#      should access it via http://localhost:8080/ from your host machine
 CMD ["python", "app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
+# The URL http://0.0.0.0:8080/ is used by the application to indicate that
+# it is listening on all network interfaces inside the container, but you
+# should access it via http://localhost:8080/ from your host machine)
