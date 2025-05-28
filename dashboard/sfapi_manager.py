@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify2 as vuetify
@@ -7,14 +8,37 @@ from state_manager import state
 from utils import load_database
 
 
-@state.change(
-    "sfapi_client_id",
-    "sfapi_key",
-)
-def sfapi_info(**kwargs):
-    # return if no client ID or key have been set
-    if state.sfapi_client_id is None or state.sfapi_key is None:
-        return
+def parse_sfapi_key(key_str):
+    # extract lines from the key string
+    key_lines = key_str.splitlines(keepends=True)
+    # the first line must contain the client ID,
+    # check that the RSA key begins on the second line
+    if key_lines[0].rstrip() == "-----BEGIN RSA PRIVATE KEY-----":
+        raise ValueError("Key file must include client ID in the first line")
+    # set the client ID from the first line and remove the line
+    state.sfapi_client_id = key_lines.pop(0).rstrip()
+    # set the key from the remaining lines in the file
+    state.sfapi_key = "".join(key_lines)
+
+
+def initialize_sfapi():
+    print("Initializing Superfacility API...")
+    # look for a key file in the current directory
+    key_path = os.path.join(os.getcwd(), "priv_key.pem")
+    if os.path.isfile(key_path):
+        try:
+            with Client(key=key_path) as client:
+                # store the whole content of the key file in a string
+                key_str = client._secret
+                # store the client ID and key in the respective state variables
+                parse_sfapi_key(key_str)
+                # update Superfacility API info
+                update_sfapi_info()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+
+def update_sfapi_info():
     print("Updating Superfacility API info...")
     try:
         # create an authenticated client and update info
@@ -49,43 +73,25 @@ def sfapi_info(**kwargs):
         state.perlmutter_status = "Unavailable"
 
 
-def sfapi_init():
-    print("Initializing Superfacility API...")
-    config, _, _ = load_database()
-    # get existing configuration from the database, if any
-    sfapi_config = config.find_one({"name": "sfapi"})
-    if sfapi_config is not None:
-        state.sfapi_client_id = sfapi_config["client_id"]
-        state.sfapi_key = sfapi_config["key"]
-
-
 @state.change("sfapi_key_dict")
-def load_credentials(**kwargs):
-    # return if no key file has been uploaded
-    if state.sfapi_key_dict is not None:
-        print("Loading Superfacility API credentials...")
-        # extract key file lines from file input dictionary
-        key_lines = state.sfapi_key_dict["content"].decode("utf-8").splitlines(keepends=True)
-        # the first line must contain the client ID,
-        # check that the RSA key begins on the second line
-        if key_lines[0].rstrip() == "-----BEGIN RSA PRIVATE KEY-----":
-            raise ValueError("Key file must include client ID in the first line")
-        # get the client ID from the first line, remove it from the file lines
-        state.sfapi_client_id = key_lines.pop(0).rstrip()
-        # store remaining file lines
-        state.sfapi_key = "".join(key_lines)
-        # update configuration in the database
-        config, _, _ = load_database()
-        sfapi_config = {
-            "$set": {
-                "client_id": state.sfapi_client_id,
-                "key": state.sfapi_key,
-            }
-        }
-        config.update_one({"name": "sfapi"}, sfapi_config, upsert=True)
+def load_sfapi_credentials(**kwargs):
+    # skip if triggered on server ready (all state variables marked as modified)
+    if len(state.modified_keys) == 1:
+        # return if no key file has been uploaded (redundant)
+        if state.sfapi_key_dict is not None:
+            print("Loading Superfacility API credentials...")
+            # store the whole content of the key file in a string
+            key_str = state.sfapi_key_dict["content"].decode("utf-8")
+            # store the client ID and key in the respective state variables
+            parse_sfapi_key(key_str)
+            # update Superfacility API info
+            update_sfapi_info()
+            # save key file to file in the local file system
+            with open("priv_key_local.pem", "w") as file:
+                file.write(key_str)
 
 
-def sfapi_card():
+def load_sfapi_card():
     print("Setting Superfacility API card...")
     with vuetify.VCard():
         with vuetify.VCardTitle("Superfacility API"):

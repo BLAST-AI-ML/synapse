@@ -10,9 +10,6 @@ import torch
 import yaml
 from state_manager import state
 
-# global database variable
-db = None
-
 def read_variables(config_file):
     print("Reading configuration file...")
     # read configuration file
@@ -41,7 +38,6 @@ def metadata_match(config_file, model_file):
     # read model file
     with open(model_file) as f:
         model_str = f.read()
-
     # load model dictionary
     model_dict = yaml.safe_load(model_str)
     # load model input variables list
@@ -55,7 +51,6 @@ def metadata_match(config_file, model_file):
 
 def load_database():
     print("Loading database...")
-    global db
     # load database
     db_defaults = {
         "host": "mongodb05.nersc.gov",
@@ -70,8 +65,6 @@ def load_database():
     db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
     db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
     db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    # read database experiment from environment variable (no default provided)
-    db_collection = state.experiment
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_PASSWORD")
     if db_password is None:
@@ -82,45 +75,33 @@ def load_database():
     else:
         direct_connection = False
     # get database instance
-    if db is None:
-        print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
-        db = pymongo.MongoClient(
-            host=db_host,
-            port=db_port,
-            username=db_user,
-            password=db_password,
-            authSource=db_auth,
-            directConnection=direct_connection,
-        )[db_name]
-    # get collection: ip2, acave, config, ...
-    collection = db[db_collection]
-    if "config" not in db.list_collection_names():
-        db.create_collection("config")
-    config = db["config"]
-    # retrieve all documents
-    documents = list(collection.find())
-    # separate documents: experimental and simulation
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    return (config, exp_docs, sim_docs)
+    print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
+    db = pymongo.MongoClient(
+        host=db_host,
+        port=db_port,
+        username=db_user,
+        password=db_password,
+        authSource=db_auth,
+        directConnection=direct_connection,
+    )[db_name]
+    return db
 
 # plot experimental, simulation, and ML data
-def plot(model):
+def plot(model_manager):
     print("Plotting...")
     # local aliases
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
-    objectives = state.objectives
     try:
         # FIXME generalize for multiple objectives
-        objective_name = list(objectives.keys())[0]
+        objective_name = list(state.objectives.keys())[0]
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
     # load experimental data
-    df_exp = pd.read_json(StringIO(state.exp_data))
-    df_sim = pd.read_json(StringIO(state.sim_data))
+    df_exp = pd.read_json(StringIO(state.exp_data_serialized))
+    df_sim = pd.read_json(StringIO(state.sim_data_serialized))
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
@@ -185,7 +166,7 @@ def plot(model):
             )
         #----------------------------------------------------------------------
         # figure trace from model data
-        if model.avail():
+        if model_manager.avail():
             input_dict_loc = dict()
             steps = 1000
             input_dict_loc[key] = torch.linspace(
@@ -198,7 +179,7 @@ def plot(model):
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
-            mean, lower, upper = model.evaluate(input_dict_loc)
+            mean, lower, upper = model_manager.evaluate(input_dict_loc)
             # upper bound
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
