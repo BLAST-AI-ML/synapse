@@ -1,4 +1,4 @@
-#from datetime import datetime, timedelta
+import copy
 import pandas as pd
 from trame.app import get_server
 
@@ -6,31 +6,24 @@ server = get_server(client_type="vue3")
 state = server.state
 ctrl = server.controller
 
-def init_state():
+def initialize_state():
     """
-    Helper function to collect and define all state variabes.
+    Helper function to initialize state variabes needed at startup.
     """
-    # serialized data
-    state.exp_data = pd.DataFrame().to_json(default_handler=str)
-    state.sim_data = pd.DataFrame().to_json(default_handler=str)
+    print(f"Initializing state variables at startup...")
+    # experiment and simulation data (pandas dataframes serialized)
+    state.exp_data_serialized = pd.DataFrame().to_json(default_handler=str)
+    state.sim_data_serialized = pd.DataFrame().to_json(default_handler=str)
+    # experiment and model type
+    state.experiment = "qed_ip2"
+    state.model_type = "Neural Network"
     # opacity
-    state.opacity = 0.1
+    state.opacity = 0.05
     # calibration
-    state.is_calibrated = False
-    # parameters
-    state.parameters = dict()
-    state.parameters_min = dict()
-    state.parameters_max = dict()
-    # objectives
-    state.objectives = dict()
-    # NERSC
-    state.sfapi_output = ""
-    # TODO
-    #state.client_id = None
-    #state.private_key = None
-    #state.sfapi_expiration_days = 33
-    #state.sfapi_expiration = str(
-    #    datetime.now() +
-    #    timedelta(days=int(state.sfapi_expiration_days))
-    #)
-    #state.perlmutter_status = None
+    state.calibrate = True
+    # Superfacility API
+    state.sfapi_client_id = None
+    state.sfapi_key = None
+    state.sfapi_key_dict = None
+    state.sfapi_key_expiration = "Unavailable"
+    state.perlmutter_status = "Unavailable"
