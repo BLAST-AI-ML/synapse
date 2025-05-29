@@ -1,3 +1,4 @@
+import copy
 from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
@@ -5,7 +6,8 @@ from state_manager import state
 class ParametersManager:
 
     def __init__(self, model, input_variables):
-        # save PyTorch model
+        print("Initializing parameters manager...")
+        # save model
         self.__model = model
         # define state variables
         state.parameters = dict()
@@ -19,21 +21,53 @@ class ParametersManager:
             state.parameters[key] = pval
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
+        state.parameters_init = copy.deepcopy(state.parameters)
 
-    def recenter(self):
-        # recenter parameters
-        for key in state.parameters.keys():
-            state.parameters[key] = (state.parameters_min[key] + state.parameters_max[key]) / 2.
+    @property
+    def model(self):
+        return self.__model
+
+    @model.setter
+    def model(self, model):
+        self.__model = model
+
+    def reset(self):
+        print("Resetting parameters to default values...")
+        # reset parameters to initial values
+        state.parameters = copy.deepcopy(state.parameters_init)
         # push again at flush time
         state.dirty("parameters")
 
     def optimize(self):
+        print("Optimizing parameters...")
         # optimize parameters through model
         self.__model.optimize()
 
     def card(self):
+        print("Setting parameters card...")
         with vuetify.VCard():
-            with vuetify.VCardTitle("Parameters"):
+            with vuetify.VCardTitle("Control: Parameters"):
+                vuetify.VSpacer()
+                with vuetify.VTooltip(bottom=True):
+                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
+                        with vuetify.VBtn(
+                            icon=True,
+                            click=self.optimize,
+                            v_on="on",
+                            v_bind="attrs",
+                        ):
+                            vuetify.VIcon("mdi-calculator-variant")
+                    vuetify.Template("Optimize")
+                with vuetify.VTooltip(bottom=True):
+                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
+                        with vuetify.VBtn(
+                            icon=True,
+                            click=self.reset,
+                            v_on="on",
+                            v_bind="attrs",
+                        ):
+                            vuetify.VIcon("mdi-restart")
+                    vuetify.Template("Reset")
                 with vuetify.VCardText():
                     for key in state.parameters.keys():
                         pmin = state.parameters_min[key]

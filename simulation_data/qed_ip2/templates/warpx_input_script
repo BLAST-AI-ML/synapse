@@ -1,0 +1,291 @@
+# IMPORTANT :
+# n_ are normalized constants
+# Version : 1.0
+authors = "Pierre Bartoli <pierre.bartoli@cea.fr>"
+
+#################################
+##### PHYSICAL PARAMETER : ######
+#################################
+#Replace with BELLA parameters
+#laser constants
+my_constants.w0_FWHM       = 3.18e-6 # corresponds to 2.7 microns waist (1/e^2 of intensity)
+my_constants.lambda        = 800e-9
+my_constants.duration_FWHM = 40e-15
+my_constants.laser_energy  = 20 # Joules
+
+my_constants.prepulse_delay = {{prepulse_delay}} # in mm, this is actually the motion of a stage
+# Zero delay is 71.41 mm ; going to the left, the delay is increasing
+my_constants.prepulse_delay_in_ps = "2 * (71.41 - prepulse_delay) * 1e-3 / clight / 1e-12"
+# Model for the gradient length:
+# The prepulse is obtained with a 1cm hole in a 20cm beam, so it contains 1/400 of the energy
+# i.e. 20 J / 400 = 0.05 J ; its waist will be 20 x 2.7 microns at focus, i.e. 54 microns.
+# Thus, the fluence is 0.05 J / (pi x 54e-6 x 54e-6) = 5.5e6 J/m^2 = 0.55 kJ/cm^2
+# The model for the gradient length from Henri Vincenti is
+# L [nm] = alpha x sqrt(F[kJ/cm^2])* tau [ps] with alpha = 50 nm/ps
+my_constants.gradient_length = 50e-9 * sqrt(0.55) * prepulse_delay_in_ps # in meters
+
+#target constants
+my_constants.target_thickness = 10e-6
+my_constants.ang              = pi/4.0
+my_constants.n_den            = 400 #(normalized to nc)
+my_constants.n_nc_lim         = 0.01 #(normalized to nc) limits where the gradient is cut in the simulation
+
+#numerics constants
+my_constants.mp  = 5
+my_constants.ppl = 200 #Resolution in points per lambda
+
+###################################
+##### ALGORITHM PARAMETERS : ######
+###################################
+my_constants.cfl   = 1
+my_constants.coarsening_x = 2
+my_constants.coarsening_z = 2
+
+#use the associated script to generate factors :
+my_constants.factor_x = 8
+my_constants.factor_z = 8
+#################################
+##### COMPUTED PARAMETERS : ######
+##################################
+#constraints for the box
+my_constants.w0_99 = 5*w0_FWHM
+my_constants.duration_99 = 3*duration_FWHM
+
+#box constants
+my_constants.pml_epsilon = 0.5e-6 #Distance between plasma boundaries and pml, this parameter is to avoid explosion when plasma touching the pml
+my_constants.lim_x_hi = w0_99 + pml_epsilon
+my_constants.lim_x_lo = -lim_x_hi - pml_epsilon  #epsilon is counted twice to take in account the laser antenna into the box
+
+my_constants.laser_start = lim_x_lo + pml_epsilon
+
+my_constants.duration_start = -laser_start/clight
+
+my_constants.laser_epsilon = 0.5e-6 #moving window adjusted at perfectly duration_99 so add epsilon to avoid cutting the laser
+my_constants.target_epsilon = 2*pml_epsilon #avoid corner effect by going down a little more with the target
+my_constants.lim_z_lo = -lim_x_hi - target_epsilon - laser_epsilon
+my_constants.lim_z_hi = max(duration_99*clight + lim_z_lo + 2*laser_epsilon, lim_x_hi - target_epsilon)
+
+my_constants.duration_box = (-laser_start + lim_z_hi)/clight
+my_constants.duration_total = duration_start + duration_99 + lim_z_hi/clight
+
+#cells constants
+my_constants.cell_x_float = ((lim_x_hi - lim_x_lo)/lambda)*ppl
+my_constants.cell_z_float = ((lim_z_hi - lim_z_lo)/lambda)*ppl
+
+my_constants.blocking_factor_x = floor(cell_x_float/(coarsening_x*factor_x))*coarsening_x
+my_constants.blocking_factor_z = floor(cell_z_float/(coarsening_z*factor_z))*coarsening_z
+my_constants.cell_x = blocking_factor_x*factor_x
+my_constants.cell_z = blocking_factor_z*factor_z
+
+my_constants.res_x = (lim_x_hi - lim_x_lo)/cell_x
+my_constants.res_z = (lim_z_hi - lim_z_lo)/cell_z
+my_constants.res_t = max(res_x, res_z)/clight
+my_constants.step = ceil(duration_total/res_t)
+
+#physical constants
+my_constants.omega = 2*pi*clight/lambda
+my_constants.nc = epsilon0*m_e/(q_e**2)*omega**2
+my_constants.den = n_den*nc
+my_constants.ll = gradient_length
+my_constants.nc_lim = n_nc_lim*nc
+
+#laser constants
+my_constants.duration = duration_FWHM/sqrt(2*log(2))
+my_constants.w0 = w0_FWHM/(sqrt(2*log(2)))
+my_constants.a0 = 246 * (lambda/w0_FWHM) * sqrt( laser_energy/(duration_FWHM*1e15) )
+
+#target constants
+my_constants.x0 = 0
+my_constants.x1 = -ll*log(nc_lim/den)/cos(ang)
+my_constants.x2 = target_thickness
+my_constants.z0 = 0
+my_constants.xmin = laser_start + pml_epsilon
+my_constants.xmax = -xmin
+my_constants.zmin = lim_z_lo + target_epsilon
+my_constants.zmax = -zmin
+
+#########################
+##### SIMULATION : ######
+#########################
+
+#box geometry
+max_step = step
+
+amr.n_cell = cell_x cell_z
+
+amr.blocking_factor_x = blocking_factor_x
+amr.blocking_factor_y = blocking_factor_z
+amr.max_grid_size_x = blocking_factor_x
+amr.max_grid_size_y = blocking_factor_z
+amr.check_input = 0
+#warpx.numprocs = 0 0
+
+amr.max_level = 0
+
+geometry.dims = 2
+boundary.field_lo = pml pml
+boundary.field_hi = pml pml
+geometry.prob_lo = lim_x_lo lim_z_lo
+geometry.prob_hi = lim_x_hi lim_z_hi
+
+warpx.verbose = 1
+
+#moving window
+warpx.do_moving_window = 1
+warpx.moving_window_dir = z
+warpx.moving_window_v = 1.0
+my_constants.start_move = ceil((duration_box)/res_t)
+warpx.start_moving_window_step = start_move
+warpx.end_moving_window_step = step
+
+#numerics
+algo.particle_shape = 3
+warpx.cfl = cfl
+
+algo.load_balance_intervals = 100
+
+warpx.serialize_initial_conditions = 0
+warpx.use_filter = 1
+
+#?????????????????????????????????? todo optimise ?
+algo.current_deposition = esirkepov
+algo.field_gathering = energy-conserving
+
+algo.maxwell_solver = psatd
+psatd.nox = 100
+psatd.nx_guard = 32
+psatd.noy = 100
+psatd.ny_guard = 32
+psatd.noz = 100
+psatd.nz_guard = 32
+
+psatd.update_with_rho = 1
+
+#plasma
+particles.species_names = ele ion_C ion_H
+
+ele.species_type = electron
+ele.injection_style = NUniformPerCell
+ele.num_particles_per_cell_each_dim = mp mp
+ele.momentum_distribution_type = "gaussian"
+ele.ux_m = 0
+ele.uy_m = 0
+ele.uz_m = 0
+ele.ux_th = 1e-4
+ele.uy_th = 0
+ele.uz_th = 1e-4
+ele.xmin = xmin
+ele.xmax = xmax
+ele.zmin = zmin
+ele.zmax = zmax
+ele.profile = "parse_density_function"
+ele.density_function(x,y,z) = "
+    s0 = (x-x0)*cos(ang)-(z-z0)*sin(ang);
+    s1 = (x-x1)*cos(ang)-(z-z0)*sin(ang);
+    s2 = (x-x2)*cos(ang)-(z-z0)*sin(ang);
+    (den)*(if((s0 >= 0.0)*(s1 < 0.0), exp(s1/ll), 0.0) + (s1>=0.0)*(s2 < 0.0))"
+
+ion_C.species_type = "carbon"
+ion_C.injection_style = NUniformPerCell
+ion_C.num_particles_per_cell_each_dim = mp mp
+ion_C.momentum_distribution_type = "at_rest"
+ion_C.xmin = xmin
+ion_C.xmax = xmax
+ion_C.zmin = zmin
+ion_C.zmax = zmax
+ion_C.profile = "parse_density_function"
+ion_C.density_function(x,y,z) = "
+    s0 = (x-x0)*cos(ang)-(z-z0)*sin(ang);
+    s1 = (x-x1)*cos(ang)-(z-z0)*sin(ang);
+    s2 = (x-x2)*cos(ang)-(z-z0)*sin(ang);
+    (den/7)*(if((s0 >= 0.0)*(s1 < 0.0), exp(s1/ll), 0.0) + (s1>=0.0)*(s2 < 0.0))"
+ion_C.do_field_ionization = 0
+#ion_C.ionization_initial_level = 0
+#ion_C.ionization_product_species = ele
+#ion_C.physical_element = C
+
+ion_H.species_type = "hydrogen"
+ion_H.injection_style = NUniformPerCell
+ion_H.num_particles_per_cell_each_dim = mp mp
+ion_H.momentum_distribution_type = "at_rest"
+ion_H.xmin = xmin
+ion_H.xmax = xmax
+ion_H.zmin = zmin
+ion_H.zmax = zmax
+ion_H.profile = "parse_density_function"
+ion_H.density_function(x,y,z) = "
+    s0 = (x-x0)*cos(ang)-(z-z0)*sin(ang);
+    s1 = (x-x1)*cos(ang)-(z-z0)*sin(ang);
+    s2 = (x-x2)*cos(ang)-(z-z0)*sin(ang);
+    (den/7)*(if((s0 >= 0.0)*(s1 < 0.0), exp(s1/ll), 0.0) + (s1>=0.0)*(s2 < 0.0))"
+ion_H.do_field_ionization = 0
+#ion_H.ionization_initial_level = 0
+#ion_H.ionization_product_species = ele
+#ion_H.physical_element = H
+
+#laser
+my_constants.tau = duration
+
+lasers.names               = DBB
+DBB.position               = laser_start 0 0
+DBB.direction              = 1. 0. 0.
+DBB.polarization           = 0. 0. 1.
+DBB.a0                     = a0
+DBB.wavelength             = lambda
+DBB.profile                = "Gaussian"
+DBB.profile_duration       = tau
+DBB.profile_t_peak         = 2.0*tau
+DBB.profile_waist          = w0
+# Per meeting notes on 2025-05-22, target_focus is in mm and the origin is at 56.84 mm
+# Increasing target_focus moves the target toward the parabola, i.e. the distance is decreasing
+my_constants.target_focus = {{target_focus}}
+DBB.profile_focal_distance = "-laser_start - (target_focus + 56.84) * 1e-3"
+
+# Diagnostics
+diagnostics.diags_names = out low_res_out
+
+out.intervals = step
+out.diag_type = Full
+out.fields_to_plot = By
+out.coarsening_ratio = 1 1
+out.write_species = 0
+out.format = openpmd
+out.openpmd_backend = bp
+#out.adios2_operator.type = blosc
+#out.adios2_operator.parameters.compressor = zstd
+#out.adios2_operator.parameters.clevel = 1
+#out.adios2_operator.parameters.doshuffle = BLOSC_BITSHUFFLE
+#out.adios2_operator.parameters.threshold = 2048
+#out.adios2_operator.parameters.nthreads = 8
+
+my_constants.low_res_step = floor(step/8)
+low_res_out.intervals = 0:0, low_res_step:7*low_res_step:low_res_step, step:step
+low_res_out.diag_type = Full
+low_res_out.fields_to_plot = Ex Ez By rho rho_ele rho_ion_C rho_ion_H
+low_res_out.coarsening_ratio = coarsening_x coarsening_z
+low_res_out.write_species = 0
+low_res_out.format = openpmd
+low_res_out.openpmd_backend = bp
+#low_res_out.adios2_operator.type = blosc
+#low_res_out.adios2_operator.parameters.compressor = zstd
+#low_res_out.adios2_operator.parameters.clevel = 1
+#low_res_out.adios2_operator.parameters.doshuffle = BLOSC_BITSHUFFLE
+#low_res_out.adios2_operator.parameters.threshold = 2048
+#low_res_out.adios2_operator.parameters.nthreads = 8
+
+warpx.reduced_diags_names = EP NP EF PP MF MR
+
+my_constants.reduced_step = floor(step/100)
+
+EP.type = ParticleEnergy
+EP.intervals = reduced_step
+NP.type = ParticleNumber
+NP.intervals = reduced_step
+EF.type = FieldEnergy
+EF.intervals = reduced_step
+PP.type = ParticleMomentum
+PP.intervals = reduced_step
+MF.type = FieldMaximum
+MF.intervals = reduced_step
+MR.type = RhoMaximum
+MR.intervals = 100

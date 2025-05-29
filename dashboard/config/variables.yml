@@ -1,3 +1,23 @@
+qed_ip2:
+
+  input_variables:
+    input1:
+      name: "Prepulse Delay"
+      type: scalar
+      default: 70
+      value_range: [67.41, 71.41]
+
+    input2:
+      name: "Target focus"
+      type: scalar
+      default: -56.84
+      value_range: [-56.87, -56.81]
+
+  output_variables:
+    output1:
+      name: "energy_in_harmonics"
+      type: scalar
+
 ip2:
 
   input_variables:

@@ -1,53 +1,89 @@
-import inspect
 import numpy as np
-import os
 from scipy.optimize import minimize
 import sys
-
 from lume_model.models.torch_model import TorchModel
-
+from lume_model.models.gp_model import GPModel
 from state_manager import state
 
 class ModelManager:
 
     def __init__(self, model_data):
-        # inspect current function and module names
-        cfunct = inspect.currentframe().f_code.co_name
-        cmodul = os.path.basename(inspect.currentframe().f_code.co_filename)
+        print(f"Initializing model manager...")
         if model_data is None:
             self.__model = None
         else:
+            # save model and model type
+            self.__is_neural_network = False
+            self.__is_gaussian_process = False
             try:
-                self.__model = TorchModel(model_data)
+                if state.model_type == "Neural Network":
+                    self.__is_neural_network = True
+                    self.__model = TorchModel(model_data)
+                elif state.model_type == "Gaussian Process":
+                    self.__is_gaussian_process = True
+                    self.__model = GPModel.from_yaml(model_data)
+                else:
+                    raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
-                print(f"{cmodul}:{self.__class__.__name__}.{cfunct}: {e}")
+                print(f"An unexpected error occurred: {e}")
                 sys.exit(1)
 
     def avail(self):
+        print("Checking model availability...")
         model_avail = True if self.__model is not None else False
         return model_avail
 
-    def evaluate(self, parameters_model):
+    @property
+    def is_neural_network(self):
+        return self.__is_neural_network
+
+    @property
+    def is_gaussian_process(self):
+        return self.__is_gaussian_process
+
+    def evaluate(self, parameters):
+        print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
-            output_dict = self.__model.evaluate(parameters_model)
-            # expected only one value
-            if len(output_dict.values()) != 1:
-                raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
-            res = list(output_dict.values())[0]
-            # convert to Python float if tensor has only one element (more elements for line plots)
-            if res.numel() == 1:
-                res = float(res)
-            return res
+            output_dict = self.__model.evaluate(parameters)
+            if self.__is_neural_network:
+                # expected only one value
+                if len(output_dict.values()) != 1:
+                    raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
+                # compute mean and mean error
+                mean = list(output_dict.values())[0]
+                mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
+            elif self.__is_gaussian_process:
+                # TODO use "exp" only once experimental data is available for all experiments
+                task_tag = "exp" if state.experiment == "ip2" else "sim"
+                output_key = [key for key in output_dict.keys() if task_tag in key][0]
+                # compute mean, standard deviation and mean error
+                # (call detach method to detach gradients from tensors)
+                mean = output_dict[output_key].mean.detach()
+                std_dev = output_dict[output_key].variance.sqrt().detach()
+                mean_error = 2.0 * std_dev
+            else:
+                raise ValueError(f"Unsupported model type: {state.model_type}")
+            # compute lower/upper bounds for error range
+            lower = mean - mean_error
+            upper = mean + mean_error
+            # convert to Python float if tensor has only one element
+            # because Trame state variables must be serializable
+            if mean.numel() == 1:
+                mean = float(mean)
+            return (mean, lower, upper)
 
     def model_wrapper(self, parameters_array):
+        print("Wrapping model...")
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
-        res = -self.evaluate(parameters_dict)
+        mean, lower, upper = self.evaluate(parameters_dict)
+        res = -mean
         return res
 
     def optimize(self):
+        # info print statement skipped to avoid redundancy
         if self.__model is not None:
             # get array of current parameters from state
             parameters_values = np.array(list(state.parameters.values()))
@@ -67,5 +103,6 @@ class ModelManager:
             state.dirty("parameters")
 
     def get_output_transformers(self):
+        print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers
