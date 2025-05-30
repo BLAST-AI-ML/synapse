@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import torch
 from trame.app import get_server
+from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify2 as vuetify
@@ -28,11 +29,13 @@ model_type_list = [
     "Gaussian Process",
     "Neural Network",
 ]
+
 # dict of auxiliary model types tags
 model_type_tag_dict = {
     "Gaussian Process": "GP",
     "Neural Network": "NN",
 }
+
 # list of all available experiments (TODO parse automatically)
 experiment_list = [
     "acave",
@@ -208,7 +211,8 @@ def update_on_change(**kwargs):
             reset_gui_layout=False,
         )
 
-def on_click(event):
+def open_image_dialog(event):
+    # extract coordinates of points that user clicked on
     x = event["points"][0]["x"]
     y = event["points"][0]["y"]
     x_label = "x"
@@ -227,7 +231,19 @@ def on_click(event):
             print(f"An unexpected error occurred: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-    print(f"Clicked on: ({x_label}={x}, {y_label}={y})")
+    print(f"Clicked on ({x_label}={x}, {y_label}={y})")
+    try:
+        # store a URL encoded file content under a given key name
+        assets = LocalFileManager(os.getcwd())
+        return_url = assets.url("image_key", "../diags/plots/iteration_21000.png")
+        state.image_url = assets["image_key"]
+        # trigger visibility of image dialog
+        state.dialog_visible = True
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def close_image_dialog(**kwargs):
+    state.dialog_visible = False
 
 # -----------------------------------------------------------------------------
 # GUI components
@@ -239,9 +255,11 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # parameters control card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.card()
+                # model control card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -262,6 +280,7 @@ def home_route():
                                             classes="mt-1",
                                             color="primary",
                                         )
+                # plots control card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -292,6 +311,7 @@ def home_route():
                                                     style="width: 80px;",
                                                     type="number",
                                                 )
+            # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
@@ -299,7 +319,7 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(on_click, "[utils.safe($event)]"),
+                                click=(open_image_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
 
@@ -309,6 +329,7 @@ def nersc_route():
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # Superfacility API card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_sfapi_card()
@@ -354,6 +375,17 @@ def gui_setup():
                         vuetify.VIcon("mdi-github")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("GitHub")
+        # interactive dialog for simulation plots
+        with vuetify.VDialog(v_model=("dialog_visible",), max_width="600"):
+            with vuetify.VCard():
+                with vuetify.VCardTitle("Simulation Data"):
+                    vuetify.VSpacer()
+                    with vuetify.VBtn(icon=True, click=close_image_dialog):
+                        vuetify.VIcon("mdi-close")
+                    vuetify.VImg(
+                        src=("image_url",),
+                        contain=True,
+                    )
 
 # -----------------------------------------------------------------------------
 # Main
