@@ -271,19 +271,27 @@ def open_image_dialog(event):
             return
         # get file directory
         file_directory = os.path.join(data_directory, "plots")
-        if os.path.isdir(file_directory):
-            print(f"Found file directory {file_directory}")
-        else:
+        if not os.path.isdir(file_directory):
             print(f"Could not find file directory {file_directory}")
             return
-        # TODO show animated gif instead of last iteration
+        # find plot file(s) to display
         file_list = os.listdir(file_directory)
         file_list.sort()
-        file_list = [file for file in file_list if "iteration" in file]
-        file_name = file_list[-1]
+        file_gif = [file for file in file_list if file.endswith(".gif")]
+        file_png = [file for file in file_list if file.endswith(".png") and "iteration" in file]
+        if len(file_gif) == 1:
+            # select GIF file
+            file_name = file_gif[0]
+        else:
+            # select PNG file from last iteration
+            file_name = file_png[-1]
+        # set file path and verify that it exists
         file_path = os.path.join(file_directory, file_name)
         if os.path.isfile(file_path):
             print(f"Found file {file_path}")
+        else:
+            print(f"Could not find file {file_path}")
+            return
         # store a URL encoded file content under a given key name
         assets = LocalFileManager(data_directory)
         return_url = assets.url(
@@ -432,7 +440,7 @@ def gui_setup():
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("dialog_visible",), max_width="600"):
             with vuetify.VCard():
-                with vuetify.VCardTitle("Simulation Data"):
+                with vuetify.VCardTitle("Simulation Plots"):
                     vuetify.VSpacer()
                     with vuetify.VBtn(icon=True, click=close_image_dialog):
                         vuetify.VIcon("mdi-close")
