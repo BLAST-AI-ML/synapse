@@ -1,3 +1,4 @@
+from bson.objectid import ObjectId
 import copy
 from io import StringIO
 import os
@@ -214,54 +215,21 @@ def update_on_change(**kwargs):
 
 def open_image_dialog(event):
     try:
-        # extract the coordinates of the point that user clicked on
-        this_parameter = event["points"][0]["x"]
-        this_objective = event["points"][0]["y"]
-        this_customdata = event["points"][0]["customdata"]
-        this_point_id = this_customdata[0]
-        this_hovertemplate = event["points"][0]["data"]["hovertemplate"]
-        # regex pattern to extract information from the this_hovertemplate string:
-        # - "([\w\s.]+)" matches one or more word characters, spaces, or dots,
-        #   and captures the key
-        # - "=%\{([^}]+)\}" matches the literal "=%{" followed by one or more
-        #   characters that are not "}", then "}", and captures the value inside "%{}"
-        # For example:
-        # - this_hovertemplate = "TOD_fs3=%{x}<br>n_protons=%{y}<br>GVD=%{customdata[1]}<br>z_target_um=%{customdata[2]}<extra></extra>"
-        # - this_hovertemplate_dict = {"TOD_fs3": "x", "n_protons": "y", "GVD": "customdata[1]", "z_target_um": "customdata[2]"}
-        pattern = r"([\w\s.]+)=%\{([^}]+)\}"
-        matches = re.findall(pattern, this_hovertemplate)
-        this_hovertemplate_dict = dict(matches)
-        # evaluate the point coordinates based on the information extracted from the this_hovertemplate string
-        for key, value in this_hovertemplate_dict.items():
-            if value == "x":
-                this_hovertemplate_dict[key] = this_parameter
-            elif value == "y":
-                this_hovertemplate_dict[key] = this_objective
-            elif "customdata" in value:
-                # regex pattern to extract the index of the customdata component:
-                # - "(\w+)" matches one or more word characters and captures "customdata"
-                # - "\[(\d+)\]" matches the literal "[" followed by one or more digits,
-                #   then "]", and captures the index of the customdata component
-                # For example:
-                # - value = "customdata[1]"
-                # - index = 1
-                pattern = r"(\w+)\[(\d+)\]"
-                matches = re.match(pattern, value)
-                index = int(matches.group(2))
-                this_hovertemplate_dict[key] = this_customdata[index]
-        print(f"Clicked on ({this_hovertemplate_dict})")
+        # extract the ID of the point that the user clicked on
+        this_point_id = event["points"][0]["customdata"][0]
         # load database
         db = load_database()
-        # find all documents from the experiment collection
-        documents = list(db[state.experiment].find())
-        # filter all simulation documents
-        documents = [doc for doc in documents if doc["experiment_flag"] == 0]
-        # filter the document with matching ID
-        documents = [doc for doc in documents if str(doc["_id"]) == this_point_id]
+        # find the document with matching ID from the experiment collection
+        documents = list(db[state.experiment].find({"_id": ObjectId(this_point_id)}))
         if len(documents) == 1:
-            print(f"Found database document matching ID {this_point_id}")
+            this_point_parameters = {
+                parameter: documents[0][parameter]
+                for parameter in state.parameters.keys()
+                if parameter in documents[0]
+            }
+            print(f"Clicked on data point ({this_point_parameters})")
         else:
-            print(f"Could not find database document matching ID {this_point_id}")
+            print(f"Could not find database document that matches ID {this_point_id}")
             return
         # get data directory from the document
         data_directory = documents[0]["data_directory"]
@@ -281,9 +249,12 @@ def open_image_dialog(event):
         if len(file_gif) == 1:
             # select GIF file
             file_name = file_gif[0]
-        else:
+        elif len(file_png) > 0:
             # select PNG file from last iteration
             file_name = file_png[-1]
+        else:
+            print(f"Could not find valid plot files to display")
+            return
         # set file path and verify that it exists
         file_path = os.path.join(file_directory, file_name)
         if os.path.isfile(file_path):
