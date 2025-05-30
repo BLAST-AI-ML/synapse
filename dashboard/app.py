@@ -3,6 +3,7 @@ from io import StringIO
 import numpy as np
 import os
 import pandas as pd
+import re
 import torch
 from trame.app import get_server
 from trame.assets.local import LocalFileManager
@@ -213,39 +214,81 @@ def update_on_change(**kwargs):
         )
 
 def open_image_dialog(event):
-    # extract coordinates of points that user clicked on
-    local_parameters = dict()
-    local_objectives = dict()
     try:
+        # extract the coordinates of the point that user clicked on
         this_parameter = event["points"][0]["x"]
         this_objective = event["points"][0]["y"]
+        this_customdata = event["points"][0]["customdata"]
+        this_point_id = this_customdata[0]
         hover_template = event["points"][0]["data"]["hovertemplate"]
-        for key, value in state.parameters.items():
-            local_parameters[key] = this_parameter if key in hover_template else value
-        for key, value in state.objectives.items():
-            local_objectives[key] = this_objective if key in hover_template else value
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-    print(f"Clicked on ({local_parameters}, {local_objectives})")
-    try:
+        # regex pattern to extract information from the hover_template string:
+        # - "([\w\s.]+)" matches one or more word characters, spaces, or dots,
+        #   and captures the key
+        # - "=%\{([^}]+)\}" matches the literal "=%{" followed by one or more
+        #   characters that are not "}", then "}", and captures the value inside "%{}"
+        # For example:
+        # - hover_template="TOD_fs3=%{x}<br>n_protons=%{y}<br>GVD=%{customdata[1]}<br>z_target_um=%{customdata[2]}<extra></extra>"
+        # - hover_template_dict = {"TOD_fs3": "x", "n_protons": "y", "GVD": "customdata[1]", "z_target_um": "customdata[2]"}
+        pattern = r"([\w\s.]+)=%\{([^}]+)\}"
+        matches = re.findall(pattern, hover_template)
+        hover_template_dict = dict(matches)
+        # evaluate the point coordinates based on the information extracted from the hover_template string
+        for key, value in hover_template_dict.items():
+            if value == "x":
+                hover_template_dict[key] = this_parameter
+            elif value == "y":
+                hover_template_dict[key] = this_objective
+            elif "customdata" in value:
+                # regex pattern to extract the index of the customdata component:
+                # - "(\w+)" matches one or more word characters and captures "customdata"
+                # - "\[(\d+)\]" matches the literal "[" followed by one or more digits,
+                #   then "]", and captures the index of the customdata component
+                # For example:
+                # - value = "customdata[1]"
+                # - index = 1
+                pattern = r"(\w+)\[(\d+)\]"
+                matches = re.match(pattern, value)
+                index = int(matches.group(2))
+                hover_template_dict[key] = this_customdata[index]
+        print(f"Clicked on ({hover_template_dict})")
         # load database
         db = load_database()
         # find all documents from experiment collection
         documents = list(db[state.experiment].find())
-        # filter documents
+        # filter simulation documents
         documents = [doc for doc in documents if doc["experiment_flag"] == 0]
-        for key, value in local_parameters.items():
-            documents = [doc for doc in documents if np.isclose(doc[key], value, rtol=np.finfo(np.float32).eps, atol=0.0)]
-        data_directory = documents[0]["data_directory"]
-        # TODO file_name = ...
-        print(f"Found data directory {data_directory}")
+        # filter document with matching ID
+        documents = [doc for doc in documents if str(doc["_id"]) == this_point_id]
+        if len(documents) == 1:
+            print(f"Found database document matching ID {this_point_id}")
+        else:
+            print(f"Could not find database document matching ID {this_point_id}")
+            return
+        # get data directory from the document
+        data_directory = "../diags"  # TODO documents[0]["data_directory"]
+        if not os.path.isdir(data_directory):
+            print(f"Could not find data directory {data_directory}")
+            return
+        # get file directory
+        file_directory = os.path.join(data_directory, "plots")
+        if os.path.isdir(file_directory):
+            print(f"Found file directory {file_directory}")
+        else:
+            print(f"Could not find file directory {file_directory}")
+            return
+        # TODO show animated gif instead of last iteration
+        file_list = os.listdir(file_directory)
+        file_list.sort()
+        file_list = [file for file in file_list if "iteration" in file]
+        file_name = file_list[-1]
+        file_path = os.path.join(file_directory, file_name)
+        if os.path.isfile(file_path):
+            print(f"Found file {file_path}")
         # store a URL encoded file content under a given key name
-        assets = LocalFileManager(os.getcwd())
-        #TODO assets = LocalFileManager(data_directory)
+        assets = LocalFileManager(data_directory)
         return_url = assets.url(
             key="image_key",
-            file_path="../diags/plots/iteration_21000.png",
-            #TODO file_path=os.path.join(data_directory, file_name),
+            file_path=file_path,
         )
         state.image_url = assets["image_key"]
         # trigger visibility of image dialog
