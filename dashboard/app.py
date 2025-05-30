@@ -265,7 +265,7 @@ def open_image_dialog(event):
             print(f"Could not find database document matching ID {this_point_id}")
             return
         # get data directory from the document
-        data_directory = "../diags"  # TODO documents[0]["data_directory"]
+        data_directory = documents[0]["data_directory"]
         if not os.path.isdir(data_directory):
             print(f"Could not find data directory {data_directory}")
             return
