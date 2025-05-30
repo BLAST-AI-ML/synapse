@@ -219,24 +219,24 @@ def open_image_dialog(event):
         this_objective = event["points"][0]["y"]
         this_customdata = event["points"][0]["customdata"]
         this_point_id = this_customdata[0]
-        hover_template = event["points"][0]["data"]["hovertemplate"]
-        # regex pattern to extract information from the hover_template string:
+        this_hovertemplate = event["points"][0]["data"]["hovertemplate"]
+        # regex pattern to extract information from the this_hovertemplate string:
         # - "([\w\s.]+)" matches one or more word characters, spaces, or dots,
         #   and captures the key
         # - "=%\{([^}]+)\}" matches the literal "=%{" followed by one or more
         #   characters that are not "}", then "}", and captures the value inside "%{}"
         # For example:
-        # - hover_template="TOD_fs3=%{x}<br>n_protons=%{y}<br>GVD=%{customdata[1]}<br>z_target_um=%{customdata[2]}<extra></extra>"
-        # - hover_template_dict = {"TOD_fs3": "x", "n_protons": "y", "GVD": "customdata[1]", "z_target_um": "customdata[2]"}
+        # - this_hovertemplate = "TOD_fs3=%{x}<br>n_protons=%{y}<br>GVD=%{customdata[1]}<br>z_target_um=%{customdata[2]}<extra></extra>"
+        # - this_hovertemplate_dict = {"TOD_fs3": "x", "n_protons": "y", "GVD": "customdata[1]", "z_target_um": "customdata[2]"}
         pattern = r"([\w\s.]+)=%\{([^}]+)\}"
-        matches = re.findall(pattern, hover_template)
-        hover_template_dict = dict(matches)
-        # evaluate the point coordinates based on the information extracted from the hover_template string
-        for key, value in hover_template_dict.items():
+        matches = re.findall(pattern, this_hovertemplate)
+        this_hovertemplate_dict = dict(matches)
+        # evaluate the point coordinates based on the information extracted from the this_hovertemplate string
+        for key, value in this_hovertemplate_dict.items():
             if value == "x":
-                hover_template_dict[key] = this_parameter
+                this_hovertemplate_dict[key] = this_parameter
             elif value == "y":
-                hover_template_dict[key] = this_objective
+                this_hovertemplate_dict[key] = this_objective
             elif "customdata" in value:
                 # regex pattern to extract the index of the customdata component:
                 # - "(\w+)" matches one or more word characters and captures "customdata"
@@ -248,8 +248,8 @@ def open_image_dialog(event):
                 pattern = r"(\w+)\[(\d+)\]"
                 matches = re.match(pattern, value)
                 index = int(matches.group(2))
-                hover_template_dict[key] = this_customdata[index]
-        print(f"Clicked on ({hover_template_dict})")
+                this_hovertemplate_dict[key] = this_customdata[index]
+        print(f"Clicked on ({this_hovertemplate_dict})")
         # load database
         db = load_database()
         # find all documents from the experiment collection
