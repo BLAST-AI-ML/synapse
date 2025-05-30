@@ -1,5 +1,6 @@
 import copy
 from io import StringIO
+import numpy as np
 import os
 import pandas as pd
 import torch
@@ -213,29 +214,39 @@ def update_on_change(**kwargs):
 
 def open_image_dialog(event):
     # extract coordinates of points that user clicked on
-    x = event["points"][0]["x"]
-    y = event["points"][0]["y"]
-    x_label = "x"
-    y_label = "y"
+    local_parameters = dict()
+    local_objectives = dict()
     try:
-        parameters_list = state.parameters.keys()
-        objectives_list = state.objectives.keys()
+        this_parameter = event["points"][0]["x"]
+        this_objective = event["points"][0]["y"]
         hover_template = event["points"][0]["data"]["hovertemplate"]
-        try:
-            x_label = [key for key in parameters_list if key in hover_template][0]
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-        try:
-            y_label = [key for key in objectives_list if key in hover_template][0]
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+        for key, value in state.parameters.items():
+            local_parameters[key] = this_parameter if key in hover_template else value
+        for key, value in state.objectives.items():
+            local_objectives[key] = this_objective if key in hover_template else value
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-    print(f"Clicked on ({x_label}={x}, {y_label}={y})")
+    print(f"Clicked on ({local_parameters}, {local_objectives})")
     try:
+        # load database
+        db = load_database()
+        # find all documents from experiment collection
+        documents = list(db[state.experiment].find())
+        # filter documents
+        documents = [doc for doc in documents if doc["experiment_flag"] == 0]
+        for key, value in local_parameters.items():
+            documents = [doc for doc in documents if np.isclose(doc[key], value, rtol=np.finfo(np.float32).eps, atol=0.0)]
+        data_directory = documents[0]["data_directory"]
+        # TODO file_name = ...
+        print(f"Found data directory {data_directory}")
         # store a URL encoded file content under a given key name
         assets = LocalFileManager(os.getcwd())
-        return_url = assets.url("image_key", "../diags/plots/iteration_21000.png")
+        #TODO assets = LocalFileManager(data_directory)
+        return_url = assets.url(
+            key="image_key",
+            file_path="../diags/plots/iteration_21000.png",
+            #TODO file_path=os.path.join(data_directory, file_name),
+        )
         state.image_url = assets["image_key"]
         # trigger visibility of image dialog
         state.dialog_visible = True
