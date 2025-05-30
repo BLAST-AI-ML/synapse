@@ -253,11 +253,11 @@ def open_image_dialog(event):
         print(f"Clicked on ({hover_template_dict})")
         # load database
         db = load_database()
-        # find all documents from experiment collection
+        # find all documents from the experiment collection
         documents = list(db[state.experiment].find())
-        # filter simulation documents
+        # filter all simulation documents
         documents = [doc for doc in documents if doc["experiment_flag"] == 0]
-        # filter document with matching ID
+        # filter the document with matching ID
         documents = [doc for doc in documents if str(doc["_id"]) == this_point_id]
         if len(documents) == 1:
             print(f"Found database document matching ID {this_point_id}")
