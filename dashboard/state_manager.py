@@ -29,4 +29,4 @@ def initialize_state():
     state.perlmutter_status = "Unavailable"
     # simulation plots in interactive dialog
     state.image_url = None
-    state.dialog_visible = False
+    state.image_dialog = False

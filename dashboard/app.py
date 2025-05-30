@@ -300,12 +300,13 @@ def open_image_dialog(event):
         )
         state.image_url = assets["image_key"]
         # trigger visibility of image dialog
-        state.dialog_visible = True
+        state.image_dialog = True
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
 def close_image_dialog(**kwargs):
-    state.dialog_visible = False
+    state.image_url = None
+    state.image_dialog = False
 
 # -----------------------------------------------------------------------------
 # GUI components
@@ -438,13 +439,14 @@ def gui_setup():
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("GitHub")
         # interactive dialog for simulation plots
-        with vuetify.VDialog(v_model=("dialog_visible",), max_width="600"):
+        with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
             with vuetify.VCard():
                 with vuetify.VCardTitle("Simulation Plots"):
                     vuetify.VSpacer()
                     with vuetify.VBtn(icon=True, click=close_image_dialog):
                         vuetify.VIcon("mdi-close")
                     vuetify.VImg(
+                        v_if=("image_url",),
                         src=("image_url",),
                         contain=True,
                     )
