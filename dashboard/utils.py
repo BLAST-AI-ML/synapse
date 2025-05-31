@@ -142,6 +142,8 @@ def plot(model_manager):
                 y=objective_name,
                 opacity=df_copy_filtered["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
+                hover_data=list(state.parameters.keys()),
+                custom_data="_id",
             )
             # do now show default legend affected by opacity map
             exp_fig["data"][0]["showlegend"] = False
@@ -244,5 +246,5 @@ def plot(model_manager):
             row=this_row,
             col=this_col,
         )
-    fig.update_layout()
+    fig.update_layout(clickmode="event")
     return fig
