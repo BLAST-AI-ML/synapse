@@ -1,9 +1,11 @@
+from bson.objectid import ObjectId
 import copy
 from io import StringIO
 import os
 import pandas as pd
 import torch
 from trame.app import get_server
+from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify2 as vuetify
@@ -28,11 +30,13 @@ model_type_list = [
     "Gaussian Process",
     "Neural Network",
 ]
+
 # dict of auxiliary model types tags
 model_type_tag_dict = {
     "Gaussian Process": "GP",
     "Neural Network": "NN",
 }
+
 # list of all available experiments (TODO parse automatically)
 experiment_list = [
     "acave",
@@ -208,6 +212,71 @@ def update_on_change(**kwargs):
             reset_gui_layout=False,
         )
 
+def open_image_dialog(event):
+    try:
+        # extract the ID of the point that the user clicked on
+        this_point_id = event["points"][0]["customdata"][0]
+        # load database
+        db = load_database()
+        # find the document with matching ID from the experiment collection
+        documents = list(db[state.experiment].find({"_id": ObjectId(this_point_id)}))
+        if len(documents) == 1:
+            this_point_parameters = {
+                parameter: documents[0][parameter]
+                for parameter in state.parameters.keys()
+                if parameter in documents[0]
+            }
+            print(f"Clicked on data point ({this_point_parameters})")
+        else:
+            print(f"Could not find database document that matches ID {this_point_id}")
+            return
+        # get data directory from the document
+        data_directory = documents[0]["data_directory"]
+        if not os.path.isdir(data_directory):
+            print(f"Could not find data directory {data_directory}")
+            return
+        # get file directory
+        file_directory = os.path.join(data_directory, "plots")
+        if not os.path.isdir(file_directory):
+            print(f"Could not find file directory {file_directory}")
+            return
+        # find plot file(s) to display
+        file_list = os.listdir(file_directory)
+        file_list.sort()
+        file_gif = [file for file in file_list if file.endswith(".gif")]
+        file_png = [file for file in file_list if file.endswith(".png") and "iteration" in file]
+        if len(file_gif) == 1:
+            # select GIF file
+            file_name = file_gif[0]
+        elif len(file_png) > 0:
+            # select PNG file from last iteration
+            file_name = file_png[-1]
+        else:
+            print(f"Could not find valid plot files to display")
+            return
+        # set file path and verify that it exists
+        file_path = os.path.join(file_directory, file_name)
+        if os.path.isfile(file_path):
+            print(f"Found file {file_path}")
+        else:
+            print(f"Could not find file {file_path}")
+            return
+        # store a URL encoded file content under a given key name
+        assets = LocalFileManager(data_directory)
+        return_url = assets.url(
+            key="image_key",
+            file_path=file_path,
+        )
+        state.image_url = assets["image_key"]
+        # trigger visibility of image dialog
+        state.image_dialog = True
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+def close_image_dialog(**kwargs):
+    state.image_url = None
+    state.image_dialog = False
+
 # -----------------------------------------------------------------------------
 # GUI components
 # -----------------------------------------------------------------------------
@@ -218,9 +287,11 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # parameters control card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.card()
+                # model control card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -241,6 +312,7 @@ def home_route():
                                             classes="mt-1",
                                             color="primary",
                                         )
+                # plots control card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         with vuetify.VCard():
@@ -271,6 +343,7 @@ def home_route():
                                                     style="width: 80px;",
                                                     type="number",
                                                 )
+            # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
@@ -278,6 +351,7 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
+                                click=(open_image_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
 
@@ -287,6 +361,7 @@ def nersc_route():
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # Superfacility API card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_sfapi_card()
@@ -332,6 +407,18 @@ def gui_setup():
                         vuetify.VIcon("mdi-github")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("GitHub")
+        # interactive dialog for simulation plots
+        with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
+            with vuetify.VCard():
+                with vuetify.VCardTitle("Simulation Plots"):
+                    vuetify.VSpacer()
+                    with vuetify.VBtn(icon=True, click=close_image_dialog):
+                        vuetify.VIcon("mdi-close")
+                    vuetify.VImg(
+                        v_if=("image_url",),
+                        src=("image_url",),
+                        contain=True,
+                    )
 
 # -----------------------------------------------------------------------------
 # Main
