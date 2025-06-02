@@ -62,9 +62,7 @@ def load_data():
     state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
 def load_config_file():
-    config_dir_local = os.path.join(os.getcwd(), "config")
-    config_dir_docker = os.path.join(os.getcwd(), "dashboard", "config")
-    config_dir = config_dir_local if os.path.exists(config_dir_local) else config_dir_docker
+    config_dir = os.path.join(os.getcwd(), "config")
     config_file = os.path.join(config_dir, "variables.yml")
     if not os.path.isfile(config_file):
         raise ValueError(f"Configuration file {config_file} not found")
@@ -74,9 +72,7 @@ def load_model_file():
     config_file = load_config_file()
     model_type_tag = model_type_tag_dict[state.model_type]
     # find model directory in the local file system
-    model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
-    model_dir_docker = os.path.join(os.getcwd(), "ml", f"{model_type_tag}_training", "saved_models")
-    model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
+    model_dir = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
     if not os.path.isfile(model_file):
         raise ValueError(f"Model file {model_file} not found")
@@ -391,7 +387,7 @@ def gui_setup():
         with layout.drawer:
             with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
                 vuetify.VSubheader("")
-                # Home route    
+                # Home route
                 with vuetify.VListItem(to="/"):
                     with vuetify.VListItemIcon():
                         vuetify.VIcon("mdi-home")
@@ -403,7 +399,7 @@ def gui_setup():
                         vuetify.VIcon("mdi-lan-connect")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
-                # GitHub route    
+                # GitHub route
                 with vuetify.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
                     with vuetify.VListItemIcon():
                         vuetify.VIcon("mdi-github")

@@ -9,10 +9,10 @@
 FROM continuumio/miniconda3:latest
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /app/dashboard
 
 # Copy the current directory contents into the container at /app
-COPY --exclude=*.pem . /app
+COPY --exclude=*.pem . /app/dashboard
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
@@ -31,7 +31,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 8080
 
 # Run app.py when the container launches
-CMD ["python", "-u", "dashboard/app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
+CMD ["python", "-u", "app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
 # The URL http://0.0.0.0:8080/ is used by the application to indicate that
 # it is listening on all network interfaces inside the container, but you
 # should access it via http://localhost:8080/ from your host machine)
