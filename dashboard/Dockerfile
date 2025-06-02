@@ -9,7 +9,7 @@
 FROM continuumio/miniconda3:latest
 
 # Set the working directory in the container
-WORKDIR /app
+WORKDIR /app/dashboard
 
 # Copy the current directory contents into the container at /app
 COPY --exclude=*.pem . /app
