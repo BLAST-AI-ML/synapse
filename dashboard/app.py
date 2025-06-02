@@ -62,7 +62,7 @@ def load_data():
     state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
 def load_config_file():
-    config_dir = os.path.join(os.getcwd(), "config")
+    config_dir = os.path.join(os.getcwd(), "dashboard", "config")
     config_file = os.path.join(config_dir, "variables.yml")
     if not os.path.isfile(config_file):
         raise ValueError(f"Configuration file {config_file} not found")
