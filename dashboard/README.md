@@ -59,11 +59,11 @@
 4. Run the GUI from the `dashboard/` folder:
     - Via the web browser interface:
     ```console
-    python app.py --port 8080
+    python -u app.py --port 8080
     ```
     - As a desktop application:
     ```console
-    python app.py --app
+    python -u app.py --app
     ```
     If you run the GUI as a desktop application, make sure to set the following environment variable first:
     ```console
