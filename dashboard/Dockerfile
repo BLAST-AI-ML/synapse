@@ -12,7 +12,7 @@ FROM continuumio/miniconda3:latest
 WORKDIR /app/dashboard
 
 # Copy the current directory contents into the container at /app
-COPY --exclude=*.pem . /app
+COPY --exclude=*.pem . /app/dashboard
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
