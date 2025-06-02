@@ -62,7 +62,9 @@ def load_data():
     state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
 def load_config_file():
-    config_dir = os.path.join(os.getcwd(), "dashboard", "config")
+    config_dir_local = os.path.join(os.getcwd(), "config")
+    config_dir_docker = os.path.join(os.getcwd(), "dashboard", "config")
+    config_dir = config_dir_local if os.path.exists(config_dir_local) else config_dir_docker
     config_file = os.path.join(config_dir, "variables.yml")
     if not os.path.isfile(config_file):
         raise ValueError(f"Configuration file {config_file} not found")
@@ -73,7 +75,7 @@ def load_model_file():
     model_type_tag = model_type_tag_dict[state.model_type]
     # find model directory in the local file system
     model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
-    model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
+    model_dir_docker = os.path.join(os.getcwd(), "ml", f"{model_type_tag}_training", "saved_models")
     model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
     if not os.path.isfile(model_file):
