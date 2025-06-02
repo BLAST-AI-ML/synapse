@@ -18,17 +18,20 @@ COPY --exclude=*.pem . /app
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name gui gui-lock.yml
 
-# Activate env in interactive and CMD use
+# Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
-RUN echo "source entrypoint.sh" >> ~/.bashrc
+
+# Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
+
+# Define the entrypoint to activate the environment in interactive and CMD use
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
 # Run app.py when the container launches
-CMD ["python", "-u", "app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
+CMD ["python", "-u", "dashboard/app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
 # The URL http://0.0.0.0:8080/ is used by the application to indicate that
 # it is listening on all network interfaces inside the container, but you
 # should access it via http://localhost:8080/ from your host machine)
