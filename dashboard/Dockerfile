@@ -28,7 +28,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 8080
 
 # Run app.py when the container launches
-CMD ["python", "app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
+CMD ["python", "-u", "app.py", "--timeout", "0", "--port", "8080", "--host", "0.0.0.0", "--server"]
 # The URL http://0.0.0.0:8080/ is used by the application to indicate that
 # it is listening on all network interfaces inside the container, but you
 # should access it via http://localhost:8080/ from your host machine)
