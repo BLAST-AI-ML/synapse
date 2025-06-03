@@ -3,6 +3,7 @@ import copy
 from io import StringIO
 import os
 import pandas as pd
+import re
 import torch
 from trame.app import get_server
 from trame.assets.local import LocalFileManager
@@ -230,6 +231,16 @@ def open_image_dialog(event):
             return
         # get data directory from the document
         data_directory = documents[0]["data_directory"]
+        # replace the absolute path preceding "simulation_data"
+        # with the work directory "/app" set in the Dockerfile:
+        # - "^(.*)" captures everything before "simulation_data"
+        # - "(.*)$" captures everything after "simulation_data"
+        # - "\g<2>" inserts the captured part after "simulation_data"
+        data_directory = re.sub(
+            pattern=r"^(.*)simulation_data/(.*)$",
+            repl=r"/app/simulation_data/\g<2>",
+            string=data_directory,
+        )
         if not os.path.isdir(data_directory):
             print(f"Could not find data directory {data_directory}")
             return
