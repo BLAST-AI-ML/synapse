@@ -10,6 +10,7 @@ import torch
 import yaml
 from state_manager import state
 
+
 def read_variables(config_file):
     print("Reading configuration file...")
     # read configuration file
@@ -24,6 +25,7 @@ def read_variables(config_file):
     output_variables = config_spec["output_variables"]
     return (input_variables, output_variables)
 
+
 def metadata_match(config_file, model_file):
     print("Checking model consistency...")
     match = False
@@ -33,7 +35,10 @@ def metadata_match(config_file, model_file):
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
     # load configuration input variables list
-    config_vars = [value["name"] for value in config_dict[state.experiment]["input_variables"].values()]
+    config_vars = [
+        value["name"]
+        for value in config_dict[state.experiment]["input_variables"].values()
+    ]
     config_vars.sort()
     # read model file
     with open(model_file) as f:
@@ -44,10 +49,11 @@ def metadata_match(config_file, model_file):
     model_vars = list(model_dict["input_variables"].keys())
     model_vars.sort()
     # check if configuration list and model list match
-    match = (config_vars == model_vars)
+    match = config_vars == model_vars
     if not match:
-        print(f"Input variables in configuration file and model file do not match")
+        print("Input variables in configuration file and model file do not match")
     return match
+
 
 def load_database():
     print("Loading database...")
@@ -86,6 +92,7 @@ def load_database():
     )[db_name]
     return db
 
+
 # plot experimental, simulation, and ML data
 def plot(model_manager):
     print("Plotting...")
@@ -106,12 +113,11 @@ def plot(model_manager):
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
-    parameters_key_order_list = list(parameters.keys())
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
-        this_row = i+1
+        this_row = i + 1
         this_col = 1
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # figure trace from CSV data
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
@@ -121,18 +127,28 @@ def plot(model_manager):
             # (e.g., simulation data set does not include GVD)
             if key not in df_copy.columns:
                 continue
-            df_copy["distance"] = 0.
+            df_copy["distance"] = 0.0
             # loop over all inputs except the current one
-            for subkey in [subkey for subkey in parameters.keys() if (subkey != key and subkey in df_copy.columns)]:
+            for subkey in [
+                subkey
+                for subkey in parameters.keys()
+                if (subkey != key and subkey in df_copy.columns)
+            ]:
                 pname_loc = subkey
                 pval_loc = parameters[subkey]
                 pmin_loc = parameters_min[subkey]
                 pmax_loc = parameters_max[subkey]
-                df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
+                df_copy["distance"] += (
+                    (df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc)
+                ) ** 2
             df_copy["distance"] = np.sqrt(df_copy["distance"])
             # normalize distance in [0,1] and compute opacity
             df_copy["distance"] = df_copy["distance"]
-            df_copy["opacity"] = np.where(df_copy["distance"] > state.opacity, 0., 1. - df_copy["distance"]/state.opacity)
+            df_copy["opacity"] = np.where(
+                df_copy["distance"] > state.opacity,
+                0.0,
+                1.0 - df_copy["distance"] / state.opacity,
+            )
             # filter out data with zero opacity
             df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
             # scatter plot with opacity
@@ -148,11 +164,11 @@ def plot(model_manager):
             # do now show default legend affected by opacity map
             exp_fig["data"][0]["showlegend"] = False
             # create custom legend empty trace (i==0 only, avoid repetition)
-            if i==0:
+            if i == 0:
                 legend = go.Scatter(
                     x=[None],
                     y=[None],
-                    mode='markers',
+                    mode="markers",
                     marker=dict(color=df_cds[df_count], opacity=1),
                     showlegend=True,
                     name=df_leg[df_count],
@@ -166,7 +182,7 @@ def plot(model_manager):
                 row=this_row,
                 col=this_col,
             )
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # figure trace from model data
         if model_manager.avail():
             input_dict_loc = dict()
@@ -186,7 +202,7 @@ def plot(model_manager):
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
                 y=upper,
-                line=dict(color='orange', width=0.3),
+                line=dict(color="orange", width=0.3),
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -199,9 +215,9 @@ def plot(model_manager):
             lower_bound = go.Scatter(
                 x=input_dict_loc[key],
                 y=lower,
-                fill='tonexty',  # fill area between this trace and the next one
-                fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
-                line=dict(color='orange', width=0.3),
+                fill="tonexty",  # fill area between this trace and the next one
+                fillcolor="rgba(255,165,0,0.25)",  # orange with alpha
+                line=dict(color="orange", width=0.3),
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -216,7 +232,7 @@ def plot(model_manager):
                 y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
-                showlegend=(True if i==0 else False),
+                showlegend=(True if i == 0 else False),
             )
             # add trace
             fig.add_trace(
@@ -224,7 +240,7 @@ def plot(model_manager):
                 row=this_row,
                 col=this_col,
             )
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
             x=parameters[key],
@@ -232,7 +248,7 @@ def plot(model_manager):
             row=this_row,
             col=this_col,
         )
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # figures style
         fig.update_xaxes(
             exponentformat="e",
