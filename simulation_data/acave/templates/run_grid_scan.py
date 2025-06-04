@@ -4,6 +4,7 @@ from optimas.core import Parameter, VaryingParameter, Objective
 from optimas.generators import GridSamplingGenerator
 from optimas.evaluators import TemplateEvaluator,FunctionEvaluator,ChainEvaluator
 from optimas.explorations import Exploration
+import argparse
 
 # Specify the analysis function.
 def analysis_func_main(work_dir, output_params):
@@ -40,7 +41,7 @@ ev_main = TemplateEvaluator(
     analysis_func=analysis_func_main,
     executable="../templates/warpx.rz",
     n_gpus=12,  # GPUs per individual evaluation
-    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL, 
+    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",
@@ -53,15 +54,17 @@ ev_chain = ChainEvaluator(
 )
 
 # Create exploration.
-exp = Exploration(
-    generator=gen,
-    evaluator=ev_chain,
-    max_evals=n_total,
-    sim_workers=sim_workers,
-    run_async=True,  # with the GridSamplingGenerator it should not matter if we run in batches,
-)
-
-# To safely perform exploration, run it in the block below (this is needed
-# for some flavours of multiprocessing, namely spawn and forkserver)
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run parameter scan for A-cave experiment")
+    parser.add_argument('--exploration_dir_path', type=str, required=True, help='Path to the exploration directory')
+    args = parser.parse_args()
+    exploration_dir_path = args.exploration_dir_path
+    exp = Exploration(
+        generator=gen,
+        evaluator=ev_chain,
+        max_evals=n_total,
+        sim_workers=sim_workers,
+        exploration_dir_path=exploration_dir_path,
+        run_async=True,  # with the GridSamplingGenerator it should not matter if we run in batches,
+    )
     exp.run()
