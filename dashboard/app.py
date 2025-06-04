@@ -1,3 +1,8 @@
+from output import setup_output
+
+# set up output redirection to both console and file
+setup_output("logs.txt")
+
 from bson.objectid import ObjectId
 import copy
 from io import StringIO
@@ -48,6 +53,17 @@ experiment_list = [
 # -----------------------------------------------------------------------------
 # Functions and callbacks
 # -----------------------------------------------------------------------------
+
+def read_logs():
+    try:
+        # read logs file and store its content in the state variable
+        with open("logs.txt", "r") as file:
+            content = file.read()
+        state.logs = content
+        #state.dirty("logs")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
 
 def load_data():
     print("Loading data from database...")
@@ -122,6 +138,7 @@ def update(
     reset_plots=True,
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
+    reset_gui_route_logs=True,
     reset_gui_layout=True,
     **kwargs,
 ):
@@ -154,6 +171,9 @@ def update(
     # reset GUI NERSC route
     if reset_gui_route_nersc:
         nersc_route()
+    # reset GUI logs route
+    if reset_gui_route_logs:
+        logs_route()
     # reset GUI layout
     if reset_gui_layout:
         gui_setup()
@@ -161,6 +181,8 @@ def update(
     if reset_plots:
         fig = plot(mod_manager)
         ctrl.figure_update(fig)
+    # read and update logs
+    read_logs()
 
 @state.change("experiment")
 def update_on_change_experiment(**kwargs):
@@ -174,6 +196,7 @@ def update_on_change_experiment(**kwargs):
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
+            reset_gui_route_logs=False,
             reset_gui_layout=False,
         )
 
@@ -189,6 +212,7 @@ def update_on_change(**kwargs):
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
+            reset_gui_route_logs=False,
             reset_gui_layout=False,
         )
 
@@ -208,6 +232,7 @@ def update_on_change(**kwargs):
             reset_plots=True,
             reset_gui_route_home=False,
             reset_gui_route_nersc=False,
+            reset_gui_route_logs=False,
             reset_gui_layout=False,
         )
 
@@ -375,6 +400,19 @@ def nersc_route():
                     with vuetify.VCol():
                         load_sfapi_card()
 
+# logs route
+def logs_route():
+    print("Setting logs route...")
+    with RouterViewLayout(server, "/logs"):
+        with vuetify.VRow():
+            with vuetify.VCol():
+                vuetify.VTextarea(
+                    v_model=("logs",),
+                    readonly=True,
+                    auto_grow=True,
+                    style="font-family: monospace;",
+                )
+
 # GUI layout
 def gui_setup():
     print("Setting GUI layout...")
@@ -410,6 +448,12 @@ def gui_setup():
                         vuetify.VIcon("mdi-lan-connect")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
+                # Logs route
+                with vuetify.VListItem(to="/logs"):
+                    with vuetify.VListItemIcon():
+                        vuetify.VIcon("mdi-console")
+                    with vuetify.VListItemContent():
+                        vuetify.VListItemTitle("Logs")
                 # GitHub route
                 with vuetify.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
                     with vuetify.VListItemIcon():

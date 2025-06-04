@@ -30,3 +30,5 @@ def initialize_state():
     # simulation plots in interactive dialog
     state.image_url = None
     state.image_dialog = False
+    # logs
+    state.logs = None
