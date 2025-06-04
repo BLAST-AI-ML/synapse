@@ -10,6 +10,7 @@ from matplotlib.gridspec import GridSpec
 from openpmd_viewer.addons import LpaDiagnostics
 from scipy.constants import c
 from datetime import datetime
+from PIL import Image
 
 try:
     from mip4py import MPI
@@ -117,6 +118,17 @@ def analyze_simulation():
 
     plt.figure(figsize=(8, 8))
     ts.iterate( visualize_iteration )
+
+    # Load images and convert to GIF
+    images = [Image.open('diags/plots/iteration_%05d.png' % iteration) for iteration in ts.iterations]
+    images[0].save(
+        "diags/plots/animation.gif",
+        save_all=True,
+        append_images=images[1:],
+        duration=200,  # duration per frame in ms
+        loop=0         # loop forever
+    )
+    print("animation.gif created successfully!")
 
 
 if __name__ == '__main__':
