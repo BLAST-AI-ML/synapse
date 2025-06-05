@@ -14,7 +14,7 @@ from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
-from utils import read_variables, metadata_match, load_database, plot
+from utils import load_experiments, load_database, load_data, load_variables, plot
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -30,66 +30,12 @@ model_type_list = [
     "Neural Network",
 ]
 
-# dict of auxiliary model types tags
-model_type_tag_dict = {
-    "Gaussian Process": "GP",
-    "Neural Network": "NN",
-}
-
-# list of all available experiments (TODO parse automatically)
-experiment_list = [
-    "acave",
-    "ip2",
-    "qed_ip2",
-]
+# list of available experiments
+experiment_list = load_experiments()
 
 # -----------------------------------------------------------------------------
 # Functions and callbacks
 # -----------------------------------------------------------------------------
-
-
-def load_data():
-    print("Loading data from database...")
-    # load database
-    db = load_database()
-    # find all documents from experiment collection
-    documents = list(db[state.experiment].find())
-    # separate experiment and simulation documents
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes and serialize to JSON strings
-    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
-
-
-def load_config_file():
-    config_dir = os.path.join(os.getcwd(), "config")
-    config_file = os.path.join(config_dir, "variables.yml")
-    if not os.path.isfile(config_file):
-        raise ValueError(f"Configuration file {config_file} not found")
-    return config_file
-
-
-def load_model_file():
-    config_file = load_config_file()
-    model_type_tag = model_type_tag_dict[state.model_type]
-    # find model directory in the local file system
-    model_dir = os.path.join(
-        os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models"
-    )
-    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-    if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
-        model_file = None
-    return model_file
-
-
-def load_variables():
-    config_file = load_config_file()
-    # load information about input and output variables from the configuration file
-    input_variables, output_variables = read_variables(config_file)
-    return (input_variables, output_variables)
 
 
 def calibrate_data():
@@ -139,8 +85,7 @@ def update(
     load_data()
     # reset model
     if reset_model:
-        model_file = load_model_file()
-        mod_manager = ModelManager(model_file)
+        mod_manager = ModelManager()
     # load input and output variables
     input_variables, output_variables = load_variables()
     # reset parameters
