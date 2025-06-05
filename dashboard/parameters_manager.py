@@ -3,8 +3,8 @@ from trame.widgets import vuetify2 as vuetify
 
 from state_manager import state
 
-class ParametersManager:
 
+class ParametersManager:
     def __init__(self, model, input_variables):
         print("Initializing parameters manager...")
         # save model
@@ -72,7 +72,7 @@ class ParametersManager:
                     for key in state.parameters.keys():
                         pmin = state.parameters_min[key]
                         pmax = state.parameters_max[key]
-                        step = (pmax - pmin) / 100.
+                        step = (pmax - pmin) / 100.0
                         # create a row for the parameter label
                         with vuetify.VRow():
                             vuetify.VSubheader(key)
