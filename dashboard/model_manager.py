@@ -5,10 +5,10 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from state_manager import state
 
-class ModelManager:
 
+class ModelManager:
     def __init__(self, model_data):
-        print(f"Initializing model manager...")
+        print("Initializing model manager...")
         if model_data is None:
             self.__model = None
         else:
@@ -49,7 +49,9 @@ class ModelManager:
             if self.__is_neural_network:
                 # expected only one value
                 if len(output_dict.values()) != 1:
-                    raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
+                    raise ValueError(
+                        f"Expected 1 output value, but found {len(output_dict.values())}"
+                    )
                 # compute mean and mean error
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
@@ -90,7 +92,9 @@ class ModelManager:
             # define parameters bounds for optimization
             parameters_bounds = []
             for key in state.parameters.keys():
-                parameters_bounds.append((state.parameters_min[key], state.parameters_max[key]))
+                parameters_bounds.append(
+                    (state.parameters_min[key], state.parameters_max[key])
+                )
             # optimize model (maximize output value)
             res = minimize(
                 fun=self.model_wrapper,
