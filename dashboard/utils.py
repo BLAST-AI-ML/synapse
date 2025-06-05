@@ -10,19 +10,74 @@ import torch
 import yaml
 from state_manager import state
 
-def read_variables(config_file):
+def load_config_file():
     print("Reading configuration file...")
+    # find configuration file in the local file system
+    config_dir = os.path.join(os.getcwd(), "config")
+    config_file = os.path.join(config_dir, "variables.yml")
+    if not os.path.isfile(config_file):
+        raise ValueError(f"Configuration file {config_file} not found")
+    return config_file
+
+def load_config_dict():
+    print("Loading configuration dictionary...")
+    config_file = load_config_file()
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
+    return config_dict
+
+def load_model_file():
+    print("Reading model file...")
+    config_file = load_config_file()
+    # dictionary of auxiliary model types tags
+    model_type_tag_dict = {
+        "Gaussian Process": "GP",
+        "Neural Network": "NN",
+    }
+    model_type_tag = model_type_tag_dict[state.model_type]
+    # find model file in the local file system
+    model_dir = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
+    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+    if not os.path.isfile(model_file):
+        raise ValueError(f"Model file {model_file} not found")
+    if not metadata_match(config_file, model_file):
+        model_file = None
+    return model_file
+
+def load_experiments():
+    print("Reading experiments from configuration file...")
+    # load configuration dictionary
+    config_dict = load_config_dict()
+    # read list of available experiments from higher-level keys
+    experiment_list = list(config_dict.keys())
+    return experiment_list
+
+def load_variables():
+    print("Reading input/output variables from configuration file...")
+    # load configuration dictionary
+    config_dict = load_config_dict()
     config_spec = config_dict[state.experiment]
     # dictionary of input variables (parameters)
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
     return (input_variables, output_variables)
+
+def load_data():
+    print("Loading data from database...")
+    # load database
+    db = load_database()
+    # find all documents from experiment collection
+    documents = list(db[state.experiment].find())
+    # separate experiment and simulation documents
+    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
+    # load pandas dataframes and serialize to JSON strings
+    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
+    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
 
 def metadata_match(config_file, model_file):
     print("Checking model consistency...")

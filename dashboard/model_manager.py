@@ -4,12 +4,14 @@ import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from state_manager import state
+from utils import load_model_file
 
 class ModelManager:
 
-    def __init__(self, model_data):
+    def __init__(self):
         print(f"Initializing model manager...")
-        if model_data is None:
+        model_file = load_model_file()
+        if model_file is None:
             self.__model = None
         else:
             # save model and model type
@@ -18,10 +20,10 @@ class ModelManager:
             try:
                 if state.model_type == "Neural Network":
                     self.__is_neural_network = True
-                    self.__model = TorchModel(model_data)
+                    self.__model = TorchModel(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
-                    self.__model = GPModel.from_yaml(model_data)
+                    self.__model = GPModel.from_yaml(model_file)
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
