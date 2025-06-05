@@ -1,7 +1,7 @@
 from state_manager import state
 
-class ObjectivesManager:
 
+class ObjectivesManager:
     def __init__(self, model, output_variables):
         print("Initializing objectives manager...")
         # FIXME generalize for multiple objectives

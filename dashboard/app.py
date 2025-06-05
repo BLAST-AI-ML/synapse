@@ -1,11 +1,9 @@
 from bson.objectid import ObjectId
-import copy
 from io import StringIO
 import os
 import pandas as pd
 import re
 import torch
-from trame.app import get_server
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
@@ -39,6 +37,7 @@ experiment_list = load_experiments()
 # Functions and callbacks
 # -----------------------------------------------------------------------------
 
+
 def calibrate_data():
     print("Calibrating data...")
     global mod_manager
@@ -66,6 +65,7 @@ def calibrate_data():
         sim_data[objective_name] = objective_tensor.numpy()[0]
         # serialize simulation data to JSON string
         state.sim_data_serialized = sim_data.to_json(default_handler=str)
+
 
 def update(
     reset_model=True,
@@ -113,6 +113,7 @@ def update(
         fig = plot(mod_manager)
         ctrl.figure_update(fig)
 
+
 @state.change("experiment")
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
@@ -128,8 +129,9 @@ def update_on_change_experiment(**kwargs):
             reset_gui_layout=False,
         )
 
+
 @state.change("model_type")
-def update_on_change(**kwargs):
+def update_on_change_model(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print("Model type changed...")
@@ -143,12 +145,13 @@ def update_on_change(**kwargs):
             reset_gui_layout=False,
         )
 
+
 @state.change(
     "parameters",
     "opacity",
     "calibrate",
 )
-def update_on_change(**kwargs):
+def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print("Parameters, opacity, or calibration changed...")
@@ -161,6 +164,7 @@ def update_on_change(**kwargs):
             reset_gui_route_nersc=False,
             reset_gui_layout=False,
         )
+
 
 def open_image_dialog(event):
     try:
@@ -204,7 +208,9 @@ def open_image_dialog(event):
         file_list = os.listdir(file_directory)
         file_list.sort()
         file_gif = [file for file in file_list if file.endswith(".gif")]
-        file_png = [file for file in file_list if file.endswith(".png") and "iteration" in file]
+        file_png = [
+            file for file in file_list if file.endswith(".png") and "iteration" in file
+        ]
         if len(file_gif) == 1:
             # select GIF file
             file_name = file_gif[0]
@@ -212,7 +218,7 @@ def open_image_dialog(event):
             # select PNG file from last iteration
             file_name = file_png[-1]
         else:
-            print(f"Could not find valid plot files to display")
+            print("Could not find valid plot files to display")
             return
         # set file path and verify that it exists
         file_path = os.path.join(file_directory, file_name)
@@ -223,7 +229,7 @@ def open_image_dialog(event):
             return
         # store a URL encoded file content under a given key name
         assets = LocalFileManager(data_directory)
-        return_url = assets.url(
+        assets.url(
             key="image_key",
             file_path=file_path,
         )
@@ -233,13 +239,16 @@ def open_image_dialog(event):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
 def close_image_dialog(**kwargs):
     state.image_url = None
     state.image_dialog = False
 
+
 # -----------------------------------------------------------------------------
 # GUI components
 # -----------------------------------------------------------------------------
+
 
 # home route
 def home_route():
@@ -307,13 +316,16 @@ def home_route():
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
-                        with vuetify.VContainer(style=f"height: {400*len(state.parameters)}px;"):
+                        with vuetify.VContainer(
+                            style=f"height: {400 * len(state.parameters)}px;"
+                        ):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
                                 click=(open_image_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
+
 
 # NERSC route
 def nersc_route():
@@ -325,6 +337,7 @@ def nersc_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_sfapi_card()
+
 
 # GUI layout
 def gui_setup():
@@ -362,7 +375,9 @@ def gui_setup():
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
                 # GitHub route
-                with vuetify.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
+                with vuetify.VListItem(
+                    click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"
+                ):
                     with vuetify.VListItemIcon():
                         vuetify.VIcon("mdi-github")
                     with vuetify.VListItemContent():
@@ -379,6 +394,7 @@ def gui_setup():
                         src=("image_url",),
                         contain=True,
                     )
+
 
 # -----------------------------------------------------------------------------
 # Main
