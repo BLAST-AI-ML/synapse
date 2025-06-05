@@ -27,3 +27,4 @@ export OMP_NUM_THREADS=1
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
 srun python /global/cfs/cdirs/m558/superfacility/git/ml/NN_training/mongo_NN.py
+srun python /global/cfs/cdirs/m558/superfacility/git/ml/GP_training/mongo_GP.py
