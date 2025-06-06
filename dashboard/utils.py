@@ -1,4 +1,3 @@
-from io import StringIO
 import numpy as np
 import os
 import pandas as pd
@@ -84,8 +83,9 @@ def load_data():
     exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
     # load pandas dataframes and serialize to JSON strings
-    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
+    exp_data = pd.DataFrame(exp_docs)
+    sim_data = pd.DataFrame(sim_docs)
+    return (exp_data, sim_data)
 
 
 def metadata_match(config_file, model_file):
@@ -156,7 +156,7 @@ def load_database():
 
 
 # plot experimental, simulation, and ML data
-def plot(model_manager):
+def plot(exp_data, sim_data, model_manager):
     print("Plotting...")
     # local aliases
     parameters = state.parameters
@@ -168,9 +168,7 @@ def plot(model_manager):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
-    # load experimental data
-    df_exp = pd.read_json(StringIO(state.exp_data_serialized))
-    df_sim = pd.read_json(StringIO(state.sim_data_serialized))
+    # set auxiliary properties
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
@@ -183,7 +181,7 @@ def plot(model_manager):
         # figure trace from CSV data
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
-        for df_count, df in enumerate([df_exp, df_sim]):
+        for df_count, df in enumerate([exp_data, sim_data]):
             df_copy = df.copy()
             # some data sets do not include all parameters
             # (e.g., simulation data set does not include GVD)
