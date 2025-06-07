@@ -43,39 +43,28 @@ class ParametersManager:
         # optimize parameters through model
         self.__model.optimize()
 
-    def card(self):
+    def panel(self):
         print("Setting parameters card...")
-        with vuetify.VCard():
-            with vuetify.VCardTitle("Control: Parameters"):
-                vuetify.VSpacer()
-                with vuetify.VTooltip(bottom=True):
-                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
-                        with vuetify.VBtn(
-                            icon=True,
-                            click=self.optimize,
-                            v_on="on",
-                            v_bind="attrs",
-                        ):
-                            vuetify.VIcon("mdi-calculator-variant")
-                    vuetify.Template("Optimize")
-                with vuetify.VTooltip(bottom=True):
-                    with vuetify.Template(v_slot_activator="{ on, attrs }"):
-                        with vuetify.VBtn(
-                            icon=True,
-                            click=self.reset,
-                            v_on="on",
-                            v_bind="attrs",
-                        ):
-                            vuetify.VIcon("mdi-restart")
-                    vuetify.Template("Reset")
-                with vuetify.VCardText():
-                    for key in state.parameters.keys():
+        with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
+            with vuetify.VExpansionPanel():
+                vuetify.VExpansionPanelHeader(
+                    "Control: Parameters", style="font-size: 20px; font-weight: 500;"
+                )
+                with vuetify.VExpansionPanelContent():
+                    for count, key in enumerate(state.parameters.keys()):
                         pmin = state.parameters_min[key]
                         pmax = state.parameters_max[key]
                         step = (pmax - pmin) / 100.0
                         # create a row for the parameter label
                         with vuetify.VRow():
-                            vuetify.VSubheader(key)
+                            vuetify.VSubheader(
+                                key,
+                                style=(
+                                    "margin-top: 16px"
+                                    if count == 0
+                                    else "margin-top: 0px"
+                                ),
+                            )
                         # create a row for the slider and text field
                         with vuetify.VRow(no_gutters=True):
                             with vuetify.VSlider(
@@ -98,3 +87,17 @@ class ParametersManager:
                                         style="width: 80px;",
                                         type="number",
                                     )
+                    # create a row for the buttons
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VBtn(
+                                "Reset",
+                                click=self.reset,
+                                style="margin-top: 12px; margin-left: 4px; text-transform: none;",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VBtn(
+                                "Optimize",
+                                click=self.optimize,
+                                style="margin-top: 12px; margin-left: 12px; text-transform: none;",
+                            )

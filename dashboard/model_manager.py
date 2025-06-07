@@ -3,6 +3,8 @@ from scipy.optimize import minimize
 import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
+from trame.widgets import vuetify2 as vuetify
+
 from state_manager import state
 from utils import load_model_file
 
@@ -112,3 +114,42 @@ class ModelManager:
         print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers
+
+    def panel(self):
+        print("Setting model card...")
+        # list of available model types
+        model_type_list = [
+            "Gaussian Process",
+            "Neural Network",
+        ]
+        with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
+            with vuetify.VExpansionPanel():
+                vuetify.VExpansionPanelHeader(
+                    "Control: Models", style="font-size: 20px; font-weight: 500;"
+                )
+                with vuetify.VExpansionPanelContent():
+                    # create a row for the model selector
+                    with vuetify.VRow():
+                        vuetify.VSelect(
+                            v_model=("model_type",),
+                            items=("Models", model_type_list),
+                            dense=True,
+                            prepend_icon="mdi-brain",
+                            style="max-width: 210px; margin-top: 24px; margin-left: 16px;",
+                        )
+                    # create a row for the switches and buttons
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VBtn(
+                                "Retrain",
+                                # click=self.retrain,  # TODO define callback
+                                disabled=True,  # TODO conditional on state
+                                style="margin-top: 12px; margin-left: 4px; text-transform: none;",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VSwitch(
+                                v_model=("calibrate",),
+                                label="Calibration",
+                                inset=True,
+                                style="margin-left: 16px;",
+                            )
