@@ -135,7 +135,7 @@ class ModelManager:
                             items=("Models", model_type_list),
                             dense=True,
                             prepend_icon="mdi-brain",
-                            style="max-width: 210px; margin-top: 24px; margin-left: 16px;",
+                            style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
                         )
                     # create a row for the switches and buttons
                     with vuetify.VRow():
@@ -144,7 +144,7 @@ class ModelManager:
                                 "Retrain",
                                 # click=self.retrain,  # TODO define callback
                                 disabled=True,  # TODO conditional on state
-                                style="margin-top: 12px; margin-left: 4px; text-transform: none;",
+                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
                             )
                         with vuetify.VCol():
                             vuetify.VSwitch(

@@ -60,9 +60,9 @@ class ParametersManager:
                             vuetify.VSubheader(
                                 key,
                                 style=(
-                                    "margin-top: 16px"
+                                    "margin-top: 16px;"
                                     if count == 0
-                                    else "margin-top: 0px"
+                                    else "margin-top: 0px;"
                                 ),
                             )
                         # create a row for the slider and text field
@@ -70,21 +70,20 @@ class ParametersManager:
                             with vuetify.VSlider(
                                 v_model_number=(f"parameters['{key}']",),
                                 change="flushState('parameters')",
-                                classes="align-center",
                                 hide_details=True,
                                 max=pmax,
                                 min=pmin,
                                 step=step,
+                                style="align-items: center;",
                             ):
                                 with vuetify.Template(v_slot_append=True):
                                     vuetify.VTextField(
                                         v_model_number=(f"parameters['{key}']",),
-                                        classes="mt-0 pt-0",
                                         density="compact",
                                         hide_details=True,
                                         readonly=True,
                                         single_line=True,
-                                        style="width: 80px;",
+                                        style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                         type="number",
                                     )
                     # create a row for the buttons
@@ -93,11 +92,11 @@ class ParametersManager:
                             vuetify.VBtn(
                                 "Reset",
                                 click=self.reset,
-                                style="margin-top: 12px; margin-left: 4px; text-transform: none;",
+                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
                             )
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Optimize",
                                 click=self.optimize,
-                                style="margin-top: 12px; margin-left: 12px; text-transform: none;",
+                                style="margin-left: 12px; margin-top: 12px; text-transform: none;",
                             )

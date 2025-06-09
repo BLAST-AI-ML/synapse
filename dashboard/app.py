@@ -281,11 +281,11 @@ def home_route():
                                         with vuetify.VSlider(
                                             v_model_number=("opacity",),
                                             change="flushState('opacity')",
-                                            classes="align-center",
                                             hide_details=True,
                                             max=1.0,
                                             min=0.0,
                                             step=0.025,
+                                            style="align-items: center;",
                                         ):
                                             with vuetify.Template(v_slot_append=True):
                                                 vuetify.VTextField(
@@ -294,7 +294,7 @@ def home_route():
                                                     hide_details=True,
                                                     readonly=True,
                                                     single_line=True,
-                                                    style="width: 80px; margin-top: 0px; padding-top: 0px;",
+                                                    style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                     type="number",
                                                 )
             # plots card
