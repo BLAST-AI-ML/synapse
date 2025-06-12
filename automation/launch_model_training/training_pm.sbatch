@@ -14,11 +14,11 @@
 #SBATCH --constraint=cpu
 # ideally single:1, but NERSC cgroups issue
 #SBATCH --ntasks-per-node=1
-#SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training_runs/sf.o%j
-#SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training_runs/sf.e%j
+#SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
+#SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
 module load python
-conda activate /global/cfs/cdirs/m558/superfacility/sfenv
+conda activate /global/cfs/cdirs/m558/superfacility/model_training/sfenv
 
 # threads for OpenMP and threaded compressors per MPI rank
 #   note: 16 avoids hyperthreading (32 virtual cores, 16 physical)
@@ -26,4 +26,4 @@ export OMP_NUM_THREADS=1
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun python /global/cfs/cdirs/m558/superfacility/git/ml/NN_training/mongo_NN.py
+srun python /global/cfs/cdirs/m558/superfacility/model_training/src/mongo_NN.py

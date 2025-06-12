@@ -37,12 +37,12 @@ df = pd.DataFrame( list(collection.find()) )
 
 # Extract the name of inputs and outputs for this setup
 #path_to_IFE_sf_src = "/global/homes/r/rjnathan/Codes/2024_IFE-superfacility/"
-path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/git"
-path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/git/ml/NN_training"
+path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/"
+path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
 sys.path.append(path_to_IFE_ml)
 from Neural_Net_Classes import CombinedNN as CombinedNN
 
-with open(path_to_IFE_sf_src+"/dashboard/config/variables.yml") as f:
+with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
     yaml_dict = yaml.safe_load( f.read() )
 input_variables = yaml_dict[setup]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ] 
