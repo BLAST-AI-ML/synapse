@@ -24,12 +24,6 @@ mod_manager = None
 par_manager = None
 obj_manager = None
 
-# list of all available model types
-model_type_list = [
-    "Gaussian Process",
-    "Neural Network",
-]
-
 # list of available experiments
 experiment_list = load_experiments()
 
@@ -256,60 +250,51 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
-                # parameters control card
+                # parameters control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        par_manager.card()
-                # model control card
+                        par_manager.panel()
+                # model control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Models"):
-                                with vuetify.VCardText():
-                                    with vuetify.VRow():
-                                        vuetify.VSelect(
-                                            v_model=("model_type",),
-                                            items=("Models", model_type_list),
-                                            dense=True,
-                                            prepend_icon="mdi-brain",
-                                            style="max-width: 210px;",
-                                        )
-                                        vuetify.VSpacer()
-                                        vuetify.VSwitch(
-                                            v_model=("calibrate",),
-                                            label="Calibration",
-                                            classes="mt-1",
-                                            color="primary",
-                                        )
-                # plots control card
+                        mod_manager.panel()
+                # plots control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Plots"):
-                                with vuetify.VCardText():
+                        with vuetify.VExpansionPanels(
+                            v_model=("expand_panel_control_plots", 0)
+                        ):
+                            with vuetify.VExpansionPanel():
+                                vuetify.VExpansionPanelHeader(
+                                    "Control: Plots",
+                                    style="font-size: 20px; font-weight: 500;",
+                                )
+                                with vuetify.VExpansionPanelContent():
                                     # create a row for the slider label
                                     with vuetify.VRow():
-                                        vuetify.VSubheader("Projected Data Depth")
+                                        vuetify.VSubheader(
+                                            "Projected Data Depth",
+                                            style="margin-top: 16px;",
+                                        )
                                     # create a row for the slider and text field
                                     with vuetify.VRow(no_gutters=True):
                                         with vuetify.VSlider(
                                             v_model_number=("opacity",),
                                             change="flushState('opacity')",
-                                            classes="align-center",
                                             hide_details=True,
                                             max=1.0,
                                             min=0.0,
                                             step=0.025,
+                                            style="align-items: center;",
                                         ):
                                             with vuetify.Template(v_slot_append=True):
                                                 vuetify.VTextField(
                                                     v_model_number=("opacity",),
-                                                    classes="mt-0 pt-0",
                                                     density="compact",
                                                     hide_details=True,
                                                     readonly=True,
                                                     single_line=True,
-                                                    style="width: 80px;",
+                                                    style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                     type="number",
                                                 )
             # plots card
@@ -374,14 +359,6 @@ def gui_setup():
                         vuetify.VIcon("mdi-lan-connect")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
-                # GitHub route
-                with vuetify.VListItem(
-                    click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"
-                ):
-                    with vuetify.VListItemIcon():
-                        vuetify.VIcon("mdi-github")
-                    with vuetify.VListItemContent():
-                        vuetify.VListItemTitle("GitHub")
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
             with vuetify.VCard():
