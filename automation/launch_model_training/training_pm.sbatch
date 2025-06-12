@@ -18,7 +18,7 @@
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
 module load python
-conda activate /global/cfs/cdirs/m558/superfacility/model_training/sfenv
+conda activate /global/cfs/cdirs/m558/superfacility/model_training/env
 
 # threads for OpenMP and threaded compressors per MPI rank
 #   note: 16 avoids hyperthreading (32 virtual cores, 16 physical)
