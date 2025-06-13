@@ -17,6 +17,7 @@ def initialize_state():
     # experiment and model type
     state.experiment = "qed_ip2"
     state.model_type = "Neural Network"
+    state.model_training = False
     # opacity
     state.opacity = 0.05
     # calibration
