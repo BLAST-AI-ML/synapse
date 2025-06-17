@@ -13,6 +13,7 @@ class ParametersManager:
         state.parameters = dict()
         state.parameters_min = dict()
         state.parameters_max = dict()
+        state.parameters_show_all = dict()
         for _, parameter_dict in input_variables.items():
             key = parameter_dict["name"]
             pmin = float(parameter_dict["value_range"][0])
@@ -21,6 +22,7 @@ class ParametersManager:
             state.parameters[key] = pval
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
+            state.parameters_show_all[key] = False
         state.parameters_init = copy.deepcopy(state.parameters)
 
     @property
@@ -90,6 +92,15 @@ class ParametersManager:
 
                                 with vuetify.VExpansionPanelContent():
                                     with vuetify.VRow(no_gutters=True):
+                                        vuetify.VCheckbox(
+                                            v_model=(
+                                                f"parameters_show_all['{key}']",
+                                                False,
+                                            ),
+                                            change="flushState('parameters_show_all')",
+                                            label="Show all data",
+                                        )
+                                    with vuetify.VRow(no_gutters=True):
                                         vuetify.VCol(children=["min:"])
                                         with vuetify.VCol():
                                             vuetify.VTextField(
@@ -100,6 +111,9 @@ class ParametersManager:
                                                 density="compact",
                                                 hide_details=True,
                                                 single_line=True,
+                                                disabled=(
+                                                    f"parameters_show_all['{key}']",
+                                                ),
                                                 style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                 type="number",
                                             )
@@ -113,6 +127,9 @@ class ParametersManager:
                                                 density="compact",
                                                 hide_details=True,
                                                 single_line=True,
+                                                disabled=(
+                                                    f"parameters_show_all['{key}']",
+                                                ),
                                                 style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                 type="number",
                                             )

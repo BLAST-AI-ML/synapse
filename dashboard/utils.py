@@ -163,6 +163,7 @@ def plot(model_manager):
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
+    parameters_show_all = state.parameters_show_all
     try:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
@@ -313,13 +314,22 @@ def plot(model_manager):
         )
         # ----------------------------------------------------------------------
         # figures style
-        fig.update_xaxes(
-            exponentformat="e",
-            title_text=key,
-            row=this_row,
-            col=this_col,
-            range=(parameters_min[key], parameters_max[key]),
-        )
+        if parameters_show_all[key]:
+            fig.update_xaxes(
+                exponentformat="e",
+                title_text=key,
+                row=this_row,
+                col=this_col,
+            )
+        else:
+            fig.update_xaxes(
+                range=(parameters_min[key], parameters_max[key]),
+                exponentformat="e",
+                title_text=key,
+                row=this_row,
+                col=this_col,
+            )
+
         fig.update_yaxes(
             exponentformat="e",
             title_text=objective_name,

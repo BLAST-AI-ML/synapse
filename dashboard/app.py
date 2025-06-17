@@ -146,8 +146,10 @@ def update_on_change_model(**kwargs):
     "calibrate",
     "parameters_min",
     "parameters_max",
+    "parameters_show_all",
 )
 def update_on_change_others(**kwargs):
+    print(state.parameters_show_all)
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print("Parameters, opacity, or calibration changed...")
