@@ -152,7 +152,6 @@ def load_database():
         authSource=db_auth,
         directConnection=direct_connection,
     )[db_name]
-    print(db_host, db_port, db_user, db_password, db_auth, direct_connection, db_name)
     return db
 
 
@@ -177,6 +176,8 @@ def plot(model_manager):
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
+    global_ymin = float("inf")
+    global_ymax = float("-inf")
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i + 1
@@ -215,6 +216,12 @@ def plot(model_manager):
             )
             # filter out data with zero opacity
             df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
+
+            if not df_copy_filtered.empty:
+                y_vals = df_copy_filtered[objective_name].values
+                global_ymin = min(global_ymin, y_vals.min())
+                global_ymax = max(global_ymax, y_vals.max())
+
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy_filtered,
@@ -262,6 +269,12 @@ def plot(model_manager):
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
             mean, lower, upper = model_manager.evaluate(input_dict_loc)
+
+            lower_np = lower.cpu().numpy() if hasattr(lower, "cpu") else lower
+            upper_np = upper.cpu().numpy() if hasattr(upper, "cpu") else upper
+            global_ymin = min(global_ymin, lower_np.min())
+            global_ymax = max(global_ymax, upper_np.max())
+
             # upper bound
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
@@ -330,11 +343,18 @@ def plot(model_manager):
                 col=this_col,
             )
 
+    # A bit of padding on either end of the y range so we can see all the data.
+    padding = 0.05 * (global_ymax - global_ymin)
+    for i, key in enumerate(parameters.keys()):
+        this_row = i + 1
+        this_col = 1
         fig.update_yaxes(
+            range=(global_ymin - padding, global_ymax + padding),
             exponentformat="e",
             title_text=objective_name,
             row=this_row,
             col=this_col,
         )
+
     fig.update_layout(clickmode="event")
     return fig
