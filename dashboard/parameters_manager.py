@@ -48,44 +48,74 @@ class ParametersManager:
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
             with vuetify.VExpansionPanel():
                 vuetify.VExpansionPanelHeader(
-                    "Control: Parameters", style="font-size: 20px; font-weight: 500;"
+                    "Control: Parameters",
+                    style="font-size: 20px; font-weight: 500;",
                 )
                 with vuetify.VExpansionPanelContent():
-                    for count, key in enumerate(state.parameters.keys()):
-                        pmin = state.parameters_min[key]
-                        pmax = state.parameters_max[key]
-                        step = (pmax - pmin) / 100.0
-                        # create a row for the parameter label
-                        with vuetify.VRow():
-                            vuetify.VSubheader(
-                                key,
-                                style=(
-                                    "margin-top: 16px;"
-                                    if count == 0
-                                    else "margin-top: 0px;"
-                                ),
-                            )
-                        # create a row for the slider and text field
-                        with vuetify.VRow(no_gutters=True):
-                            with vuetify.VSlider(
-                                v_model_number=(f"parameters['{key}']",),
-                                change="flushState('parameters')",
-                                hide_details=True,
-                                max=pmax,
-                                min=pmin,
-                                step=step,
-                                style="align-items: center;",
-                            ):
-                                with vuetify.Template(v_slot_append=True):
-                                    vuetify.VTextField(
+                    with vuetify.VExpansionPanels(
+                        v_model=("expand_panel_control_parameter", 0), multiple=True
+                    ):
+                        for key in state.parameters.keys():
+                            # create a row for the parameter label
+                            with vuetify.VExpansionPanel():
+                                vuetify.VExpansionPanelHeader(
+                                    key,
+                                    style="font-size: 20px; font-weight: 500;",
+                                    expand_icon="mdi-cog",
+                                )
+                                with vuetify.VRow(no_gutters=True):
+                                    with vuetify.VSlider(
                                         v_model_number=(f"parameters['{key}']",),
-                                        density="compact",
+                                        change="flushState('parameters')",
                                         hide_details=True,
-                                        readonly=True,
-                                        single_line=True,
-                                        style="margin-top: 0px; padding-top: 0px; width: 80px;",
-                                        type="number",
-                                    )
+                                        min=(f"parameters_min['{key}']",),
+                                        max=(f"parameters_max['{key}']",),
+                                        step=(
+                                            f"({{ parameters_max['{key}'] }} - {{ parameters_min['{key}'] }}) / 100"
+                                        ),
+                                        style="align-items: center;",
+                                    ):
+                                        with vuetify.Template(v_slot_append=True):
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"parameters['{key}']",
+                                                ),
+                                                density="compact",
+                                                hide_details=True,
+                                                readonly=True,
+                                                single_line=True,
+                                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                                type="number",
+                                            )
+
+                                with vuetify.VExpansionPanelContent():
+                                    with vuetify.VRow(no_gutters=True):
+                                        vuetify.VCol(children=["min:"])
+                                        with vuetify.VCol():
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"parameters_min['{key}']",
+                                                ),
+                                                change="flushState('parameters_min')",
+                                                density="compact",
+                                                hide_details=True,
+                                                single_line=True,
+                                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                                type="number",
+                                            )
+                                        vuetify.VCol(children=["max:"])
+                                        with vuetify.VCol():
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"parameters_max['{key}']",
+                                                ),
+                                                change="flushState('parameters_max')",
+                                                density="compact",
+                                                hide_details=True,
+                                                single_line=True,
+                                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                                type="number",
+                                            )
                     # create a row for the buttons
                     with vuetify.VRow():
                         with vuetify.VCol():

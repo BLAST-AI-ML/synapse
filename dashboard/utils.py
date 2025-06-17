@@ -152,7 +152,7 @@ def load_database():
         authSource=db_auth,
         directConnection=direct_connection,
     )[db_name]
-    print(db_host, db_port, db_user, db_password, db_auth,direct_connection, db_name)
+    print(db_host, db_port, db_user, db_password, db_auth, direct_connection, db_name)
     return db
 
 
@@ -318,7 +318,7 @@ def plot(model_manager):
             title_text=key,
             row=this_row,
             col=this_col,
-            range=(parameters_min[key], parameters_max[key])
+            range=(parameters_min[key], parameters_max[key]),
         )
         fig.update_yaxes(
             exponentformat="e",
