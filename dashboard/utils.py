@@ -270,10 +270,8 @@ def plot(model_manager):
             # their values are set to zero to collapse the error range)
             mean, lower, upper = model_manager.evaluate(input_dict_loc)
 
-            lower_np = lower.cpu().numpy() if hasattr(lower, "cpu") else lower
-            upper_np = upper.cpu().numpy() if hasattr(upper, "cpu") else upper
-            global_ymin = min(global_ymin, lower_np.min())
-            global_ymax = max(global_ymax, upper_np.max())
+            global_ymin = min(global_ymin, lower.numpy().min())
+            global_ymax = max(global_ymax, upper.numpy().max())
 
             # upper bound
             upper_bound = go.Scatter(

@@ -92,16 +92,6 @@ class ParametersManager:
 
                                 with vuetify.VExpansionPanelContent():
                                     with vuetify.VRow(no_gutters=True):
-                                        vuetify.VCheckbox(
-                                            v_model=(
-                                                f"parameters_show_all['{key}']",
-                                                False,
-                                            ),
-                                            change="flushState('parameters_show_all')",
-                                            label="Show all data",
-                                        )
-                                    with vuetify.VRow(no_gutters=True):
-                                        vuetify.VCol(children=["min:"])
                                         with vuetify.VCol():
                                             vuetify.VTextField(
                                                 v_model_number=(
@@ -110,14 +100,13 @@ class ParametersManager:
                                                 change="flushState('parameters_min')",
                                                 density="compact",
                                                 hide_details=True,
-                                                single_line=True,
                                                 disabled=(
                                                     f"parameters_show_all['{key}']",
                                                 ),
-                                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                                style="width: 80px;",
                                                 type="number",
+                                                label="min",
                                             )
-                                        vuetify.VCol(children=["max:"])
                                         with vuetify.VCol():
                                             vuetify.VTextField(
                                                 v_model_number=(
@@ -126,12 +115,22 @@ class ParametersManager:
                                                 change="flushState('parameters_max')",
                                                 density="compact",
                                                 hide_details=True,
-                                                single_line=True,
                                                 disabled=(
                                                     f"parameters_show_all['{key}']",
                                                 ),
-                                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                                style="width: 80px;",
                                                 type="number",
+                                                label="max",
+                                            )
+                                        with vuetify.VCol(style="min-width: 100px;"):
+                                            vuetify.VCheckbox(
+                                                v_model=(
+                                                    f"parameters_show_all['{key}']",
+                                                    False,
+                                                ),
+                                                density="compact",
+                                                change="flushState('parameters_show_all')",
+                                                label="Show all",
                                             )
                     # create a row for the buttons
                     with vuetify.VRow():
