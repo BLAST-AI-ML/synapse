@@ -7,14 +7,21 @@ import torch
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify2 as vuetify
+from trame.widgets import plotly, router, vuetify2 as vuetify, html
 
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
-from utils import load_experiments, load_database, load_data, load_variables, plot
+from utils import (
+    load_experiments,
+    load_database,
+    load_data,
+    load_variables,
+    plot,
+    convert_gif_to_mp4,
+)
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -230,23 +237,29 @@ def find_image(event):
 def open_simulation_dialog(event):
     if os.getenv("DEV_STORAGE") and os.getenv("DEV_IMAGE_FILENAME"):
         # Dev mock of the data/file path of the simulation gifs
-        data_directory = os.getenv("DEV_STORAGE")
-        file_path = os.getenv("DEV_IMAGE_FILENAME")
+        data_directory = os.path.abspath(os.getenv("DEV_STORAGE"))
+        file_path = os.path.join(data_directory, os.getenv("DEV_IMAGE_FILENAME"))
     else:
         data_directory, file_path = find_image(event)
     print(f"loading image {file_path} from {data_directory}")
+
+    if file_path.endswith("gif"):
+        print("Converting gif to mp4")
+        file_path = convert_gif_to_mp4(data_directory, file_path)
+        state.video_simulation = True
     assets = LocalFileManager(data_directory)
     assets.url(
-        key="image_key",
+        key="simulation_key",
         file_path=file_path,
     )
-    state.image_url = assets["image_key"]
+    state.simulation_url = assets["simulation_key"]
     state.simulation_dialog = True
 
 
 def close_simulation_dialog(**kwargs):
-    state.image_url = None
+    state.simulation_url = None
     state.simulation_dialog = False
+    state.video_simulation = False
 
 
 # -----------------------------------------------------------------------------
@@ -376,9 +389,16 @@ def gui_setup():
                     vuetify.VSpacer()
                     with vuetify.VBtn(icon=True, click=close_simulation_dialog):
                         vuetify.VIcon("mdi-close")
+                html.Video(
+                    v_if=("video_simulation",),
+                    controls=True,
+                    src=("simulation_url",),
+                    width="640",
+                    height="360",
+                )
                 vuetify.VImg(
-                    v_if=("image_url",),
-                    src=("image_url",),
+                    v_if=("!video_simulation",),
+                    src=("simulation_url",),
                     contain=True,
                 )
 

@@ -1,4 +1,5 @@
 from io import StringIO
+from moviepy.editor import VideoFileClip
 import numpy as np
 import os
 import pandas as pd
@@ -326,3 +327,24 @@ def plot(model_manager):
         )
     fig.update_layout(clickmode="event")
     return fig
+
+
+def convert_gif_to_mp4(data_directory, image_file_path):
+    video_file_path = os.path.join(data_directory, "simulation.mp4")
+    clip = VideoFileClip(image_file_path)
+
+    # ffmpeg can only make a 420p video with an even height and width, so we can cut the last row/column of pixels if it isn;t evem/
+    w, h = clip.size
+    if w % 2 != 0:
+        clip = clip.crop(x1=0, y1=0, x2=w - 1, y2=h)
+    if h % 2 != 0:
+        clip = clip.crop(x1=0, y1=0, x2=clip.w, y2=h - 1)
+
+    # The ffmpeg_params are important to be able to play the mp4 in a browser
+    clip.write_videofile(
+        video_file_path,
+        codec="libx264",
+        audio=False,
+        ffmpeg_params=["-pix_fmt", "yuv420p"],
+    )
+    return video_file_path

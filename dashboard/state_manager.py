@@ -28,5 +28,6 @@ def initialize_state():
     state.sfapi_key_expiration = "Unavailable"
     state.perlmutter_status = "Unavailable"
     # simulation plots in interactive dialog
-    state.image_url = None
+    state.simulation_url = None
     state.simulation_dialog = False
+    state.video_simulation = False
