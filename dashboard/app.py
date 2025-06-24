@@ -160,7 +160,7 @@ def update_on_change_others(**kwargs):
         )
 
 
-def open_image_dialog(event):
+def find_image(event):
     try:
         # extract the ID of the point that the user clicked on
         this_point_id = event["points"][0]["customdata"][0]
@@ -222,21 +222,31 @@ def open_image_dialog(event):
             print(f"Could not find file {file_path}")
             return
         # store a URL encoded file content under a given key name
-        assets = LocalFileManager(data_directory)
-        assets.url(
-            key="image_key",
-            file_path=file_path,
-        )
-        state.image_url = assets["image_key"]
-        # trigger visibility of image dialog
-        state.image_dialog = True
+        return data_directory, file_path
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
 
-def close_image_dialog(**kwargs):
+def open_simulation_dialog(event):
+    if os.getenv("DEV_STORAGE") and os.getenv("DEV_IMAGE_FILENAME"):
+        # Dev mock of the data/file path of the simulation gifs
+        data_directory = os.getenv("DEV_STORAGE")
+        file_path = os.getenv("DEV_IMAGE_FILENAME")
+    else:
+        data_directory, file_path = find_image(event)
+    print(f"loading image {file_path} from {data_directory}")
+    assets = LocalFileManager(data_directory)
+    assets.url(
+        key="image_key",
+        file_path=file_path,
+    )
+    state.image_url = assets["image_key"]
+    state.simulation_dialog = True
+
+
+def close_simulation_dialog(**kwargs):
     state.image_url = None
-    state.image_dialog = False
+    state.simulation_dialog = False
 
 
 # -----------------------------------------------------------------------------
@@ -307,7 +317,7 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(open_image_dialog, "[utils.safe($event)]"),
+                                click=(open_simulation_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
 
@@ -360,17 +370,17 @@ def gui_setup():
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
         # interactive dialog for simulation plots
-        with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
+        with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
             with vuetify.VCard():
                 with vuetify.VCardTitle("Simulation Plots"):
                     vuetify.VSpacer()
-                    with vuetify.VBtn(icon=True, click=close_image_dialog):
+                    with vuetify.VBtn(icon=True, click=close_simulation_dialog):
                         vuetify.VIcon("mdi-close")
-                    vuetify.VImg(
-                        v_if=("image_url",),
-                        src=("image_url",),
-                        contain=True,
-                    )
+                vuetify.VImg(
+                    v_if=("image_url",),
+                    src=("image_url",),
+                    contain=True,
+                )
 
 
 # -----------------------------------------------------------------------------
