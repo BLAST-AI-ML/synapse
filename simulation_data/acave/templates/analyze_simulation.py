@@ -11,6 +11,7 @@ from openpmd_viewer.addons import LpaDiagnostics
 from scipy.constants import c
 from datetime import datetime
 from PIL import Image
+import imageio.v2 as imageio
 
 try:
     from mip4py import MPI
@@ -119,16 +120,13 @@ def analyze_simulation():
     plt.figure(figsize=(8, 8))
     ts.iterate( visualize_iteration )
 
-    # Load images and convert to GIF
-    images = [Image.open('diags/plots/iteration_%05d.png' % iteration) for iteration in ts.iterations]
-    images[0].save(
-        "diags/plots/animation.gif",
-        save_all=True,
-        append_images=images[1:],
-        duration=200,  # duration per frame in ms
-        loop=0         # loop forever
-    )
-    print("animation.gif created successfully!")
+    # Load images and convert to MP4
+    image_files = ['diags/plots/iteration_%05d.png' % iteration for iteration in ts.iterations]
+    with imageio.get_writer('diags/plots/animation.mp4', fps=5) as writer:
+        for filename in image_files:
+            image = imageio.imread(filename)
+            writer.append_data(image)
+    print("animation.mp4 created successfully!")
 
 
 if __name__ == '__main__':
