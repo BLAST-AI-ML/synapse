@@ -1,6 +1,5 @@
 import asyncio
 import numpy as np
-import os
 from pathlib import Path
 from scipy.optimize import minimize
 from sfapi_client import Client
@@ -131,11 +130,11 @@ class ModelManager:
                 target_path = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
                 [target_path] = perlmutter.ls(target_path, directory=True)
                 # set the source path where auxiliary files are copied from
-                source_path = os.path.join(os.getcwd(), "..")
+                source_path = Path.cwd().parent
                 source_path_list = [
-                    Path(source_path + "/ml/NN_training/mongo_NN.py"),
-                    Path(source_path + "/ml/NN_training/Neural_Net_Classes.py"),
-                    Path(source_path + "/dashboard/config/variables.yml"),
+                    Path(source_path / "ml/NN_training/mongo_NN.py"),
+                    Path(source_path / "ml/NN_training/Neural_Net_Classes.py"),
+                    Path(source_path / "dashboard/config/variables.yml"),
                 ]
                 # copy auxiliary files to NERSC
                 for path in source_path_list:
@@ -144,7 +143,7 @@ class ModelManager:
                         target_path.upload(f)
                 # set the path of the script used to submit the training job on NERSC
                 script_path = Path(
-                    source_path + "/automation/launch_model_training/training_pm.sbatch"
+                    source_path / "automation/launch_model_training/training_pm.sbatch"
                 )
                 with open(script_path, "r") as file:
                     script_job = file.read()

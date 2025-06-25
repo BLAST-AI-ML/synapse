@@ -11,15 +11,18 @@ FROM continuumio/miniconda3:latest
 # Set the working directory in the container
 WORKDIR /app/dashboard
 
-# Copy the current directory contents into the container at /app
-COPY --exclude=*.pem . /app/dashboard
+# Copy content into the container at /app
+COPY --exclude=*.pem dashboard /app/dashboard
+COPY ml/NN_training/mongo_NN.py /app/ml/NN_training/mongo_NN.py
+COPY ml/NN_training/Neural_Net_Classes.py /app/ml/NN_training/Neural_Net_Classes.py
+COPY automation/launch_model_training/training_pm.sbatch /app/automation/launch_model_training/training_pm.sbatch
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name gui gui-lock.yml
 
 # Copy the entrypoint script
-COPY entrypoint.sh /entrypoint.sh
+COPY dashboard/entrypoint.sh /entrypoint.sh
 
 # Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
