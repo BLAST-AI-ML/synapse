@@ -20,7 +20,6 @@ from utils import (
     load_data,
     load_variables,
     plot,
-    convert_gif_to_mp4,
 )
 
 # -----------------------------------------------------------------------------
@@ -167,7 +166,7 @@ def update_on_change_others(**kwargs):
         )
 
 
-def find_image(event):
+def find_simulation(event):
     try:
         # extract the ID of the point that the user clicked on
         this_point_id = event["points"][0]["customdata"][0]
@@ -208,13 +207,13 @@ def find_image(event):
         # find plot file(s) to display
         file_list = os.listdir(file_directory)
         file_list.sort()
-        file_gif = [file for file in file_list if file.endswith(".gif")]
+        file_video = [file for file in file_list if file.endswith(".mp4")]
         file_png = [
             file for file in file_list if file.endswith(".png") and "iteration" in file
         ]
-        if len(file_gif) == 1:
+        if len(file_video) == 1:
             # select GIF file
-            file_name = file_gif[0]
+            file_name = file_video[0]
         elif len(file_png) > 0:
             # select PNG file from last iteration
             file_name = file_png[-1]
@@ -235,18 +234,15 @@ def find_image(event):
 
 
 def open_simulation_dialog(event):
-    if os.getenv("DEV_STORAGE") and os.getenv("DEV_IMAGE_FILENAME"):
+    if os.getenv("DEV_STORAGE") and os.getenv("DEV_SIMULATION_FILENAME"):
         # Dev mock of the data/file path of the simulation gifs
         data_directory = os.path.abspath(os.getenv("DEV_STORAGE"))
-        file_path = os.path.join(data_directory, os.getenv("DEV_IMAGE_FILENAME"))
+        file_path = os.path.join(data_directory, os.getenv("DEV_SIMULATION_FILENAME"))
     else:
-        data_directory, file_path = find_image(event)
-    print(f"loading image {file_path} from {data_directory}")
+        data_directory, file_path = find_simulation(event)
+    print(f"loading {file_path} from {data_directory}")
 
-    if file_path.endswith("gif"):
-        print("Converting gif to mp4")
-        file_path = convert_gif_to_mp4(data_directory, file_path)
-        state.video_simulation = True
+    state.video_simulation = file_path.endswith(".mp4")
     assets = LocalFileManager(data_directory)
     assets.url(
         key="simulation_key",
