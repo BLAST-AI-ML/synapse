@@ -20,15 +20,16 @@ import sys
 # Select experimental setup for which we are training a model
 setup = "qed_ip2"
 
-# Open credential file for database
-with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
-    db_profile = f.read()
+# Read database password from environment variable (no default provided)
+db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+if db_password is None:
+    raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
 
 # Connect to the MongoDB database with read-only access
 db = pymongo.MongoClient(
     host="mongodb05.nersc.gov",
     username="bella_sf_ro",
-    password=re.findall('SF_DB_READONLY_PASSWORD=(.+)', db_profile)[0],
+    password=db_password,
     authSource="bella_sf")["bella_sf"]
 
 # Extract data from the database as pandas dataframe
