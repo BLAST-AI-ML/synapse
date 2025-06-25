@@ -82,9 +82,14 @@ def load_data():
     # separate experiment and simulation documents
     exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
     sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes and serialize to JSON strings
+    # load pandas dataframes
     exp_data = pd.DataFrame(exp_docs)
     sim_data = pd.DataFrame(sim_docs)
+    # Make sure that the _id is stored as a string (important for interactivity in plotly)
+    if '_id' in exp_data.columns:
+        exp_data['_id'] = exp_data['_id'].astype(str)
+    if '_id' in sim_data.columns:
+        sim_data['_id'] = sim_data['_id'].astype(str)
     return (exp_data, sim_data)
 
 
