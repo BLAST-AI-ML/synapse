@@ -13,7 +13,8 @@ class ParametersManager:
         state.parameters = dict()
         state.parameters_min = dict()
         state.parameters_max = dict()
-        for _, parameter_dict in input_variables.items():
+        state.parameters_display_name = dict()
+        for parameter_dict in input_variables.values():
             key = parameter_dict["name"]
             pmin = float(parameter_dict["value_range"][0])
             pmax = float(parameter_dict["value_range"][1])
@@ -21,6 +22,7 @@ class ParametersManager:
             state.parameters[key] = pval
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
+            state.parameters_display_name[key] = parameter_dict.get("display_name", key)
         state.parameters_init = copy.deepcopy(state.parameters)
 
     @property
@@ -58,7 +60,7 @@ class ParametersManager:
                         # create a row for the parameter label
                         with vuetify.VRow():
                             vuetify.VSubheader(
-                                key,
+                                state.parameters_display_name[key],
                                 style=(
                                     "margin-top: 16px;"
                                     if count == 0

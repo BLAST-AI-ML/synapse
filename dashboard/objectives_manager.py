@@ -10,8 +10,11 @@ class ObjectivesManager:
         self.__model = model
         # define state variables
         state.objectives = dict()
-        for _, objective_dict in output_variables.items():
+        state.objectives_display_name = dict()
+        for objective_dict in output_variables.values():
             key = objective_dict["name"]
+            state.objectives_display_name[key] = objective_dict.get("display_name", key)
+
             if model.avail():
                 state.objectives[key], lower, upper = model.evaluate(state.parameters)
             else:

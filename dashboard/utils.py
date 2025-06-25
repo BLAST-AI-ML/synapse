@@ -162,12 +162,15 @@ def plot(model_manager):
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
+    parameters_display_name = state.parameters_display_name
     try:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
+        objective_display_name = state.objectives_display_name[objective_name]
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
+        objective_display_name = ""
     # load experimental data
     df_exp = pd.read_json(StringIO(state.exp_data_serialized))
     df_sim = pd.read_json(StringIO(state.sim_data_serialized))
@@ -314,15 +317,16 @@ def plot(model_manager):
         # figures style
         fig.update_xaxes(
             exponentformat="e",
-            title_text=key,
+            title_text=parameters_display_name[key],
             row=this_row,
             col=this_col,
         )
         fig.update_yaxes(
             exponentformat="e",
-            title_text=objective_name,
+            title_text=objective_display_name,
             row=this_row,
             col=this_col,
         )
+
     fig.update_layout(clickmode="event")
     return fig

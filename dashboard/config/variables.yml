@@ -16,6 +16,7 @@ qed_ip2:
   output_variables:
     output1:
       name: "energy_in_harmonics"
+      display_name: "Energy in Harmonics"
       type: scalar
 
 ip2:
