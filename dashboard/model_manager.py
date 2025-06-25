@@ -163,6 +163,7 @@ class ModelManager:
             print("Training job completed")
             # flush state and enable button
             state.model_training = False
+            state.model_training_status = "Completed"
             state.flush()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -170,6 +171,7 @@ class ModelManager:
     def training_trigger(self):
         try:
             state.model_training = True
+            state.model_training_status = "Submitted"
             state.flush()
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
@@ -206,6 +208,13 @@ class ModelManager:
                                 click=self.training_trigger,
                                 disabled=("model_training",),
                                 style="margin-left: 4px; margin-top: 12px; text-transform: none;",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("model_training_status",),
+                                label="Training status",
+                                readonly=True,
+                                style="width: 100px;",
                             )
                         with vuetify.VCol():
                             vuetify.VSwitch(
