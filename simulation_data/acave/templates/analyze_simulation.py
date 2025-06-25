@@ -10,7 +10,6 @@ from matplotlib.gridspec import GridSpec
 from openpmd_viewer.addons import LpaDiagnostics
 from scipy.constants import c
 from datetime import datetime
-from PIL import Image
 import imageio.v2 as imageio
 
 try:
