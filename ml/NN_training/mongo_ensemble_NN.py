@@ -1,3 +1,5 @@
+#To run this
+#python3 mongo_ensemble_NN.py <setup name> <num_models>
 import pandas as pd
 import torch
 from botorch.models.transforms.input import AffineInputTransform
