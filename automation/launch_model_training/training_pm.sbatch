@@ -28,7 +28,6 @@ experiment=${1}
 
 if [[ -z "${experiment}" ]]; then
     echo "Must pass the experiment name/tag as a command line argument"
-    exit 1
 fi
 
 # CUDA visible devices are ordered inverse to local task IDs
