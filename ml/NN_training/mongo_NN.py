@@ -4,6 +4,7 @@
 ## Author : Revathi Jambunathan
 ## Date : January, 2025
 
+import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch
@@ -17,8 +18,22 @@ from lume_model.models import TorchModel
 from lume_model.variables import ScalarVariable
 import sys
 
-# Select experimental setup for which we are training a model
-setup = "qed_ip2"
+
+# define parser
+parser = argparse.ArgumentParser()
+# add argument
+parser.add_argument(
+    "--experiment",
+    help="name/tag of the experiment",
+    type=str,
+    required=False,
+    default="qed_ip2",
+)
+# parse arguments
+args = parser.parse_args()
+
+# Select experiment for which we are training a model
+experiment = args.experiment
 
 # Open credential file for database
 with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
@@ -32,11 +47,10 @@ db = pymongo.MongoClient(
     authSource="bella_sf")["bella_sf"]
 
 # Extract data from the database as pandas dataframe
-collection=db[setup]
+collection=db[experiment]
 df = pd.DataFrame( list(collection.find()) )
 
-# Extract the name of inputs and outputs for this setup
-#path_to_IFE_sf_src = "/global/homes/r/rjnathan/Codes/2024_IFE-superfacility/"
+# Extract the name of inputs and outputs for this experiment
 path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/"
 path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
 sys.path.append(path_to_IFE_ml)
@@ -44,9 +58,9 @@ from Neural_Net_Classes import CombinedNN as CombinedNN
 
 with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
     yaml_dict = yaml.safe_load( f.read() )
-input_variables = yaml_dict[setup]["input_variables"]
+input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ] 
-output_variables = yaml_dict[setup]["output_variables"]
+output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
 
 #Normalize with Affine Input Transformer
@@ -102,5 +116,4 @@ model = TorchModel(
     input_transformers=[input_transform],
     output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
 )
-model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/NN_training/saved_models', setup+'.yml'), save_jit=True )
-
+model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/NN_training/saved_models', experiment+'.yml'), save_jit=True )
