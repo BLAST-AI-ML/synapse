@@ -380,23 +380,24 @@ def gui_setup():
                         vuetify.VListItemTitle("NERSC")
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
-            with vuetify.VCard():
+            with vuetify.VCard(style="overflow: hidden;"):
                 with vuetify.VCardTitle("Simulation Plots"):
                     vuetify.VSpacer()
                     with vuetify.VBtn(icon=True, click=close_simulation_dialog):
                         vuetify.VIcon("mdi-close")
-                html.Video(
-                    v_if=("video_simulation",),
-                    controls=True,
-                    src=("simulation_url",),
-                    width="640",
-                    height="360",
-                )
-                vuetify.VImg(
-                    v_if=("!video_simulation",),
-                    src=("simulation_url",),
-                    contain=True,
-                )
+                with vuetify.VRow(align="center", justify="center"):
+                    html.Video(
+                        v_if=("video_simulation",),
+                        controls=True,
+                        src=("simulation_url",),
+                        height="480",
+                    )
+                    vuetify.VImg(
+                        v_if=("!video_simulation",),
+                        src=("simulation_url",),
+                        contain=True,
+                        height="480",
+                    )
 
 
 # -----------------------------------------------------------------------------
