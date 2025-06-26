@@ -10,7 +10,7 @@
 #SBATCH -N 1
 #SBATCH -J testsf
 #SBATCH -A m558
-#SBATCH -q debug
+#SBATCH -q realtime
 #SBATCH --constraint=cpu
 # ideally single:1, but NERSC cgroups issue
 #SBATCH --ntasks-per-node=1
