@@ -24,6 +24,13 @@ conda activate /global/cfs/cdirs/m558/superfacility/model_training/env
 #   note: 16 avoids hyperthreading (32 virtual cores, 16 physical)
 export OMP_NUM_THREADS=1
 
+experiment=${1}
+
+if [[ -z "${experiment}" ]]; then
+    echo "Must pass the experiment name/tag as a command line argument"
+    exit 1
+fi
+
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun python /global/cfs/cdirs/m558/superfacility/model_training/src/mongo_NN.py
+srun python /global/cfs/cdirs/m558/superfacility/model_training/src/mongo_NN.py --experiment ${experiment}

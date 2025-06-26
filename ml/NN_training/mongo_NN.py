@@ -26,8 +26,7 @@ parser.add_argument(
     "--experiment",
     help="name/tag of the experiment",
     type=str,
-    required=False,
-    default="qed_ip2",
+    required=True,
 )
 # parse arguments
 args = parser.parse_args()
