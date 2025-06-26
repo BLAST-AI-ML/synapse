@@ -1,4 +1,3 @@
-import copy
 import pandas as pd
 from trame.app import get_server
 
@@ -6,11 +5,12 @@ server = get_server(client_type="vue2")
 state = server.state
 ctrl = server.controller
 
+
 def initialize_state():
     """
     Helper function to initialize state variabes needed at startup.
     """
-    print(f"Initializing state variables at startup...")
+    print("Initializing state variables at startup...")
     # experiment and simulation data (pandas dataframes serialized)
     state.exp_data_serialized = pd.DataFrame().to_json(default_handler=str)
     state.sim_data_serialized = pd.DataFrame().to_json(default_handler=str)

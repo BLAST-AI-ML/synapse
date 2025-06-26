@@ -1,16 +1,10 @@
 from output import setup_output
-
-# set up output redirection to both console and file
-setup_output("logs.txt")
-
 from bson.objectid import ObjectId
-import copy
 from io import StringIO
 import os
 import pandas as pd
 import re
 import torch
-from trame.app import get_server
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
@@ -21,7 +15,10 @@ from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
-from utils import read_variables, metadata_match, load_database, plot
+from utils import load_experiments, load_database, load_data, load_variables, plot
+
+# set up output redirection to both console and file
+setup_output("logs.txt")
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -31,28 +28,13 @@ mod_manager = None
 par_manager = None
 obj_manager = None
 
-# list of all available model types
-model_type_list = [
-    "Gaussian Process",
-    "Neural Network",
-]
-
-# dict of auxiliary model types tags
-model_type_tag_dict = {
-    "Gaussian Process": "GP",
-    "Neural Network": "NN",
-}
-
-# list of all available experiments (TODO parse automatically)
-experiment_list = [
-    "acave",
-    "ip2",
-    "qed_ip2",
-]
+# list of available experiments
+experiment_list = load_experiments()
 
 # -----------------------------------------------------------------------------
 # Functions and callbacks
 # -----------------------------------------------------------------------------
+
 
 def read_logs():
     try:
@@ -60,48 +42,10 @@ def read_logs():
         with open("logs.txt", "r") as file:
             content = file.read()
         state.logs = content
-        #state.dirty("logs")
+        # state.dirty("logs")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-
-def load_data():
-    print("Loading data from database...")
-    # load database
-    db = load_database()
-    # find all documents from experiment collection
-    documents = list(db[state.experiment].find())
-    # separate experiment and simulation documents
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes and serialize to JSON strings
-    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
-
-def load_config_file():
-    config_dir = os.path.join(os.getcwd(), "config")
-    config_file = os.path.join(config_dir, "variables.yml")
-    if not os.path.isfile(config_file):
-        raise ValueError(f"Configuration file {config_file} not found")
-    return config_file
-
-def load_model_file():
-    config_file = load_config_file()
-    model_type_tag = model_type_tag_dict[state.model_type]
-    # find model directory in the local file system
-    model_dir = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
-    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-    if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
-        model_file = None
-    return model_file
-
-def load_variables():
-    config_file = load_config_file()
-    # load information about input and output variables from the configuration file
-    input_variables, output_variables = read_variables(config_file)
-    return (input_variables, output_variables)
 
 def calibrate_data():
     print("Calibrating data...")
@@ -131,6 +75,7 @@ def calibrate_data():
         # serialize simulation data to JSON string
         state.sim_data_serialized = sim_data.to_json(default_handler=str)
 
+
 def update(
     reset_model=True,
     reset_parameters=True,
@@ -150,8 +95,7 @@ def update(
     load_data()
     # reset model
     if reset_model:
-        model_file = load_model_file()
-        mod_manager = ModelManager(model_file)
+        mod_manager = ModelManager()
     # load input and output variables
     input_variables, output_variables = load_variables()
     # reset parameters
@@ -184,6 +128,7 @@ def update(
     # read and update logs
     read_logs()
 
+
 @state.change("experiment")
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
@@ -200,8 +145,9 @@ def update_on_change_experiment(**kwargs):
             reset_gui_layout=False,
         )
 
+
 @state.change("model_type")
-def update_on_change(**kwargs):
+def update_on_change_model(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print("Model type changed...")
@@ -216,12 +162,13 @@ def update_on_change(**kwargs):
             reset_gui_layout=False,
         )
 
+
 @state.change(
     "parameters",
     "opacity",
     "calibrate",
 )
-def update_on_change(**kwargs):
+def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print("Parameters, opacity, or calibration changed...")
@@ -235,6 +182,7 @@ def update_on_change(**kwargs):
             reset_gui_route_logs=False,
             reset_gui_layout=False,
         )
+
 
 def open_image_dialog(event):
     try:
@@ -278,7 +226,9 @@ def open_image_dialog(event):
         file_list = os.listdir(file_directory)
         file_list.sort()
         file_gif = [file for file in file_list if file.endswith(".gif")]
-        file_png = [file for file in file_list if file.endswith(".png") and "iteration" in file]
+        file_png = [
+            file for file in file_list if file.endswith(".png") and "iteration" in file
+        ]
         if len(file_gif) == 1:
             # select GIF file
             file_name = file_gif[0]
@@ -286,7 +236,7 @@ def open_image_dialog(event):
             # select PNG file from last iteration
             file_name = file_png[-1]
         else:
-            print(f"Could not find valid plot files to display")
+            print("Could not find valid plot files to display")
             return
         # set file path and verify that it exists
         file_path = os.path.join(file_directory, file_name)
@@ -297,7 +247,7 @@ def open_image_dialog(event):
             return
         # store a URL encoded file content under a given key name
         assets = LocalFileManager(data_directory)
-        return_url = assets.url(
+        assets.url(
             key="image_key",
             file_path=file_path,
         )
@@ -307,13 +257,16 @@ def open_image_dialog(event):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+
 def close_image_dialog(**kwargs):
     state.image_url = None
     state.image_dialog = False
 
+
 # -----------------------------------------------------------------------------
 # GUI components
 # -----------------------------------------------------------------------------
+
 
 # home route
 def home_route():
@@ -321,73 +274,67 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
-                # parameters control card
+                # parameters control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        par_manager.card()
-                # model control card
+                        par_manager.panel()
+                # model control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Models"):
-                                with vuetify.VCardText():
-                                    with vuetify.VRow():
-                                        vuetify.VSelect(
-                                            v_model=("model_type",),
-                                            items=("Models", model_type_list),
-                                            dense=True,
-                                            prepend_icon="mdi-brain",
-                                            style="max-width: 210px;",
-                                        )
-                                        vuetify.VSpacer()
-                                        vuetify.VSwitch(
-                                            v_model=("calibrate",),
-                                            label="Calibration",
-                                            classes="mt-1",
-                                            color="primary",
-                                        )
-                # plots control card
+                        mod_manager.panel()
+                # plots control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Plots"):
-                                with vuetify.VCardText():
+                        with vuetify.VExpansionPanels(
+                            v_model=("expand_panel_control_plots", 0)
+                        ):
+                            with vuetify.VExpansionPanel():
+                                vuetify.VExpansionPanelHeader(
+                                    "Control: Plots",
+                                    style="font-size: 20px; font-weight: 500;",
+                                )
+                                with vuetify.VExpansionPanelContent():
                                     # create a row for the slider label
                                     with vuetify.VRow():
-                                        vuetify.VSubheader("Projected Data Depth")
+                                        vuetify.VSubheader(
+                                            "Projected Data Depth",
+                                            style="margin-top: 16px;",
+                                        )
                                     # create a row for the slider and text field
                                     with vuetify.VRow(no_gutters=True):
                                         with vuetify.VSlider(
                                             v_model_number=("opacity",),
                                             change="flushState('opacity')",
-                                            classes="align-center",
                                             hide_details=True,
                                             max=1.0,
                                             min=0.0,
                                             step=0.025,
+                                            style="align-items: center;",
                                         ):
                                             with vuetify.Template(v_slot_append=True):
                                                 vuetify.VTextField(
                                                     v_model_number=("opacity",),
-                                                    classes="mt-0 pt-0",
                                                     density="compact",
                                                     hide_details=True,
                                                     readonly=True,
                                                     single_line=True,
-                                                    style="width: 80px;",
+                                                    style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                     type="number",
                                                 )
             # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
-                        with vuetify.VContainer(style=f"height: {400*len(state.parameters)}px;"):
+                        with vuetify.VContainer(
+                            style=f"height: {400 * len(state.parameters)}px;"
+                        ):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
                                 click=(open_image_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
+
 
 # NERSC route
 def nersc_route():
@@ -399,6 +346,7 @@ def nersc_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_sfapi_card()
+
 
 # logs route
 def logs_route():
@@ -412,6 +360,7 @@ def logs_route():
                     auto_grow=True,
                     style="font-family: monospace;",
                 )
+
 
 # GUI layout
 def gui_setup():
@@ -454,12 +403,6 @@ def gui_setup():
                         vuetify.VIcon("mdi-console")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("Logs")
-                # GitHub route
-                with vuetify.VListItem(click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')"):
-                    with vuetify.VListItemIcon():
-                        vuetify.VIcon("mdi-github")
-                    with vuetify.VListItemContent():
-                        vuetify.VListItemTitle("GitHub")
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
             with vuetify.VCard():
@@ -472,6 +415,7 @@ def gui_setup():
                         src=("image_url",),
                         contain=True,
                     )
+
 
 # -----------------------------------------------------------------------------
 # Main

@@ -3,13 +3,17 @@ from scipy.optimize import minimize
 import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
+from trame.widgets import vuetify2 as vuetify
+
 from state_manager import state
+from utils import load_model_file
+
 
 class ModelManager:
-
-    def __init__(self, model_data):
-        print(f"Initializing model manager...")
-        if model_data is None:
+    def __init__(self):
+        print("Initializing model manager...")
+        model_file = load_model_file()
+        if model_file is None:
             self.__model = None
         else:
             # save model and model type
@@ -18,10 +22,10 @@ class ModelManager:
             try:
                 if state.model_type == "Neural Network":
                     self.__is_neural_network = True
-                    self.__model = TorchModel(model_data)
+                    self.__model = TorchModel(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
-                    self.__model = GPModel.from_yaml(model_data)
+                    self.__model = GPModel.from_yaml(model_file)
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
@@ -49,7 +53,9 @@ class ModelManager:
             if self.__is_neural_network:
                 # expected only one value
                 if len(output_dict.values()) != 1:
-                    raise ValueError(f"Expected 1 output value, but found {len(output_dict.values())}")
+                    raise ValueError(
+                        f"Expected 1 output value, but found {len(output_dict.values())}"
+                    )
                 # compute mean and mean error
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
@@ -90,7 +96,9 @@ class ModelManager:
             # define parameters bounds for optimization
             parameters_bounds = []
             for key in state.parameters.keys():
-                parameters_bounds.append((state.parameters_min[key], state.parameters_max[key]))
+                parameters_bounds.append(
+                    (state.parameters_min[key], state.parameters_max[key])
+                )
             # optimize model (maximize output value)
             res = minimize(
                 fun=self.model_wrapper,
@@ -106,3 +114,42 @@ class ModelManager:
         print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers
+
+    def panel(self):
+        print("Setting model card...")
+        # list of available model types
+        model_type_list = [
+            "Gaussian Process",
+            "Neural Network",
+        ]
+        with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
+            with vuetify.VExpansionPanel():
+                vuetify.VExpansionPanelHeader(
+                    "Control: Models", style="font-size: 20px; font-weight: 500;"
+                )
+                with vuetify.VExpansionPanelContent():
+                    # create a row for the model selector
+                    with vuetify.VRow():
+                        vuetify.VSelect(
+                            v_model=("model_type",),
+                            items=("Models", model_type_list),
+                            dense=True,
+                            prepend_icon="mdi-brain",
+                            style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
+                        )
+                    # create a row for the switches and buttons
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VBtn(
+                                "Retrain",
+                                # click=self.retrain,  # TODO define callback
+                                disabled=True,  # TODO conditional on state
+                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VSwitch(
+                                v_model=("calibrate",),
+                                label="Calibration",
+                                inset=True,
+                                style="margin-left: 16px;",
+                            )

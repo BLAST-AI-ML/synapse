@@ -10,19 +10,83 @@ import torch
 import yaml
 from state_manager import state
 
-def read_variables(config_file):
+
+def load_config_file():
     print("Reading configuration file...")
+    # find configuration file in the local file system
+    config_dir = os.path.join(os.getcwd(), "config")
+    config_file = os.path.join(config_dir, "variables.yml")
+    if not os.path.isfile(config_file):
+        raise ValueError(f"Configuration file {config_file} not found")
+    return config_file
+
+
+def load_config_dict():
+    print("Loading configuration dictionary...")
+    config_file = load_config_file()
     # read configuration file
     with open(config_file) as f:
         config_str = f.read()
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
+    return config_dict
+
+
+def load_model_file():
+    print("Reading model file...")
+    config_file = load_config_file()
+    # dictionary of auxiliary model types tags
+    model_type_tag_dict = {
+        "Gaussian Process": "GP",
+        "Neural Network": "NN",
+    }
+    model_type_tag = model_type_tag_dict[state.model_type]
+    # find model file in the local file system
+    model_dir = os.path.join(
+        os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models"
+    )
+    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
+    if not os.path.isfile(model_file):
+        raise ValueError(f"Model file {model_file} not found")
+    if not metadata_match(config_file, model_file):
+        model_file = None
+    return model_file
+
+
+def load_experiments():
+    print("Reading experiments from configuration file...")
+    # load configuration dictionary
+    config_dict = load_config_dict()
+    # read list of available experiments from higher-level keys
+    experiment_list = list(config_dict.keys())
+    return experiment_list
+
+
+def load_variables():
+    print("Reading input/output variables from configuration file...")
+    # load configuration dictionary
+    config_dict = load_config_dict()
     config_spec = config_dict[state.experiment]
     # dictionary of input variables (parameters)
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
     return (input_variables, output_variables)
+
+
+def load_data():
+    print("Loading data from database...")
+    # load database
+    db = load_database()
+    # find all documents from experiment collection
+    documents = list(db[state.experiment].find())
+    # separate experiment and simulation documents
+    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
+    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
+    # load pandas dataframes and serialize to JSON strings
+    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
+    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
+
 
 def metadata_match(config_file, model_file):
     print("Checking model consistency...")
@@ -33,7 +97,10 @@ def metadata_match(config_file, model_file):
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
     # load configuration input variables list
-    config_vars = [value["name"] for value in config_dict[state.experiment]["input_variables"].values()]
+    config_vars = [
+        value["name"]
+        for value in config_dict[state.experiment]["input_variables"].values()
+    ]
     config_vars.sort()
     # read model file
     with open(model_file) as f:
@@ -44,10 +111,11 @@ def metadata_match(config_file, model_file):
     model_vars = list(model_dict["input_variables"].keys())
     model_vars.sort()
     # check if configuration list and model list match
-    match = (config_vars == model_vars)
+    match = config_vars == model_vars
     if not match:
-        print(f"Input variables in configuration file and model file do not match")
+        print("Input variables in configuration file and model file do not match")
     return match
+
 
 def load_database():
     print("Loading database...")
@@ -86,6 +154,7 @@ def load_database():
     )[db_name]
     return db
 
+
 # plot experimental, simulation, and ML data
 def plot(model_manager):
     print("Plotting...")
@@ -106,12 +175,11 @@ def plot(model_manager):
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
-    parameters_key_order_list = list(parameters.keys())
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
-        this_row = i+1
+        this_row = i + 1
         this_col = 1
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # figure trace from CSV data
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
@@ -121,18 +189,28 @@ def plot(model_manager):
             # (e.g., simulation data set does not include GVD)
             if key not in df_copy.columns:
                 continue
-            df_copy["distance"] = 0.
+            df_copy["distance"] = 0.0
             # loop over all inputs except the current one
-            for subkey in [subkey for subkey in parameters.keys() if (subkey != key and subkey in df_copy.columns)]:
+            for subkey in [
+                subkey
+                for subkey in parameters.keys()
+                if (subkey != key and subkey in df_copy.columns)
+            ]:
                 pname_loc = subkey
                 pval_loc = parameters[subkey]
                 pmin_loc = parameters_min[subkey]
                 pmax_loc = parameters_max[subkey]
-                df_copy["distance"] += ((df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc))**2
+                df_copy["distance"] += (
+                    (df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc)
+                ) ** 2
             df_copy["distance"] = np.sqrt(df_copy["distance"])
             # normalize distance in [0,1] and compute opacity
             df_copy["distance"] = df_copy["distance"]
-            df_copy["opacity"] = np.where(df_copy["distance"] > state.opacity, 0., 1. - df_copy["distance"]/state.opacity)
+            df_copy["opacity"] = np.where(
+                df_copy["distance"] > state.opacity,
+                0.0,
+                1.0 - df_copy["distance"] / state.opacity,
+            )
             # filter out data with zero opacity
             df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
             # scatter plot with opacity
@@ -148,11 +226,11 @@ def plot(model_manager):
             # do now show default legend affected by opacity map
             exp_fig["data"][0]["showlegend"] = False
             # create custom legend empty trace (i==0 only, avoid repetition)
-            if i==0:
+            if i == 0:
                 legend = go.Scatter(
                     x=[None],
                     y=[None],
-                    mode='markers',
+                    mode="markers",
                     marker=dict(color=df_cds[df_count], opacity=1),
                     showlegend=True,
                     name=df_leg[df_count],
@@ -166,7 +244,7 @@ def plot(model_manager):
                 row=this_row,
                 col=this_col,
             )
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # figure trace from model data
         if model_manager.avail():
             input_dict_loc = dict()
@@ -186,7 +264,7 @@ def plot(model_manager):
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
                 y=upper,
-                line=dict(color='orange', width=0.3),
+                line=dict(color="orange", width=0.3),
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -199,9 +277,9 @@ def plot(model_manager):
             lower_bound = go.Scatter(
                 x=input_dict_loc[key],
                 y=lower,
-                fill='tonexty',  # fill area between this trace and the next one
-                fillcolor='rgba(255,165,0,0.25)',  # orange with alpha
-                line=dict(color='orange', width=0.3),
+                fill="tonexty",  # fill area between this trace and the next one
+                fillcolor="rgba(255,165,0,0.25)",  # orange with alpha
+                line=dict(color="orange", width=0.3),
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -216,7 +294,7 @@ def plot(model_manager):
                 y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
-                showlegend=(True if i==0 else False),
+                showlegend=(True if i == 0 else False),
             )
             # add trace
             fig.add_trace(
@@ -224,7 +302,7 @@ def plot(model_manager):
                 row=this_row,
                 col=this_col,
             )
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
             x=parameters[key],
@@ -232,7 +310,7 @@ def plot(model_manager):
             row=this_row,
             col=this_col,
         )
-        #----------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         # figures style
         fig.update_xaxes(
             exponentformat="e",

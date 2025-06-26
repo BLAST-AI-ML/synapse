@@ -31,5 +31,6 @@ dependencies:
   - trame-router
   - trame-vuetify
   - pip:
+    - pre-commit
     - pywebview[qt]
     - sfapi_client
