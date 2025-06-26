@@ -75,7 +75,7 @@ class ParametersManager:
                                 min=(f"parameters_min['{key}']",),
                                 max=(f"parameters_max['{key}']",),
                                 step=(
-                                    f"({{ parameters_max['{key}'] }} - {{ parameters_min['{key}'] }}) / 100"
+                                    f"(parameters_max['{key}'] - parameters_min['{key}']) / 100",
                                 ),
                                 style="align-items: center;",
                             ):
