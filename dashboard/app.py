@@ -234,14 +234,7 @@ def find_simulation(event):
 
 
 def open_simulation_dialog(event):
-    if os.getenv("DEV_STORAGE") and os.getenv("DEV_SIMULATION_FILENAME"):
-        # Dev mock of the data/file path of the simulation gifs
-        data_directory = os.path.abspath(os.getenv("DEV_STORAGE"))
-        file_path = os.path.join(data_directory, os.getenv("DEV_SIMULATION_FILENAME"))
-    else:
-        data_directory, file_path = find_simulation(event)
-    print(f"loading {file_path} from {data_directory}")
-
+    data_directory, file_path = find_simulation(event)
     state.video_simulation = file_path.endswith(".mp4")
     assets = LocalFileManager(data_directory)
     assets.url(
