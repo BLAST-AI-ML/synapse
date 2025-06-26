@@ -1,4 +1,3 @@
-import pandas as pd
 from trame.app import get_server
 
 server = get_server(client_type="vue2")
@@ -11,9 +10,6 @@ def initialize_state():
     Helper function to initialize state variabes needed at startup.
     """
     print("Initializing state variables at startup...")
-    # experiment and simulation data (pandas dataframes serialized)
-    state.exp_data_serialized = pd.DataFrame().to_json(default_handler=str)
-    state.sim_data_serialized = pd.DataFrame().to_json(default_handler=str)
     # experiment and model type
     state.experiment = "qed_ip2"
     state.model_type = "Neural Network"

@@ -1,7 +1,5 @@
 from bson.objectid import ObjectId
-from io import StringIO
 import os
-import pandas as pd
 import re
 import torch
 from trame.assets.local import LocalFileManager
@@ -32,7 +30,7 @@ experiment_list = load_experiments()
 # -----------------------------------------------------------------------------
 
 
-def calibrate_data():
+def calibrate_data(sim_data):
     print("Calibrating data...")
     global mod_manager
     global par_manager
@@ -45,8 +43,6 @@ def calibrate_data():
         output_transformers = mod_manager.get_output_transformers()
         output_calibration = output_transformers[0]
         output_normalization = output_transformers[1]
-        # read simulation data back from JSON string
-        sim_data = pd.read_json(StringIO(state.sim_data_serialized))
         # normalize simulation data
         objective_tensor = torch.from_numpy(sim_data[objective_name].values)
         objective_tensor = output_normalization.transform(objective_tensor)
@@ -57,8 +53,6 @@ def calibrate_data():
             objective_tensor = output_calibration.transform(objective_tensor)
             objective_tensor = output_normalization.untransform(objective_tensor)
         sim_data[objective_name] = objective_tensor.numpy()[0]
-        # serialize simulation data to JSON string
-        state.sim_data_serialized = sim_data.to_json(default_handler=str)
 
 
 def update(
@@ -76,7 +70,7 @@ def update(
     global par_manager
     global obj_manager
     # load data
-    load_data()
+    exp_data, sim_data = load_data()
     # reset model
     if reset_model:
         mod_manager = ModelManager()
@@ -92,7 +86,7 @@ def update(
     if reset_objectives:
         obj_manager = ObjectivesManager(mod_manager, output_variables)
     # calibration
-    calibrate_data()
+    calibrate_data(sim_data)
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
@@ -104,7 +98,11 @@ def update(
         gui_setup()
     # reset plots
     if reset_plots:
-        fig = plot(mod_manager)
+        fig = plot(
+            exp_data=exp_data,
+            sim_data=sim_data,
+            model_manager=mod_manager,
+        )
         ctrl.figure_update(fig)
 
 
