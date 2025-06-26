@@ -151,6 +151,7 @@ class ModelManager:
                 sfapi_job = perlmutter.submit_job(script_job)
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
+                # wait for the job to move into a terminal state
                 sfapi_job.complete()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
