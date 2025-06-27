@@ -13,6 +13,8 @@ class ParametersManager:
         state.parameters = dict()
         state.parameters_min = dict()
         state.parameters_max = dict()
+        state.parameters_show_all = dict()
+        self.parameters_step = dict()
         for _, parameter_dict in input_variables.items():
             key = parameter_dict["name"]
             pmin = float(parameter_dict["value_range"][0])
@@ -21,6 +23,8 @@ class ParametersManager:
             state.parameters[key] = pval
             state.parameters_min[key] = pmin
             state.parameters_max[key] = pmax
+            state.parameters_show_all[key] = False
+            self.parameters_step[key] = (pmax - pmin) / 100
         state.parameters_init = copy.deepcopy(state.parameters)
 
     @property
@@ -48,13 +52,11 @@ class ParametersManager:
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
             with vuetify.VExpansionPanel():
                 vuetify.VExpansionPanelHeader(
-                    "Control: Parameters", style="font-size: 20px; font-weight: 500;"
+                    "Control: Parameters",
+                    style="font-size: 20px; font-weight: 500;",
                 )
                 with vuetify.VExpansionPanelContent():
                     for count, key in enumerate(state.parameters.keys()):
-                        pmin = state.parameters_min[key]
-                        pmax = state.parameters_max[key]
-                        step = (pmax - pmin) / 100.0
                         # create a row for the parameter label
                         with vuetify.VRow():
                             vuetify.VSubheader(
@@ -65,15 +67,16 @@ class ParametersManager:
                                     else "margin-top: 0px;"
                                 ),
                             )
-                        # create a row for the slider and text field
                         with vuetify.VRow(no_gutters=True):
                             with vuetify.VSlider(
                                 v_model_number=(f"parameters['{key}']",),
                                 change="flushState('parameters')",
                                 hide_details=True,
-                                max=pmax,
-                                min=pmin,
-                                step=step,
+                                min=(f"parameters_min['{key}']",),
+                                max=(f"parameters_max['{key}']",),
+                                step=(
+                                    f"(parameters_max['{key}'] - parameters_min['{key}']) / 100",
+                                ),
                                 style="align-items: center;",
                             ):
                                 with vuetify.Template(v_slot_append=True):
@@ -86,6 +89,44 @@ class ParametersManager:
                                         style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                         type="number",
                                     )
+                        step = self.parameters_step[key]
+                        with vuetify.VRow(no_gutters=True):
+                            with vuetify.VCol():
+                                vuetify.VTextField(
+                                    v_model_number=(f"parameters_min['{key}']",),
+                                    change="flushState('parameters_min')",
+                                    density="compact",
+                                    hide_details=True,
+                                    disabled=(f"parameters_show_all['{key}']",),
+                                    step=step,
+                                    __properties=["step"],
+                                    style="width: 80px;",
+                                    type="number",
+                                    label="min",
+                                )
+                            with vuetify.VCol():
+                                vuetify.VTextField(
+                                    v_model_number=(f"parameters_max['{key}']",),
+                                    change="flushState('parameters_max')",
+                                    density="compact",
+                                    hide_details=True,
+                                    disabled=(f"parameters_show_all['{key}']",),
+                                    step=step,
+                                    __properties=["step"],
+                                    style="width: 80px;",
+                                    type="number",
+                                    label="max",
+                                )
+                            with vuetify.VCol(style="min-width: 100px;"):
+                                vuetify.VCheckbox(
+                                    v_model=(
+                                        f"parameters_show_all['{key}']",
+                                        False,
+                                    ),
+                                    density="compact",
+                                    change="flushState('parameters_show_all')",
+                                    label="Show all",
+                                )
                     # create a row for the buttons
                     with vuetify.VRow():
                         with vuetify.VCol():
