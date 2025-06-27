@@ -167,6 +167,7 @@ def plot(exp_data, sim_data, model_manager):
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
+    parameters_show_all = state.parameters_show_all
     try:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
@@ -178,6 +179,8 @@ def plot(exp_data, sim_data, model_manager):
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
+    global_ymin = float("inf")
+    global_ymax = float("-inf")
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i + 1
@@ -216,6 +219,12 @@ def plot(exp_data, sim_data, model_manager):
             )
             # filter out data with zero opacity
             df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
+
+            if not df_copy_filtered.empty:
+                y_vals = df_copy_filtered[objective_name].values
+                global_ymin = min(global_ymin, y_vals.min())
+                global_ymax = max(global_ymax, y_vals.max())
+
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy_filtered,
@@ -263,6 +272,10 @@ def plot(exp_data, sim_data, model_manager):
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
             mean, lower, upper = model_manager.evaluate(input_dict_loc)
+
+            global_ymin = min(global_ymin, lower.numpy().min())
+            global_ymax = max(global_ymax, upper.numpy().max())
+
             # upper bound
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
@@ -315,17 +328,34 @@ def plot(exp_data, sim_data, model_manager):
         )
         # ----------------------------------------------------------------------
         # figures style
-        fig.update_xaxes(
-            exponentformat="e",
-            title_text=key,
-            row=this_row,
-            col=this_col,
-        )
+        if parameters_show_all[key]:
+            fig.update_xaxes(
+                exponentformat="e",
+                title_text=key,
+                row=this_row,
+                col=this_col,
+            )
+        else:
+            fig.update_xaxes(
+                range=(parameters_min[key], parameters_max[key]),
+                exponentformat="e",
+                title_text=key,
+                row=this_row,
+                col=this_col,
+            )
+
+    # A bit of padding on either end of the y range so we can see all the data.
+    padding = 0.05 * (global_ymax - global_ymin)
+    for i, key in enumerate(parameters.keys()):
+        this_row = i + 1
+        this_col = 1
         fig.update_yaxes(
+            range=(global_ymin - padding, global_ymax + padding),
             exponentformat="e",
             title_text=objective_name,
             row=this_row,
             col=this_col,
         )
+
     fig.update_layout(clickmode="event")
     return fig
