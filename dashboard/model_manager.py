@@ -1,6 +1,7 @@
 import asyncio
 import numpy as np
 from pathlib import Path
+import re
 from scipy.optimize import minimize
 from sfapi_client import Client
 from sfapi_client.compute import Machine
@@ -147,6 +148,13 @@ class ModelManager:
                 )
                 with open(script_path, "r") as file:
                     script_job = file.read()
+                # replace the --experiment command line argument in the batch script
+                # with the current experiment in the state
+                script_job = re.sub(
+                    pattern=r"--experiment (.*)",
+                    repl=rf"--experiment {state.experiment}",
+                    string=script_job,
+                )
                 # submit the training job through the Superfacility API
                 sfapi_job = perlmutter.submit_job(script_job)
                 # print some logs
