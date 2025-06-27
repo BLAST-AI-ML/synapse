@@ -142,6 +142,9 @@ def update_on_change_model(**kwargs):
     "parameters",
     "opacity",
     "calibrate",
+    "parameters_min",
+    "parameters_max",
+    "parameters_show_all",
 )
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
