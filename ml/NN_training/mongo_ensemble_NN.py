@@ -1,5 +1,5 @@
-#To run this
-#python3 mongo_ensemble_NN.py <setup name> <num_models>
+#Format
+#python3 mongo_ensemble_NN.py <setup_name> <number_of_models>
 import pandas as pd
 import torch
 from botorch.models.transforms.input import AffineInputTransform
@@ -8,7 +8,9 @@ import os
 import re
 import yaml
 from lume_model.models import TorchModel
+from lume_model.models.ensemble import NNEnsemble
 from lume_model.variables import ScalarVariable
+from lume_model.variables import DistributionVariable
 import sys
 import numpy as np
 
@@ -106,16 +108,6 @@ print(f'\nAlpha Mean: {mean_alpha:.4f}\nAlpha Std: {std_alpha:.4f}\n\nBeta Mean:
 #Save Ensemble
 path = f'/global/homes/e/erod/2024_IFE-superfacility/ml/NN_training/Ensemble_Models/{setup}/'
 os.makedirs(path, exist_ok=True)
-# Save alphas, betas, and their statistics to a text file
-summary_path = os.path.join(path, "alpha_beta_summary.txt")
-with open(summary_path, "w") as f:
-    f.write("Alpha and Beta Calibration Parameters per Model:\n")
-    f.write(alphas_and_betas.to_string(index=False))
-    f.write("\n\n")
-    f.write(f"Alpha Mean: {mean_alpha:.4f}\n")
-    f.write(f"Alpha Std: {std_alpha:.4f}\n")
-    f.write(f"Beta Mean: {mean_beta:.4f}\n")
-    f.write(f"Beta Std: {std_beta:.4f}\n")
 
 torch_models = []
 
@@ -137,4 +129,11 @@ for i, model_nn in enumerate(ensemble):
         input_transformers=[input_transform],
         output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
         )
-    torch_model.dump( file=os.path.join(path, setup+'_model'+str(i)+'.yml'), save_jit=True )
+    torch_models.append(torch_model)
+
+nn_ensemble = NNEnsemble(
+    models=torch_models,
+    input_variables=[ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ],
+    output_variables=[ DistributionVariable(**output_variables[k]) for k in output_variables.keys() ]
+    )
+nn_ensemble.dump( file=os.path.join(path, setup+'ensemble.yml'), save_jit=True )
