@@ -77,14 +77,9 @@ def load_data():
     print("Loading data from database...")
     # load database
     db = load_database()
-    # find all documents from experiment collection
-    documents = list(db[state.experiment].find())
-    # separate experiment and simulation documents
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes
-    exp_data = pd.DataFrame(exp_docs)
-    sim_data = pd.DataFrame(sim_docs)
+    # load experiment and simulation data points in dataframes
+    exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
+    sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
     # Make sure that the _id is stored as a string (important for interactivity in plotly)
     if '_id' in exp_data.columns:
         exp_data['_id'] = exp_data['_id'].astype(str)
