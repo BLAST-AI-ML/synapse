@@ -212,10 +212,10 @@ def find_simulation(event):
             file for file in file_list if file.endswith(".png") and "iteration" in file
         ]
         if len(file_video) == 1:
-            # select GIF file
+            # select video file
             file_name = file_video[0]
         elif len(file_png) > 0:
-            # select PNG file from last iteration
+            # select image file from last iteration
             file_name = file_png[-1]
         else:
             print("Could not find valid plot files to display")
