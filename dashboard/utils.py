@@ -46,8 +46,10 @@ def load_model_file():
     )
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
     if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
+        print(f"Model file {model_file} not found")
+        model_file = None
+    elif not metadata_match(config_file, model_file):
+        print(f"Model file {model_file} does not match configuration file {config_file}")
         model_file = None
     return model_file
 
