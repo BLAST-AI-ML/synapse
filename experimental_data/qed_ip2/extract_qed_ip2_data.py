@@ -77,7 +77,7 @@ def extract_info_more_scan_file( path_to_scan_file ):
             # Select pre-defined ROI, apply Gaussian filter
             imdata = gaussian_filter( image[100:400, 400:800], sigma=5 )
             # Coarse estimation of the harmonics energy: proportional to STD, with arbitrary constant
-            data['energy_in_harmonics'] = 100*imdata.std()
+            data['harmonic_signal'] = 100*imdata.std()
 
             # Add to the database
             print('Uploading: ', data)

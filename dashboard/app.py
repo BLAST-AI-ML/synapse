@@ -1,20 +1,25 @@
 from bson.objectid import ObjectId
-from io import StringIO
 import os
-import pandas as pd
 import re
 import torch
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify2 as vuetify
+from trame.widgets import plotly, router, vuetify2 as vuetify, html
 
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
+from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
-from utils import load_experiments, load_database, load_data, load_variables, plot
+from utils import (
+    load_experiments,
+    load_database,
+    load_data,
+    load_variables,
+    plot,
+)
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -23,6 +28,7 @@ from utils import load_experiments, load_database, load_data, load_variables, pl
 mod_manager = None
 par_manager = None
 obj_manager = None
+cal_manager = None
 
 # list of available experiments
 experiment_list = load_experiments()
@@ -31,40 +37,11 @@ experiment_list = load_experiments()
 # Functions and callbacks
 # -----------------------------------------------------------------------------
 
-
-def calibrate_data():
-    print("Calibrating data...")
-    global mod_manager
-    global par_manager
-    global obj_manager
-    # TODO simplify if condition once calibration is available for GP data
-    if mod_manager.avail() and not mod_manager.is_gaussian_process:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
-        # get calibration and normalization transformers
-        output_transformers = mod_manager.get_output_transformers()
-        output_calibration = output_transformers[0]
-        output_normalization = output_transformers[1]
-        # read simulation data back from JSON string
-        sim_data = pd.read_json(StringIO(state.sim_data_serialized))
-        # normalize simulation data
-        objective_tensor = torch.from_numpy(sim_data[objective_name].values)
-        objective_tensor = output_normalization.transform(objective_tensor)
-        if state.calibrate:
-            objective_tensor = output_calibration.untransform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        else:
-            objective_tensor = output_calibration.transform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        sim_data[objective_name] = objective_tensor.numpy()[0]
-        # serialize simulation data to JSON string
-        state.sim_data_serialized = sim_data.to_json(default_handler=str)
-
-
 def update(
     reset_model=True,
     reset_parameters=True,
     reset_objectives=True,
+    reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
@@ -75,13 +52,14 @@ def update(
     global mod_manager
     global par_manager
     global obj_manager
+    global cal_manager
     # load data
-    load_data()
+    exp_data, sim_data = load_data()
     # reset model
     if reset_model:
         mod_manager = ModelManager()
     # load input and output variables
-    input_variables, output_variables = load_variables()
+    input_variables, output_variables, simulation_calibration = load_variables()
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -91,8 +69,9 @@ def update(
     # reset objectives
     if reset_objectives:
         obj_manager = ObjectivesManager(mod_manager, output_variables)
-    # calibration
-    calibrate_data()
+    # reset calibration
+    if reset_calibration:
+        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
@@ -104,7 +83,12 @@ def update(
         gui_setup()
     # reset plots
     if reset_plots:
-        fig = plot(mod_manager)
+        fig = plot(
+            exp_data=exp_data,
+            sim_data=sim_data,
+            model_manager=mod_manager,
+            cal_manager=cal_manager,
+        )
         ctrl.figure_update(fig)
 
 
@@ -117,6 +101,7 @@ def update_on_change_experiment(**kwargs):
             reset_model=True,
             reset_parameters=True,
             reset_objectives=True,
+            reset_calibration=True,
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
@@ -133,6 +118,7 @@ def update_on_change_model(**kwargs):
             reset_model=True,
             reset_parameters=False,
             reset_objectives=False,
+            reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
@@ -143,16 +129,19 @@ def update_on_change_model(**kwargs):
 @state.change(
     "parameters",
     "opacity",
-    "calibrate",
+    "parameters_min",
+    "parameters_max",
+    "parameters_show_all",
 )
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity, or calibration changed...")
+        print("Parameters, opacity changed...")
         update(
             reset_model=False,
             reset_parameters=False,
             reset_objectives=False,
+            reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=False,
             reset_gui_route_nersc=False,
@@ -160,7 +149,7 @@ def update_on_change_others(**kwargs):
         )
 
 
-def open_image_dialog(event):
+def find_simulation(event):
     try:
         # extract the ID of the point that the user clicked on
         this_point_id = event["points"][0]["customdata"][0]
@@ -201,15 +190,15 @@ def open_image_dialog(event):
         # find plot file(s) to display
         file_list = os.listdir(file_directory)
         file_list.sort()
-        file_gif = [file for file in file_list if file.endswith(".gif")]
+        file_video = [file for file in file_list if file.endswith(".mp4")]
         file_png = [
             file for file in file_list if file.endswith(".png") and "iteration" in file
         ]
-        if len(file_gif) == 1:
-            # select GIF file
-            file_name = file_gif[0]
+        if len(file_video) == 1:
+            # select video file
+            file_name = file_video[0]
         elif len(file_png) > 0:
-            # select PNG file from last iteration
+            # select image file from last iteration
             file_name = file_png[-1]
         else:
             print("Could not find valid plot files to display")
@@ -222,21 +211,27 @@ def open_image_dialog(event):
             print(f"Could not find file {file_path}")
             return
         # store a URL encoded file content under a given key name
-        assets = LocalFileManager(data_directory)
-        assets.url(
-            key="image_key",
-            file_path=file_path,
-        )
-        state.image_url = assets["image_key"]
-        # trigger visibility of image dialog
-        state.image_dialog = True
+        return data_directory, file_path
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
 
-def close_image_dialog(**kwargs):
-    state.image_url = None
-    state.image_dialog = False
+def open_simulation_dialog(event):
+    data_directory, file_path = find_simulation(event)
+    state.simulation_video = file_path.endswith(".mp4")
+    assets = LocalFileManager(data_directory)
+    assets.url(
+        key="simulation_key",
+        file_path=file_path,
+    )
+    state.simulation_url = assets["simulation_key"]
+    state.simulation_dialog = True
+
+
+def close_simulation_dialog(**kwargs):
+    state.simulation_url = None
+    state.simulation_dialog = False
+    state.simulation_video = False
 
 
 # -----------------------------------------------------------------------------
@@ -307,7 +302,7 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(open_image_dialog, "[utils.safe($event)]"),
+                                click=(open_simulation_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
 
@@ -360,16 +355,24 @@ def gui_setup():
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
         # interactive dialog for simulation plots
-        with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
-            with vuetify.VCard():
+        with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
+            with vuetify.VCard(style="overflow: hidden;"):
                 with vuetify.VCardTitle("Simulation Plots"):
                     vuetify.VSpacer()
-                    with vuetify.VBtn(icon=True, click=close_image_dialog):
+                    with vuetify.VBtn(icon=True, click=close_simulation_dialog):
                         vuetify.VIcon("mdi-close")
+                with vuetify.VRow(align="center", justify="center"):
+                    html.Video(
+                        v_if=("simulation_video",),
+                        controls=True,
+                        src=("simulation_url",),
+                        height="480",
+                    )
                     vuetify.VImg(
-                        v_if=("image_url",),
-                        src=("image_url",),
+                        v_if=("!simulation_video",),
+                        src=("simulation_url",),
                         contain=True,
+                        height="480",
                     )
 
 

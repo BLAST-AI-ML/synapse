@@ -74,22 +74,24 @@
 
 ### How to build and run the Docker container
 
-1. Build the Docker image based on `Dockerfile`:
+1. Move to the root directory of the repository.
+
+2. Build the Docker image based on `Dockerfile`:
     ```console
-    docker build -t gui .
+    docker build -t gui -f dashboard/Dockerfile .
     ```
 
-2. Run the Docker container from the `dashboard/` folder:
+3. Run the Docker container from the `dashboard/` folder:
     ```console
-    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' gui
+    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' gui
     ```
     For debugging, you can also enter the container without starting the app:
     ```console
-    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/../ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it gui bash
+    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it gui bash
     ```
     Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
-3. Optional: Publish the container privately to NERSC registry (https://registry.nersc.gov):
+4. Optional: Publish the container privately to NERSC registry (https://registry.nersc.gov):
     ```console
     docker login registry.nersc.gov
     # Username: your NERSC username
@@ -101,7 +103,7 @@
     docker push -a registry.nersc.gov/m558/superfacility/gui
     ```
 
-4. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
+5. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
     ```console
     docker system prune -a
     ```

@@ -19,8 +19,8 @@ except ImportError:
 def create_laser_pulse():
 
     input_params = {
-        'kHz_Hexapod_Target ypos': {{ypos}},
-        'kHz_Zaber_Compressor Position.Ch1': {{ch1}},
+        'target_to_focus_distance': {{target_to_focus_distance}},
+        'fused_silica_thickness': {{fused_silica_thickness}},
     }
 
     # Dump input parameters, to be read in analysis file
@@ -39,7 +39,7 @@ def create_laser_pulse():
     laser_energy = 2e-3 # Energy of the laser pulse in joules
     waist = 3.5e-6  # Waist of the laser pulse in meters
     t_peak = 0.0  # Location of the peak of the laser pulse in time
-    focal_position = 200e-6 + input_params['kHz_Hexapod_Target ypos']*1e-3  # Focal position in meters
+    focal_position = 200e-6 + input_params['target_to_focus_distance']*1e-3  # Focal position in meters
     time_window_fs = 400
 
     # Apply spectral phase from fused silica
@@ -50,11 +50,10 @@ def create_laser_pulse():
             + 0.8974794 * lambda_micron**2 / (lambda_micron**2 - 9.896161**2)
     n = n2**0.5
     # Calculate the phase shift in radians
-    fused_silica_thickness_micron = 4e3 / 150e3 * ( input_params['kHz_Zaber_Compressor Position.Ch1'] - 75e3 )
     # Subtract index of the mean wavelength, since this simply adds a constant delay
     mean_wavelength_micron = mean_wavelength * 1e-6
     n_central = n[ np.argmin( abs(lambda_micron-mean_wavelength) ) ]
-    phase_shift = 2 * np.pi * (n - n_central) / lambda_micron * fused_silica_thickness_micron
+    phase_shift = 2 * np.pi * (n - n_central) / lambda_micron * input_params['fused_silica_thickness']
     phase += phase_shift
 
     # Define lasy grid
@@ -99,7 +98,7 @@ def create_laser_pulse():
     plt.ylabel('Intensity [a.u.]')
     #plt.ylim(0, 1)
     plt.grid()
-    plt.title('Pulse for kHz_Zaber_Compressor Position.Ch1 = %d' %input_params['kHz_Zaber_Compressor Position.Ch1'])
+    plt.title('Pulse for fused_silica_thickness = %d' %input_params['fused_silica_thickness'])
 
     plt.subplot(212)
     laser.show(cmap='gist_heat_r')

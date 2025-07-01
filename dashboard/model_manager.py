@@ -1,5 +1,10 @@
+import asyncio
 import numpy as np
+from pathlib import Path
+import re
 from scipy.optimize import minimize
+from sfapi_client import Client
+from sfapi_client.compute import Machine
 import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
@@ -115,6 +120,72 @@ class ModelManager:
         if self.__model is not None:
             return self.__model.output_transformers
 
+    def training_kernel(self):
+        try:
+            # create an authenticated client
+            with Client(
+                client_id=state.sfapi_client_id, secret=state.sfapi_key
+            ) as client:
+                perlmutter = client.compute(Machine.perlmutter)
+                # set the target path where auxiliary files will be copied
+                target_path = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
+                [target_path] = perlmutter.ls(target_path, directory=True)
+                # set the source path where auxiliary files are copied from
+                source_path = Path.cwd().parent
+                source_path_list = [
+                    Path(source_path / "ml/NN_training/mongo_NN.py"),
+                    Path(source_path / "ml/NN_training/Neural_Net_Classes.py"),
+                    Path(source_path / "dashboard/config/variables.yml"),
+                ]
+                # copy auxiliary files to NERSC
+                for path in source_path_list:
+                    with open(path, "rb") as f:
+                        f.filename = path.name
+                        target_path.upload(f)
+                # set the path of the script used to submit the training job on NERSC
+                script_path = Path(
+                    source_path / "automation/launch_model_training/training_pm.sbatch"
+                )
+                with open(script_path, "r") as file:
+                    script_job = file.read()
+                # replace the --experiment command line argument in the batch script
+                # with the current experiment in the state
+                script_job = re.sub(
+                    pattern=r"--experiment (.*)",
+                    repl=rf"--experiment {state.experiment}",
+                    string=script_job,
+                )
+                # submit the training job through the Superfacility API
+                sfapi_job = perlmutter.submit_job(script_job)
+                # print some logs
+                print(f"Training job submitted (job ID: {sfapi_job.jobid})")
+                # wait for the job to move into a terminal state
+                sfapi_job.complete()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+    async def training_async(self):
+        try:
+            print("Training model...")
+            await asyncio.to_thread(self.training_kernel)
+            print("Training job completed")
+            # flush state and enable button
+            state.model_training = False
+            state.model_training_status = "Completed"
+            state.flush()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+    def training_trigger(self):
+        try:
+            state.model_training = True
+            state.model_training_status = "Submitted"
+            state.flush()
+            # schedule asynchronous job
+            asyncio.create_task(self.training_async())
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
     def panel(self):
         print("Setting model card...")
         # list of available model types
@@ -141,15 +212,15 @@ class ModelManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VBtn(
-                                "Retrain",
-                                # click=self.retrain,  # TODO define callback
-                                disabled=True,  # TODO conditional on state
+                                "Train",
+                                click=self.training_trigger,
+                                disabled=("model_training",),
                                 style="margin-left: 4px; margin-top: 12px; text-transform: none;",
                             )
                         with vuetify.VCol():
-                            vuetify.VSwitch(
-                                v_model=("calibrate",),
-                                label="Calibration",
-                                inset=True,
-                                style="margin-left: 16px;",
+                            vuetify.VTextField(
+                                v_model_number=("model_training_status",),
+                                label="Training status",
+                                readonly=True,
+                                style="width: 100px;",
                             )

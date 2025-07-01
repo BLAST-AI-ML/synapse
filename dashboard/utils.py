@@ -1,4 +1,3 @@
-from io import StringIO
 import numpy as np
 import os
 import pandas as pd
@@ -47,8 +46,10 @@ def load_model_file():
     )
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
     if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
+        print(f"Model file {model_file} not found")
+        model_file = None
+    elif not metadata_match(config_file, model_file):
+        print(f"Model file {model_file} does not match configuration file {config_file}")
         model_file = None
     return model_file
 
@@ -71,21 +72,24 @@ def load_variables():
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
-    return (input_variables, output_variables)
+    # dictionary of calibration variables
+    simulation_calibration = config_spec["simulation_calibration"]
+    return (input_variables, output_variables, simulation_calibration)
 
 
 def load_data():
     print("Loading data from database...")
     # load database
     db = load_database()
-    # find all documents from experiment collection
-    documents = list(db[state.experiment].find())
-    # separate experiment and simulation documents
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes and serialize to JSON strings
-    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
+    # load experiment and simulation data points in dataframes
+    exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
+    sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
+    # Make sure that the _id is stored as a string (important for interactivity in plotly)
+    if '_id' in exp_data.columns:
+        exp_data['_id'] = exp_data['_id'].astype(str)
+    if '_id' in sim_data.columns:
+        sim_data['_id'] = sim_data['_id'].astype(str)
+    return (exp_data, sim_data)
 
 
 def metadata_match(config_file, model_file):
@@ -156,25 +160,28 @@ def load_database():
 
 
 # plot experimental, simulation, and ML data
-def plot(model_manager):
+def plot(exp_data, sim_data, model_manager, cal_manager):
     print("Plotting...")
+    # convert simulation data to experimental data
+    cal_manager.convert_sim_to_exp(sim_data)
     # local aliases
     parameters = state.parameters
     parameters_min = state.parameters_min
     parameters_max = state.parameters_max
+    parameters_show_all = state.parameters_show_all
     try:
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
-    # load experimental data
-    df_exp = pd.read_json(StringIO(state.exp_data_serialized))
-    df_sim = pd.read_json(StringIO(state.sim_data_serialized))
+    # set auxiliary properties
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
     fig = make_subplots(rows=len(parameters), cols=1)
+    global_ymin = float("inf")
+    global_ymax = float("-inf")
     for i, key in enumerate(parameters.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i + 1
@@ -183,7 +190,7 @@ def plot(model_manager):
         # figure trace from CSV data
         # set opacity map based on distance from current inputs
         # compute Euclidean distance
-        for df_count, df in enumerate([df_exp, df_sim]):
+        for df_count, df in enumerate([exp_data, sim_data]):
             df_copy = df.copy()
             # some data sets do not include all parameters
             # (e.g., simulation data set does not include GVD)
@@ -213,6 +220,12 @@ def plot(model_manager):
             )
             # filter out data with zero opacity
             df_copy_filtered = df_copy[df_copy["opacity"] != 0.0]
+
+            if not df_copy_filtered.empty:
+                y_vals = df_copy_filtered[objective_name].values
+                global_ymin = min(global_ymin, y_vals.min())
+                global_ymax = max(global_ymax, y_vals.max())
+
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy_filtered,
@@ -260,6 +273,10 @@ def plot(model_manager):
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
             mean, lower, upper = model_manager.evaluate(input_dict_loc)
+
+            global_ymin = min(global_ymin, lower.numpy().min())
+            global_ymax = max(global_ymax, upper.numpy().max())
+
             # upper bound
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
@@ -312,17 +329,34 @@ def plot(model_manager):
         )
         # ----------------------------------------------------------------------
         # figures style
-        fig.update_xaxes(
-            exponentformat="e",
-            title_text=key,
-            row=this_row,
-            col=this_col,
-        )
+        if parameters_show_all[key]:
+            fig.update_xaxes(
+                exponentformat="e",
+                title_text=key,
+                row=this_row,
+                col=this_col,
+            )
+        else:
+            fig.update_xaxes(
+                range=(parameters_min[key], parameters_max[key]),
+                exponentformat="e",
+                title_text=key,
+                row=this_row,
+                col=this_col,
+            )
+
+    # A bit of padding on either end of the y range so we can see all the data.
+    padding = 0.05 * (global_ymax - global_ymin)
+    for i, key in enumerate(parameters.keys()):
+        this_row = i + 1
+        this_col = 1
         fig.update_yaxes(
+            range=(global_ymin - padding, global_ymax + padding),
             exponentformat="e",
             title_text=objective_name,
             row=this_row,
             col=this_col,
         )
+
     fig.update_layout(clickmode="event")
     return fig

@@ -10,8 +10,8 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("ypos", -0.1, 0.1)
-var_2 = VaryingParameter("ch1", 50e3, 100e3)
+var_1 = VaryingParameter("target_to_focus_distance", -0.1, 0.1)
+var_2 = VaryingParameter("fused_silica_thickness", -667, 667)
 obj = Objective("f", minimize=False)
 
 n_var_1 = 5
@@ -40,7 +40,7 @@ ev_main = TemplateEvaluator(
     analysis_func=analysis_func_main,
     executable="../templates/warpx.rz",
     n_gpus=12,  # GPUs per individual evaluation
-    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL, 
+    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",
