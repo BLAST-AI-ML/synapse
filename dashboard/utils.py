@@ -49,7 +49,7 @@ def load_model_file():
         print(f"Model file {model_file} not found")
         model_file = None
     elif not metadata_match(config_file, model_file):
-        print(f"Model file {model_file} does not match configuration file")
+        print(f"Model file {model_file} does not match configuration file {config_file}")
         model_file = None
     return model_file
 
