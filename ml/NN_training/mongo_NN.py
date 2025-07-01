@@ -51,7 +51,7 @@ path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
 sys.path.append(path_to_IFE_ml)
 from Neural_Net_Classes import CombinedNN as CombinedNN
 
-with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
+with open("../../dashboard/config/variables.yml") as f:
     yaml_dict = yaml.safe_load( f.read() )
 input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ] 
@@ -125,4 +125,4 @@ model = TorchModel(
     input_transformers=[input_transform],
     output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
 )
-model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/NN_training/saved_models', experiment+'.yml'), save_jit=True )
+#model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/NN_training/saved_models', experiment+'.yml'), save_jit=True )

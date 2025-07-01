@@ -1,5 +1,4 @@
-#Format
-#python3 mongo_ensemble_NN.py <setup_name> <number_of_models>
+import argparse
 import pandas as pd
 import torch
 from botorch.models.transforms.input import AffineInputTransform
@@ -14,8 +13,25 @@ from lume_model.variables import DistributionVariable
 import sys
 import numpy as np
 
-# Select experimental setup for which we are training a model
-setup = sys.argv[1]
+#get arguments
+parser = argparse.ArgumentParser()
+
+parser.add_argument(
+    "--experiment",
+    help="name/tag of the experiment",
+    type=str,
+    required=True
+)
+parser.add_argument(
+    "--nummodels",
+    help="number of NN models in ensemble",
+    type=int,
+    required=True
+)
+
+args=parser.parse_args()
+experiment = args.experiment
+num_models = args.nummodels
 # Open credential file for database
 with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
     db_profile = f.read()
@@ -27,35 +43,44 @@ db = pymongo.MongoClient(
     password=re.findall('SF_DB_READONLY_PASSWORD=(.+)', db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
-# Extract data from the database as pandas dataframe
-collection=db[setup]
-df = pd.DataFrame( list(collection.find()) )
-
-# Extract the name of inputs and outputs for this setup
-#path_to_IFE_sf_src = "/global/homes/r/rjnathan/Codes/2024_IFE-superfacility/"
+# Extract the name of inputs and outputs for this experiment
 path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/"
 path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
 sys.path.append(path_to_IFE_ml)
 from Neural_Net_Classes import CombinedNN as CombinedNN
 
-with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
+with open("../../dashboard/config/variables.yml") as f:
     yaml_dict = yaml.safe_load( f.read() )
-input_variables = yaml_dict[setup]["input_variables"]
-input_names = [ v['name'] for v in input_variables.values() ] 
-output_variables = yaml_dict[setup]["output_variables"]
+input_variables = yaml_dict[experiment]["input_variables"]
+input_names = [ v['name'] for v in input_variables.values() ]
+output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
 
-#Normalize with Affine Input Transformer
+# Extract data from the database as pandas dataframe
+collection = db[experiment]
+df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
+df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
+# Apply calibration to the simulation results
+simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+for _, value in simulation_calibration.items():
+    sim_name = value["name"]
+    exp_name = value["depends_on"]
+    df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
+# Concatenate experimental and simulation data
+variables = input_names + output_names + ['experiment_flag']
+df = pd.concat( (df_exp[variables], df_sim[variables]) )
+
+# Normalize with Affine Input Transformer
 # Define the input and output normalizations
 X = torch.tensor( df[ input_names ].values, dtype=torch.float )
-input_transform = AffineInputTransform( 
-    len(input_names), 
-    coefficient=X.std(axis=0), 
+input_transform = AffineInputTransform(
+    len(input_names),
+    coefficient=X.std(axis=0),
     offset=X.mean(axis=0)
 )
 y = torch.tensor( df[ output_names ].values, dtype=torch.float )
-output_transform = AffineInputTransform( 
-    len(output_names), 
+output_transform = AffineInputTransform(
+    len(output_names),
     coefficient=y.std(axis=0),
     offset=y.mean(axis=0)
 )
@@ -70,8 +95,8 @@ norm_expt_outputs_training = torch.tensor( norm_df[norm_df.experiment_flag==1][o
 norm_sim_inputs_training = torch.tensor( norm_df[norm_df.experiment_flag==0][input_names].values, dtype=torch.float)
 norm_sim_outputs_training = torch.tensor( norm_df[norm_df.experiment_flag==0][output_names].values, dtype=torch.float)
 
+
 #Generate and Train Ensemble
-num_models = int(sys.argv[2])
 ensemble = []
 for i in range(num_models):
     model = CombinedNN(len(input_names), len(output_names), learning_rate=0.0001)
@@ -106,7 +131,7 @@ print(alphas_and_betas)
 print(f'\nAlpha Mean: {mean_alpha:.4f}\nAlpha Std: {std_alpha:.4f}\n\nBeta Mean: {mean_beta:.4f}\nBeta Std: {std_beta:.4f}')
 
 #Save Ensemble
-path = f'/global/homes/e/erod/2024_IFE-superfacility/ml/NN_training/Ensemble_Models/{setup}/'
+path = f'/global/homes/e/erod/2024_IFE-superfacility/ml/NN_training/Ensemble_Models/{experiment}/'
 os.makedirs(path, exist_ok=True)
 
 torch_models = []
@@ -136,4 +161,4 @@ nn_ensemble = NNEnsemble(
     input_variables=[ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ],
     output_variables=[ DistributionVariable(**output_variables[k]) for k in output_variables.keys() ]
     )
-nn_ensemble.dump( file=os.path.join(path, setup+'ensemble.yml'), save_jit=True )
+nn_ensemble.dump( file=os.path.join(path_to_IFE_sf_src+f'/ml/NN_training/ensemble_models/{experiment}', experiment+'ensemble.yml'), save_jit=True )
