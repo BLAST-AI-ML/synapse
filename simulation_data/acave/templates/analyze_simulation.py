@@ -44,7 +44,7 @@ def analyze_simulation():
     last_iteration = last_step
     S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
     lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
-    data['kHz_ThorlabsSpec MeanWavelength'] = lambda_avg*1e9 # convert from m to nm
+    data['mean_wavelength'] = lambda_avg*1e9 # convert from m to nm
 
     # Write to the data base
     db = pymongo.MongoClient(

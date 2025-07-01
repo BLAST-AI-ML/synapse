@@ -224,10 +224,3 @@ class ModelManager:
                                 readonly=True,
                                 style="width: 100px;",
                             )
-                        with vuetify.VCol():
-                            vuetify.VSwitch(
-                                v_model=("calibrate",),
-                                label="Calibration",
-                                inset=True,
-                                style="margin-left: 16px;",
-                            )
