@@ -45,10 +45,6 @@ db = pymongo.MongoClient(
     password=re.findall('SF_DB_READONLY_PASSWORD=(.+)', db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
-# Extract data from the database as pandas dataframe
-collection=db[experiment]
-df = pd.DataFrame( list(collection.find()) )
-
 # Extract the name of inputs and outputs for this experiment
 path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/"
 path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
@@ -62,7 +58,21 @@ input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
 
-#Normalize with Affine Input Transformer
+# Extract data from the database as pandas dataframe
+collection = db[experiment]
+df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
+df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
+# Apply calibration to the simulation results
+simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+for _, value in simulation_calibration.items():
+    sim_name = value["name"]
+    exp_name = value["depends_on"]
+    df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
+# Concatenate experimental and simulation data
+variables = input_names + output_names + ['experiment_flag']
+df = pd.concat( (df_exp[variables], df_sim[variables]) )
+
+# Normalize with Affine Input Transformer
 # Define the input and output normalizations
 X = torch.tensor( df[ input_names ].values, dtype=torch.float )
 input_transform = AffineInputTransform( 

@@ -17,8 +17,6 @@ def initialize_state():
     state.model_training_status = "Completed"
     # opacity
     state.opacity = 0.05
-    # calibration
-    state.calibrate = True
     # Superfacility API
     state.sfapi_client_id = None
     state.sfapi_key = None

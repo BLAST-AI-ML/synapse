@@ -72,7 +72,9 @@ def load_variables():
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
-    return (input_variables, output_variables)
+    # dictionary of calibration variables
+    simulation_calibration = config_spec["simulation_calibration"]
+    return (input_variables, output_variables, simulation_calibration)
 
 
 def load_data():
@@ -158,8 +160,10 @@ def load_database():
 
 
 # plot experimental, simulation, and ML data
-def plot(exp_data, sim_data, model_manager):
+def plot(exp_data, sim_data, model_manager, cal_manager):
     print("Plotting...")
+    # convert simulation data to experimental data
+    cal_manager.convert_sim_to_exp(sim_data)
     # local aliases
     parameters = state.parameters
     parameters_min = state.parameters_min

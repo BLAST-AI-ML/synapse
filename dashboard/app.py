@@ -10,6 +10,7 @@ from trame.widgets import plotly, router, vuetify2 as vuetify, html
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
+from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
 from utils import (
@@ -27,6 +28,7 @@ from utils import (
 mod_manager = None
 par_manager = None
 obj_manager = None
+cal_manager = None
 
 # list of available experiments
 experiment_list = load_experiments()
@@ -35,36 +37,11 @@ experiment_list = load_experiments()
 # Functions and callbacks
 # -----------------------------------------------------------------------------
 
-
-def calibrate_data(sim_data):
-    print("Calibrating data...")
-    global mod_manager
-    global par_manager
-    global obj_manager
-    # TODO simplify if condition once calibration is available for GP data
-    if mod_manager.avail() and not mod_manager.is_gaussian_process:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
-        # get calibration and normalization transformers
-        output_transformers = mod_manager.get_output_transformers()
-        output_calibration = output_transformers[0]
-        output_normalization = output_transformers[1]
-        # normalize simulation data
-        objective_tensor = torch.from_numpy(sim_data[objective_name].values)
-        objective_tensor = output_normalization.transform(objective_tensor)
-        if state.calibrate:
-            objective_tensor = output_calibration.untransform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        else:
-            objective_tensor = output_calibration.transform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        sim_data[objective_name] = objective_tensor.numpy()[0]
-
-
 def update(
     reset_model=True,
     reset_parameters=True,
     reset_objectives=True,
+    reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
@@ -75,13 +52,14 @@ def update(
     global mod_manager
     global par_manager
     global obj_manager
+    global cal_manager
     # load data
     exp_data, sim_data = load_data()
     # reset model
     if reset_model:
         mod_manager = ModelManager()
     # load input and output variables
-    input_variables, output_variables = load_variables()
+    input_variables, output_variables, simulation_calibration = load_variables()
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -91,8 +69,9 @@ def update(
     # reset objectives
     if reset_objectives:
         obj_manager = ObjectivesManager(mod_manager, output_variables)
-    # calibration
-    calibrate_data(sim_data)
+    # reset calibration
+    if reset_calibration:
+        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
@@ -108,6 +87,7 @@ def update(
             exp_data=exp_data,
             sim_data=sim_data,
             model_manager=mod_manager,
+            cal_manager=cal_manager,
         )
         ctrl.figure_update(fig)
 
@@ -121,6 +101,7 @@ def update_on_change_experiment(**kwargs):
             reset_model=True,
             reset_parameters=True,
             reset_objectives=True,
+            reset_calibration=True,
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
@@ -137,6 +118,7 @@ def update_on_change_model(**kwargs):
             reset_model=True,
             reset_parameters=False,
             reset_objectives=False,
+            reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
@@ -147,7 +129,6 @@ def update_on_change_model(**kwargs):
 @state.change(
     "parameters",
     "opacity",
-    "calibrate",
     "parameters_min",
     "parameters_max",
     "parameters_show_all",
@@ -155,11 +136,12 @@ def update_on_change_model(**kwargs):
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity, or calibration changed...")
+        print("Parameters, opacity changed...")
         update(
             reset_model=False,
             reset_parameters=False,
             reset_objectives=False,
+            reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=False,
             reset_gui_route_nersc=False,
