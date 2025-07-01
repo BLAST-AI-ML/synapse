@@ -5,14 +5,20 @@ import torch
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify2 as vuetify
+from trame.widgets import plotly, router, vuetify2 as vuetify, html
 
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
-from utils import load_experiments, load_database, load_data, load_variables, plot
+from utils import (
+    load_experiments,
+    load_database,
+    load_data,
+    load_variables,
+    plot,
+)
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -161,7 +167,7 @@ def update_on_change_others(**kwargs):
         )
 
 
-def open_image_dialog(event):
+def find_simulation(event):
     try:
         # extract the ID of the point that the user clicked on
         this_point_id = event["points"][0]["customdata"][0]
@@ -202,15 +208,15 @@ def open_image_dialog(event):
         # find plot file(s) to display
         file_list = os.listdir(file_directory)
         file_list.sort()
-        file_gif = [file for file in file_list if file.endswith(".gif")]
+        file_video = [file for file in file_list if file.endswith(".mp4")]
         file_png = [
             file for file in file_list if file.endswith(".png") and "iteration" in file
         ]
-        if len(file_gif) == 1:
-            # select GIF file
-            file_name = file_gif[0]
+        if len(file_video) == 1:
+            # select video file
+            file_name = file_video[0]
         elif len(file_png) > 0:
-            # select PNG file from last iteration
+            # select image file from last iteration
             file_name = file_png[-1]
         else:
             print("Could not find valid plot files to display")
@@ -223,21 +229,27 @@ def open_image_dialog(event):
             print(f"Could not find file {file_path}")
             return
         # store a URL encoded file content under a given key name
-        assets = LocalFileManager(data_directory)
-        assets.url(
-            key="image_key",
-            file_path=file_path,
-        )
-        state.image_url = assets["image_key"]
-        # trigger visibility of image dialog
-        state.image_dialog = True
+        return data_directory, file_path
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
 
-def close_image_dialog(**kwargs):
-    state.image_url = None
-    state.image_dialog = False
+def open_simulation_dialog(event):
+    data_directory, file_path = find_simulation(event)
+    state.simulation_video = file_path.endswith(".mp4")
+    assets = LocalFileManager(data_directory)
+    assets.url(
+        key="simulation_key",
+        file_path=file_path,
+    )
+    state.simulation_url = assets["simulation_key"]
+    state.simulation_dialog = True
+
+
+def close_simulation_dialog(**kwargs):
+    state.simulation_url = None
+    state.simulation_dialog = False
+    state.simulation_video = False
 
 
 # -----------------------------------------------------------------------------
@@ -308,7 +320,7 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(open_image_dialog, "[utils.safe($event)]"),
+                                click=(open_simulation_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
 
@@ -361,16 +373,24 @@ def gui_setup():
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
         # interactive dialog for simulation plots
-        with vuetify.VDialog(v_model=("image_dialog",), max_width="600"):
-            with vuetify.VCard():
+        with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
+            with vuetify.VCard(style="overflow: hidden;"):
                 with vuetify.VCardTitle("Simulation Plots"):
                     vuetify.VSpacer()
-                    with vuetify.VBtn(icon=True, click=close_image_dialog):
+                    with vuetify.VBtn(icon=True, click=close_simulation_dialog):
                         vuetify.VIcon("mdi-close")
+                with vuetify.VRow(align="center", justify="center"):
+                    html.Video(
+                        v_if=("simulation_video",),
+                        controls=True,
+                        src=("simulation_url",),
+                        height="480",
+                    )
                     vuetify.VImg(
-                        v_if=("image_url",),
-                        src=("image_url",),
+                        v_if=("!simulation_video",),
+                        src=("simulation_url",),
                         contain=True,
+                        height="480",
                     )
 
 
