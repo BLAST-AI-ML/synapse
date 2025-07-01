@@ -42,7 +42,7 @@ def load_model_file():
     model_type_tag = model_type_tag_dict[state.model_type]
     # find model file in the local file system
     model_dir = os.path.join(
-        os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models"
+        os.getcwd(), "..", "ml", "saved_models", f"{model_type_tag}_training",
     )
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
     if not os.path.isfile(model_file):
