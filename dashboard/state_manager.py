@@ -30,4 +30,4 @@ def initialize_state():
     # simulation plots in interactive dialog
     state.simulation_url = None
     state.simulation_dialog = False
-    state.video_simulation = False
+    state.simulation_video = False

@@ -235,7 +235,7 @@ def find_simulation(event):
 
 def open_simulation_dialog(event):
     data_directory, file_path = find_simulation(event)
-    state.video_simulation = file_path.endswith(".mp4")
+    state.simulation_video = file_path.endswith(".mp4")
     assets = LocalFileManager(data_directory)
     assets.url(
         key="simulation_key",
@@ -248,7 +248,7 @@ def open_simulation_dialog(event):
 def close_simulation_dialog(**kwargs):
     state.simulation_url = None
     state.simulation_dialog = False
-    state.video_simulation = False
+    state.simulation_video = False
 
 
 # -----------------------------------------------------------------------------
@@ -380,13 +380,13 @@ def gui_setup():
                         vuetify.VIcon("mdi-close")
                 with vuetify.VRow(align="center", justify="center"):
                     html.Video(
-                        v_if=("video_simulation",),
+                        v_if=("simulation_video",),
                         controls=True,
                         src=("simulation_url",),
                         height="480",
                     )
                     vuetify.VImg(
-                        v_if=("!video_simulation",),
+                        v_if=("!simulation_video",),
                         src=("simulation_url",),
                         contain=True,
                         height="480",
