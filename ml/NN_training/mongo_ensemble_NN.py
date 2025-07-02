@@ -26,12 +26,13 @@ parser.add_argument(
     "--nummodels",
     help="number of NN models in ensemble",
     type=int,
-    required=True
+    required=False
 )
 
 args=parser.parse_args()
 experiment = args.experiment
-num_models = args.nummodels
+#num_models = args.nummodels For later use mayhaps
+num_models = 10
 # Open credential file for database
 with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
     db_profile = f.read()
@@ -162,3 +163,11 @@ nn_ensemble = NNEnsemble(
     output_variables=[ DistributionVariable(**output_variables[k]) for k in output_variables.keys() ]
     )
 nn_ensemble.dump( file=os.path.join(path_to_IFE_sf_src+f'/ml/NN_training/ensemble_models/{experiment}', experiment+'ensemble.yml'), save_jit=True )
+'''
+To load ensemble
+ensemble=NNEnsemble(yml_file)
+output_dict = ensemble.evaluate({
+        name: torch.tensor(df[df.experiment_flag==1][name].values) 
+        for name in input_names
+    })
+'''
