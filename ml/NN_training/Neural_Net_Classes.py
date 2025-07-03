@@ -89,7 +89,9 @@ class CombinedNN(nn.Module):
         return x
 
     def train_model(self, sim_inputs, sim_targets,
-                    exp_inputs, exp_targets, num_epochs=1500):
+                    exp_inputs, exp_targets,
+                    sim_inputs_val, sim_targets_val,
+                    exp_inputs_val, exp_targets_val, num_epochs=1500):
 
         for epoch in range(num_epochs):
             self.optimizer.zero_grad()
@@ -110,11 +112,23 @@ class CombinedNN(nn.Module):
             self.loss_data['epoch_count'].append(epoch)
             self.scheduler.step(current_loss)
 
+            # compute validation loss for early stopping
+            with torch.no_grad():
+                val_loss = 0
+                if len(sim_inputs_val) > 0:
+                    sim_outputs_val = self(sim_inputs_val)
+                    val_loss += self.criterion( sim_targets_val, sim_outputs_val )
+                if len(exp_inputs_val) > 0:
+                    exp_outputs_val = self(exp_inputs_val)
+                    val_loss += self.criterion( exp_targets_val, exp_outputs_val )
+
+
             if(epoch+1) % (num_epochs/10) == 0:
-                print(f'Epoch [{epoch+1}/{num_epochs}], Loss:{loss.item():.6f}')
-            self.early_stopper(loss)
+                print(f'Epoch [{epoch+1}/{num_epochs}], Loss:{loss.item():.6f}, Val Loss:{val_loss.item():.6f}')
+
+            self.early_stopper(val_loss.item())
             if self.early_stopper.early_stop:
-                print(f'Early stopping triggered at, {epoch}  "with loss ", {loss.item():.6f}' )
+                print(f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}' )
                 break
 
 
