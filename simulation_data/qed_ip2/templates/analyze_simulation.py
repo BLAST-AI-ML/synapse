@@ -31,8 +31,8 @@ def analyze_simulation():
     # Parse the warpx_used_output
     with open('warpx_used_inputs') as f:
         text = f.read()
-        data['Prepulse Delay'] = float( re.findall('my_constants\.prepulse_delay\s+= (.+)', text)[0] )
-        data['Target focus'] = float( re.findall('my_constants\.target_focus\s+= (.+)', text)[0] )
+        data['plasma_gradient_length'] = float( re.findall('my_constants\.plasma_gradient_length\s+= (.+)', text)[0] )
+        data['target_to_focus_distance'] = float( re.findall('my_constants\.target_to_focus_distance\s+= (.+)', text)[0] )
 
     # Compute energy in the harmonics, above harmonic `min_harmonic`
     min_harmonic = 9

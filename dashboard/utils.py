@@ -42,12 +42,14 @@ def load_model_file():
     model_type_tag = model_type_tag_dict[state.model_type]
     # find model file in the local file system
     model_dir = os.path.join(
-        os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models"
+        os.getcwd(), "..", "ml", "saved_models", f"{model_type_tag}_training",
     )
     model_file = os.path.join(model_dir, f"{state.experiment}.yml")
     if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
+        print(f"Model file {model_file} not found")
+        model_file = None
+    elif not metadata_match(config_file, model_file):
+        print(f"Model file {model_file} does not match configuration file {config_file}")
         model_file = None
     return model_file
 
@@ -70,21 +72,18 @@ def load_variables():
     input_variables = config_spec["input_variables"]
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
-    return (input_variables, output_variables)
+    # dictionary of calibration variables
+    simulation_calibration = config_spec["simulation_calibration"]
+    return (input_variables, output_variables, simulation_calibration)
 
 
 def load_data():
     print("Loading data from database...")
     # load database
     db = load_database()
-    # find all documents from experiment collection
-    documents = list(db[state.experiment].find())
-    # separate experiment and simulation documents
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes
-    exp_data = pd.DataFrame(exp_docs)
-    sim_data = pd.DataFrame(sim_docs)
+    # load experiment and simulation data points in dataframes
+    exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
+    sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
     # Make sure that the _id is stored as a string (important for interactivity in plotly)
     if '_id' in exp_data.columns:
         exp_data['_id'] = exp_data['_id'].astype(str)
@@ -161,8 +160,10 @@ def load_database():
 
 
 # plot experimental, simulation, and ML data
-def plot(exp_data, sim_data, model_manager):
+def plot(exp_data, sim_data, model_manager, cal_manager):
     print("Plotting...")
+    # convert simulation data to experimental data
+    cal_manager.convert_sim_to_exp(sim_data)
     # local aliases
     parameters = state.parameters
     parameters_min = state.parameters_min

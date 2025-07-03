@@ -17,8 +17,6 @@ def initialize_state():
     state.model_training_status = "Completed"
     # opacity
     state.opacity = 0.05
-    # calibration
-    state.calibrate = True
     # Superfacility API
     state.sfapi_client_id = None
     state.sfapi_key = None
@@ -26,7 +24,8 @@ def initialize_state():
     state.sfapi_key_expiration = "Unavailable"
     state.perlmutter_status = "Unavailable"
     # simulation plots in interactive dialog
-    state.image_url = None
-    state.image_dialog = False
+    state.simulation_url = None
+    state.simulation_dialog = False
+    state.simulation_video = False
     # logs
     state.logs = None
