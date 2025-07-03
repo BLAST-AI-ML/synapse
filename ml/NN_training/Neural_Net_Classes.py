@@ -29,7 +29,7 @@ class CombinedNN(nn.Module):
     Model that trains a 5 layer neural network and a calibration layer
     """
     def __init__(self, input_size, output_size, hidden_size=20, 
-                 learning_rate=0.001, patience=100, factor=0.5, threshold=1e-4):
+                 learning_rate=0.001, patience_LRreduction=100, patience_earlystopping=150, factor=0.5, threshold=1e-4):
         '''
         args:
             float learning_rate: how much should NN correct when it guesses wrong
@@ -63,8 +63,8 @@ class CombinedNN(nn.Module):
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
-                                           factor=factor, patience=patience, threshold=threshold)
-        self.early_stopper = EarlyStopping(patience=patience)
+                                           factor=factor, patience=patience_LRreduction, threshold=threshold)
+        self.early_stopper = EarlyStopping(patience=patience_earlystopping)
 
     @torch.jit.export
     def calibrate(self, x):
