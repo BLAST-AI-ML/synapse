@@ -50,7 +50,7 @@ path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
 sys.path.append(path_to_IFE_ml)
 from Neural_Net_Classes import CombinedNN as CombinedNN
 
-with open("../../dashboard/config/variables.yml") as f:
+with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
     yaml_dict = yaml.safe_load( f.read() )
 input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
