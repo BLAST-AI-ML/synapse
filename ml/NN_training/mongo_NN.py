@@ -10,12 +10,13 @@ import matplotlib.pyplot as plt
 import torch
 from botorch.models.transforms.input import AffineInputTransform
 import pymongo
-import pandas as pd
 import os
 import re
 import yaml
 from lume_model.models import TorchModel
+from lume_model.models.ensemble import NNEnsemble
 from lume_model.variables import ScalarVariable
+from lume_model.variables import DistributionVariable
 from sklearn.model_selection import train_test_split
 import sys
 
@@ -29,11 +30,22 @@ parser.add_argument(
     type=str,
     required=True,
 )
+
+parser.add_argument(
+    "--model",
+    help="Choose to train a model between GP, NN, or ensemble_NN",
+    required=True
+)
 # parse arguments
 args = parser.parse_args()
 
 # Select experiment for which we are training a model
 experiment = args.experiment
+model_choice = args.model
+
+if model_choice not in ['NN', 'ensemble_NN']:
+    raise ValueError(f"Invalid model type: {model_choice}")
+
 
 # Open credential file for database
 with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
@@ -129,32 +141,57 @@ norm_sim_outputs_val = torch.tensor( norm_df_val[norm_df_val.experiment_flag==0]
 
 
 # Train combined NN
-calibrated_nn = CombinedNN( len(input_names), len(output_names), learning_rate=0.0005)
-calibrated_nn.train_model(
-    norm_sim_inputs_train, norm_sim_outputs_train,
-    norm_expt_inputs_train, norm_expt_outputs_train,
-    norm_sim_inputs_val, norm_sim_outputs_val,
-    norm_expt_inputs_val, norm_expt_outputs_val,    
-    num_epochs=20000)
+if model_choice == 'NN':
+    num_models = 1
+elif model_choice == 'ensemble_NN':
+    num_models = 10
+    
+ensemble = []
+for i in range(num_models):
+    model = CombinedNN(len(input_names), len(output_names), learning_rate=0.0001)
+    model.train_model(
+        norm_sim_inputs_train, norm_sim_outputs_train,
+        norm_expt_inputs_train, norm_expt_outputs_train,
+        norm_sim_inputs_val, norm_sim_outputs_val,
+        norm_expt_inputs_val, norm_expt_outputs_val,    
+        num_epochs=20000)
+    print(f'Model_{i+1} trained')
+    ensemble.append(model)
 
 
 # Saving the Lume Model - TO do for combined NN
-calibration_transform = AffineInputTransform(
-    len(output_names),
-    coefficient=calibrated_nn.sim_to_exp_calibration.weight.clone(),
-    offset=calibrated_nn.sim_to_exp_calibration.bias.clone() )
+models_path = f'/global/homes/e/erod/2024_IFE-superfacility/ml/NN_training/saved_models/{model_choice}/{experiment}'
+os.makedirs(models_path, exist_ok=True)
 
-# Fix mismatch in name between the config file and the expected lume-model format
-for k in input_variables:
-    print(input_variables[k])
-    input_variables[k]['default_value'] = input_variables[k]['default']
-    del input_variables[k]['default']
-
-model = TorchModel(
-    model=calibrated_nn,
+torch_models = []
+for model_nn in ensemble:
+    calibration_transform = AffineInputTransform(
+        len(output_names),
+        coefficient=model_nn.sim_to_exp_calibration.weight.clone(),
+        offset=model_nn.sim_to_exp_calibration.bias.clone() )
+    
+    # Fix mismatch in name between the config file and the expected lume-model format
+    for k in input_variables:
+        print(input_variables[k])
+        input_variables[k]['default_value'] = input_variables[k]['default']
+    
+    torch_model = TorchModel(
+        model=model_nn,
+        input_variables=[ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ],
+        output_variables=[ ScalarVariable(**output_variables[k]) for k in output_variables.keys() ],
+        input_transformers=[input_transform],
+        output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
+    )
+    if num_models == 1:
+        torch_model.dump(file=os.path.join(models_path, experiment+'NN.yml'), save_jit=True)
+        break
+    torch_models.append(torch_model)
+        
+if num_models > 1:
+    nn_ensemble = NNEnsemble(
+    models=torch_models,
     input_variables=[ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ],
-    output_variables=[ ScalarVariable(**output_variables[k]) for k in output_variables.keys() ],
-    input_transformers=[input_transform],
-    output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
-)
-model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/saved_models/NN_training/', experiment+'.yml'), save_jit=True )
+    output_variables=[ DistributionVariable(**output_variables[k]) for k in output_variables.keys() ]
+    )
+    nn_ensemble.dump( file=os.path.join(models_path, experiment+'ensemble.yml'), save_jit=True )
+
