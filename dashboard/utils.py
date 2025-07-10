@@ -32,15 +32,33 @@ def load_config_dict():
 
 
 def load_model_file():
-    print("Reading model file...")
-    config_file = load_config_file()
     # dictionary of auxiliary model types tags
     model_type_tag_dict = {
         "Gaussian Process": "GP",
         "Neural Network": "NN",
     }
     model_type_tag = model_type_tag_dict[state.model_type]
-    # find model file in the local file system
+
+    # Download model information from the database
+    db = load_database()
+    collection = db['models']
+    document = collection.find_one({'experiment': state.experiment, 'model_type': model_type_tag})
+    yaml_file_content = document['yaml_file_content']
+    model_info = yaml.safe_load(yaml_file_content)
+
+    # Save model files to the local file system
+    model_dir = os.path.join(
+        os.getcwd(), "..", "ml", "saved_models", f"{model_type_tag}_training",
+    )
+    with open(os.path.join(model_dir, state.experiment+'.yml'), 'w') as f:
+        f.write(yaml_file_content)
+    for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
+        with open(os.path.join(model_dir, filename), 'wb') as f:
+            f.write( document[filename] )
+    print("Reading model file...")
+    config_file = load_config_file()
+
+    # Find model file in the local file system
     model_dir = os.path.join(
         os.getcwd(), "..", "ml", "saved_models", f"{model_type_tag}_training",
     )
