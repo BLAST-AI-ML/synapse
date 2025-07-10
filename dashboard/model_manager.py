@@ -133,7 +133,7 @@ class ModelManager:
                 # set the source path where auxiliary files are copied from
                 source_path = Path.cwd().parent
                 source_path_list = [
-                    Path(source_path / "ml/NN_training/mongo_NN.py"),
+                    Path(source_path / "ml/NN_training/mongo_ensemble_NN.py"),
                     Path(source_path / "ml/NN_training/Neural_Net_Classes.py"),
                     Path(source_path / "dashboard/config/variables.yml"),
                 ]
@@ -155,6 +155,18 @@ class ModelManager:
                     repl=rf"--experiment {state.experiment}",
                     string=script_job,
                 )
+                if state.model_type == "Neural Network":
+                    script_job = re.sub(
+                        pattern=r"--model (.*)",
+                        repl=rf"--model NN",
+                        string=script_job,
+                    )
+                if state.model_type == "Gaussian Process":
+                    script_job = re.sub(
+                            pattern=r"--model (.*)",
+                            repl=rf"--model GP",
+                            string=script_job,
+                        )
                 # submit the training job through the Superfacility API
                 sfapi_job = perlmutter.submit_job(script_job)
                 # print some logs
