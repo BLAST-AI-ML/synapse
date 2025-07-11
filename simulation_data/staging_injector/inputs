@@ -1,10 +1,25 @@
 #################################
 ####### GENERAL PARAMETERS ######
 #################################
-warpx.zmax_plasma_to_compute_max_step = bound_z_max
 
-amr.n_cell =  128 10240 # 8192
-warpx.numprocs = 1 40
+# Plasma:
+# - Is there a transverse parabolic profile?
+# - Typical length of the ramps
+# - Typical length of doping transition
+
+# Laser:
+# - Switch to lasy
+# - How do we define waist (52 um) for the Jinc?
+# - Does a Jinc have infinite energy?
+
+# - Diags: optimize size of what is written to disk
+
+# - Increase resolution
+
+warpx.zmax_plasma_to_compute_max_step = stage_length
+
+amr.n_cell = 50 2000
+warpx.numprocs = 1 1
 geometry.dims = RZ
 geometry.prob_lo     = x_min z_min
 geometry.prob_hi     = x_max z_max
@@ -24,7 +39,7 @@ warpx.cfl = 0.999
 warpx.do_moving_window = 1
 warpx.moving_window_dir = z
 warpx.moving_window_v = 1.
-warpx.serialize_initial_conditions = 1
+
 warpx.gamma_boost = 10.
 warpx.boost_direction = z
 psatd.use_default_v_galilean = 1
@@ -45,80 +60,64 @@ psatd.nx_guard = 32
 psatd.nz_guard = 32
 psatd.update_with_rho = 1
 
-#Boundaries of simulation box
+# Boundaries of simulation box
 my_constants.x_min = 0.e-6
 my_constants.x_max =  128.e-6
-my_constants.z_min = -256e-6
+my_constants.z_min = -100e-6
 my_constants.z_max =  0.e-6
 
-my_constants.slice_xmin = x_min*0.9
-my_constants.slice_xmax = x_max*0.9
-my_constants.slice_zmin = z_min
-my_constants.slice_zmax = z_max
-
-my_constants.bound_x_min = x_min*0.8
-my_constants.bound_x_max = x_max*0.8
-my_constants.bound_z_min = 0.e-6
-my_constants.bound_z_max = 105.e-2
-
-#my_constants.ppc_r  = 2
-#my_constants.ppc_th = 8
-#my_constants.ppc_z  = 2
-
-my_constants.ppc_r1  = 3  # 4
-my_constants.ppc_th1 = 14 # 16
-my_constants.ppc_z1  = 3  # 4
+my_constants.ppc_r1  = 3
+my_constants.ppc_th1 = 14
+my_constants.ppc_z1  = 3
 
 my_constants.ppc_r2  = 2
 my_constants.ppc_th2 = 8
 my_constants.ppc_z2  = 2
-
-
 
 #################################
 ##### plasma parameters #########
 #################################
 
 my_constants.n_atom = 5.e23 # number of electrons per m^3
-my_constants.n_e =  1.4e23 ## 0.8e23  # axial plasma density (when fully ionized, pure H2)
-my_constants.n_exp = 10
+my_constants.ramp_length = 0.5e-2
+my_constants.stage_length = 3.3e-2
+
+#my_constants.n_e =  1.4e23 ## 0.8e23  # axial plasma density (when fully ionized, pure H2)
+#my_constants.n_exp = 10
 
 # Laser and gas jet parameters (assuming a square wave profile without ramps)
-my_constants.mxg_ratio = 3.467e-02
-my_constants.w0 = 52.e-6 # laser beam waist
-my_constants.a = 1/(pi*2.81e-15*w0**4)
-my_constants.w_s = 60.e-6  # approximate shock location
+#my_constants.mxg_ratio = 3.467e-02
+#my_constants.w0 = 52.e-6 # laser beam waist
+#my_constants.a = 1/(pi*2.81e-15*w0**4)
+#my_constants.w_s = 60.e-6  # approximate shock location
 
-my_constants.slope = 4.89e00
+#my_constants.slope = 4.89e00
 
-my_constants.z1 = 0.006
-my_constants.z2 = 1.995e-02
-my_constants.z22= z2 + 0.01 # 0.03
-my_constants.z3 = 1.0
-my_constants.z4 = 1.01
+#my_constants.z1 = 0.006
+#my_constants.z2 = 1.995e-02
+#my_constants.z22= z2 + 0.01 # 0.03
+#my_constants.z3 = 1.0
 
-my_constants.re = 73e-6
-my_constants.sh1 = ((n_e+a*re**4)*exp(-(re/w_s)**n_exp)+n_atom*(1-exp(-(re/w_s)**n_exp)))
-my_constants.cut2 = 41.1e-6
-my_constants.w_s2 = 55e-6
-#my_constants.down_ramp =  1.2*sh1*exp(-abs((r-cut2)/w_s2)**6.4)
-
+#my_constants.re = 73e-6
+#my_constants.sh1 = ((n_e+a*re**4)*exp(-(re/w_s)**n_exp)+n_atom*(1-exp(-(re/w_s)**n_exp)))
+#my_constants.cut2 = 41.1e-6
+#my_constants.w_s2 = 55e-6
 
 #################################
 ############ PLASMA #############
 #################################
 
-particles.species_names = electrons1 hydrogen1 nitrogen1 electrons_n1 electrons2 hydrogen2 nitrogen2 electrons_n2
+particles.species_names = electrons1 hydrogen1 # nitrogen1 electrons_n1 electrons2 hydrogen2 nitrogen2 electrons_n2
 
 electrons1.mass = m_e
 electrons1.charge = -q_e
 electrons1.injection_style = nuniformpercell
 electrons1.num_particles_per_cell_each_dim = ppc_r1 ppc_th1 ppc_z1
-electrons1.xmin = bound_x_min
-electrons1.xmax = bound_x_max
-electrons1.zmin = bound_z_min
-electrons1.zmax = bound_z_max
-electrons1.density_function(x,y,z) = "r=sqrt(x*x+y*y); (((n_e+a*r**4)*exp(-(r/w_s)**n_exp)+n_atom*(1-exp(-(r/w_s)**n_exp)))*heaviside(-r+73e-6,0)  + sh1*heaviside(-r+83e-6,83e-6)*heaviside(r-73e-6,0) + 1.2*sh1*exp(-abs((r-cut2)/w_s2)**6.4)*heaviside(r-83e-6,0))*((1+0*mxg_ratio)*(exp(z/(0.006/log(2)))-1)*heaviside(-z+z1,0) + 0*mxg_ratio*heaviside(z-z1,0)*heaviside(-z+z2,0) +  heaviside( (z-0.006)*(z3-z) ,   1 )  + (exp(-(z-z3)/(0.006/log(10))))*heaviside(z-z3,0))*heaviside(-z+z22,0)*(1+slope*z)"
+electrons1.xmin = 0
+electrons1.xmax = 0.9*x_max
+electrons1.zmin = 0
+electrons1.zmax = stage_length
+electrons1.density_function(x,y,z) = "n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1)" #+ (z>=stage_length-ramp_length)*(z<stage_length)*sqrt(stage_length-z)/(ramp_length)))"
 electrons1.profile = parse_density_function
 electrons1.momentum_distribution_type = constant
 electrons1.do_continuous_injection=1
@@ -127,11 +126,11 @@ hydrogen1.mass = m_p
 hydrogen1.charge = q_e
 hydrogen1.injection_style = nuniformpercell
 hydrogen1.num_particles_per_cell_each_dim = ppc_r1 ppc_th1 ppc_z1
-hydrogen1.xmin = bound_x_min
-hydrogen1.xmax = bound_x_max
-hydrogen1.zmin = bound_z_min
-hydrogen1.zmax = bound_z_max
-hydrogen1.density_function(x,y,z) = "r=sqrt(x*x+y*y); (((n_e+a*r**4)*exp(-(r/w_s)**n_exp)+n_atom*(1-exp(-(r/w_s)**n_exp)))*heaviside(-r+73e-6,0)  + sh1*heaviside(-r+83e-6,83e-6)*heaviside(r-73e-6,0) + 1.2*sh1*exp(-abs((r-cut2)/w_s2)**6.4)*heaviside(r-83e-6,0))*((1-5*mxg_ratio)*(exp(z/(0.006/log(2)))-1)*heaviside(-z+z1,0) - 5*mxg_ratio*heaviside(z-z1,0)*heaviside(-z+z2,0) - 5*mxg_ratio*(exp(-(z-z2)/(0.006/log(10))))*heaviside(z-z2,0)*heaviside(-z+z22,0) + heaviside( (z-0.006)*(z3-z) ,1 )  + (exp(-(z-z3)/(0.006/log(10))))*heaviside(z-z3,0))*heaviside(-z+z22,0)*(1+slope*z)"
+hydrogen1.xmin = 0
+hydrogen1.xmax = 0.9*x_max
+hydrogen1.zmin = 0
+hydrogen1.zmax = stage_length
+hydrogen1.density_function(x,y,z) = "n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1)" # + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt(stage_length-z)/(ramp_length)))"
 hydrogen1.profile = parse_density_function
 hydrogen1.momentum_distribution_type = constant
 hydrogen1.do_continuous_injection=1
@@ -154,7 +153,6 @@ nitrogen1.physical_element = N
 nitrogen1.do_continuous_injection=1
 electrons_n1.mass = m_e
 electrons_n1.charge = -q_e
-
 
 electrons2.mass = m_e
 electrons2.charge = -q_e
@@ -201,37 +199,31 @@ nitrogen2.do_continuous_injection=1
 electrons_n2.mass = m_e
 electrons_n2.charge = -q_e
 
-
-
 #################################
 ############ LASER ##############
 #################################
 lasers.names        = laser1
 laser1.profile      = from_file
-laser1.lasy_file_name      = "lasy_profile_00000.h5"
+laser1.lasy_file_name  = "diags/lasy_profile_00000.h5"
 laser1.position     = 0. 0. -1.e-9
 laser1.direction    = 0. 0. 1.
-laser1.polarization = 0. 1. 0.
+laser1.polarization = 1. 0. 0.
 laser1.e_max = 6.820e12
-laser1.wavelength =8.162e-07
+laser1.wavelength = 0.8e-6
 
 #################################
 ######### DIAGNOSTICS ###########
 #################################
-diagnostics.diags_names = diag1 diag2
+diagnostics.diags_names = diag diag1
+
+diag.diag_type = Full
+diag.intervals = 50
+diag.format = openpmd
+diag.fields_to_plot = n_hydrogen1 n_electrons1
 
 diag1.diag_type = BackTransformed
 diag1.do_back_transformed_fields = 1
-diag1.num_snapshots_lab = 250
-diag1.dt_snapshots_lab = 0.5e-12
+diag1.num_snapshots_lab = 20
+diag1.dt_snapshots_lab = 5.5e-12
 diag1.format = openpmd
 diag1.fields_to_plot = Er Et Ez rho
-diag1.species = electrons_n1 electrons_n2 electrons1 electrons2
-
-diag2.diag_type = BackTransformed
-diag2.do_back_transformed_fields = 1
-diag2.num_snapshots_lab = 800
-diag2.dt_snapshots_lab = 4e-12
-diag2.format = openpmd
-diag2.fields_to_plot = Er Et Ez rho
-diag2.species = electrons_n1 electrons_n2
