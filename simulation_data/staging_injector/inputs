@@ -18,7 +18,7 @@
 
 warpx.zmax_plasma_to_compute_max_step = stage_length
 
-amr.n_cell = 50 2000
+amr.n_cell = 50 1500
 warpx.numprocs = 1 1
 geometry.dims = RZ
 geometry.prob_lo     = x_min z_min
@@ -63,7 +63,7 @@ psatd.update_with_rho = 1
 # Boundaries of simulation box
 my_constants.x_min = 0.e-6
 my_constants.x_max =  128.e-6
-my_constants.z_min = -100e-6
+my_constants.z_min = -75e-6
 my_constants.z_max =  0.e-6
 
 my_constants.ppc_r1  = 3
