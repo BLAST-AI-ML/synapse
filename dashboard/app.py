@@ -30,6 +30,8 @@ par_manager = None
 obj_manager = None
 cal_manager = None
 
+# load database
+db = load_database()
 # list of available experiments
 experiment_list = load_experiments()
 
@@ -54,7 +56,7 @@ def update(
     global obj_manager
     global cal_manager
     # load data
-    exp_data, sim_data = load_data()
+    exp_data, sim_data = load_data(db)
     # reset model
     if reset_model:
         mod_manager = ModelManager()
@@ -149,12 +151,10 @@ def update_on_change_others(**kwargs):
         )
 
 
-def find_simulation(event):
+def find_simulation(event, db):
     try:
         # extract the ID of the point that the user clicked on
         this_point_id = event["points"][0]["customdata"][0]
-        # load database
-        db = load_database()
         # find the document with matching ID from the experiment collection
         documents = list(db[state.experiment].find({"_id": ObjectId(this_point_id)}))
         if len(documents) == 1:
@@ -217,7 +217,7 @@ def find_simulation(event):
 
 
 def open_simulation_dialog(event):
-    data_directory, file_path = find_simulation(event)
+    data_directory, file_path = find_simulation(event, db)
     state.simulation_video = file_path.endswith(".mp4")
     assets = LocalFileManager(data_directory)
     assets.url(

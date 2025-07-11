@@ -77,10 +77,8 @@ def load_variables():
     return (input_variables, output_variables, simulation_calibration)
 
 
-def load_data():
+def load_data(db):
     print("Loading data from database...")
-    # load database
-    db = load_database()
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
