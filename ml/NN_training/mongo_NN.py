@@ -176,7 +176,18 @@ model_info = yaml.safe_load(yaml_file_content)
 for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
     with open(os.path.join(path_to_save, filename), 'rb') as f:
         document[filename] = f.read()
-# - Upload the dictionary to the database
-print(f"Uploading model to database")
-db['models'].insert_one(document)
-print(f"Model uploaded to database")
+# - Check whether there is already a model in the database
+query = {'experiment': experiment, 'model_type': model_choice}
+count = db['models'].count_documents(query)
+# - Upload/replace the model in the database
+if count > 1:
+    print(f"Multiple models found for experiment: {experiment} and model type: {model_choice}! Removing them.")
+    db['models'].delete_many(query)
+if count == 0 or count > 1:
+    print("Uploading new model to database")
+    db['models'].insert_one(document)
+    print("Model uploaded to database")
+elif count == 1:
+    print('Model already exists in database ; updating it.')
+    db['models'].update_one(query, {'$set': document})
+print("Model updated in database")
