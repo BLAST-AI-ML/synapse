@@ -26,7 +26,7 @@ geometry.prob_hi     = x_max z_max
 amr.max_level = 0
 
 boundary.field_lo = none damped
-boundary.field_hi = none damped
+boundary.field_hi = pml damped
 
 #################################
 ############ NUMERICS ###########
