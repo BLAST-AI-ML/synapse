@@ -117,7 +117,7 @@ electrons1.xmin = 0
 electrons1.xmax = 0.9*x_max
 electrons1.zmin = 0
 electrons1.zmax = stage_length
-electrons1.density_function(x,y,z) = "n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1)" #+ (z>=stage_length-ramp_length)*(z<stage_length)*sqrt(stage_length-z)/(ramp_length)))"
+electrons1.density_function(x,y,z) = "n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1 + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length))"
 electrons1.profile = parse_density_function
 electrons1.momentum_distribution_type = constant
 electrons1.do_continuous_injection=1
@@ -130,7 +130,7 @@ hydrogen1.xmin = 0
 hydrogen1.xmax = 0.9*x_max
 hydrogen1.zmin = 0
 hydrogen1.zmax = stage_length
-hydrogen1.density_function(x,y,z) = "n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1)" # + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt(stage_length-z)/(ramp_length)))"
+hydrogen1.density_function(x,y,z) = "n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1 + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length))"
 hydrogen1.profile = parse_density_function
 hydrogen1.momentum_distribution_type = constant
 hydrogen1.do_continuous_injection=1
@@ -207,7 +207,7 @@ laser1.profile      = from_file
 laser1.lasy_file_name  = "diags/lasy_profile_00000.h5"
 laser1.position     = 0. 0. -1.e-9
 laser1.direction    = 0. 0. 1.
-laser1.polarization = 1. 0. 0.
+laser1.polarization = 0. 1. 0.
 laser1.e_max = 6.820e12
 laser1.wavelength = 0.8e-6
 
@@ -219,7 +219,6 @@ diagnostics.diags_names = diag diag1
 diag.diag_type = Full
 diag.intervals = 50
 diag.format = openpmd
-diag.fields_to_plot = n_hydrogen1 n_electrons1
 
 diag1.diag_type = BackTransformed
 diag1.do_back_transformed_fields = 1
