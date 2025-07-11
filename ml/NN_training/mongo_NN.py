@@ -200,7 +200,10 @@ if model_choice != 'GP':
         )
         if num_models == 1:
             #Save single NN and break
-            torch_model.dump(file=os.path.join(models_path, experiment+'NN.yml'), save_jit=True)
+            path_to_save = path_to_IFE_sf_src+'/ml/saved_models/NN_training/'
+            model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_jit=True )
+            print(f"Model saved to {path_to_save}")
+            #torch_model.dump(file=os.path.join(models_path, experiment+'NN.yml'), save_jit=True)
             end_time = time.time()
             break
         torch_models.append(torch_model)
@@ -277,7 +280,11 @@ else:
         input_transformers=[input_transform],
         output_transformers=[output_transform],
     )
-    
+    gp_lume_model.dump(
+        file='./saved_models/' + setup +'.yml',
+        save_models=True,   
+    )
+    '''
     model.dump( file=os.path.join(models_path, experiment+'GP.yml'),     
     save_models=True  
-    )
+    )'''
