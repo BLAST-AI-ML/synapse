@@ -17,6 +17,9 @@ COPY ml/NN_training/mongo_NN.py /app/ml/NN_training/mongo_NN.py
 COPY ml/NN_training/Neural_Net_Classes.py /app/ml/NN_training/Neural_Net_Classes.py
 COPY automation/launch_model_training/training_pm.sbatch /app/automation/launch_model_training/training_pm.sbatch
 
+# Create directory for downloaded models
+RUN mkdir -p /app/dashboard/downloaded_model
+
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name gui gui-lock.yml
