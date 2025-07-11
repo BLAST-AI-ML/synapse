@@ -158,10 +158,12 @@ model = TorchModel(
 
 path_to_save = path_to_IFE_sf_src+'/ml/saved_models/NN_training/'
 model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_jit=True )
+print(f"Model saved to {path_to_save}")
 
 # Upload the model to the database
 model_choice = 'NN'
 # - Load the files that were just created into a dictionary
+print(f"Loading model from {path_to_save}")
 with open(os.path.join(path_to_save, experiment+'.yml')) as f:
     yaml_file_content = f.read()
 document = {
@@ -169,9 +171,12 @@ document = {
     'model_type': model_choice,
     'yaml_file_content': yaml_file_content
 }
+print(document)
 model_info = yaml.safe_load(yaml_file_content)
 for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
     with open(os.path.join(path_to_save, filename), 'rb') as f:
         document[filename] = f.read()
 # - Upload the dictionary to the database
-db[experiment].insert_one(document)
+print(f"Uploading model to database")
+db['models'].insert_one(document)
+print(f"Model uploaded to database")
