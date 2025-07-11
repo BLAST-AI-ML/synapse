@@ -183,6 +183,7 @@ count = db['models'].count_documents(query)
 if count > 1:
     print(f"Multiple models found for experiment: {experiment} and model type: {model_choice}! Removing them.")
     db['models'].delete_many(query)
+    count = db['models'].count_documents(query)
 if count == 0 or count > 1:
     print("Uploading new model to database")
     db['models'].insert_one(document)
