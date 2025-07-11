@@ -32,7 +32,7 @@ def load_config_dict():
     return config_dict
 
 
-def load_model_file():
+def load_model_file(db):
     # dictionary of auxiliary model types tags
     model_type_tag_dict = {
         "Gaussian Process": "GP",
@@ -41,7 +41,6 @@ def load_model_file():
     model_type_tag = model_type_tag_dict[state.model_type]
 
     # Download model information from the database
-    db = load_database()
     collection = db['models']
     query = {'experiment': state.experiment, 'model_type': model_type_tag}
     count = collection.count_documents(query)
@@ -108,10 +107,8 @@ def load_variables():
     return (input_variables, output_variables, simulation_calibration)
 
 
-def load_data():
+def load_data(db):
     print("Loading data from database...")
-    # load database
-    db = load_database()
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
