@@ -278,7 +278,7 @@ else:
     )
 
     path_to_save = path_to_IFE_sf_src+'/ml/saved_models/GP_training/'
-    model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_jit=True )
+    model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_models=True )
     print(f"Model saved to {path_to_save}")
 
 # Upload the model to the database
