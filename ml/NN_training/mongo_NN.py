@@ -5,8 +5,6 @@
 ## Date : January, 2025
 
 import argparse
-import pandas as pd
-import matplotlib.pyplot as plt
 import torch
 from botorch.models.transforms.input import AffineInputTransform
 import pymongo
@@ -42,8 +40,8 @@ with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
 # Connect to the MongoDB database with read-only access
 db = pymongo.MongoClient(
     host="mongodb05.nersc.gov",
-    username="bella_sf_ro",
-    password=re.findall('SF_DB_READONLY_PASSWORD=(.+)', db_profile)[0],
+    username="bella_sf_admin",
+    password=re.findall('SF_DB_ADMIN_PASSWORD=(.+)', db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
 # Extract the name of inputs and outputs for this experiment
@@ -134,7 +132,7 @@ calibrated_nn.train_model(
     norm_sim_inputs_train, norm_sim_outputs_train,
     norm_expt_inputs_train, norm_expt_outputs_train,
     norm_sim_inputs_val, norm_sim_outputs_val,
-    norm_expt_inputs_val, norm_expt_outputs_val,    
+    norm_expt_inputs_val, norm_expt_outputs_val,
     num_epochs=20000)
 
 
@@ -157,4 +155,44 @@ model = TorchModel(
     input_transformers=[input_transform],
     output_transformers=[calibration_transform,output_transform] # saving calibration before normalization
 )
-model.dump( file=os.path.join(path_to_IFE_sf_src+'/ml/saved_models/NN_training/', experiment+'.yml'), save_jit=True )
+
+path_to_save = path_to_IFE_sf_src+'/ml/saved_models/NN_training/'
+model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_jit=True )
+print(f"Model saved to {path_to_save}")
+
+# Upload the model to the database
+model_choice = 'NN'
+# - Load the files that were just created into a dictionary
+print(f"Loading model from {path_to_save}")
+with open(os.path.join(path_to_save, experiment+'.yml')) as f:
+    yaml_file_content = f.read()
+document = {
+    'experiment': experiment,
+    'model_type': model_choice,
+    'yaml_file_content': yaml_file_content
+}
+print(document)
+model_info = yaml.safe_load(yaml_file_content)
+for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
+    with open(os.path.join(path_to_save, filename), 'rb') as f:
+        document[filename] = f.read()
+# - Check whether there is already a model in the database
+query = {'experiment': experiment, 'model_type': model_choice}
+count = db['models'].count_documents(query)
+# - Upload/replace the model in the database
+if count > 1:
+    print(f"Multiple models found for experiment: {experiment} and model type: {model_choice}! Removing them.")
+    db['models'].delete_many(query)
+    count = db['models'].count_documents(query)
+if count == 0:
+    print("Uploading new model to database")
+    db['models'].insert_one(document)
+    print("Model uploaded to database")
+elif count == 1:
+    print('Model already exists in database ; updating it.')
+    db['models'].update_one(query, {'$set': document})
+else:
+    # Raise error, this should not happen
+    raise ValueError(f"Multiple models found for experiment: {experiment} and model type: {model_choice}!")
+
+print("Model updated in database")
