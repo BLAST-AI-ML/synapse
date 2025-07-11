@@ -7,6 +7,7 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
+import shutil
 from state_manager import state
 
 
@@ -55,10 +56,11 @@ def load_model_file():
 
         # Save model files to the local file system
         # - Prepare path on the local file system
-        model_dir = os.path.join(
-            os.getcwd(), "..", "ml", "saved_models", f"{model_type_tag}_training",
-        )
-        os.makedirs(model_dir, exist_ok=True)
+        model_dir = 'downloaded_model'
+        # - Remove the directory if it exists
+        if os.path.exists(model_dir):
+            shutil.rmtree(model_dir)
+        os.makedirs(model_dir)
         # - Save the model yaml file
         yaml_file_content = document['yaml_file_content']
         with open(os.path.join(model_dir, state.experiment+'.yml'), 'w') as f:
