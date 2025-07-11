@@ -31,62 +31,6 @@ def load_config_dict():
     config_dict = yaml.safe_load(config_str)
     return config_dict
 
-
-def load_model_file(db):
-    # dictionary of auxiliary model types tags
-    model_type_tag_dict = {
-        "Gaussian Process": "GP",
-        "Neural Network": "NN",
-    }
-    model_type_tag = model_type_tag_dict[state.model_type]
-
-    # Download model information from the database
-    collection = db['models']
-    query = {'experiment': state.experiment, 'model_type': model_type_tag}
-    count = collection.count_documents(query)
-    if count == 0:
-        print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
-        model_file = None
-    elif count > 1:
-        print(f'Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!')
-        model_file = None
-    else:
-        document = collection.find_one(query)
-
-        # Save model files to the local file system
-        # - Prepare path on the local file system
-        model_dir = 'downloaded_model'
-        if not os.path.exists(model_dir):
-            # Create the directory if it does not exist
-            os.makedirs(model_dir)
-        else:
-            # else remove the previous model
-            for file in os.listdir(model_dir):
-                os.remove(os.path.join(model_dir, file))
-        # - Save the model yaml file
-        yaml_file_content = document['yaml_file_content']
-        with open(os.path.join(model_dir, state.experiment+'.yml'), 'w') as f:
-            f.write(yaml_file_content)
-        # - Save the corresponding binary files
-        model_info = yaml.safe_load(yaml_file_content)
-        for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
-            with open(os.path.join(model_dir, filename), 'wb') as f:
-                f.write( document[filename] )
-
-        # Check consistency of the model file
-        print("Reading model file...")
-        config_file = load_config_file()
-        model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-        if not os.path.isfile(model_file):
-            print(f"Model file {model_file} not found")
-            model_file = None
-        elif not metadata_match(config_file, model_file):
-            print(f"Model file {model_file} does not match configuration file {config_file}")
-            model_file = None
-
-    return model_file
-
-
 def load_experiments():
     print("Reading experiments from configuration file...")
     # load configuration dictionary
