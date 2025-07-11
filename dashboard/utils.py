@@ -57,10 +57,13 @@ def load_model_file():
         # Save model files to the local file system
         # - Prepare path on the local file system
         model_dir = 'downloaded_model'
-        # - Remove the directory if it exists
-        if os.path.exists(model_dir):
-            shutil.rmtree(model_dir)
-        os.makedirs(model_dir)
+        if not os.path.exists(model_dir):
+            # Create the directory if it does not exist
+            os.makedirs(model_dir)
+        else:
+            # else remove the previous model
+            for file in os.listdir(model_dir):
+                os.remove(os.path.join(model_dir, file))
         # - Save the model yaml file
         yaml_file_content = document['yaml_file_content']
         with open(os.path.join(model_dir, state.experiment+'.yml'), 'w') as f:
