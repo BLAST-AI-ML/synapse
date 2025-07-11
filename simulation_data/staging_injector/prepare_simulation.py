@@ -29,9 +29,9 @@ def create_laser_pulse():
         t_peak=0.,  # s,
     )
     profile = CombinedLongitudinalTransverseProfile(
-        wavelength=0.8e-6,  # m
+        wavelength=wavelength,  # m
         pol=(1, 0),
-        laser_energy=1.,  # J
+        laser_energy=laser_energy,  # J
         long_profile = longitudinalProfile,
         trans_profile = tranverseProfile,
     )
