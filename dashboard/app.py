@@ -59,7 +59,7 @@ def update(
     exp_data, sim_data = load_data(db)
     # reset model
     if reset_model:
-        mod_manager = ModelManager()
+        mod_manager = ModelManager(db)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables()
     # reset parameters

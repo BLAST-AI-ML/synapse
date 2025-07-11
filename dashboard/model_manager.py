@@ -15,9 +15,9 @@ from utils import load_model_file
 
 
 class ModelManager:
-    def __init__(self):
+    def __init__(self, db):
         print("Initializing model manager...")
-        model_file = load_model_file()
+        model_file = load_model_file(db)
         if model_file is None:
             self.__model = None
         else:
