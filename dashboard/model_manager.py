@@ -1,6 +1,9 @@
 import asyncio
 import numpy as np
 from pathlib import Path
+import tempfile
+import os
+import yaml
 import re
 from scipy.optimize import minimize
 from sfapi_client import Client
@@ -9,21 +12,68 @@ import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
+from utils import load_config_file, metadata_match
 
 from state_manager import state
-from utils import load_model_file
 
+model_type_tag_dict = {
+    "Gaussian Process": "GP",
+    "Neural Network": "NN",
+}
 
 class ModelManager:
+
     def __init__(self, db):
+
         print("Initializing model manager...")
-        model_file = load_model_file(db)
-        if model_file is None:
-            self.__model = None
-        else:
-            # save model and model type
-            self.__is_neural_network = False
-            self.__is_gaussian_process = False
+        # Set initial default values
+        self.__model = None
+        self.__is_neural_network = False
+        self.__is_gaussian_process = False
+
+        # Download model information from the database
+        collection = db['models']
+        model_type_tag = model_type_tag_dict[state.model_type]
+        query = {'experiment': state.experiment, 'model_type': model_type_tag}
+        count = collection.count_documents(query)
+        if count == 0:
+            print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
+            return
+        elif count > 1:
+            print(f'Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!')
+            return
+
+        # Load model information from the database
+        document = collection.find_one(query)
+        # Save model files in a temporary directory,
+        # so that it can then be loaded with lume_model
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            # - Save the model yaml file
+            yaml_file_content = document['yaml_file_content']
+            with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
+                f.write(yaml_file_content)
+            # - Save the corresponding binary files
+            model_info = yaml.safe_load(yaml_file_content)
+            filenames = [ model_info['model'] ] + \
+                model_info['input_transformers'] + \
+                model_info['output_transformers']
+            for filename in filenames:
+                with open(os.path.join(temp_dir, filename), 'wb') as f:
+                    f.write( document[filename] )
+
+            # Check consistency of the model file
+            print("Reading model file...")
+            config_file = load_config_file()
+            model_file = os.path.join(temp_dir, f"{state.experiment}.yml")
+            if not os.path.isfile(model_file):
+                print(f"Model file {model_file} not found")
+                return
+            elif not metadata_match(config_file, model_file):
+                print(f"Model file {model_file} does not match configuration file {config_file}")
+                return
+
+            # Load model with lume_model
             try:
                 if state.model_type == "Neural Network":
                     self.__is_neural_network = True
