@@ -77,7 +77,6 @@ output_names = [ v['name'] for v in output_variables.values() ]
 
 # Extract data from the database as pandas dataframe
 collection = db[experiment]
-df_train = pd.DataFrame( list(collection.find()) )
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
 df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 # Apply calibration to the simulation results
@@ -87,15 +86,19 @@ for _, value in simulation_calibration.items():
     exp_name = value["depends_on"]
     df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
 
-
-#Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)
-
 # Concatenate experimental and simulation data for training and validation
 variables = input_names + output_names + ['experiment_flag']
-df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
+if model_type != 'GP':
+    #Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
+    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the 
+    sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)#random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
+    df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
+    df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
 
+else:
+    # No split: all the data is training data
+    df_train = pd.concate( (df_exp[variables], df_sim[variables]) )
+    
 # Normalize with Affine Input Transformer
 # Define the input and output normalizations
 X_train = torch.tensor( df_train[ input_names ].values, dtype=torch.float )
@@ -131,8 +134,6 @@ if model_type != 'GP':
     ##############################
     #Early Stopping and validation
     ##############################
-    df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
-
     X_val = torch.tensor( df_val[ input_names ].values, dtype=torch.float )
     input_transform = AffineInputTransform(
         len(input_names),
