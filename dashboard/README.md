@@ -78,7 +78,7 @@
 
 2. Build the Docker image based on `Dockerfile`:
     ```console
-    docker build -t gui -f dashboard/Dockerfile .
+    docker build --platform linux/amd64 -t gui -f dashboard/Dockerfile .
     ```
 
 3. Run the Docker container from the `dashboard/` folder:
