@@ -10,7 +10,7 @@
 #SBATCH -N 1
 #SBATCH -J testsf
 #SBATCH -A m558
-#SBATCH -q realtime
+#SBATCH -q debug
 #SBATCH --constraint=gpu
 # ideally single:1, but NERSC cgroups issue
 #SBATCH --ntasks-per-node=1
@@ -33,4 +33,4 @@ fi
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun python /global/cfs/cdirs/m558/superfacility/model_training/src/mongo_NN.py --experiment ${experiment} --model ${model}
+srun python /global/cfs/cdirs/m558/superfacility/model_training/src/train_model.py --experiment ${experiment} --model ${model}

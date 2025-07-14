@@ -13,8 +13,8 @@ WORKDIR /app/dashboard
 
 # Copy content into the container at /app
 COPY --exclude=*.pem dashboard /app/dashboard
-COPY ml/NN_training/mongo_NN.py /app/ml/NN_training/mongo_NN.py
-COPY ml/NN_training/Neural_Net_Classes.py /app/ml/NN_training/Neural_Net_Classes.py
+COPY ml/train_model.py /app/ml/train_model.py
+COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY automation/launch_model_training/training_pm.sbatch /app/automation/launch_model_training/training_pm.sbatch
 
 # Install any needed packages specified in the environment file
