@@ -134,19 +134,6 @@ if model_type != 'GP':
     ##############################
     #Early Stopping and validation
     ##############################
-    X_val = torch.tensor( df_val[ input_names ].values, dtype=torch.float )
-    input_transform = AffineInputTransform(
-        len(input_names),
-        coefficient=X_val.std(axis=0),
-        offset=X_val.mean(axis=0)
-    )
-    y_val = torch.tensor( df_val[ output_names ].values, dtype=torch.float )
-    output_transform = AffineInputTransform(
-        len(output_names),
-        coefficient=y_val.std(axis=0),
-        offset=y_val.mean(axis=0)
-    )
-
     # Apply normalization to the validation data set
     norm_df_val = df_val.copy()
     norm_df_val[input_names] = input_transform( torch.tensor( df_val[input_names].values ) )
