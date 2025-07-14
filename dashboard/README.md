@@ -78,10 +78,6 @@
 
 2. Build the Docker image based on `Dockerfile`:
     ```console
-    docker build -t gui -f dashboard/Dockerfile .
-    ```
-    or, when running on Apple Silicon:
-    ```consol
     docker build --platform linux/amd64 -t gui -f dashboard/Dockerfile .
     ```
 
