@@ -183,8 +183,8 @@ class ModelManager:
                 # set the source path where auxiliary files are copied from
                 source_path = Path.cwd().parent
                 source_path_list = [
-                    Path(source_path / "ml/NN_training/mongo_NN.py"),
-                    Path(source_path / "ml/NN_training/Neural_Net_Classes.py"),
+                    Path(source_path / "ml/train_model.py"),
+                    Path(source_path / "ml/Neural_Net_Classes.py"),
                     Path(source_path / "dashboard/config/variables.yml"),
                 ]
                 # copy auxiliary files to NERSC
