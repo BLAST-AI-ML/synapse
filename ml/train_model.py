@@ -124,7 +124,7 @@ norm_expt_outputs_train = torch.tensor( norm_df_train[norm_df_train.experiment_f
 norm_sim_inputs_train = torch.tensor( norm_df_train[norm_df_train.experiment_flag==0][input_names].values, dtype=torch.float)
 norm_sim_outputs_train = torch.tensor( norm_df_train[norm_df_train.experiment_flag==0][output_names].values, dtype=torch.float)
 
-model = none
+model = None
 ######################################################
 # Neural Net and Ensemble Creation and training
 ######################################################
@@ -188,7 +188,7 @@ if model_type != 'GP':
             model = torch_model
             end_time = time.time()
             break
-        torch_models.append(model)
+        torch_models.append(torch_model)
 
     #Save Ensemble
     if num_models > 1:
