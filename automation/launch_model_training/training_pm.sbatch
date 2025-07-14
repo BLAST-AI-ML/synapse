@@ -33,4 +33,4 @@ fi
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun python /global/cfs/cdirs/m558/superfacility/model_training/src/mongo_NN.py --experiment ${experiment} --model ${model}
+srun python /global/cfs/cdirs/m558/superfacility/model_training/src/train_model.py --experiment ${experiment} --model ${model}
