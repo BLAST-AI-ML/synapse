@@ -1,0 +1,149 @@
+qed_ip2:
+
+  input_variables:
+    input1:
+      name: "Prepulse Delay"
+      type: scalar
+      default: 70
+      value_range: [67.41, 71.41]
+
+    input2:
+      name: "Target focus"
+      type: scalar
+      default: -56.84
+      value_range: [-56.87, -56.81]
+
+  output_variables:
+    output1:
+      name: "harmonic_signal"
+      type: scalar
+
+  simulation_calibration:
+
+    input1:
+      name: "plasma_gradient_length"
+      unit: "nm"
+      depends_on: "Prepulse Delay"
+      # Model for the gradient length:
+      # Prepulse Delay is in mm, this is actually the motion of a stage
+      # Zero delay is 71.41 mm ; going to the left, the delay is increasing
+      # The prepulse is obtained with a 1cm hole in a 20cm beam, so it contains 1/400 of the energy
+      # i.e. 20 J / 400 = 0.05 J ; its waist will be 20 x 2.7 microns at focus, i.e. 54 microns.
+      # Thus, the fluence is 0.05 J / (pi x 54e-6 x 54e-6) = 5.5e6 J/m^2 = 0.55 kJ/cm^2
+      # The model for the gradient length from Henri Vincenti is
+      # L [nm] = alpha x sqrt(F[kJ/cm^2])* tau [ps] with alpha = 50 nm/ps
+      # L [nm] = alpha x sqrt(F[kJ/cm^2])* 2/clight* 1e-3/1e-12*(71.41 - prepulse_delay_mm)
+      alpha: -247.
+      beta: 71.41
+
+    input2:
+      name: "target_to_focus_distance"
+      unit: "um"
+      depends_on: "Target focus"
+      # Per meeting notes on 2025-05-22, target_focus is in mm and the origin is at 56.84 mm
+      # Increasing target_focus moves the target toward the parabola, i.e. the distance is decreasing
+      alpha: 1.0
+      beta: 56.84
+
+    output1:
+      name: "energy_in_harmonics"
+      unit: "J/m"
+      depends_on: "harmonic_signal"
+      alpha: 1.0
+      beta: 0.0
+
+ip2:
+
+  input_variables:
+
+    input1:
+        name: "Preplasma Z (MFA)"
+        type: scalar
+        default: 12.1
+        value_range: [11.85, 12.15]
+
+    input2:
+        name: "DAZZLER-LT-3rdorder value1"
+        type: scalar
+        default: 80000.
+        value_range: [-80000.0, 80000.0]
+
+  output_variables:
+    output1:
+      name: "n_protons"
+      type: scalar
+
+  simulation_calibration:
+
+    input1:
+      name: "target_to_focus_distance"
+      unit: "um"
+      depends_on: "Preplasma Z (MFA)"
+      alpha: 1000. # convert from mm to um
+      beta: 12
+
+    input2:
+      name: "TOD"
+      unit: "fs^3"
+      depends_on: "DAZZLER-LT-3rdorder value1"
+      alpha: 1.0
+      beta: 0.0
+
+    output1:
+      name: "n_protons_2d"
+      unit: "a.u."
+      depends_on: "n_protons"
+      alpha: 1.5
+      beta: 20000000000.
+
+acave:
+
+  input_variables:
+    input1:
+        name: "kHz_Hexapod_Target ypos"
+        type: scalar
+        default: 0.
+        value_range: [-0.1, 0.1]
+
+    input2:
+        name: "kHz_Zaber_Compressor Position.Ch1"
+        type: scalar
+        default: 75000
+        value_range: [0., 150000]
+
+  output_variables:
+
+    output1:
+      name: "kHz_ThorlabsSpec MeanWavelength"
+      type: scalar
+
+    output2:
+      name: "kHz_ThorlabsSpec lambda_r"
+      type: scalar
+
+    output3:
+      name: "kHz_ThorlabsSpec lambda_b"
+      type: scalar
+
+  simulation_calibration:
+
+    input1:
+      name: "target_to_focus_distance"
+      unit: "mm"
+      depends_on: "kHz_Hexapod_Target ypos"
+      alpha: 1.0
+      beta: 0.0
+
+    input2:
+      name: "fused_silica_thickness"
+      unit: "um"
+      depends_on: "kHz_Zaber_Compressor Position.Ch1"
+      alpha: 0.027
+      beta: 75000
+
+    output1:
+      name: "mean_wavelength"
+      unit: "um"
+      depends_on: "kHz_ThorlabsSpec MeanWavelength"
+      alpha: 1.0
+      beta: 0.0
