@@ -19,7 +19,8 @@ COPY automation/launch_model_training/training_pm.sbatch /app/automation/launch_
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
-    && conda-lock install --name gui gui-lock.yml
+    && conda-lock install --name gui gui-lock.yml \
+    && conda clean --all -y
 
 # Copy the entrypoint script
 COPY dashboard/entrypoint.sh /entrypoint.sh
