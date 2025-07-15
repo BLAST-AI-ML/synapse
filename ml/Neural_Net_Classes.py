@@ -48,7 +48,7 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
-        self.sim_to_exp_calibration = nn.Linear(output_size, output_size)
+        self.sim_to_exp_calibration = nn.Linear(1, 1)
         with torch.no_grad():
             # Initialize to reasonable value, so that, 
             # if there is no experimental data this stays as is
