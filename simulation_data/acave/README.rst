@@ -34,12 +34,6 @@ WarpX should be compiled with this command:
 To run simulations, copy (or clone) the whole folder `simulation_data/acave` into your `$SCRATCH` folder.
 Then copy the compiled WarpX executable to `simulation_data/acave/templates/warpx.rz`.
 
-Single simulations can be run with
-
-.. code-block:: bash
-
-   sbatch submission_script_oneoff
-
 Scans of parameters can be run with
 
 .. code-block:: bash
