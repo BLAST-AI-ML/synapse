@@ -133,7 +133,6 @@ model = None
 ######################################################
 if model_type != 'GP':
     # Saving the Lume Model - TO do for combined NN
-    path_to_save = path_to_IFE_sf_src+'/ml/saved_models/NN_training/'
     ##############################
     #Early Stopping and validation
     ##############################
@@ -280,7 +279,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
         model.dump(file=os.path.join(temp_dir, experiment+'.yml'), save_models=True )
     # Upload the model to the database
     # - Load the files that were just created into a dictionary
-    print(f"Loading model from temp dir")
+    print("Loading model from temp dir")
     with open(os.path.join(temp_dir, experiment+'.yml')) as f:
         yaml_file_content = f.read()
     document = {

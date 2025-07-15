@@ -21,11 +21,18 @@ Then install `openPMD-viewer` and `pymongo` in the same environment:
    python -m pip install pymongo
    python -m pip install git+https://github.com/openPMD/openPMD-viewer@get_laser_spectral_intensity
 
-Single simulations can be run with
+WarpX should be compiled with this command:
 
-.. code-block:: bash
+.. code-block::bash
 
-   sbatch submission_script_oneoff
+   cd $HOME/src/warpx
+   rm -rf build_pm_gpu
+
+   cmake -S . -B build_pm_gpu -DWarpX_COMPUTE=CUDA -DWarpX_FFT=ON -DWarpX_DIMS="RZ"
+   cmake --build build_pm_gpu -j 16
+
+To run simulations, copy (or clone) the whole folder `simulation_data/acave` into your `$SCRATCH` folder.
+Then copy the compiled WarpX executable to `simulation_data/acave/templates/warpx.rz`.
 
 Scans of parameters can be run with
 
