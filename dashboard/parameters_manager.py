@@ -79,8 +79,13 @@ class ParametersManager:
         print(simulation_calibration)
         print(f"\nSimulation Values {setup}")
         for name in state.parameters:
-            sim_val= simulation_calibration[alpha] * (state.parameters[name] - simulation_calibration[beta])
-            print(f"{name}: {sim_val}")
+            for sim_name, sim_info in simulation_calibration.items():
+                if sim_info["depends_on"] == name:
+                    alpha = sim_info["alpha"]
+                    beta = sim_info["beta"]
+                    sim_val = alpha * (state.parameters[name] - beta)
+                    print(f"{sim_info['name']}: {sim_val}")
+
             
         
     def panel(self):
