@@ -35,6 +35,8 @@ export OMP_NUM_THREADS=16
 # GPU-aware MPI optimizations
 GPU_AWARE_MPI="amrex.use_gpu_aware_mpi=1"
 
+./prepare_simulation.py
+
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
 srun -n 1 --cpu-bind=cores bash -c "

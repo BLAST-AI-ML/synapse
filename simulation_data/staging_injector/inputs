@@ -75,31 +75,10 @@ my_constants.ppc_z1  = 3
 #################################
 
 my_constants.n_atom = 5.e23 # number of electrons per m^3
-my_constants.ramp_length = 0.5e-2
+my_constants.ramp_length = 0.4e-2
 my_constants.stage_length = 3.3e-2
-my_constants.dopant_length = 0.8e-2
+my_constants.dopant_length = 0.4e-2
 my_constants.dopant_fraction = 0.05
-
-#my_constants.n_e =  1.4e23 ## 0.8e23  # axial plasma density (when fully ionized, pure H2)
-#my_constants.n_exp = 10
-
-# Laser and gas jet parameters (assuming a square wave profile without ramps)
-#my_constants.mxg_ratio = 3.467e-02
-#my_constants.w0 = 52.e-6 # laser beam waist
-#my_constants.a = 1/(pi*2.81e-15*w0**4)
-#my_constants.w_s = 60.e-6  # approximate shock location
-
-#my_constants.slope = 4.89e00
-
-#my_constants.z1 = 0.006
-#my_constants.z2 = 1.995e-02
-#my_constants.z22= z2 + 0.01 # 0.03
-#my_constants.z3 = 1.0
-
-#my_constants.re = 73e-6
-#my_constants.sh1 = ((n_e+a*re**4)*exp(-(re/w_s)**n_exp)+n_atom*(1-exp(-(re/w_s)**n_exp)))
-#my_constants.cut2 = 41.1e-6
-#my_constants.w_s2 = 55e-6
 
 #################################
 ############ PLASMA #############
