@@ -150,6 +150,6 @@ class ParametersManager:
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Simulation",
-                                click=self.simulation,
+                                click=self.simulate,
                                 style="margin-left: 12px; margin-top: 12px; text-transform: none;",
                             )
