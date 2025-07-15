@@ -54,7 +54,6 @@ class ParametersManager:
         for name in state.parameters:
             print(f'{name}: {state.parameters[name]}')
 
-        print("Reading configuration file...")
         # find configuration file in the local file system
         config_dir = os.path.join(os.getcwd(), "config")
         config_file = os.path.join(config_dir, "variables.yml")
@@ -68,7 +67,6 @@ class ParametersManager:
         # load configuration dictionary
         config_dict = yaml.safe_load(config_str)
         
-        print("Reading input/output variables from configuration file...")
         # load configuration dictionary
         config_spec = config_dict[state.experiment]
         # dictionary of input variables (parameters)
@@ -76,7 +74,7 @@ class ParametersManager:
         # dictionary of output variables (objectives)
         # dictionary of calibration variables
         simulation_calibration = config_spec["simulation_calibration"]
-        print(simulation_calibration)
+
         print(f"\nSimulation Values {setup}")
         for name in state.parameters:
             for sim_name, sim_info in simulation_calibration.items():
