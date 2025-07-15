@@ -90,7 +90,7 @@ for _, value in simulation_calibration.items():
 variables = input_names + output_names + ['experiment_flag']
 if model_type != 'GP':
     #Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the 
+    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
     sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)#random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
     df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
     df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
@@ -98,7 +98,7 @@ if model_type != 'GP':
 else:
     # No split: all the data is training data
     df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
-    
+
 # Normalize with Affine Input Transformer
 # Define the input and output normalizations
 X_train = torch.tensor( df_train[ input_names ].values, dtype=torch.float )
@@ -130,7 +130,6 @@ model = None
 ######################################################
 if model_type != 'GP':
     # Saving the Lume Model - TO do for combined NN
-    path_to_save = path_to_IFE_sf_src+'/ml/saved_models/NN_training/'
     ##############################
     #Early Stopping and validation
     ##############################
@@ -206,7 +205,7 @@ if model_type != 'GP':
     print(f"Total time taken: {elapsed_time:.2f} seconds")
     print(f"Data prep time taken: {data_time:.2f} seconds")
     print(f"NN time taken: {NN_time:.2f} seconds")
-    
+
 
 ###############################################################
 # Guassian Process Creation and training
@@ -274,7 +273,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
         model.dump(file=os.path.join(temp_dir, experiment+'.yml'), save_models=True )
     # Upload the model to the database
     # - Load the files that were just created into a dictionary
-    print(f"Loading model from temp dir")
+    print("Loading model from temp dir")
     with open(os.path.join(temp_dir, experiment+'.yml')) as f:
         yaml_file_content = f.read()
     document = {
@@ -305,5 +304,5 @@ with tempfile.TemporaryDirectory() as temp_dir:
     else:
         # Raise error, this should not happen
         raise ValueError(f"Multiple models found for experiment: {experiment} and model type: {model_type}!")
-    
+
     print("Model updated in database")
