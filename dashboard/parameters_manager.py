@@ -47,6 +47,9 @@ class ParametersManager:
         # optimize parameters through model
         self.__model.optimize()
 
+    def simulate(self):
+        for name in state.parameters:
+            print(f'{name}: {state.parameters[name]}')
     def panel(self):
         print("Setting parameters card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
@@ -139,5 +142,11 @@ class ParametersManager:
                             vuetify.VBtn(
                                 "Optimize",
                                 click=self.optimize,
+                                style="margin-left: 12px; margin-top: 12px; text-transform: none;",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VBtn(
+                                "Simulation",
+                                click=self.simulation,
                                 style="margin-left: 12px; margin-top: 12px; text-transform: none;",
                             )
