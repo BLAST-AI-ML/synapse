@@ -4,7 +4,7 @@
 ## Author : Revathi Jambunathan
 ## Date : January, 2025
 import time
-
+import tempfile
 import argparse
 import torch
 from botorch.models.transforms.input import AffineInputTransform
@@ -97,7 +97,7 @@ if model_type != 'GP':
 
 else:
     # No split: all the data is training data
-    df_train = pd.concate( (df_exp[variables], df_sim[variables]) )
+    df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
     
 # Normalize with Affine Input Transformer
 # Define the input and output normalizations
@@ -124,7 +124,7 @@ norm_expt_outputs_train = torch.tensor( norm_df_train[norm_df_train.experiment_f
 norm_sim_inputs_train = torch.tensor( norm_df_train[norm_df_train.experiment_flag==0][input_names].values, dtype=torch.float)
 norm_sim_outputs_train = torch.tensor( norm_df_train[norm_df_train.experiment_flag==0][output_names].values, dtype=torch.float)
 
-
+model = None
 ######################################################
 # Neural Net and Ensemble Creation and training
 ######################################################
@@ -185,21 +185,19 @@ if model_type != 'GP':
         )
         if num_models == 1:
             #Save single NN and break
-            torch_model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_jit=True )
-            print(f"Model saved to {path_to_save}")
-            #torch_model.dump(file=os.path.join(models_path, experiment+'NN.yml'), save_jit=True)
+            model = torch_model
             end_time = time.time()
             break
         torch_models.append(torch_model)
 
     #Save Ensemble
     if num_models > 1:
-        nn_ensemble = NNEnsemble(
+        ensemble = NNEnsemble(
         models=torch_models,
         input_variables=[ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ],
         output_variables=[ DistributionVariable(**output_variables[k]) for k in output_variables.keys() ]
         )
-        nn_ensemble.dump( file=os.path.join(path_to_save, experiment+'ensemble.yml'), save_jit=True )
+        model = ensemble
         end_time = time.time()
 
     elapsed_time = end_time - start_time
@@ -208,6 +206,7 @@ if model_type != 'GP':
     print(f"Total time taken: {elapsed_time:.2f} seconds")
     print(f"Data prep time taken: {data_time:.2f} seconds")
     print(f"NN time taken: {NN_time:.2f} seconds")
+    
 
 ###############################################################
 # Guassian Process Creation and training
@@ -257,7 +256,7 @@ else:
             for suffix in ["sim_task"]
         ]
     #Save GP model
-    model = GPModel(
+    gpmodel = GPModel(
         model=gp_model,
         input_variables=input_variables,
         output_variables=output_variables,
@@ -265,42 +264,46 @@ else:
         output_transformers=[output_transform],
     )
 
-    path_to_save = path_to_IFE_sf_src+'/ml/saved_models/GP_training/'
-    model.dump( file=os.path.join(path_to_save, experiment+'.yml'), save_models=True )
-    print(f"Model saved to {path_to_save}")
+    model = gpmodel
 
-# Upload the model to the database
-# - Load the files that were just created into a dictionary
-print(f"Loading model from {path_to_save}")
-with open(os.path.join(path_to_save, experiment+'.yml')) as f:
-    yaml_file_content = f.read()
-document = {
-    'experiment': experiment,
-    'model_type': model_type,
-    'yaml_file_content': yaml_file_content
-}
-print(document)
-model_info = yaml.safe_load(yaml_file_content)
-for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
-    with open(os.path.join(path_to_save, filename), 'rb') as f:
-        document[filename] = f.read()
-# - Check whether there is already a model in the database
-query = {'experiment': experiment, 'model_type': model_type}
-count = db['models'].count_documents(query)
-# - Upload/replace the model in the database
-if count > 1:
-    print(f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them.")
-    db['models'].delete_many(query)
+
+with tempfile.TemporaryDirectory() as temp_dir:
+    if model_type != 'GP':
+        model.dump(file=os.path.join(temp_dir, experiment+'.yml'), save_jit=True )
+    else:
+        model.dump(file=os.path.join(temp_dir, experiment+'.yml'), save_models=True )
+    # Upload the model to the database
+    # - Load the files that were just created into a dictionary
+    print(f"Loading model from temp dir")
+    with open(os.path.join(temp_dir, experiment+'.yml')) as f:
+        yaml_file_content = f.read()
+    document = {
+        'experiment': experiment,
+        'model_type': model_type,
+        'yaml_file_content': yaml_file_content
+    }
+    print(document)
+    model_info = yaml.safe_load(yaml_file_content)
+    for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
+        with open(os.path.join(temp_dir, filename), 'rb') as f:
+            document[filename] = f.read()
+    # - Check whether there is already a model in the database
+    query = {'experiment': experiment, 'model_type': model_type}
     count = db['models'].count_documents(query)
-if count == 0:
-    print("Uploading new model to database")
-    db['models'].insert_one(document)
-    print("Model uploaded to database")
-elif count == 1:
-    print('Model already exists in database ; updating it.')
-    db['models'].update_one(query, {'$set': document})
-else:
-    # Raise error, this should not happen
-    raise ValueError(f"Multiple models found for experiment: {experiment} and model type: {model_type}!")
-
-print("Model updated in database")
+    # - Upload/replace the model in the database
+    if count > 1:
+        print(f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them.")
+        db['models'].delete_many(query)
+        count = db['models'].count_documents(query)
+    if count == 0:
+        print("Uploading new model to database")
+        db['models'].insert_one(document)
+        print("Model uploaded to database")
+    elif count == 1:
+        print('Model already exists in database ; updating it.')
+        db['models'].update_one(query, {'$set': document})
+    else:
+        # Raise error, this should not happen
+        raise ValueError(f"Multiple models found for experiment: {experiment} and model type: {model_type}!")
+    
+    print("Model updated in database")
