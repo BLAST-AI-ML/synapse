@@ -194,7 +194,7 @@ class ModelManager:
                         target_path.upload(f)
                 # set the path of the script used to submit the training job on NERSC
                 script_path = Path(
-                    source_path / "automation/launch_model_training/training_pm.sbatch"
+                    source_path / "ml/training_pm.sbatch"
                 )
                 with open(script_path, "r") as file:
                     script_job = file.read()

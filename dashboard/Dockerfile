@@ -15,7 +15,7 @@ WORKDIR /app/dashboard
 COPY --exclude=*.pem dashboard /app/dashboard
 COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
-COPY automation/launch_model_training/training_pm.sbatch /app/automation/launch_model_training/training_pm.sbatch
+COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
