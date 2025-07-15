@@ -264,7 +264,6 @@ else:
         output_transformers=[output_transform],
     )
 
-    #path_to_save = path_to_IFE_sf_src+'/ml/saved_models/GP_training/'
     model = gpmodel
 
 
