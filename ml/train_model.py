@@ -25,6 +25,8 @@ import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
+# Automatically select device for training of GP
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 ############################################
 # Get command line arguments
@@ -90,7 +92,7 @@ for _, value in simulation_calibration.items():
 variables = input_names + output_names + ['experiment_flag']
 if model_type != 'GP':
     #Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the 
+    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
     sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)#random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
     df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
     df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
@@ -98,7 +100,7 @@ if model_type != 'GP':
 else:
     # No split: all the data is training data
     df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
-    
+
 # Normalize with Affine Input Transformer
 # Define the input and output normalizations
 X_train = torch.tensor( df_train[ input_names ].values, dtype=torch.float )
@@ -206,7 +208,7 @@ if model_type != 'GP':
     print(f"Total time taken: {elapsed_time:.2f} seconds")
     print(f"Data prep time taken: {data_time:.2f} seconds")
     print(f"NN time taken: {NN_time:.2f} seconds")
-    
+
 
 ###############################################################
 # Guassian Process Creation and training
@@ -219,7 +221,7 @@ else:
             task_feature=0,
             covar_module=ScaleKernel(MaternKernel(nu=1.5)),
             outcome_transform=None,
-        )
+        ).to(device)
         cov = gp_model.task_covar_module._eval_covar_matrix()
         print( 'Correlation: ', cov[1,0]/torch.sqrt(cov[0,0]*cov[1,1]).item() )
 
@@ -229,11 +231,14 @@ else:
             torch.tensor(norm_df_train[output_names].values, dtype=torch.float64),
             covar_module=ScaleKernel(MaternKernel(nu=1.5)),
             outcome_transform=None,
-        )
+        ).to(device)
 
     # Fit the model
     mll = ExactMarginalLogLikelihood(gp_model.likelihood, gp_model)
+    GP_start_time = time.time()
     fit_gpytorch_mll(mll)
+    GP_end_time = time.time()
+    print(f"GP time taken: {GP_end_time - GP_start_time:.2f} seconds")
 
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
@@ -257,7 +262,7 @@ else:
         ]
     #Save GP model
     gpmodel = GPModel(
-        model=gp_model,
+        model=gp_model.cpu(),
         input_variables=input_variables,
         output_variables=output_variables,
         input_transformers=[input_transform],
@@ -305,5 +310,5 @@ with tempfile.TemporaryDirectory() as temp_dir:
     else:
         # Raise error, this should not happen
         raise ValueError(f"Multiple models found for experiment: {experiment} and model type: {model_type}!")
-    
+
     print("Model updated in database")
