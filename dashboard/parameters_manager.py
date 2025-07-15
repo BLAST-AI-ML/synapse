@@ -49,9 +49,36 @@ class ParametersManager:
 
     def simulate(self):
         setup = state.experiment
+        print(f"\nExperimental Values {setup}")
         for name in state.parameters:
-            print(f"\nExperimental Values {setup}")
             print(f'{name}: {state.parameters[name]}')
+        print(f"\nSimulation Values {setup}")
+
+        print("Reading configuration file...")
+        # find configuration file in the local file system
+        config_dir = os.path.join(os.getcwd(), "config")
+        config_file = os.path.join(config_dir, "variables.yml")
+        if not os.path.isfile(config_file):
+            raise ValueError(f"Configuration file {config_file} not found")
+        
+        print("Loading configuration dictionary...")
+        # read configuration file
+        with open(config_file) as f:
+            config_str = f.read()
+        # load configuration dictionary
+        config_dict = yaml.safe_load(config_str)
+        
+        print("Reading input/output variables from configuration file...")
+        # load configuration dictionary
+        config_spec = config_dict[state.experiment]
+        # dictionary of input variables (parameters)
+        input_variables = config_spec["input_variables"]
+        # dictionary of output variables (objectives)
+        # dictionary of calibration variables
+        simulation_calibration = config_spec["simulation_calibration"]
+        print(simulation_calibration)
+        for name in state.parameters:
+            
         
     def panel(self):
         print("Setting parameters card...")
