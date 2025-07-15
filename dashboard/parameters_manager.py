@@ -1,6 +1,7 @@
 import copy
 from trame.widgets import vuetify2 as vuetify
-
+import os
+import yaml
 from state_manager import state
 
 
@@ -52,7 +53,6 @@ class ParametersManager:
         print(f"\nExperimental Values {setup}")
         for name in state.parameters:
             print(f'{name}: {state.parameters[name]}')
-        print(f"\nSimulation Values {setup}")
 
         print("Reading configuration file...")
         # find configuration file in the local file system
@@ -77,7 +77,10 @@ class ParametersManager:
         # dictionary of calibration variables
         simulation_calibration = config_spec["simulation_calibration"]
         print(simulation_calibration)
+        print(f"\nSimulation Values {setup}")
         for name in state.parameters:
+            sim_val= simulation_calibration[alpha] * (state.parameters[name] - simulation_calibration[beta])
+            print(f"{name}: {sim_val}")
             
         
     def panel(self):
