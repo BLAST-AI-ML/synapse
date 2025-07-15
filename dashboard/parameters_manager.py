@@ -48,7 +48,7 @@ class ParametersManager:
         self.__model.optimize()
 
     def simulate(self):
-        setup = state.experiment()
+        setup = state.experiment
         for name in state.parameters:
             print(f"\nExperimental Values {setup}")
             print(f'{name}: {state.parameters[name]}')
