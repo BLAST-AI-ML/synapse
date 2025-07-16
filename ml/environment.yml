@@ -12,6 +12,7 @@ channels:
 dependencies:
   - pip:
     - gpytorch
+    - botorch
     - lume-model
     - pandas
     - pymongo
