@@ -2,6 +2,7 @@ import copy
 from trame.widgets import vuetify2 as vuetify
 import os
 import yaml
+import pandas as pd
 from state_manager import state
 
 
@@ -76,13 +77,27 @@ class ParametersManager:
         simulation_calibration = config_spec["simulation_calibration"]
 
         print(f"\nSimulation Values {setup}")
+        sim_data = {
+            var_name = [],
+            exp_val = [],
+            sim_val = []
+        }
         for name in state.parameters:
             for sim_name, sim_info in simulation_calibration.items():
                 if sim_info["depends_on"] == name:
                     alpha = sim_info["alpha"]
                     beta = sim_info["beta"]
                     sim_val = alpha * (state.parameters[name] - beta)
+                    
+                    sim_data[var_name].append(name)
+                    sim_data[exp_val].append(state.parameters[name])
+                    sim_data[sim_val].append(sim_val)
+                    
                     print(f"{sim_info['name']}: {sim_val}")
+        data_df = pd.DataFrame(sim_data)
+        data_df.to_csv(f"/global/u2/e/erod/2024_IFE-superfacility/simulation_data/{setup}/sim_data.csv")
+        
+        path_to_expt = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
 
             
         
