@@ -95,8 +95,7 @@ class ParametersManager:
                     
                     print(f"{sim_info['name']}: {sim_val}")
         
-        save_dir = f"/global/u2/e/erod/2024_IFE-superfacility/simulation_data/{setup}"
-        os.makedirs(save_dir, exist_ok=True)
+        save_dir = f"../simulation_data/{setup}"
         data_df = pd.DataFrame(sim_data)
         data_df.to_csv(os.path.join(save_dir, "sim_data.csv"), index=False)
 
