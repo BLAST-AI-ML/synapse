@@ -97,7 +97,7 @@ class ParametersManager:
         
         save_dir = f"../simulation_data/{setup}"
         data_df = pd.DataFrame(sim_data)
-        data_df.to_csv(os.path.join(save_dir, "singje_sim_vals.csv"), index=False)
+        data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
 
         
         path_to_expt = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
