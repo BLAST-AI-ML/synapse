@@ -19,4 +19,4 @@ mkdir single_$SLURM_JOB_ID
 cd single_$SLURM_JOB_ID
 
 # Run optimas scan
-python ../templates/run_grid_scan.py --single-simulation-parameters ../test_parameters.csv
+python ../templates/run_grid_scan.py --single-simulation-parameters ../singje_sim_vals.csv
