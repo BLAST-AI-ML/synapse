@@ -30,7 +30,7 @@ else:
     df = pd.read_csv(args.single_simulation_parameters)
     # Set the varying parameters with the same min and max value,
     # so that the simulation is run exactly with the provided parameters
-    var_1 = VaryingParameter("target_to_focus_distance", df["target_to_focus_distance"].iloc[0], df["target_to_focus_distance"].iloc[0])
+    var_1 = VaryingParameter("target_to_focus_distance", df["sim_val"].iloc[0], df["sim_val"].iloc[1])
     var_2 = VaryingParameter("fused_silica_thickness", df["fused_silica_thickness"].iloc[0], df["fused_silica_thickness"].iloc[0])
     
 # Specify the analysis function.

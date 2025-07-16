@@ -3,6 +3,8 @@ from trame.widgets import vuetify2 as vuetify
 import os
 import yaml
 import pandas as pd
+from sfapi_client import Client
+from sfapi_client.compute import Machine
 from state_manager import state
 
 
@@ -99,9 +101,39 @@ class ParametersManager:
         data_df = pd.DataFrame(sim_data)
         data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
 
-        
-        path_to_expt = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
+        try:
+            with Client(
+                client_id=state.sfapi_client_id, secret=state.sfapi_key
+            ) as client:
+                perlmutter = client.compute(Machine.perlmutter)
+                # set the target path where auxiliary files will be copied
+                target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
+                [target_path] = perlmutter.ls(target_path, directory=True)
+                source_path = Path.cwd().parent
+                source_path_list = [
+                    Path(source_path / f"simulation_data/{setup}/templates/run_grid_scan.py"),
+                    Path(source_path / f"simulation_data/{setup}/single_sim_vals.csv")
+                ]
+                #copy auxiliary files to NERSC
+                for path in source_path_list:
+                    with open(path, "rb") as f:
+                        f.filename = path.name
+                        target_path.upload(f)
+                #set the path of the script used to submit the training job on NERSC
+                script_path = path(
+                    source_path / f"simulation_data/{setup}/submission_script_single"
+                )
+                with open(script_path, "r") as file:
+                    script_job = file.read()
+                # submit the training job through the Superfacility API
+                sfapi_job = perlmutter.submit_job(script_job)
+                # print some logs
+                print(f"Simulation job submitted (job ID: {sfapi_job.jobid})")
+                # wait for the job to move into a terminal state
+                sfapi_job.complete()
 
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
             
         
     def panel(self):
