@@ -16,7 +16,7 @@ obj = Objective("f", minimize=False)
 
 n_var_1 = 5
 n_var_2 = 5
-sim_workers = 5
+sim_workers = 1
 
 n_total = n_var_1 * n_var_2
 
