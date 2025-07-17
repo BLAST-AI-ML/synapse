@@ -1,10 +1,12 @@
-
-
-
 name: ml-training
+
 channels:
   - conda-forge
+  - nodefaults
+
 dependencies:
+  - pip
+  - python
   - pip:
     - gpytorch
     - botorch
