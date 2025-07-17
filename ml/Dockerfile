@@ -8,7 +8,6 @@ WORKDIR /app/ml
 COPY ml/environment.yml /app/ml/environment.yml
 COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
-COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
 COPY dashboard/config/variables.yml /app/ml/variables.yml
 
 # Install any needed packages specified in the environment file
