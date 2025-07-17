@@ -25,6 +25,9 @@ import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
+# Automatically select device for training of GP
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print('Device selected: ', device)
 
 ############################################
 # Get command line arguments
@@ -218,7 +221,7 @@ else:
             task_feature=0,
             covar_module=ScaleKernel(MaternKernel(nu=1.5)),
             outcome_transform=None,
-        )
+        ).to(device)
         cov = gp_model.task_covar_module._eval_covar_matrix()
         print( 'Correlation: ', cov[1,0]/torch.sqrt(cov[0,0]*cov[1,1]).item() )
 
@@ -228,11 +231,14 @@ else:
             torch.tensor(norm_df_train[output_names].values, dtype=torch.float64),
             covar_module=ScaleKernel(MaternKernel(nu=1.5)),
             outcome_transform=None,
-        )
+        ).to(device)
 
     # Fit the model
     mll = ExactMarginalLogLikelihood(gp_model.likelihood, gp_model)
+    GP_start_time = time.time()
     fit_gpytorch_mll(mll)
+    GP_end_time = time.time()
+    print(f"GP time taken: {GP_end_time - GP_start_time:.2f} seconds")
 
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
@@ -256,7 +262,7 @@ else:
         ]
     #Save GP model
     gpmodel = GPModel(
-        model=gp_model,
+        model=gp_model.cpu(),
         input_variables=input_variables,
         output_variables=output_variables,
         input_transformers=[input_transform],
