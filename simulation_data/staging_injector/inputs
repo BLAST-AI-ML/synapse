@@ -147,15 +147,16 @@ laser1.wavelength = 0.8e-6
 #################################
 ######### DIAGNOSTICS ###########
 #################################
-diagnostics.diags_names = diag diag1
+diagnostics.diags_names = diag
 
-diag.diag_type = Full
-diag.intervals = 50
+#diag.diag_type = Full
+#diag.intervals = 50
+#diag.format = openpmd
+
+diag.diag_type = BackTransformed
+diag.do_back_transformed_fields = 1
+diag.num_snapshots_lab = 40
+diag.dt_snapshots_lab = 2.75e-12
 diag.format = openpmd
-
-diag1.diag_type = BackTransformed
-diag1.do_back_transformed_fields = 1
-diag1.num_snapshots_lab = 20
-diag1.dt_snapshots_lab = 5.5e-12
-diag1.format = openpmd
-diag1.fields_to_plot = Er Et Ez rho
+diag.fields_to_plot = Er Et Ez
+diag.species = electrons_n1
