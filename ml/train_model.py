@@ -289,7 +289,12 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
     print(document)
     model_info = yaml.safe_load(yaml_file_content)
-    for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
+    filenames = model_info['input_transformers'] + model_info['output_transformers']
+    if model_type != 'ensemble_NN':
+        filenames += [model_info['model']]
+    else:
+        filenames += model_info['models']
+    for filename in filenames:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
             document[filename] = f.read()
     # - Check whether there is already a model in the database
