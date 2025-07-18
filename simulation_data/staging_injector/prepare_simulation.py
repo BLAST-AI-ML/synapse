@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import matplotlib.pyplot as plt
 from lasy.laser import Laser
 from lasy.profiles.transverse import JincTransverseProfile
 from lasy.profiles.longitudinal import GaussianLongitudinalProfile
