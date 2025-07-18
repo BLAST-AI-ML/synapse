@@ -20,46 +20,60 @@ conda activate ml-training
 1. Move to the root directory of the repository.
 
 2. Build the Docker image based on `Dockerfile`:
-    ```console
-    docker build --platform linux/amd64 -t ml-training -f ml/Dockerfile .
-    ```
+   ```console
+   docker build --platform linux/amd64 -t ml-training -f ml/Dockerfile .
+   ```
 
 3. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
-    ```console
-    docker system prune -a
-    ```
+   ```console
+   docker system prune -a
+   ```
 
 4. Publish the container privately to NERSC registry (https://registry.nersc.gov):
-    ```console
-    docker login registry.nersc.gov
-    # Username: your NERSC username
-    # Password: your NERSC password without 2FA
-    ```
+   ```console
+   docker login registry.nersc.gov
+   # Username: your NERSC username
+   # Password: your NERSC password without 2FA
+   ```
 
-    ```console
-    docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:latest
-    docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:$(date "+%y.%m")
-    docker push -a registry.nersc.gov/m558/superfacility/ml-training
-    ```
+   ```console
+   docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:latest
+   docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:$(date "+%y.%m")
+   docker push -a registry.nersc.gov/m558/superfacility/ml-training
+   ```
 
 5. Cache & Share the Docker container on Perlmutter:
-    ```console
-    ssh perlmutter-p1.nersc.gov
+   ```console
+   ssh perlmutter-p1.nersc.gov
 
-    podman-hpc login --username $USER registry.nersc.gov
-    # Password: your NERSC password without 2FA
+   podman-hpc login --username $USER registry.nersc.gov
+   # Password: your NERSC password without 2FA
 
-    podman-hpc pull registry.nersc.gov/m558/superfacility/ml-training:latest
-    ```
+   podman-hpc --squash-dir /global/cfs/cdirs/m558/superfacility/model_training/containers pull registry.nersc.gov/m558/superfacility/ml-training:latest
+   
+   find /global/cfs/cdirs/m558/superfacility/model_training/containers -type f -exec chmod g+r {} \;
+   find /global/cfs/cdirs/m558/superfacility/model_training/containers -type d -exec chmod g+rx {} \;
+   ```
 
 6. Optional test: Run the Docker container manually on Perlmutter:
-    Ensure the file `$HOME/db.profile` contains a line `SF_DB_ADMIN_PASSWORD=...` with the write password to the database.
-    ```console
-    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
+   One-time preparation (already done!).
+   Become the superfacility pseudo user:
+   ```console
+   ssh <username>@dtn03.nersc.gov
+   collabsu sf558
+   # Password: your NERSC password without 2FA
+   ```
+   Ensure the file `$HOME/db.profile` contains a line `export SF_DB_ADMIN_PASSWORD=...` with the write password to the database.
 
-    podman-hpc run --gpu -v $HOME/db.profile:/root/db.profile --rm -it ml-training:latest python -u /app/ml/train_model.py --experiment ip2 --model NN
-    ```
-    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
+   Then, on perlmutter:
+   ```console
+   salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
+
+   export PODMANHPC_ADDITIONAL_STORES=/dvs_ro/cfs/cdirs/m558/superfacility/model_training/containers
+   podman-hpc run --gpu -v $HOME/db.profile:/root/db.profile --rm -it ml-training:latest python -u /app/ml/train_model.py --experiment ip2 --model NN
+   ```
+   Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
+   Note that we read from the [projected DVS filesystem location](https://docs.nersc.gov/performance/io/dvs/) for container startup speed.
 
 
 ## References
