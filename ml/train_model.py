@@ -289,11 +289,25 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
     print(document)
     model_info = yaml.safe_load(yaml_file_content)
-    filenames = model_info['input_transformers'] + model_info['output_transformers']
+    filenames = []
     if model_type != 'ensemble_NN':
-        filenames += [model_info['model']]
+        filenames = model_info['input_transformers'] + model_info['output_transformers']
+        filenames.append(model_info['model'])
     else:
-        filenames += model_info['models']
+        print("\n=== Files in Temporary Directory ===")
+        for root, dirs, files in os.walk(temp_dir):
+            for file in files:
+                print(os.path.relpath(os.path.join(root, file), temp_dir))
+        print("====================================\n")
+    
+        filenames = model_info['models']
+        for model_file in model_info['models']:
+            model_yml = model_file.replace('_model.pt', '')
+            filenames.append(model_yml)
+            with open(os.path.join(temp_dir, model_yml)) as sub_f:
+                sub_model_info = yaml.safe_load(sub_f)
+            filenames += sub_model_info.get('input_transformers', [])
+            filenames += sub_model_info.get('output_transformers', [])
     for filename in filenames:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
             document[filename] = f.read()
