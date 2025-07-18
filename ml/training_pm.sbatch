@@ -35,4 +35,4 @@ export PODMANHPC_ADDITIONAL_STORES=/dvs_ro/cfs/cdirs/m558/superfacility/model_tr
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun podman-hpc run --gpu -v $HOME/db.profile:/root/db.profile --rm -it ml-training:latest python -u /app/ml/train_model.py --experiment ${experiment} --model ${model}
+srun podman-hpc run --gpu -v $HOME/db.profile:/root/db.profile --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --experiment ${experiment} --model ${model}
