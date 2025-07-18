@@ -178,9 +178,17 @@ class ModelManager:
             ) as client:
                 perlmutter = client.compute(Machine.perlmutter)
                 # set the path of the script used to submit the training job on NERSC
-                script_path = Path.cwd() / "training_pm.sbatch"
-                with open(script_path, "r") as file:
-                    script_job = file.read()
+                script_job = None
+                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
+                for script_dir in script_locations:
+                    script_path = script_dir / "training_pm.sbatch"
+                    if os.path.exists(script_path):
+                        with open(script_path, "r") as file:
+                            script_job = file.read()
+                        break
+                if script_job is None:
+                    raise RuntimeError("Could not find training_pm.sbatch")
+
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
                 if state.model_type == "Neural Network":
