@@ -27,7 +27,7 @@ def analyze_simulation():
 
     # Get current directory
     data_directory = os.path.join( os.getcwd() )
-    ts = LpaDiagnostics( os.path.join(data_directory, 'old_diags/diag') )
+    ts = LpaDiagnostics( os.path.join(data_directory, 'diags/diag') )
 
     # Load input parameters
     # TODO: load

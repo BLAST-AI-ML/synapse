@@ -157,6 +157,7 @@ diag.diag_type = BackTransformed
 diag.do_back_transformed_fields = 1
 diag.num_snapshots_lab = 40
 diag.dt_snapshots_lab = 2.75e-12
+diag.itervals = 1:40
 diag.format = openpmd
 diag.fields_to_plot = Er Et Ez
 diag.species = electrons_n1
