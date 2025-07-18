@@ -19,6 +19,7 @@ from state_manager import state
 model_type_tag_dict = {
     "Gaussian Process": "GP",
     "Neural Network": "NN",
+    "Ensemble NN": "NNEnsemble",
 }
 
 class ModelManager:
@@ -30,6 +31,7 @@ class ModelManager:
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
+        self.__is_ensemble = False
 
         # Download model information from the database
         collection = db['models']
@@ -78,6 +80,9 @@ class ModelManager:
                 if state.model_type == "Neural Network":
                     self.__is_neural_network = True
                     self.__model = TorchModel(model_file)
+                elif state.model_type == "Ensemble NN":
+                    self.__is_ensemble = True
+                    self.__model = NNEnsemble(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
                     self.__model = GPModel.from_yaml(model_file)
@@ -99,6 +104,10 @@ class ModelManager:
     @property
     def is_gaussian_process(self):
         return self.__is_gaussian_process
+    
+    @property
+    def is_ensemble(self):
+        return self.__is_ensemble
 
     def evaluate(self, parameters):
         print("Evaluating model...")
@@ -114,7 +123,7 @@ class ModelManager:
                 # compute mean and mean error
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
-            elif self.__is_gaussian_process:
+            elif self.__is_gaussian_process or self.__is_ensemble :
                 # TODO use "exp" only once experimental data is available for all experiments
                 task_tag = "exp" if state.experiment == "ip2" else "sim"
                 output_key = [key for key in output_dict.keys() if task_tag in key][0]
@@ -206,6 +215,12 @@ class ModelManager:
                         repl=rf"--experiment {state.experiment} --model NN",
                         string=script_job,
                     )
+                elif state.model_type == "Ensemble NN":
+                    script_job = re.sub(
+                        pattern=r"--experiment (.*)",
+                        repl=rf"--experiment {state.experiment} --model ensemble_NN",
+                        string=script_job,
+                    )
                 if state.model_type == "Gaussian Process":
                     script_job = re.sub(
                         pattern=r"--experiment (.*)",
@@ -249,6 +264,7 @@ class ModelManager:
         model_type_list = [
             "Gaussian Process",
             "Neural Network",
+            "Ensemble NN",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
             with vuetify.VExpansionPanel():
