@@ -10,6 +10,9 @@ COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY dashboard/config/variables.yml /app/ml/variables.yml
 
+# Silence pip error to install in root dirs
+ENV PIP_ROOT_USER_ACTION=ignore
+
 # Install any needed packages specified in the environment file
 RUN conda env create -y -f environment.yml \
     && conda clean --all -y

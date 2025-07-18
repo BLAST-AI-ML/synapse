@@ -15,6 +15,9 @@ WORKDIR /app/dashboard
 COPY --exclude=*.pem dashboard /app/dashboard
 COPY ml/training_pm.sbatch /app/dashboard
 
+# Silence pip error to install in root dirs
+ENV PIP_ROOT_USER_ACTION=ignore
+
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name gui gui-lock.yml \
