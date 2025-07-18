@@ -100,7 +100,7 @@ class ParametersManager:
         save_dir = f"../simulation_data/{setup}"
         data_df = pd.DataFrame(sim_data)
         data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
-
+        '''
         try:
             with Client(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
@@ -134,7 +134,7 @@ class ParametersManager:
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            
+        '''    
         
     def panel(self):
         print("Setting parameters card...")
