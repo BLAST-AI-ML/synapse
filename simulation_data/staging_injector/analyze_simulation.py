@@ -180,9 +180,14 @@ def analyze_simulation():
     
         plt.savefig('diags/plots/iteration_%05d.png' % iteration)
         plt.tight_layout()
-        plt.figure(figsize=(8, 8))
-        ts.iterate( visualize_iteration )
 
+    # Create directory
+    os.makedirs( 'diags/plots/', exist_ok=True )
+
+    # Create images
+    plt.figure(figsize=(11, 7))
+    ts.iterate( visualize_iteration )
+    
     # Load images and convert to MP4
     image_files = ['diags/plots/iteration_%05d.png' % iteration for iteration in ts.iterations]
     with imageio.get_writer('diags/plots/animation.mp4', fps=5) as writer:
