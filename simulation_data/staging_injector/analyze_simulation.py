@@ -128,12 +128,12 @@ def analyze_simulation():
         
         # Plot of a0 and w0 as a function of z
         fig.add_subplot(gs[3,0])
-        plt.plot( 1e2*z_laser[1:], a0[1:], 'r' )
+        plt.plot( 1e2*z_laser, a0, 'r' )
         plt.ylabel('a0', color='r')
         plt.grid()
         plt.xlabel(r'z[cm]')
         plt.twinx()
-        plt.plot( 1e2*z_laser[1:], 1e6*w0[1:], 'purple' )
+        plt.plot( 1e2*z_laser, 1e6*w0, 'purple' )
         plt.ylabel(r'waist [$\mu$m]', color='purple')
         plt.axvline(x=1e2*current_z_las, color='k', ls='--')
         plt.xlim(0, 1e2*stage_length)
@@ -141,7 +141,7 @@ def analyze_simulation():
         # Plot of the laser + accelerating field
         fig.add_subplot(gs[0:2,1])
         Ez, info = ts.get_field('E', 'z', iteration=iteration)
-        plt.imshow( abs(Ez.T), cmap='Blues',
+        plt.imshow( abs(Ez.T), cmap='Blues', interpolation='bicubic',
                 extent=[1e6*(info.zmin-ct), 1e6*(info.zmax-ct), 
                         1e6*info.rmin, 1e6*info.rmax],
                 aspect='auto', vmin=0, vmax=5e10)
@@ -177,15 +177,15 @@ def analyze_simulation():
         plt.title('Laser spectrum')
         plt.plot( 1.e6*lambd, 1e3*S[1:], color='r' )
         plt.xlim(0.5,1.2)
-    
+        
+        plt.subplots_adjust(hspace=0.5)
         plt.savefig('diags/plots/iteration_%05d.png' % iteration)
-        plt.tight_layout()
 
     # Create directory
     os.makedirs( 'diags/plots/', exist_ok=True )
 
     # Create images
-    plt.figure(figsize=(11, 7))
+    plt.figure(figsize=(12, 12))
     ts.iterate( visualize_iteration )
     
     # Load images and convert to MP4
