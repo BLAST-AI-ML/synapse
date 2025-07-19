@@ -41,76 +41,34 @@ class ModelManager:
         if count == 0:
             print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
             return
-        elif count > 1:
-            print(f'Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!')
-            return
-
         # Load model information from the database
         document = collection.find_one(query)
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
+
+            # - Save the model yaml file
             yaml_file_content = document['yaml_file_content']
-            main_yaml_filename = f"{state.experiment}.yml"
-            main_yaml_path = os.path.join(temp_dir, main_yaml_filename)
-
-            # Save the main .yml file
-            with open(main_yaml_path, 'w') as f:
+            with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
                 f.write(yaml_file_content)
-
+            # - Save the corresponding binary files
             model_info = yaml.safe_load(yaml_file_content)
-            filenames = []
-
-            # Determine which files to save
-            if state.model_type == "Ensemble NN":
-                self.__is_ensemble = True
-                model_files = model_info.get("models", [])
-                filenames += model_files
-
-                for model_file in model_files:
-                    if not model_file.endswith("_model.pt"):
-                        print(f"Warning: Unexpected ensemble model file format: {model_file}")
-                        continue
-
-                    base_name = model_file.replace("_model.pt", "")
-                    sub_yml = f"{base_name}.yml"
-                    sub_yml_path = os.path.join(temp_dir, sub_yml)
-
-                    filenames.append(sub_yml)
-
-                    # Save sub-yml and parse it
-                    if sub_yml not in document:
-                        print(f"Error: Missing {sub_yml} in document")
-                        continue
-
-                    with open(sub_yml_path, 'w') as f:
-                        f.write(document[sub_yml])
-
-                    sub_model_info = yaml.safe_load(document[sub_yml])
-                    filenames += sub_model_info.get("input_transformers", [])
-                    filenames += sub_model_info.get("output_transformers", [])
-            else:
-                # For GP or NN
-                filenames.append(model_info["model"])
-                filenames += model_info.get("input_transformers", [])
-                filenames += model_info.get("output_transformers", [])
-
-            # Save all needed binary files
+            filenames = [ model_info['model'] ] + \
+                model_info['input_transformers'] + \
+                model_info['output_transformers']
             for filename in filenames:
-                if filename not in document:
-                    print(f"Warning: {filename} not found in document.")
-                    continue
                 with open(os.path.join(temp_dir, filename), 'wb') as f:
-                    f.write(document[filename])
+                    f.write( document[filename] )
 
-            # === Model file consistency checks ===
+            # Check consistency of the model file
             print("Reading model file...")
             config_file = load_config_file()
-            if not os.path.isfile(main_yaml_path):
-                print(f"Model file {main_yaml_path} not found")
+            model_file = os.path.join(temp_dir, f"{state.experiment}.yml")
+            if not os.path.isfile(model_file):
+                print(f"Model file {model_file} not found")
                 return
-            elif not metadata_match(config_file, main_yaml_path):
-                print(f"Model file {main_yaml_path} does not match configuration file {config_file}")
+            elif not metadata_match(config_file, model_file):
+                print(f"Model file {model_file} does not match configuration file {config_file}")
                 return
 
             # Load model with lume_model
