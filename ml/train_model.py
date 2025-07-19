@@ -300,7 +300,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
                 raise ValueError(f"Unexpected model filename: {model_file}")
 
             base_name = model_file.replace('_model.pt', '')
-            model_yml = f"f{base_name}.yml"
+            model_yml = f"{base_name}.yml"
             filenames.append(model_yml)
 
             sub_yml_path = os.path.join(temp_dir, model_yml)

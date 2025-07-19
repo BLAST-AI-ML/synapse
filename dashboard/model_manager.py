@@ -19,7 +19,7 @@ from state_manager import state
 model_type_tag_dict = {
     "Gaussian Process": "GP",
     "Neural Network": "NN",
-    "Ensemble NN": "NNEnsemble",
+    "Ensemble NN": "ensemble_NN",
 }
 
 class ModelManager:
@@ -123,7 +123,7 @@ class ModelManager:
                 # compute mean and mean error
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
-            elif self.__is_gaussian_process or self.__is_ensemble :
+            elif self.__is_gaussian_process or self.__is_ensemble:
                 # TODO use "exp" only once experimental data is available for all experiments
                 task_tag = "exp" if state.experiment == "ip2" else "sim"
                 output_key = [key for key in output_dict.keys() if task_tag in key][0]
