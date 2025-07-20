@@ -26,11 +26,12 @@ uz_threshold = 10
 def analyze_simulation():
 
     # Get current directory
-    data_directory = os.path.join( os.getcwd() )
-    ts = LpaDiagnostics( os.path.join(data_directory, 'diags/diag') )
+    data_directory = os.path.join( os.getcwd(), 'diags' )
+    ts = LpaDiagnostics( os.path.join(data_directory, 'diag') )
 
     # Load input parameters
     # TODO: template this script
+    data = {}
     data["Laser energy [J]"] = 12
     data["Target-to-focus distance [cm]"] = 1
     data["Dopant concentration [%]"] = 5
@@ -80,8 +81,8 @@ def analyze_simulation():
     gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
 
     data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
-    data['Beam energy spread [%]'] = dgamma[-1]/gamma[-1]
-    data['Trapped charge [pC]'] = Q[-1]*1e12
+    data['Beam energy spread [%]'] = 100*dgamma[-1]/gamma[-1]
+    data['Trapped charge [pC]'] = -Q[-1]*1e12
 
     # Write to the data base
     db = pymongo.MongoClient(
