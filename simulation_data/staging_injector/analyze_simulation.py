@@ -30,13 +30,8 @@ def analyze_simulation():
     ts = LpaDiagnostics( os.path.join(data_directory, 'diag') )
 
     # Load input parameters
-    # TODO: template this script
-    data = {}
-    data["Laser energy [J]"] = 12
-    data["Target-to-focus distance [cm]"] = 1
-    data["Dopant concentration [%]"] = 5
-    data["Background density [1e18/cm^3]"] = 4
-
+    with open('input_params.json') as file:
+        data = json.load(file)
     # Additional metadata
     data['experiment_flag'] = 0
     data['date'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -55,7 +50,7 @@ def analyze_simulation():
 
     # Compute average wavelength at the last iteration and add it to the data
     S, info = ts.get_laser_spectral_intensity(
-        iteration=ts.iterations[-1], pol='x')
+        iteration=ts.iterations[-1], pol=pol)
     lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
     data['Mean laser wavelength [nm]'] = lambda_avg*1e9 # convert from m to nm
 
@@ -68,8 +63,8 @@ def analyze_simulation():
     n_H = eval( hydrogen_density_function )
     n_N = eval( nitrogen_density_function )
     # - a0
-    a0 = ts.iterate( ts.get_a0, pol='y')
-    w0 = ts.iterate( ts.get_laser_waist, pol='y')
+    a0 = ts.iterate( ts.get_a0, pol=pol)
+    w0 = ts.iterate( ts.get_laser_waist, pol=pol)
     # - Mean laser position
     def get_mean_laser_position(iteration):
         env, info = ts.get_laser_envelope( pol=pol, iteration=iteration, slice_across='r' )

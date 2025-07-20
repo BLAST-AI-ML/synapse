@@ -2,19 +2,8 @@
 ####### GENERAL PARAMETERS ######
 #################################
 
-# Plasma:
-# - Is there a transverse parabolic profile?
-# - Typical length of the ramps
-# - Typical length of doping transition
-
-# Laser:
-# - Switch to lasy
-# - How do we define waist (52 um) for the Jinc?
-# - Does a Jinc have infinite energy?
-
-# - Diags: optimize size of what is written to disk
-
-# - Increase resolution
+# Note: here we neglect the transverse parabolic profile, as 
+# it should relatively weak, and with little effect over 3.3 cm
 
 warpx.zmax_plasma_to_compute_max_step = stage_length
 

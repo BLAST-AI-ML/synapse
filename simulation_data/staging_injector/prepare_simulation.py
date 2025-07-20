@@ -5,12 +5,24 @@ from lasy.profiles.transverse import JincTransverseProfile
 from lasy.profiles.longitudinal import GaussianLongitudinalProfile
 from lasy.profiles import CombinedLongitudinalTransverseProfile
 import numpy as np
+import json
 
 try:
     from mip4py import MPI
     rank = MPI.COMM_WORLD.Get_rank()
 except ImportError:
     rank = 0
+
+def record_simulation_parameters():
+    input_params = {
+        "Laser energy [J]": 12,
+        "Target-to-focus distance [cm]": 1,
+        "Dopant concentration [%]": 5,
+        "Background density [1e18/cm^3]": 4,
+    }
+    # Dump input parameters, to be read in analysis file
+    with open('input_params.json', 'w') as file:
+        json.dump(input_params, file, indent=4)
 
 def create_laser_pulse():
 
@@ -55,4 +67,5 @@ if __name__ == '__main__':
     # it might be run by multiple processes
     # but we only need to run it once
     if rank == 0:
+        record_simulation_parameters()
         create_laser_pulse()
