@@ -1,0 +1,22 @@
+#!/bin/bash -l
+
+#SBATCH -t 00:20:00
+#SBATCH -N 2
+#SBATCH -A m558_g
+#SBATCH -q debug
+#SBATCH -C gpu
+#SBATCH --exclusive
+#SBATCH --gpu-bind=none
+#SBATCH --ntasks-per-node=4
+#SBATCH --gpus-per-node=4
+
+# Source environment
+source $HOME/db.profile
+source $HOME/perlmutter_gpu_warpx.profile
+
+# Create new directory
+mkdir multi_$SLURM_JOB_ID
+cd multi_$SLURM_JOB_ID
+
+# Run optimas scan
+python ../templates/run_grid_scan.py
