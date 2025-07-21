@@ -296,9 +296,6 @@ with tempfile.TemporaryDirectory() as temp_dir:
     else:
         filenames = list(model_info['models'])
         for model_file in model_info['models']:
-            if not model_file.endswith('_model.pt'):
-                raise ValueError(f"Unexpected model filename: {model_file}")
-
             base_name = model_file.replace('_model.pt', '')
             model_yml = f"{base_name}.yml"
             filenames.append(model_yml)
