@@ -4,7 +4,7 @@ max_step = 21000
 # amr
 amr.max_level = 0
 amr.n_cell = 256 6144
-warpx.numprocs = 1 12
+warpx.numprocs = 1 1 #12
 
 # Parameters of the fitted density
 my_constants.n0 = 2.11e+25 # peak molecular density, in m-3
@@ -58,7 +58,7 @@ diag.intervals = 5000::500
 diag.write_species = 0
 
 # laser
-lasers.names = laser1
+#lasers.names = laser1
 laser1.direction = 0 0 1
 laser1.a0 = 1.
 laser1.profile      = from_file

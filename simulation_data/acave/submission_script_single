@@ -14,6 +14,9 @@
 source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
+#Go to cfs superfacility
+cd /global/cfs/cdirs/m558/superfacility/simulation_data/acave
+
 # Create new directory
 mkdir single_$SLURM_JOB_ID
 cd single_$SLURM_JOB_ID

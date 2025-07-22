@@ -3,6 +3,7 @@ from trame.widgets import vuetify2 as vuetify
 import os
 import yaml
 import pandas as pd
+from pathlib import Path
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from state_manager import state
@@ -100,27 +101,38 @@ class ParametersManager:
         save_dir = f"../simulation_data/{setup}"
         data_df = pd.DataFrame(sim_data)
         data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
-        '''
+        
         try:
             with Client(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = client.compute(Machine.perlmutter)
                 # set the target path where auxiliary files will be copied
-                target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
-                [target_path] = perlmutter.ls(target_path, directory=True)
+                target_path1 = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
+                [target_path1] = perlmutter.ls(target_path1, directory=True)
+                print("target1 made")
+                target_path2 = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/templates"
+                [target_path2] = perlmutter.ls(target_path2, directory=True)
+                print("target2 made")
                 source_path = Path.cwd().parent
                 source_path_list = [
                     Path(source_path / f"simulation_data/{setup}/templates/run_grid_scan.py"),
+                    Path(source_path / f"simulation_data/{setup}/templates/warpx_input_script"),
                     Path(source_path / f"simulation_data/{setup}/single_sim_vals.csv")
                 ]
+                print(source_path_list)
                 #copy auxiliary files to NERSC
+                count = 1
                 for path in source_path_list:
                     with open(path, "rb") as f:
                         f.filename = path.name
-                        target_path.upload(f)
+                        if count == 3:
+                            target_path1.upload(f)
+                        else:
+                            target_path2.upload(f)
+                        count += 1
                 #set the path of the script used to submit the training job on NERSC
-                script_path = path(
+                script_path = Path(
                     source_path / f"simulation_data/{setup}/submission_script_single"
                 )
                 with open(script_path, "r") as file:
@@ -134,7 +146,7 @@ class ParametersManager:
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        '''    
+            
         
     def panel(self):
         print("Setting parameters card...")
