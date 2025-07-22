@@ -16,5 +16,4 @@ class SimulationCalibrationManager:
         for value in self.simulation_calibration.values():
             sim_name = value["name"]
             exp_name = value["depends_on"]
-            df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
-            
+            df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]            
