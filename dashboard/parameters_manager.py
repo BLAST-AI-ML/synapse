@@ -240,11 +240,11 @@ class ParametersManager:
                             vuetify.VBtn(
                                 "Optimize",
                                 click=self.optimize,
-                                style="margin-left: 12px; margin-top: 12px; text-transform: none;",
+                                style=" margin-top: 12px; text-transform: none;",
                             )
                         with vuetify.VCol():
                             vuetify.VBtn(
-                                "Simulation",
+                                "Simulate",
                                 click=self.simulate,
-                                style="margin-left: 12px; margin-top: 12px; text-transform: none;",
+                                style="margin-right: 4px; margin-top: 12px; text-transform: none;",
                             )
