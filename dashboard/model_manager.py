@@ -21,9 +21,10 @@ model_type_tag_dict = {
     "Neural Network": "NN",
 }
 
-
 class ModelManager:
+
     def __init__(self, db):
+
         print("Initializing model manager...")
         # Set initial default values
         self.__model = None
@@ -31,19 +32,15 @@ class ModelManager:
         self.__is_gaussian_process = False
 
         # Download model information from the database
-        collection = db["models"]
+        collection = db['models']
         model_type_tag = model_type_tag_dict[state.model_type]
-        query = {"experiment": state.experiment, "model_type": model_type_tag}
+        query = {'experiment': state.experiment, 'model_type': model_type_tag}
         count = collection.count_documents(query)
         if count == 0:
-            print(
-                f"No model found for experiment: {state.experiment} and model type: {model_type_tag}"
-            )
+            print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
             return
         elif count > 1:
-            print(
-                f"Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!"
-            )
+            print(f'Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!')
             return
 
         # Load model information from the database
@@ -51,20 +48,19 @@ class ModelManager:
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
+
             # - Save the model yaml file
-            yaml_file_content = document["yaml_file_content"]
-            with open(os.path.join(temp_dir, state.experiment + ".yml"), "w") as f:
+            yaml_file_content = document['yaml_file_content']
+            with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
                 f.write(yaml_file_content)
             # - Save the corresponding binary files
             model_info = yaml.safe_load(yaml_file_content)
-            filenames = (
-                [model_info["model"]]
-                + model_info["input_transformers"]
-                + model_info["output_transformers"]
-            )
+            filenames = [ model_info['model'] ] + \
+                model_info['input_transformers'] + \
+                model_info['output_transformers']
             for filename in filenames:
-                with open(os.path.join(temp_dir, filename), "wb") as f:
-                    f.write(document[filename])
+                with open(os.path.join(temp_dir, filename), 'wb') as f:
+                    f.write( document[filename] )
 
             # Check consistency of the model file
             print("Reading model file...")
@@ -74,9 +70,7 @@ class ModelManager:
                 print(f"Model file {model_file} not found")
                 return
             elif not metadata_match(config_file, model_file):
-                print(
-                    f"Model file {model_file} does not match configuration file {config_file}"
-                )
+                print(f"Model file {model_file} does not match configuration file {config_file}")
                 return
 
             # Load model with lume_model
@@ -199,7 +193,9 @@ class ModelManager:
                         f.filename = path.name
                         target_path.upload(f)
                 # set the path of the script used to submit the training job on NERSC
-                script_path = Path(source_path / "ml/training_pm.sbatch")
+                script_path = Path(
+                    source_path / "ml/training_pm.sbatch"
+                )
                 with open(script_path, "r") as file:
                     script_job = file.read()
                 # replace the --experiment command line argument in the batch script
@@ -214,7 +210,7 @@ class ModelManager:
                     script_job = re.sub(
                         pattern=r"--experiment (.*)",
                         repl=rf"--experiment {state.experiment} --model GP",
-                        string=script_job,
+                            string=script_job,
                     )
                 # submit the training job through the Superfacility API
                 sfapi_job = perlmutter.submit_job(script_job)
