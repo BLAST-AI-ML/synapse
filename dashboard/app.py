@@ -336,6 +336,20 @@ def gui_setup():
             )
         # set up router view
         with layout.content:
+            with html.Div(
+                style="width: 350px; z-index: 20000; position: fixed; top: 16px; right: 16px;",
+            ):
+                vuetify.VAlert(
+                    v_for="(alert, i) in errors",
+                    key="i",
+                    class_="mb-2",
+                    # dense=True,
+                    dismissible=True,
+                    close_icon="mdi-close",
+                    # click_close=(""),
+                    # text="{{ alert }}",
+                    type="error",
+                )
             with vuetify.VContainer():
                 router.RouterView()
         # add router components to the drawer
