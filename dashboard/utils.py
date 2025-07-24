@@ -7,7 +7,6 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
-import shutil
 from state_manager import state
 
 
@@ -30,6 +29,7 @@ def load_config_dict():
     # load configuration dictionary
     config_dict = yaml.safe_load(config_str)
     return config_dict
+
 
 def load_experiments():
     print("Reading experiments from configuration file...")
@@ -60,10 +60,10 @@ def load_data(db):
     exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
     # Make sure that the _id is stored as a string (important for interactivity in plotly)
-    if '_id' in exp_data.columns:
-        exp_data['_id'] = exp_data['_id'].astype(str)
-    if '_id' in sim_data.columns:
-        sim_data['_id'] = sim_data['_id'].astype(str)
+    if "_id" in exp_data.columns:
+        exp_data["_id"] = exp_data["_id"].astype(str)
+    if "_id" in sim_data.columns:
+        sim_data["_id"] = sim_data["_id"].astype(str)
     return (exp_data, sim_data)
 
 
