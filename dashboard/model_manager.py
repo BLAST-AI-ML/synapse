@@ -10,6 +10,7 @@ from sfapi_client import Client
 from sfapi_client.compute import Machine
 import sys
 from lume_model.models.torch_model import TorchModel
+from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
@@ -36,29 +37,39 @@ class ModelManager:
         # Download model information from the database
         collection = db['models']
         model_type_tag = model_type_tag_dict[state.model_type]
-        query = {'experiment': state.experiment, 'model_type': model_type_tag}
+        query = {'experiment': state.experiment, 'model_type': model_type_tag,}
         count = collection.count_documents(query)
+        print(count)
         if count == 0:
             print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
             return
         # Load model information from the database
         document = collection.find_one(query)
+
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
-
-            # - Save the model yaml file
             yaml_file_content = document['yaml_file_content']
-            with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
-                f.write(yaml_file_content)
-            # - Save the corresponding binary files
-            model_info = yaml.safe_load(yaml_file_content)
-            filenames = [ model_info['model'] ] + \
-                model_info['input_transformers'] + \
-                model_info['output_transformers']
-            for filename in filenames:
-                with open(os.path.join(temp_dir, filename), 'wb') as f:
-                    f.write( document[filename] )
+            print(yaml_file_content)
+            if state.model_type == "Ensemble NN":
+                with open(os.path.join(temp_dir, state.experiment + '.yml'), 'w') as f:
+                    f.write(yaml_file_content)
+                for key, value in document.items():
+                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml')):
+                        with open(os.path.join(temp_dir, key), 'wb') as f:
+                            f.write(value)
+            else:
+                # - Save the model yaml file
+                with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
+                    f.write(yaml_file_content)
+                # - Save the corresponding binary files
+                model_info = yaml.safe_load(yaml_file_content)
+                filenames = [ model_info['model'] ] + \
+                    model_info['input_transformers'] + \
+                    model_info['output_transformers']
+                for filename in filenames:
+                    with open(os.path.join(temp_dir, filename), 'wb') as f:
+                        f.write( document[filename] )
 
             # Check consistency of the model file
             print("Reading model file...")
@@ -79,6 +90,7 @@ class ModelManager:
                 elif state.model_type == "Ensemble NN":
                     self.__is_ensemble = True
                     self.__model = NNEnsemble(model_file)
+                    print("model created")
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
                     self.__model = GPModel.from_yaml(model_file)
