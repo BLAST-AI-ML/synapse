@@ -66,7 +66,9 @@ def update_sfapi_info():
                 status = client.compute(Machine.perlmutter)
                 state.perlmutter_description = f"{status.description}"
                 state.perlmutter_status = f"{status.status.value}"
-                print(f"Perlmutter status is {state.perlmutter_status} with description {state.perlmutter_description}")
+                print(
+                    f"Perlmutter status is {state.perlmutter_status} with description {state.perlmutter_description}"
+                )
             else:
                 # reset key expiration date
                 state.sfapi_key_expiration = (

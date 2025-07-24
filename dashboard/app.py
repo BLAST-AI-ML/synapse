@@ -1,7 +1,6 @@
 from bson.objectid import ObjectId
 import os
 import re
-import torch
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify2 import SinglePageWithDrawerLayout
@@ -38,6 +37,7 @@ experiment_list = load_experiments()
 # -----------------------------------------------------------------------------
 # Functions and callbacks
 # -----------------------------------------------------------------------------
+
 
 def update(
     reset_model=True,
