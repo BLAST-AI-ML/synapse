@@ -151,6 +151,11 @@ def update_on_change_others(**kwargs):
         )
 
 
+def remove_error(i):
+    state.errors.pop(int(i))
+    state.dirty("errors")
+
+
 def find_simulation(event, db):
     try:
         # extract the ID of the point that the user clicked on
@@ -319,6 +324,11 @@ def nersc_route():
                         load_sfapi_card()
 
 
+@state.change("errors")
+def print_errors(**kwargs):
+    print(state.errors)
+
+
 # GUI layout
 def gui_setup():
     print("Setting GUI layout...")
@@ -339,17 +349,18 @@ def gui_setup():
             with html.Div(
                 style="width: 350px; z-index: 20000; position: fixed; top: 16px; right: 16px;",
             ):
-                vuetify.VAlert(
+                with vuetify.VAlert(
                     v_for="(alert, i) in errors",
-                    key="i",
+                    key="alert.id",
                     class_="mb-2",
-                    # dense=True,
+                    dense=True,
                     dismissible=True,
                     close_icon="mdi-close",
-                    # click_close=(""),
-                    # text="{{ alert }}",
+                    input=(remove_error, "[i]"),
+                    text=True,
                     type="error",
-                )
+                ):
+                    html.P("{{alert.msg}}")
             with vuetify.VContainer():
                 router.RouterView()
         # add router components to the drawer

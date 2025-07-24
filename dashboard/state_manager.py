@@ -29,3 +29,14 @@ def initialize_state():
     state.simulation_dialog = False
     state.simulation_video = False
     state.errors = []
+    state.error_counter = 0
+
+
+def add_error(msg):
+    state.errors.append(
+        {
+            "id": state.error_counter,
+            "msg": msg,
+        }
+    )
+    state.error_counter += 1
