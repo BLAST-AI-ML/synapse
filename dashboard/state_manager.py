@@ -40,3 +40,4 @@ def add_error(msg):
         }
     )
     state.error_counter += 1
+    state.dirty("errors")

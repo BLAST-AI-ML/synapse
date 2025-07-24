@@ -4,7 +4,7 @@ from sfapi_client import Client
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify2 as vuetify
 
-from state_manager import state
+from state_manager import state, add_error
 
 
 def parse_sfapi_key(key_str):
@@ -34,6 +34,7 @@ def initialize_sfapi():
                 # update Superfacility API info
                 update_sfapi_info()
         except Exception as e:
+            add_error("Unable to initialize superfacility connection")
             print(f"An unexpected error occurred: {e}")
 
 
@@ -77,6 +78,7 @@ def update_sfapi_info():
                 # reset Perlmutter status
                 state.perlmutter_description = "Unavailable"
                 state.perlmutter_status = "unavailable"
+                add_error("sfapi key is expired")
                 print("Key is expired, setting perlmutter status to unavailable")
     except Exception as e:
         print(f"An unexpected error occurred when connecting to superfacility:\n{e}")
@@ -85,6 +87,7 @@ def update_sfapi_info():
         # reset Perlmutter status
         state.perlmutter_description = "Unavailable"
         state.perlmutter_status = "unavailable"
+        add_error("Error occurred when connecting to Superfacility")
         print("Setting perlmutter status to unavailable")
 
 

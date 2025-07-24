@@ -11,7 +11,7 @@ from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
-from state_manager import server, state, ctrl, initialize_state
+from state_manager import server, state, ctrl, initialize_state, add_error
 from utils import (
     load_experiments,
     load_database,
@@ -19,6 +19,7 @@ from utils import (
     load_variables,
     plot,
 )
+import random
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -218,6 +219,7 @@ def find_simulation(event, db):
         # store a URL encoded file content under a given key name
         return data_directory, file_path
     except Exception as e:
+        add_error("Could not find simulation")
         print(f"An unexpected error occurred: {e}")
 
 
@@ -324,9 +326,8 @@ def nersc_route():
                         load_sfapi_card()
 
 
-@state.change("errors")
-def print_errors(**kwargs):
-    print(state.errors)
+def create_new_error():
+    add_error(f"Oh no! an error! random int: {random.randint(0, 100)}")
 
 
 # GUI layout
@@ -357,7 +358,6 @@ def gui_setup():
                     dismissible=True,
                     close_icon="mdi-close",
                     input=(remove_error, "[i]"),
-                    text=True,
                     type="error",
                 ):
                     html.P("{{alert.msg}}")
@@ -379,6 +379,8 @@ def gui_setup():
                         vuetify.VIcon("mdi-lan-connect")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
+                with vuetify.VBtn(click=create_new_error):
+                    html.P("Click me to make an error")
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
             with vuetify.VCard(style="overflow: hidden;"):

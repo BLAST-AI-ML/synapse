@@ -8,11 +8,11 @@ import re
 from scipy.optimize import minimize
 from sfapi_client import Client
 from sfapi_client.compute import Machine
-import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
+from state_manager import add_error
 
 from state_manager import state
 
@@ -90,8 +90,8 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
+                add_error(f"Unable to load model {state.model_type}")
                 print(f"An unexpected error occurred: {e}")
-                sys.exit(1)
 
     def avail(self):
         print("Checking model availability...")
@@ -223,6 +223,7 @@ class ModelManager:
                 # wait for the job to move into a terminal state
                 sfapi_job.complete()
         except Exception as e:
+            add_error("Unable to train kernel")
             print(f"An unexpected error occurred: {e}")
 
     async def training_async(self):
@@ -235,6 +236,7 @@ class ModelManager:
             state.model_training_status = "Completed"
             state.flush()
         except Exception as e:
+            add_error("Unable to train model")
             print(f"An unexpected error occurred: {e}")
 
     def training_trigger(self):
@@ -245,6 +247,7 @@ class ModelManager:
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
+            add_error("Unable to train model")
             print(f"An unexpected error occurred: {e}")
 
     def panel(self):
