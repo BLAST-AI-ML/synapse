@@ -65,6 +65,7 @@ def update_sfapi_info():
                 # update Perlmutter status
                 status = client.compute(Machine.perlmutter)
                 state.perlmutter_description = f"{status.description}"
+                state.perlmutter_status = f"{status.status.value}"
             else:
                 # reset key expiration date
                 state.sfapi_key_expiration = (
@@ -72,12 +73,14 @@ def update_sfapi_info():
                 )
                 # reset Perlmutter status
                 state.perlmutter_description = "Unavailable"
+                state.perlmutter_status = "unavailable"
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         # reset key expiration date
         state.sfapi_key_expiration = "Unavailable"
         # reset Perlmutter status
         state.perlmutter_description = "Unavailable"
+        state.perlmutter_status = "unavailable"
 
 
 @state.change("sfapi_key_dict")
