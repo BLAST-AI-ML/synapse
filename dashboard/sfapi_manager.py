@@ -64,20 +64,20 @@ def update_sfapi_info():
                 )
                 # update Perlmutter status
                 status = client.compute(Machine.perlmutter)
-                state.perlmutter_status = f"{status.description}"
+                state.perlmutter_description = f"{status.description}"
             else:
                 # reset key expiration date
                 state.sfapi_key_expiration = (
                     f"Expired On {expiration.strftime(user_format)}"
                 )
                 # reset Perlmutter status
-                state.perlmutter_status = "Unavailable"
+                state.perlmutter_description = "Unavailable"
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         # reset key expiration date
         state.sfapi_key_expiration = "Unavailable"
         # reset Perlmutter status
-        state.perlmutter_status = "Unavailable"
+        state.perlmutter_description = "Unavailable"
 
 
 @state.change("sfapi_key_dict")
@@ -120,7 +120,7 @@ def load_sfapi_card():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         vuetify.VTextField(
-                            v_model=("perlmutter_status",),
+                            v_model=("perlmutter_description",),
                             label="Perlmutter Status",
                             readonly=True,
                         )

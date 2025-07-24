@@ -271,7 +271,7 @@ class ModelManager:
                             vuetify.VBtn(
                                 "Train",
                                 click=self.training_trigger,
-                                disabled=("model_training || perlmutter_status == 'Unavailable'",),
+                                disabled=("model_training || perlmutter_description == 'Unavailable'",),
                                 style="margin-left: 4px; margin-top: 12px; text-transform: none;",
                             )
                         with vuetify.VCol():
