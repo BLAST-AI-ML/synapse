@@ -350,17 +350,18 @@ def gui_setup():
             with html.Div(
                 style="width: 350px; z-index: 20000; position: fixed; top: 16px; right: 16px;",
             ):
-                with vuetify.VAlert(
-                    v_for="(alert, i) in errors",
-                    key="alert.id",
-                    class_="mb-2",
-                    dense=True,
-                    dismissible=True,
-                    close_icon="mdi-close",
-                    input=(remove_error, "[i]"),
-                    type="error",
-                ):
-                    html.P("{{alert.msg}}")
+                with vuetify.VSlideYTransition(group=True):
+                    with vuetify.VAlert(
+                        v_for="(alert, i) in errors",
+                        key="alert.id",
+                        class_="mb-2",
+                        dense=True,
+                        dismissible=True,
+                        close_icon="mdi-close",
+                        input=(remove_error, "[i]"),
+                        type="error",
+                    ):
+                        html.P("{{alert.msg}}")
             with vuetify.VContainer():
                 router.RouterView()
         # add router components to the drawer
