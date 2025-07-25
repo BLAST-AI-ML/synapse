@@ -234,7 +234,7 @@ class ModelManager:
             # flush state and enable button
             state.model_training = False
             state.model_training_status = "Completed"
-            state.model_training_time = f"{datetime.now()}"
+            state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
             state.flush()
             print(f"Finished training model at {state.model_training_time}")
         except Exception as e:
