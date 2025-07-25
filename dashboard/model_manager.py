@@ -13,6 +13,7 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
+from datetime import datetime
 
 from state_manager import state
 
@@ -234,6 +235,8 @@ class ModelManager:
             state.model_training = False
             state.model_training_status = "Completed"
             state.flush()
+            state.model_load_time = datetime.now()
+            print(f"model loaded at {state.model_load_time}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
