@@ -111,7 +111,7 @@ def update_on_change_experiment(**kwargs):
         )
 
 
-@state.change("model_type")
+@state.change("model_type", "model_training_time")
 def update_on_change_model(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
