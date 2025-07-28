@@ -54,9 +54,8 @@ class ParametersManager:
 
     def simulate(self):
         setup = state.experiment
-        print(f"\nExperimental Values {setup}")
-        for name in state.parameters:
-            print(f'{name}: {state.parameters[name]}')
+        print(f"\nExperiment parameters ({setup}):")
+        print(state.parameters)
 
         # find configuration file in the local file system
         config_dir = os.path.join(os.getcwd(), "config")
