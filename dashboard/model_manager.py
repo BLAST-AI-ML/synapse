@@ -9,11 +9,26 @@ from scipy.optimize import minimize
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 import sys
+import lume_model
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
+
+def print_document_summary(document):
+    print("Document contents summary:\n")
+    for key, value in document.items():
+        if isinstance(value, bytes):
+            print(f"{key}: <binary data, {len(value)} bytes>")
+        elif isinstance(value, dict):
+            print(f"{key}: <dict with {len(value)} keys>")
+        else:
+            # For other types, print a short preview or type
+            preview = str(value)
+            if len(preview) > 100:
+                preview = preview[:100] + "..."
+            print(f"{key}: {preview}")
 
 from state_manager import state
 
@@ -45,7 +60,6 @@ class ModelManager:
             return
         # Load model information from the database
         document = collection.find_one(query)
-
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -55,7 +69,7 @@ class ModelManager:
                 with open(os.path.join(temp_dir, state.experiment + '.yml'), 'w') as f:
                     f.write(yaml_file_content)
                 for key, value in document.items():
-                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml')):
+                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml') or key.endswith('.jit')):
                         with open(os.path.join(temp_dir, key), 'wb') as f:
                             f.write(value)
             else:
@@ -89,8 +103,10 @@ class ModelManager:
                     self.__model = TorchModel(model_file)
                 elif state.model_type == "Ensemble NN":
                     self.__is_ensemble = True
-                    self.__model = NNEnsemble(model_file)
-                    print("model created")
+                    print("before")
+                    self.__mdoel = NNEnsemble("../ml/ip2/ip2ensemble.yml")
+                    print("after")
+                    #self.__model = NNEnsemble(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
                     self.__model = GPModel.from_yaml(model_file)
