@@ -12,6 +12,7 @@ from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state, add_error
+from error_manager import error_alert
 from utils import (
     load_experiments,
     load_database,
@@ -150,11 +151,6 @@ def update_on_change_others(**kwargs):
             reset_gui_route_nersc=False,
             reset_gui_layout=False,
         )
-
-
-def remove_error(i):
-    state.errors.pop(int(i))
-    state.dirty("errors")
 
 
 def find_simulation(event, db):
@@ -347,21 +343,7 @@ def gui_setup():
             )
         # set up router view
         with layout.content:
-            with html.Div(
-                style="width: 350px; z-index: 20000; position: fixed; top: 16px; right: 16px;",
-            ):
-                with vuetify.VSlideYTransition(group=True):
-                    with vuetify.VAlert(
-                        v_for="(alert, i) in errors",
-                        key="alert.id",
-                        class_="mb-2",
-                        dense=True,
-                        dismissible=True,
-                        close_icon="mdi-close",
-                        input=(remove_error, "[i]"),
-                        type="error",
-                    ):
-                        html.P("{{alert.msg}}")
+            error_alert()
             with vuetify.VContainer():
                 router.RouterView()
         # add router components to the drawer
