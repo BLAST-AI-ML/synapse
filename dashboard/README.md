@@ -2,7 +2,8 @@
 
 ### Prerequisites
 - Ensure you have Conda installed.
-- Ensure you have Docker installed (if you plan to use Docker).
+- Ensure you have Docker installed, if you plan to use Docker.
+  Minimum version recommended 23.0, to enable [BuildKit](https://docs.docker.com/build/buildkit/) by default.
 
 ### How to create a new conda environment lock file
 
@@ -78,7 +79,7 @@
 
 2. Build the Docker image based on `Dockerfile`:
     ```console
-    docker build --platform linux/amd64 -t gui -f dashboard/Dockerfile .
+    docker buildx build --platform linux/amd64 -t gui -f dashboard/Dockerfile .
     ```
 
 3. Run the Docker container from the `dashboard/` folder:
