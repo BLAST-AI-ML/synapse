@@ -78,7 +78,7 @@ class ParametersManager:
         # dictionary of calibration variables
         simulation_calibration = config_spec["simulation_calibration"]
 
-        print(f"\nSimulation Values {setup}")
+        print(f"\nSimulation parameters ({setup}):")
         sim_data = {
             "var_name": [],
             "exp_val": [],
