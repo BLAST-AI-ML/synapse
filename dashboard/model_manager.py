@@ -16,20 +16,6 @@ from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
 
-def print_document_summary(document):
-    print("Document contents summary:\n")
-    for key, value in document.items():
-        if isinstance(value, bytes):
-            print(f"{key}: <binary data, {len(value)} bytes>")
-        elif isinstance(value, dict):
-            print(f"{key}: <dict with {len(value)} keys>")
-        else:
-            # For other types, print a short preview or type
-            preview = str(value)
-            if len(preview) > 100:
-                preview = preview[:100] + "..."
-            print(f"{key}: {preview}")
-
 from state_manager import state
 
 model_type_tag_dict = {
@@ -72,6 +58,7 @@ class ModelManager:
                     if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml') or key.endswith('.jit')):
                         with open(os.path.join(temp_dir, key), 'wb') as f:
                             f.write(value)
+            
             else:
                 # - Save the model yaml file
                 with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
@@ -85,6 +72,7 @@ class ModelManager:
                     with open(os.path.join(temp_dir, filename), 'wb') as f:
                         f.write( document[filename] )
 
+            
             # Check consistency of the model file
             print("Reading model file...")
             config_file = load_config_file()
@@ -103,10 +91,7 @@ class ModelManager:
                     self.__model = TorchModel(model_file)
                 elif state.model_type == "Ensemble NN":
                     self.__is_ensemble = True
-                    print("before")
-                    self.__mdoel = NNEnsemble("../ml/ip2/ip2ensemble.yml")
-                    print("after")
-                    #self.__model = NNEnsemble(model_file)
+                    self.__model = NNEnsemble(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
                     self.__model = GPModel.from_yaml(model_file)

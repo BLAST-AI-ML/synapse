@@ -287,6 +287,12 @@ with tempfile.TemporaryDirectory() as temp_dir:
         'model_type': model_type,
         'yaml_file_content': yaml_file_content
     }
+
+    if model_type == 'ensemble_NN':
+        neural_net_class_path = os.path.join(path_to_IFE_ml, "Neural_Net_Classes.py")
+        with open(neural_net_class_path, 'r') as f:
+            document['Neural_Net_Classes.py'] = f.read()
+
     print(document)
     model_info = yaml.safe_load(yaml_file_content)
     filenames = []
