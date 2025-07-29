@@ -40,7 +40,7 @@ class ModelManager:
         model_type_tag = model_type_tag_dict[state.model_type]
         query = {'experiment': state.experiment, 'model_type': model_type_tag,}
         count = collection.count_documents(query)
-        print(count)
+        
         if count == 0:
             print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
             return
@@ -50,19 +50,27 @@ class ModelManager:
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
             yaml_file_content = document['yaml_file_content']
-            print(yaml_file_content)
+            model_filename = f"{state.experiment}.yml"
+
+            with open(os.path.join(temp_dir, model_filename), 'w') as f:
+                f.write(yaml_file_content)    
             if state.model_type == "Ensemble NN":
-                with open(os.path.join(temp_dir, state.experiment + '.yml'), 'w') as f:
-                    f.write(yaml_file_content)
                 for key, value in document.items():
-                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml') or key.endswith('.jit')):
+                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml')):
                         with open(os.path.join(temp_dir, key), 'wb') as f:
                             f.write(value)
+                    elif key == "Neural_Net_Classes":
+                        py_code = value['py']
+                        py_path = os.path.join(temp_dir, 'Neural_Net_Classes.py')
+                        with open(py_path, 'w') as f:
+                            f.write(py_code)
+                        print(f"Wrote Python source file: {key} to {py_path}")
+                    
+                        if temp_dir not in sys.path:
+                            sys.path.insert(0, temp_dir)
+                            print(f"Added {temp_dir} to sys.path for importing {key}")
             
             else:
-                # - Save the model yaml file
-                with open(os.path.join(temp_dir, state.experiment+'.yml'), 'w') as f:
-                    f.write(yaml_file_content)
                 # - Save the corresponding binary files
                 model_info = yaml.safe_load(yaml_file_content)
                 filenames = [ model_info['model'] ] + \
@@ -71,8 +79,7 @@ class ModelManager:
                 for filename in filenames:
                     with open(os.path.join(temp_dir, filename), 'wb') as f:
                         f.write( document[filename] )
-
-            
+             
             # Check consistency of the model file
             print("Reading model file...")
             config_file = load_config_file()
@@ -133,9 +140,13 @@ class ModelManager:
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
             elif self.__is_gaussian_process or self.__is_ensemble:
-                # TODO use "exp" only once experimental data is available for all experiments
-                task_tag = "exp" if state.experiment == "ip2" else "sim"
-                output_key = [key for key in output_dict.keys() if task_tag in key][0]
+                if self.__is_gaussian_process:
+                    # TODO use "exp" only once experimental data is available for all experiments
+                    task_tag = "exp" if state.experiment == "ip2" else "sim"
+                    output_key = [key for key in output_dict.keys() if task_tag in key][0]
+                elif self.__is_ensemble:
+                    output_key = list(output_dict.keys())[0]
+
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
                 mean = output_dict[output_key].mean.detach()
