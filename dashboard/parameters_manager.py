@@ -7,7 +7,7 @@ from pathlib import Path
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from state_manager import state
-
+from utils import load_variables
 
 class ParametersManager:
     def __init__(self, model, input_variables):
@@ -56,28 +56,10 @@ class ParametersManager:
         setup = state.experiment
         print(f"\nExperiment parameters ({setup}):")
         print(state.parameters)
-
-        # find configuration file in the local file system
-        config_dir = os.path.join(os.getcwd(), "config")
-        config_file = os.path.join(config_dir, "variables.yml")
-        if not os.path.isfile(config_file):
-            raise ValueError(f"Configuration file {config_file} not found")
         
-        print("Loading configuration dictionary...")
-        # read configuration file
-        with open(config_file) as f:
-            config_str = f.read()
-        # load configuration dictionary
-        config_dict = yaml.safe_load(config_str)
-        
-        # load configuration dictionary
-        config_spec = config_dict[state.experiment]
-        # dictionary of input variables (parameters)
-        input_variables = config_spec["input_variables"]
-        # dictionary of output variables (objectives)
-        # dictionary of calibration variables
-        simulation_calibration = config_spec["simulation_calibration"]
-
+        input_variables, output_variables, simulation_calibration = load_variables()
+        print(simulation_calibration)
+        print(simulation_calibration.items())
         print(f"\nSimulation parameters ({setup}):")
         sim_data = {
             "var_name": [],

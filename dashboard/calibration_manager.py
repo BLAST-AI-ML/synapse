@@ -17,3 +17,13 @@ class SimulationCalibrationManager:
             sim_name = value["name"]
             exp_name = value["depends_on"]
             df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
+
+    def convert_exp_to_sim(self, df_sim):
+        """
+        Apply calibration to the experimental points, to be passed as 
+        parameters for simulations on NERSC
+        """
+        for values in self.simulation_calibration.values():
+            sim_name = value["name"]
+            exp_name = value["depends_on"]
+            df_sim[sim_name] = (df_sim[exp_name] - value["beta"]) * value["alpha"]
