@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from sfapi_client import Client
 from sfapi_client.compute import Machine
+from calibration_manager import SimulationCalibrationManager
 from state_manager import state
 from utils import load_variables
 
@@ -58,29 +59,19 @@ class ParametersManager:
         print(state.parameters)
         
         input_variables, output_variables, simulation_calibration = load_variables()
-        print(simulation_calibration)
-        print(simulation_calibration.items())
+        
         print(f"\nSimulation parameters ({setup}):")
         sim_data = {
             "var_name": [],
-            "exp_val": [],
             "sim_val": []
-        }
-        for name in state.parameters:
-            for sim_name, sim_info in simulation_calibration.items():
-                if sim_info["depends_on"] == name:
-                    alpha = sim_info["alpha"]
-                    beta = sim_info["beta"]
-                    sim_val = alpha * (state.parameters[name] - beta)
-                    
-                    sim_data["var_name"].append(name)
-                    sim_data["exp_val"].append(state.parameters[name])
-                    sim_data["sim_val"].append(sim_val)
-                    
-                    print(f"{sim_info['name']}: {sim_val}")
-        
+             }
+
+        getsim = SimulationCalibrationManager(simulation_calibration)
+        sim_vals = getsim.convert_exp_to_sim(state.parameters, sim_data)
+        print(sim_vals)
+
         save_dir = f"../simulation_data/{setup}"
-        data_df = pd.DataFrame(sim_data)
+        data_df = pd.DataFrame(sim_vals)
         data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
         print("simulation values saved to csv")
         try:
