@@ -12,7 +12,7 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
-from state_manager import add_error
+from error_manager import add_error
 from datetime import datetime
 
 from state_manager import state

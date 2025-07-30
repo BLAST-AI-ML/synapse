@@ -2,12 +2,28 @@ from trame.widgets import vuetify2 as vuetify, html
 from state_manager import state
 
 
+def add_error(msg):
+    state.errors.append(
+        {
+            "id": state.error_counter,
+            "msg": msg,
+        }
+    )
+    state.error_counter += 1
+    state.dirty("errors")
+
+
 def remove_error(i):
     state.errors.pop(int(i))
     state.dirty("errors")
 
 
-def error_alert():
+def remove_all_errors():
+    state.errors = []
+    state.dirty("errors")
+
+
+def error_panel():
     with html.Div(
         style="width: 350px; z-index: 20000; position: fixed; bottom: 16px; left: 16px;",
     ):
@@ -34,4 +50,13 @@ def error_alert():
                         dismissible=True,
                         close_icon="mdi-close",
                         input=(remove_error, "[i]"),
+                    )
+                    vuetify.VBtn(
+                        "Close all",
+                        dense=True,
+                        dismissible=True,
+                        click=remove_all_errors,
+                        color="error",
+                        text=True,
+                        block=True,
                     )

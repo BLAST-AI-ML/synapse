@@ -11,8 +11,8 @@ from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
-from state_manager import server, state, ctrl, initialize_state, add_error
-from error_manager import error_alert
+from state_manager import server, state, ctrl, initialize_state
+from error_manager import error_panel, add_error
 from utils import (
     load_experiments,
     load_database,
@@ -168,6 +168,9 @@ def find_simulation(event, db):
             print(f"Clicked on data point ({this_point_parameters})")
         else:
             print(f"Could not find database document that matches ID {this_point_id}")
+            add_error(
+                f"Could not find database document that matches ID {this_point_id}"
+            )
             return
         # get data directory from the document
         data_directory = documents[0]["data_directory"]
@@ -343,7 +346,7 @@ def gui_setup():
             )
         # set up router view
         with layout.content:
-            error_alert()
+            error_panel()
             with vuetify.VContainer():
                 router.RouterView()
         # add router components to the drawer

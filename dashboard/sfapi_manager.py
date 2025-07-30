@@ -4,7 +4,8 @@ from sfapi_client import Client
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify2 as vuetify
 
-from state_manager import state, add_error
+from state_manager import state
+from error_manager import add_error
 
 
 def parse_sfapi_key(key_str):

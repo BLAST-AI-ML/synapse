@@ -7,7 +7,8 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
-from state_manager import state, add_error
+from state_manager import state
+from error_manager import add_error
 
 
 def load_config_file():
