@@ -6,7 +6,8 @@ import os
 import yaml
 import re
 from scipy.optimize import minimize
-from sfapi_client import Client
+from sfapi_client import AsyncClient
+from sfapi_client._jobs import TERMINAL_STATES
 from sfapi_client.compute import Machine
 import sys
 from lume_model.models.torch_model import TorchModel
@@ -177,16 +178,16 @@ class ModelManager:
         if self.__model is not None:
             return self.__model.output_transformers
 
-    def training_kernel(self):
+    async def training_kernel(self):
         try:
             # create an authenticated client
-            with Client(
+            async with AsyncClient(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
-                perlmutter = client.compute(Machine.perlmutter)
+                perlmutter = await client.compute(Machine.perlmutter)
                 # set the target path where auxiliary files will be copied
                 target_path = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
-                [target_path] = perlmutter.ls(target_path, directory=True)
+                [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the source path where auxiliary files are copied from
                 source_path = Path.cwd().parent
                 source_path_list = [
@@ -198,7 +199,7 @@ class ModelManager:
                 for path in source_path_list:
                     with open(path, "rb") as f:
                         f.filename = path.name
-                        target_path.upload(f)
+                        await target_path.upload(f)
                 # set the path of the script used to submit the training job on NERSC
                 script_path = Path(source_path / "ml/training_pm.sbatch")
                 with open(script_path, "r") as file:
@@ -218,18 +219,31 @@ class ModelManager:
                         string=script_job,
                     )
                 # submit the training job through the Superfacility API
-                sfapi_job = perlmutter.submit_job(script_job)
+                sfapi_job = await perlmutter.submit_job(script_job)
+                state.model_training_status = "Submitted"
+                state.flush()
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
-                # wait for the job to move into a terminal state
-                sfapi_job.complete()
+                while sfapi_job.state not in TERMINAL_STATES:
+                    await asyncio.sleep(5)
+                    await sfapi_job.update()
+                    # Make the status more readable by putting in spaces and capitalizing the words
+                    state.model_training_status = sfapi_job.state.value.replace(
+                        "_", " "
+                    ).title()
+                    state.flush()
+                    print("sfapi job status: ", state.model_training_status)
+
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
     async def training_async(self):
         try:
             print("Training model...")
-            await asyncio.to_thread(self.training_kernel)
+            state.model_training = True
+            state.model_training_status = "Submitting"
+            state.flush()
+            await self.training_kernel()
             print("Training job completed")
             # flush state and enable button
             state.model_training = False
@@ -242,9 +256,6 @@ class ModelManager:
 
     def training_trigger(self):
         try:
-            state.model_training = True
-            state.model_training_status = "Submitted"
-            state.flush()
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
