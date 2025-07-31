@@ -7,13 +7,12 @@ import yaml
 import re
 from scipy.optimize import minimize
 from sfapi_client import AsyncClient
-from sfapi_client._jobs import TERMINAL_STATES
 from sfapi_client.compute import Machine
 import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
-from utils import load_config_file, metadata_match
+from utils import load_config_file, metadata_match, monitor_sfapi_job
 from datetime import datetime
 
 from state_manager import state
@@ -224,15 +223,7 @@ class ModelManager:
                 state.flush()
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
-                while sfapi_job.state not in TERMINAL_STATES:
-                    await asyncio.sleep(5)
-                    await sfapi_job.update()
-                    # Make the status more readable by putting in spaces and capitalizing the words
-                    state.model_training_status = sfapi_job.state.value.replace(
-                        "_", " "
-                    ).title()
-                    state.flush()
-                    print("sfapi job status: ", state.model_training_status)
+                await monitor_sfapi_job(sfapi_job, "model_training_status")
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
