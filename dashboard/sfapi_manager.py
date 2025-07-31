@@ -35,7 +35,10 @@ def initialize_sfapi():
                 # update Superfacility API info
                 update_sfapi_info()
         except Exception as e:
-            add_error("Unable to initialize superfacility connection")
+            add_error(
+                "Unable to initialize superfacility connection",
+                f"Failed to initialize siperfacility connection with error {e}",
+            )
             print(f"An unexpected error occurred: {e}")
 
 
@@ -79,7 +82,10 @@ def update_sfapi_info():
                 # reset Perlmutter status
                 state.perlmutter_description = "Unavailable"
                 state.perlmutter_status = "unavailable"
-                add_error("sfapi key is expired")
+                add_error(
+                    "sfapi key is expired",
+                    f"sfapi key expired on {expiration.strftime(user_format)}",
+                )
                 print("Key is expired, setting perlmutter status to unavailable")
     except Exception as e:
         print(f"An unexpected error occurred when connecting to superfacility:\n{e}")
@@ -88,7 +94,10 @@ def update_sfapi_info():
         # reset Perlmutter status
         state.perlmutter_description = "Unavailable"
         state.perlmutter_status = "unavailable"
-        add_error("Error occurred when connecting to Superfacility")
+        add_error(
+            "Error occurred when connecting to Superfacility",
+            "Unable to connect to superfacility with error {e}",
+        )
         print("Setting perlmutter status to unavailable")
 
 

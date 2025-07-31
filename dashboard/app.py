@@ -169,7 +169,8 @@ def find_simulation(event, db):
         else:
             print(f"Could not find database document that matches ID {this_point_id}")
             add_error(
-                f"Could not find database document that matches ID {this_point_id}"
+                "Database document not found",
+                f"Could not find database document that matches ID {this_point_id}",
             )
             return
         # get data directory from the document
@@ -218,7 +219,10 @@ def find_simulation(event, db):
         # store a URL encoded file content under a given key name
         return data_directory, file_path
     except Exception as e:
-        add_error("Could not find simulation")
+        add_error(
+            "Could not find simulation",
+            f"Error occured when trying to find simulation: {e}",
+        )
         print(f"An unexpected error occurred: {e}")
 
 
@@ -326,7 +330,10 @@ def nersc_route():
 
 
 def create_new_error():
-    add_error(f"Oh no! an error! random int: {random.randint(0, 100)}")
+    add_error(
+        "Random int error",
+        f"Oh no! an error! random iskajdhfa sfkhaskjdfh askjdf aksjdhf kajsh fdkajshdfl kajshflkjashd \nlfkjhasd kfj hnt: {random.randint(0, 100)}",
+    )
 
 
 # GUI layout

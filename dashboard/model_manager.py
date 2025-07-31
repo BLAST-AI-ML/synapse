@@ -91,7 +91,10 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
-                add_error(f"Unable to load model {state.model_type}")
+                add_error(
+                    f"Unable to load model {state.model_type}",
+                    f"Failed to load model with exception {e}",
+                )
                 print(f"An unexpected error occurred: {e}")
 
     def avail(self):
@@ -224,7 +227,7 @@ class ModelManager:
                 # wait for the job to move into a terminal state
                 sfapi_job.complete()
         except Exception as e:
-            add_error("Unable to train kernel")
+            add_error("Unable to train kernel", "Failed to train kernel with error {e}")
             print(f"An unexpected error occurred: {e}")
 
     async def training_async(self):
@@ -239,7 +242,7 @@ class ModelManager:
             state.flush()
             print(f"Finished training model at {state.model_training_time}")
         except Exception as e:
-            add_error("Unable to train model")
+            add_error("Unable to train model", f"Failed to load model with error {e}")
             print(f"An unexpected error occurred: {e}")
 
     def training_trigger(self):
@@ -250,7 +253,7 @@ class ModelManager:
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
-            add_error("Unable to train model")
+            add_error("Unable to train model", f"Failed to load model with error {e}")
             print(f"An unexpected error occurred: {e}")
 
     def panel(self):
