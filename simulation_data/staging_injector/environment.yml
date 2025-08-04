@@ -1,3 +1,0 @@
-- pip:
-    - imageio[ffmpeg]
-    - git+https://github.com/RemiLehe/transparent_imshow
