@@ -86,7 +86,7 @@ class ParametersManager:
                                             hide_details=True,
                                             readonly=True,
                                             single_line=True,
-                                            style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                            style="margin-top: 0px; padding-top: 0px; width: 100px;",
                                             type="number",
                                         )
                             step = self.parameters_step[key]
@@ -100,7 +100,7 @@ class ParametersManager:
                                         disabled=(f"parameters_show_all['{key}']",),
                                         step=step,
                                         __properties=["step"],
-                                        style="width: 80px;",
+                                        style="width: 100px;",
                                         type="number",
                                         label="min",
                                     )
@@ -113,7 +113,7 @@ class ParametersManager:
                                         disabled=(f"parameters_show_all['{key}']",),
                                         step=step,
                                         __properties=["step"],
-                                        style="width: 80px;",
+                                        style="width: 100px;",
                                         type="number",
                                         label="max",
                                     )

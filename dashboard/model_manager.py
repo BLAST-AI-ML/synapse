@@ -272,7 +272,7 @@ class ModelManager:
                             items=("Models", model_type_list),
                             dense=True,
                             prepend_icon="mdi-brain",
-                            style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
+                            style="margin-left: 16px; margin-top: 24px; max-width: 250px;",
                         )
                     # create a row for the switches and buttons
                     with vuetify.VRow():
@@ -290,5 +290,5 @@ class ModelManager:
                                 v_model_number=("model_training_status",),
                                 label="Training status",
                                 readonly=True,
-                                style="width: 100px;",
+                                style="width: 150px;",
                             )
