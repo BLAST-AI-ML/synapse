@@ -28,10 +28,6 @@ export OMP_NUM_THREADS=1
 experiment=${1}
 model=${2}
 
-if [[ -z "${experiment}" ]]; then
-    echo "Must pass the experiment name/tag as a command line argument"
-fi
-
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
 srun python /global/cfs/cdirs/m558/superfacility/model_training/src/train_model.py --experiment ${experiment} --model ${model}

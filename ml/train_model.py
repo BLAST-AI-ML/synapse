@@ -48,6 +48,7 @@ parser.add_argument(
 args = parser.parse_args()
 experiment = args.experiment
 model_type = args.model
+print(f"Experiment: {experiment}, Model type: {model_type}")
 start_time = time.time()
 if model_type not in ['NN', 'ensemble_NN', 'GP']:
     raise ValueError(f"Invalid model type: {model_type}")
@@ -83,7 +84,10 @@ collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
 df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 # Apply calibration to the simulation results
-simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+if "simulation_calibration" in yaml_dict[experiment]:
+    simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+else:
+    simulation_calibration = {}
 for _, value in simulation_calibration.items():
     sim_name = value["name"]
     exp_name = value["depends_on"]
