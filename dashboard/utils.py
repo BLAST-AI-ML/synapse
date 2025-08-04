@@ -62,7 +62,10 @@ def load_variables():
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
     # dictionary of calibration variables
-    simulation_calibration = config_spec["simulation_calibration"]
+    if "simulation_calibration" in config_spec:
+        simulation_calibration = config_spec["simulation_calibration"]
+    else:
+        simulation_calibration = {}
     return (input_variables, output_variables, simulation_calibration)
 
 
