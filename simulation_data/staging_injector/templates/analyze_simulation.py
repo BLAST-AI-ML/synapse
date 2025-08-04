@@ -170,7 +170,6 @@ def analyze_simulation():
         plt.title('Electron energy spectrum')
 
         # Plot of the laser spectrum
-        # TODO: Use proper function
         fig.add_subplot(gs[3,1])
         S, info = ts.get_spectrum(iteration=iteration, pol=pol)
         lambd = 2*np.pi*c/info.omega[1:]
