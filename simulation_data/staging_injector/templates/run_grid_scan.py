@@ -11,10 +11,10 @@ def analysis_func_main(work_dir, output_params):
 
 # Create varying parameters and objectives.
 # TODO: automatically read config file
-var_1 = VaryingParameter("Laser energy [J]", 12, 17)
-var_2 = VaryingParameter("Target-to-focus distance [cm]", 0, 2)
-var_3 = VaryingParameter("Dopant concentration [%]", 0, 10)
-var_4 = VaryingParameter("Background density [1e18/cm^3]", 3, 5)
+var_1 = VaryingParameter("laser_energy", 12, 17)
+var_2 = VaryingParameter("target_to_focus_distance", 0, 2)
+var_3 = VaryingParameter("dopant_concentration", 0, 10)
+var_4 = VaryingParameter("background_density", 3, 5)
 obj = Objective("f", minimize=False)
 
 n_steps = [2, 2, 2, 2]

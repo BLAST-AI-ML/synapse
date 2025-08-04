@@ -15,10 +15,10 @@ except ImportError:
 
 def record_simulation_parameters():
     input_params = {
-        "Laser energy [J]": 12,
-        "Target-to-focus distance [cm]": 1,
-        "Dopant concentration [%]": 5,
-        "Background density [1e18/cm^3]": 4,
+        "Laser energy [J]": {{laser_energy}},
+        "Target-to-focus distance [cm]": {{target_to_focus_distance}},
+        "Dopant concentration [%]": {{dopant_concentration}},
+        "Background density [1e18/cm^3]": {{background_density}},
     }
     # Dump input parameters, to be read in analysis file
     with open('input_params.json', 'w') as file:
@@ -27,11 +27,11 @@ def record_simulation_parameters():
 def create_laser_pulse():
 
     # Laser parameters
-    laser_energy = 12 # J
+    laser_energy = {{laser_energy}} # J
     w0 = 52.0e-6/2.66 # m
     tau = 35e-15/np.sqrt(2*np.log(2)) # s
     wavelength = 0.8e-6 # m
-    target_to_focus_distance = 1e-2 # m
+    target_to_focus_distance = {{target_to_focus_distance}}*1e-2 # m
 
     tranverseProfile = JincTransverseProfile(w0)
     longitudinalProfile = GaussianLongitudinalProfile(
