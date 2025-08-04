@@ -13,16 +13,7 @@ my_constants.lambda        = 800e-9
 my_constants.duration_FWHM = 40e-15
 my_constants.laser_energy  = 20 # Joules
 
-my_constants.prepulse_delay = {{prepulse_delay}} # in mm, this is actually the motion of a stage
-# Zero delay is 71.41 mm ; going to the left, the delay is increasing
-my_constants.prepulse_delay_in_ps = "2 * (71.41 - prepulse_delay) * 1e-3 / clight / 1e-12"
-# Model for the gradient length:
-# The prepulse is obtained with a 1cm hole in a 20cm beam, so it contains 1/400 of the energy
-# i.e. 20 J / 400 = 0.05 J ; its waist will be 20 x 2.7 microns at focus, i.e. 54 microns.
-# Thus, the fluence is 0.05 J / (pi x 54e-6 x 54e-6) = 5.5e6 J/m^2 = 0.55 kJ/cm^2
-# The model for the gradient length from Henri Vincenti is
-# L [nm] = alpha x sqrt(F[kJ/cm^2])* tau [ps] with alpha = 50 nm/ps
-my_constants.gradient_length = 50e-9 * sqrt(0.55) * prepulse_delay_in_ps # in meters
+my_constants.plasma_gradient_length = {{plasma_gradient_length}} * 1e-9 # in meters
 
 #target constants
 my_constants.target_thickness = 10e-6
@@ -86,7 +77,7 @@ my_constants.step = ceil(duration_total/res_t)
 my_constants.omega = 2*pi*clight/lambda
 my_constants.nc = epsilon0*m_e/(q_e**2)*omega**2
 my_constants.den = n_den*nc
-my_constants.ll = gradient_length
+my_constants.ll = plasma_gradient_length
 my_constants.nc_lim = n_nc_lim*nc
 
 #laser constants
@@ -236,10 +227,8 @@ DBB.profile                = "Gaussian"
 DBB.profile_duration       = tau
 DBB.profile_t_peak         = 2.0*tau
 DBB.profile_waist          = w0
-# Per meeting notes on 2025-05-22, target_focus is in mm and the origin is at 56.84 mm
-# Increasing target_focus moves the target toward the parabola, i.e. the distance is decreasing
-my_constants.target_focus = {{target_focus}}
-DBB.profile_focal_distance = "-laser_start - (target_focus + 56.84) * 1e-3"
+my_constants.target_to_focus_distance = {{target_to_focus_distance}}
+DBB.profile_focal_distance = "-laser_start - target_to_focus_distance * 1e-3"
 
 # Diagnostics
 diagnostics.diags_names = out low_res_out

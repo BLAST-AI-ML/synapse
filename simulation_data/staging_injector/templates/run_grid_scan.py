@@ -1,8 +1,8 @@
 """ Run parameter scan for A-cave experiment """
 
-from optimas.core import Parameter, VaryingParameter, Objective
+from optimas.core import VaryingParameter, Objective
 from optimas.generators import GridSamplingGenerator
-from optimas.evaluators import TemplateEvaluator,FunctionEvaluator,ChainEvaluator
+from optimas.evaluators import TemplateEvaluator, ChainEvaluator
 from optimas.explorations import Exploration
 
 # Specify the analysis function.
@@ -10,37 +10,38 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("target_to_focus_distance", -0.1, 0.1)
-var_2 = VaryingParameter("fused_silica_thickness", -667, 667)
+var_1 = VaryingParameter("laser_energy", 12, 17)
+var_2 = VaryingParameter("target_to_focus_distance", 0, 2)
+var_3 = VaryingParameter("dopant_concentration", 0, 10)
+var_4 = VaryingParameter("background_density", 3, 5)
 obj = Objective("f", minimize=False)
 
-n_var_1 = 5
-n_var_2 = 5
-sim_workers = 5
+n_steps = [2, 2, 2, 2]
+sim_workers = 8
 
-n_total = n_var_1 * n_var_2
+# Compute total number of steps
+n_total = 1
+for n_step in n_steps:
+    n_total *= n_step
 
-# Create generator.
+# Create generator
 gen = GridSamplingGenerator(
-    varying_parameters=[var_1,var_2],
+    varying_parameters=[var_1,var_2,var_3,var_4],
     objectives=[obj],
-    n_steps=[n_var_1,n_var_2],
+    n_steps=n_steps,
 )
 
 # Create evaluators
 ev_pre = TemplateEvaluator(
     sim_template="../templates/prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
-    sim_files=[
-        "../templates/retrieval01_spectrum.csv"
-    ],
     n_procs=1
 )
 ev_main = TemplateEvaluator(
-    sim_template="../templates/warpx_input_script",
+    sim_template="../templates/inputs",
     analysis_func=analysis_func_main,
-    executable="../templates/warpx.rz",
-    n_gpus=12,  # GPUs per individual evaluation
-    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
+    executable="../templates/warpx",
+    n_gpus=1,  # GPUs per individual evaluation
+    env_mpi='srun',
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",

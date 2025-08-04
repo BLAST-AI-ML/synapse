@@ -1,19 +1,24 @@
-import copy
-from io import StringIO
+from bson.objectid import ObjectId
 import os
-import pandas as pd
-import torch
-from trame.app import get_server
+import re
+from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify3 as vuetify
+from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
+from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
-from utils import read_variables, metadata_match, load_database, plot
+from utils import (
+    load_experiments,
+    load_database,
+    load_data,
+    load_variables,
+    plot,
+)
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -22,100 +27,23 @@ from utils import read_variables, metadata_match, load_database, plot
 mod_manager = None
 par_manager = None
 obj_manager = None
+cal_manager = None
 
-# list of all available model types
-model_type_list = [
-    "Gaussian Process",
-    "Neural Network",
-]
-# dict of auxiliary model types tags
-model_type_tag_dict = {
-    "Gaussian Process": "GP",
-    "Neural Network": "NN",
-}
-# list of all available experiments (TODO parse automatically)
-experiment_list = [
-    "acave",
-    "ip2",
-    "qed_ip2",
-]
+# load database
+db = load_database()
+# list of available experiments
+experiment_list = load_experiments()
 
 # -----------------------------------------------------------------------------
 # Functions and callbacks
 # -----------------------------------------------------------------------------
 
-def load_data():
-    print("Loading data from database...")
-    # load database
-    db = load_database()
-    # find all documents from experiment collection
-    documents = list(db[state.experiment].find())
-    # separate experiment and simulation documents
-    exp_docs = [doc for doc in documents if doc["experiment_flag"] == 1]
-    sim_docs = [doc for doc in documents if doc["experiment_flag"] == 0]
-    # load pandas dataframes and serialize to JSON strings
-    state.exp_data_serialized = pd.DataFrame(exp_docs).to_json(default_handler=str)
-    state.sim_data_serialized = pd.DataFrame(sim_docs).to_json(default_handler=str)
-
-def load_config_file():
-    config_dir = os.path.join(os.getcwd(), "config")
-    config_file = os.path.join(config_dir, "variables.yml")
-    if not os.path.isfile(config_file):
-        raise ValueError(f"Configuration file {config_file} not found")
-    return config_file
-
-def load_model_file():
-    config_file = load_config_file()
-    model_type_tag = model_type_tag_dict[state.model_type]
-    # find model directory in the local file system
-    model_dir_local = os.path.join(os.getcwd(), "..", "ml", f"{model_type_tag}_training", "saved_models")
-    model_dir_docker = os.path.join("/", "app", "ml", f"{model_type_tag}_training", "saved_models")
-    model_dir = model_dir_local if os.path.exists(model_dir_local) else model_dir_docker
-    model_file = os.path.join(model_dir, f"{state.experiment}.yml")
-    if not os.path.isfile(model_file):
-        raise ValueError(f"Model file {model_file} not found")
-    if not metadata_match(config_file, model_file):
-        model_file = None
-    return model_file
-
-def load_variables():
-    config_file = load_config_file()
-    # load information about input and output variables from the configuration file
-    input_variables, output_variables = read_variables(config_file)
-    return (input_variables, output_variables)
-
-def calibrate_data():
-    print("Calibrating data...")
-    global mod_manager
-    global par_manager
-    global obj_manager
-    # TODO simplify if condition once calibration is available for GP data
-    if mod_manager.avail() and not mod_manager.is_gaussian_process:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
-        # get calibration and normalization transformers
-        output_transformers = mod_manager.get_output_transformers()
-        output_calibration = output_transformers[0]
-        output_normalization = output_transformers[1]
-        # read simulation data back from JSON string
-        sim_data = pd.read_json(StringIO(state.sim_data_serialized))
-        # normalize simulation data
-        objective_tensor = torch.from_numpy(sim_data[objective_name].values)
-        objective_tensor = output_normalization.transform(objective_tensor)
-        if state.calibrate:
-            objective_tensor = output_calibration.untransform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        else:
-            objective_tensor = output_calibration.transform(objective_tensor)
-            objective_tensor = output_normalization.untransform(objective_tensor)
-        sim_data[objective_name] = objective_tensor.numpy()[0]
-        # serialize simulation data to JSON string
-        state.sim_data_serialized = sim_data.to_json(default_handler=str)
 
 def update(
     reset_model=True,
     reset_parameters=True,
     reset_objectives=True,
+    reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
@@ -126,14 +54,14 @@ def update(
     global mod_manager
     global par_manager
     global obj_manager
+    global cal_manager
     # load data
-    load_data()
+    exp_data, sim_data = load_data(db)
     # reset model
     if reset_model:
-        model_file = load_model_file()
-        mod_manager = ModelManager(model_file)
+        mod_manager = ModelManager(db)
     # load input and output variables
-    input_variables, output_variables = load_variables()
+    input_variables, output_variables, simulation_calibration = load_variables()
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -143,8 +71,9 @@ def update(
     # reset objectives
     if reset_objectives:
         obj_manager = ObjectivesManager(mod_manager, output_variables)
-    # calibration
-    calibrate_data()
+    # reset calibration
+    if reset_calibration:
+        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
@@ -156,8 +85,14 @@ def update(
         gui_setup()
     # reset plots
     if reset_plots:
-        fig = plot(mod_manager)
+        fig = plot(
+            exp_data=exp_data,
+            sim_data=sim_data,
+            model_manager=mod_manager,
+            cal_manager=cal_manager,
+        )
         ctrl.figure_update(fig)
+
 
 @state.change("experiment")
 def update_on_change_experiment(**kwargs):
@@ -168,14 +103,16 @@ def update_on_change_experiment(**kwargs):
             reset_model=True,
             reset_parameters=True,
             reset_objectives=True,
+            reset_calibration=True,
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
             reset_gui_layout=False,
         )
 
-@state.change("model_type")
-def update_on_change(**kwargs):
+
+@state.change("model_type", "model_training_time")
+def update_on_change_model(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print("Model type changed...")
@@ -183,34 +120,124 @@ def update_on_change(**kwargs):
             reset_model=True,
             reset_parameters=False,
             reset_objectives=False,
+            reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
             reset_gui_layout=False,
         )
 
+
 @state.change(
     "parameters",
     "opacity",
-    "calibrate",
+    "parameters_min",
+    "parameters_max",
+    "parameters_show_all",
 )
-def update_on_change(**kwargs):
+def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity, or calibration changed...")
+        print("Parameters, opacity changed...")
         update(
             reset_model=False,
             reset_parameters=False,
             reset_objectives=False,
+            reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=False,
             reset_gui_route_nersc=False,
             reset_gui_layout=False,
         )
 
+
+def find_simulation(event, db):
+    try:
+        # extract the ID of the point that the user clicked on
+        this_point_id = event["points"][0]["customdata"][0]
+        # find the document with matching ID from the experiment collection
+        documents = list(db[state.experiment].find({"_id": ObjectId(this_point_id)}))
+        if len(documents) == 1:
+            this_point_parameters = {
+                parameter: documents[0][parameter]
+                for parameter in state.parameters.keys()
+                if parameter in documents[0]
+            }
+            print(f"Clicked on data point ({this_point_parameters})")
+        else:
+            print(f"Could not find database document that matches ID {this_point_id}")
+            return
+        # get data directory from the document
+        data_directory = documents[0]["data_directory"]
+        # replace the absolute path preceding "simulation_data"
+        # with the work directory "/app" set in the Dockerfile:
+        # - "^(.*)" captures everything before "simulation_data"
+        # - "(.*)$" captures everything after "simulation_data"
+        # - "\g<2>" inserts the captured part after "simulation_data"
+        data_directory = re.sub(
+            pattern=r"^(.*)simulation_data/(.*)$",
+            repl=r"/app/simulation_data/\g<2>",
+            string=data_directory,
+        )
+        if not os.path.isdir(data_directory):
+            print(f"Could not find data directory {data_directory}")
+            return
+        # get file directory
+        file_directory = os.path.join(data_directory, "plots")
+        if not os.path.isdir(file_directory):
+            print(f"Could not find file directory {file_directory}")
+            return
+        # find plot file(s) to display
+        file_list = os.listdir(file_directory)
+        file_list.sort()
+        file_video = [file for file in file_list if file.endswith(".mp4")]
+        file_png = [
+            file for file in file_list if file.endswith(".png") and "iteration" in file
+        ]
+        if len(file_video) == 1:
+            # select video file
+            file_name = file_video[0]
+        elif len(file_png) > 0:
+            # select image file from last iteration
+            file_name = file_png[-1]
+        else:
+            print("Could not find valid plot files to display")
+            return
+        # set file path and verify that it exists
+        file_path = os.path.join(file_directory, file_name)
+        if os.path.isfile(file_path):
+            print(f"Found file {file_path}")
+        else:
+            print(f"Could not find file {file_path}")
+            return
+        # store a URL encoded file content under a given key name
+        return data_directory, file_path
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
+def open_simulation_dialog(event):
+    data_directory, file_path = find_simulation(event, db)
+    state.simulation_video = file_path.endswith(".mp4")
+    assets = LocalFileManager(data_directory)
+    assets.url(
+        key="simulation_key",
+        file_path=file_path,
+    )
+    state.simulation_url = assets["simulation_key"]
+    state.simulation_dialog = True
+
+
+def close_simulation_dialog(**kwargs):
+    state.simulation_url = None
+    state.simulation_dialog = False
+    state.simulation_video = False
+
+
 # -----------------------------------------------------------------------------
 # GUI components
 # -----------------------------------------------------------------------------
+
 
 # home route
 def home_route():
@@ -218,68 +245,66 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # parameters control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        par_manager.card()
+                        par_manager.panel()
+                # model control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Models"):
-                                with vuetify.VCardText():
-                                    with vuetify.VRow():
-                                        vuetify.VSelect(
-                                            v_model=("model_type",),
-                                            items=("Models", model_type_list),
-                                            dense=True,
-                                            prepend_icon="mdi-brain",
-                                            style="max-width: 210px;",
-                                        )
-                                        vuetify.VSpacer()
-                                        vuetify.VSwitch(
-                                            v_model=("calibrate",),
-                                            label="Calibration",
-                                            classes="mt-1",
-                                            color="primary",
-                                        )
+                        mod_manager.panel()
+                # plots control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VCard():
-                            with vuetify.VCardTitle("Control: Plots"):
-                                with vuetify.VCardText():
+                        with vuetify.VExpansionPanels(
+                            v_model=("expand_panel_control_plots", 0)
+                        ):
+                            with vuetify.VExpansionPanel(
+                                title="Control: Plots",
+                                style="font-size: 20px; font-weight: 500;",
+                            ):
+                                with vuetify.VExpansionPanelText():
                                     # create a row for the slider label
                                     with vuetify.VRow():
-                                        vuetify.VListSubheader("Projected Data Depth")
+                                        vuetify.VListSubheader(
+                                            "Projected Data Depth",
+                                            style="margin-top: 16px;",
+                                        )
                                     # create a row for the slider and text field
                                     with vuetify.VRow(no_gutters=True):
                                         with vuetify.VSlider(
                                             v_model_number=("opacity",),
                                             change="flushState('opacity')",
-                                            classes="align-center",
                                             hide_details=True,
                                             max=1.0,
                                             min=0.0,
                                             step=0.025,
+                                            style="align-items: center;",
                                         ):
                                             with vuetify.Template(v_slot_append=True):
                                                 vuetify.VTextField(
                                                     v_model_number=("opacity",),
-                                                    classes="mt-0 pt-0",
                                                     density="compact",
                                                     hide_details=True,
                                                     readonly=True,
                                                     single_line=True,
-                                                    style="width: 80px;",
+                                                    style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                     type="number",
                                                 )
+            # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
-                        with vuetify.VContainer(style=f"height: {400*len(state.parameters)}px;"):
+                        with vuetify.VContainer(
+                            style=f"height: {400 * len(state.parameters)}px;"
+                        ):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
+                                click=(open_simulation_dialog, "[utils.safe($event)]"),
                             )
                             ctrl.figure_update = figure.update
+
 
 # NERSC route
 def nersc_route():
@@ -287,9 +312,11 @@ def nersc_route():
     with RouterViewLayout(server, "/nersc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # Superfacility API card
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_sfapi_card()
+
 
 # GUI layout
 def gui_setup():
@@ -314,7 +341,7 @@ def gui_setup():
         with layout.drawer:
             with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
                 vuetify.VListSubheader("")
-                # Home route    
+                # Home route
                 vuetify.VListItem(
                     to="/",
                     prepend_icon="mdi-home",
@@ -326,12 +353,27 @@ def gui_setup():
                     prepend_icon="mdi-lan-connect",
                     title="NERSC",
                 )
-                # GitHub route    
-                vuetify.VListItem(
-                    click="window.open('https://github.com/ECP-WarpX/2024_IFE-superfacility/tree/main/dashboard', '_blank')",
-                    prepend_icon="mdi-github",
-                    title="GitHub",
-                )
+        # interactive dialog for simulation plots
+        with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
+            with vuetify.VCard(style="overflow: hidden;"):
+                with vuetify.VCardTitle("Simulation Plots"):
+                    vuetify.VSpacer()
+                    with vuetify.VBtn(icon=True, click=close_simulation_dialog):
+                        vuetify.VIcon("mdi-close")
+                with vuetify.VRow(align="center", justify="center"):
+                    html.Video(
+                        v_if=("simulation_video",),
+                        controls=True,
+                        src=("simulation_url",),
+                        height="480",
+                    )
+                    vuetify.VImg(
+                        v_if=("!simulation_video",),
+                        src=("simulation_url",),
+                        contain=True,
+                        height="480",
+                    )
+
 
 # -----------------------------------------------------------------------------
 # Main

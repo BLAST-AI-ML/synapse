@@ -10,6 +10,7 @@ from matplotlib.gridspec import GridSpec
 from openpmd_viewer.addons import LpaDiagnostics
 from scipy.constants import c
 from datetime import datetime
+import imageio.v2 as imageio
 
 try:
     from mip4py import MPI
@@ -43,7 +44,7 @@ def analyze_simulation():
     last_iteration = last_step
     S, info = ts.get_laser_spectral_intensity(iteration=last_iteration, pol='x')
     lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
-    data['kHz_ThorlabsSpec MeanWavelength'] = lambda_avg*1e9 # convert from m to nm
+    data['mean_wavelength'] = lambda_avg*1e9 # convert from m to nm
 
     # Write to the data base
     db = pymongo.MongoClient(
@@ -117,6 +118,14 @@ def analyze_simulation():
 
     plt.figure(figsize=(8, 8))
     ts.iterate( visualize_iteration )
+
+    # Load images and convert to MP4
+    image_files = ['diags/plots/iteration_%05d.png' % iteration for iteration in ts.iterations]
+    with imageio.get_writer('diags/plots/animation.mp4', fps=5) as writer:
+        for filename in image_files:
+            image = imageio.imread(filename)
+            writer.append_data(image)
+    print("animation.mp4 created successfully!")
 
 
 if __name__ == '__main__':

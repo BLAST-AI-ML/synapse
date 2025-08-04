@@ -10,8 +10,8 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("prepulse_delay", 67.41, 71.41)
-var_2 = VaryingParameter("target_focus", -56.81, -56.87)
+var_1 = VaryingParameter("plasma_gradient_length", 0., 1000.)
+var_2 = VaryingParameter("target_to_focus_distance", -0.03, 0.03)
 obj = Objective("f", minimize=False)
 
 n_var_1 = 8
