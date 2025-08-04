@@ -146,6 +146,7 @@ if model_type != 'GP':
     norm_sim_inputs_val = torch.tensor( norm_df_val[norm_df_val.experiment_flag==0][input_names].values, dtype=torch.float)
     norm_sim_outputs_val = torch.tensor( norm_df_val[norm_df_val.experiment_flag==0][output_names].values, dtype=torch.float)
 
+    print("training started")
 
     NN_start_time = time.time()
     if model_type == 'NN':
@@ -156,13 +157,16 @@ if model_type != 'GP':
     ensemble = []
     for i in range(num_models):
         model = CombinedNN(len(input_names), len(output_names), learning_rate=0.0001)
+        model.to(device) # moving to GPU
+        NNmodel_start_time = time.time()
         model.train_model(
-            norm_sim_inputs_train, norm_sim_outputs_train,
-            norm_expt_inputs_train, norm_expt_outputs_train,
-            norm_sim_inputs_val, norm_sim_outputs_val,
-            norm_expt_inputs_val, norm_expt_outputs_val,
+            norm_sim_inputs_train.to(device), norm_sim_outputs_train.to(device),
+            norm_expt_inputs_train.to(device), norm_expt_outputs_train.to(device),
+            norm_sim_inputs_val.to(device), norm_sim_outputs_val.to(device),
+            norm_expt_inputs_val.to(device), norm_expt_outputs_val.to(device),
             num_epochs=20000)
-        print(f'Model_{i+1} trained')
+        NNmodel_end_time = time.time()
+        print(f'Model_{i+1} trained in ', NNmodel_end_time - NNmodel_start_time)
         ensemble.append(model)
 
 
@@ -170,8 +174,8 @@ if model_type != 'GP':
     for model_nn in ensemble:
         calibration_transform = AffineInputTransform(
             len(output_names),
-            coefficient=model_nn.sim_to_exp_calibration.weight.clone(),
-            offset=model_nn.sim_to_exp_calibration.bias.clone() )
+            coefficient=model_nn.sim_to_exp_calibration.weight.clone().detach().cpu(),
+            offset=model_nn.sim_to_exp_calibration.bias.clone().detach().cpu() )
 
         # Fix mismatch in name between the config file and the expected lume-model format
         for k in input_variables:
