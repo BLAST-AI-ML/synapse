@@ -38,7 +38,7 @@ def analyze_simulation():
     data['data_directory'] = data_directory
 
     # Parse the warpx_used_output
-    with open('/pscratch/sd/r/rlehe/2024_IFE-superfacility/simulation_data/staging_injector/warpx_used_inputs') as f:
+    with open('warpx_used_inputs') as f:
         text = f.read()
         stage_length = float( re.findall(r'my_constants\.stage_length = (.+)', text)[0] )
         ramp_length = float( re.findall(r'my_constants\.ramp_length = (.+)', text)[0] )
@@ -170,7 +170,6 @@ def analyze_simulation():
         plt.title('Electron energy spectrum')
 
         # Plot of the laser spectrum
-        # TODO: Use proper function
         fig.add_subplot(gs[3,1])
         S, info = ts.get_spectrum(iteration=iteration, pol=pol)
         lambd = 2*np.pi*c/info.omega[1:]
