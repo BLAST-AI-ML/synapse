@@ -1,3 +1,37 @@
+staging_injector:
+
+  input_variables:
+
+    input1:
+      name: "Laser energy [J]"
+      type: scalar
+      default: 12
+      value_range: [12, 17]
+
+    input2:
+      name: "Target-to-focus distance [cm]"
+      type: scalar
+      default: 1
+      value_range: [0, 2]
+
+    input3:
+      name: "Dopant concentration [%]"
+      type: scalar
+      default: 5
+      value_range: [0, 10]
+
+    input4:
+      name: "Background density [1e18/cm^3]"
+      type: scalar
+      default: 4
+      value_range: [3, 5]
+
+  output_variables:
+
+    output1:
+      name: "Trapped charge [pC]"
+      type: scalar
+
 qed_ip2:
 
   input_variables:
