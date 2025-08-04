@@ -38,7 +38,7 @@ def analyze_simulation():
     data['data_directory'] = data_directory
 
     # Parse the warpx_used_output
-    with open('/pscratch/sd/r/rlehe/2024_IFE-superfacility/simulation_data/staging_injector/warpx_used_inputs') as f:
+    with open('warpx_used_inputs') as f:
         text = f.read()
         stage_length = float( re.findall(r'my_constants\.stage_length = (.+)', text)[0] )
         ramp_length = float( re.findall(r'my_constants\.ramp_length = (.+)', text)[0] )
