@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-
 class EarlyStopping:
     def __init__(self, patience=50, min_delta=0):
         self.patience = patience
@@ -55,11 +54,6 @@ class CombinedNN(nn.Module):
             self.sim_to_exp_calibration.weight[...] = 1.
             self.sim_to_exp_calibration.bias[...] = 0.
         
-        self.loss_data = {
-            'loss':[],
-            'epoch_count':[]
-            }
-
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
@@ -108,8 +102,6 @@ class CombinedNN(nn.Module):
             self.optimizer.step()
 
             current_loss = loss.item()
-            self.loss_data['loss'].append(loss.detach().numpy())
-            self.loss_data['epoch_count'].append(epoch)
             self.scheduler.step(current_loss)
 
             # compute validation loss for early stopping
@@ -131,25 +123,6 @@ class CombinedNN(nn.Module):
                 print(f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}' )
                 break
 
-
-
-    def plot_loss(self, filename=None):
-        '''
-        Args:
-            if a string is provided it will save the plot with the given name
-        return:
-            displays epochs vs loss graph
-        '''
-        fig, ax = plt.subplots()
-        ax.plot(self.loss_data['epoch_count'], self.loss_data['loss'], label='loss')
-        plt.title('epochs vs loss')
-        plt.xlabel('epochs')
-        plt.ylabel('loss')
-
-        if filename:
-            plt.savefig(filename+'.png')
-        else:
-            plt.show()
 
 
     def predict_sim(self, inputs):
