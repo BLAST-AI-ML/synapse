@@ -78,7 +78,6 @@ input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
-
 # Extract data from the database as pandas dataframe
 collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
@@ -99,12 +98,16 @@ if model_type != 'GP':
     #Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
     exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
     sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)#random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
+
     df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
     df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
 
 else:
     # No split: all the data is training data
-    df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
+    if len(df_exp) > 0:
+        df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
+    else:
+        df_train = df_sim[variables]
 
 # Normalize with Affine Input Transformer
 # Define the input and output normalizations
@@ -222,7 +225,7 @@ if model_type != 'GP':
 # Guassian Process Creation and training
 ###############################################################
 else:
-    if experiment != 'acave':
+    if len(df_exp) > 0:
         gp_model = MultiTaskGP(
             torch.tensor( norm_df_train[['experiment_flag']+input_names].values ),
             torch.tensor( norm_df_train[output_names].values ),
