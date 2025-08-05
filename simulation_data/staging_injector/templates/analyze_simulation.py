@@ -75,9 +75,16 @@ def analyze_simulation():
                    select={'uz':[uz_threshold, None]})
     gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
 
-    data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
-    data['Beam energy spread [%]'] = 100*dgamma[-1]/gamma[-1]
-    data['Trapped charge [pC]'] = -Q[-1]*1e12
+    # For a beam with no charge, avoid NaNs (which prevent ML training)
+    # and replace with 0 instead
+    if Q[-1] == 0:
+        data['Beam mean energy [GeV]'] = 0.
+        data['Beam energy spread [%]'] = 0.
+        data['Trapped charge [pC]'] = 0.
+    else:
+        data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
+        data['Beam energy spread [%]'] = 100*dgamma[-1]/gamma[-1]
+        data['Trapped charge [pC]'] = -Q[-1]*1e12
 
     # Write to the data base
     db = pymongo.MongoClient(
