@@ -70,7 +70,9 @@ def update(
         par_manager.model = mod_manager
     # reset objectives
     if reset_objectives:
-        obj_manager = ObjectivesManager(mod_manager, output_variables)
+        # Select the current objective
+        objective = list(output_variables.keys())[state.displayed_quantity_index]
+        obj_manager = ObjectivesManager(mod_manager, { objective: output_variables[objective]} )
     # reset calibration
     if reset_calibration:
         cal_manager = SimulationCalibrationManager(simulation_calibration)
