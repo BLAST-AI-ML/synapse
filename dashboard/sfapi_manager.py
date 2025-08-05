@@ -36,8 +36,8 @@ def initialize_sfapi():
                 update_sfapi_info()
         except Exception as e:
             add_error(
-                "Unable to initialize superfacility connection",
-                f"Failed to initialize superfacility connection with error {e}",
+                "Error occurred when initializing the Superfacility API connection",
+                f"Unable to initialize the Superfacility API connection: {e}",
             )
             print(f"An unexpected error occurred: {e}")
 
