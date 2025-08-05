@@ -7,19 +7,7 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
-import asyncio
-from sfapi_client.jobs import TERMINAL_STATES
 from state_manager import state
-
-
-async def monitor_sfapi_job(sfapi_job, state_variable):
-    while sfapi_job.state not in TERMINAL_STATES:
-        await asyncio.sleep(5)
-        await sfapi_job.update()
-        # Make the status more readable by putting in spaces and capitalizing the words
-        state[state_variable] = sfapi_job.state.value.replace("_", " ").title()
-        state.flush()
-        print("sfapi job status: ", state.model_training_status)
 
 
 def load_config_file():
