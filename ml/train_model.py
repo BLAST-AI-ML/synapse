@@ -259,7 +259,7 @@ else:
 
     input_variables = [ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ]
 
-    if experiment != 'acave':
+    if len(df_exp) > 0:
         output_variables = [
             DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
             for name in output_names
