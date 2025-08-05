@@ -3,8 +3,21 @@ import os
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify2 as vuetify
+import asyncio
+from sfapi_client.jobs import TERMINAL_STATES, JobState
 
 from state_manager import state
+
+
+async def monitor_sfapi_job(sfapi_job, state_variable):
+    while sfapi_job.state not in TERMINAL_STATES:
+        await asyncio.sleep(5)
+        await sfapi_job.update()
+        # Make the status more readable by putting in spaces and capitalizing the words
+        state[state_variable] = sfapi_job.state.value.replace("_", " ").title()
+        state.flush()
+        print("sfapi job status: ", state.model_training_status)
+    return sfapi_job.state == JobState.COMPLETED
 
 
 def parse_sfapi_key(key_str):
