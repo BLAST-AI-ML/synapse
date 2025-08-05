@@ -7,6 +7,7 @@ from trame.ui.vuetify2 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify2 as vuetify, html
 
 from model_manager import ModelManager
+from outputs_manager import OutputManager
 from objectives_manager import ObjectivesManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
@@ -24,6 +25,7 @@ from utils import (
 # Globals
 # -----------------------------------------------------------------------------
 
+out_manager = None
 mod_manager = None
 par_manager = None
 obj_manager = None
@@ -41,6 +43,7 @@ experiment_list = load_experiments()
 
 def update(
     reset_model=True,
+    reset_output=True,
     reset_parameters=True,
     reset_objectives=True,
     reset_calibration=True,
@@ -52,6 +55,7 @@ def update(
 ):
     print("Updating...")
     global mod_manager
+    global out_manager
     global par_manager
     global obj_manager
     global cal_manager
@@ -62,6 +66,9 @@ def update(
         mod_manager = ModelManager(db)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables()
+    # reset output
+    if reset_output:
+        out_manager = OutputManager(output_variables)
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -71,8 +78,11 @@ def update(
     # reset objectives
     if reset_objectives:
         # Select the current objective
-        objective = list(output_variables.keys())[state.displayed_quantity_index]
-        obj_manager = ObjectivesManager(mod_manager, { objective: output_variables[objective]} )
+        obj_manager = ObjectivesManager(
+            mod_manager,
+            {k: v for k, v in output_variables.items() if output_variables[k]['name'] == state.displayed_output},
+            # This creates a dictionary with only one key, to adapt to the expected interface
+        )
     # reset calibration
     if reset_calibration:
         cal_manager = SimulationCalibrationManager(simulation_calibration)
@@ -247,6 +257,10 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # objectives control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        out_manager.panel()
                 # parameters control panel
                 with vuetify.VRow():
                     with vuetify.VCol():

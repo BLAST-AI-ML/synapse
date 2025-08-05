@@ -148,8 +148,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     parameters_max = state.parameters_max
     parameters_show_all = state.parameters_show_all
     try:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[state.displayed_quantity_index]
+        objective_name = state.displayed_output
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         objective_name = ""
