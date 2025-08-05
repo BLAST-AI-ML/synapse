@@ -37,7 +37,7 @@ staging_injector:
       type: scalar
 
     output3:
-      name: "Beam mean energy [GeV]"
+      name: "Beam energy spread [%]"
       type: scalar
 
     output4:

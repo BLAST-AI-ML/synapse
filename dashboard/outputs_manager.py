@@ -8,12 +8,11 @@ class OutputManager:
     def __init__(self, output_variables):
         print("Initializing output manager...")
         # define state variables
-        self.output_variables = [ v['name'] for v in output_variables.values() ]
-        state.displayed_output = self.output_variables[0]
+        state.output_variables = [ v['name'] for v in output_variables.values() ]
+        state.displayed_output = state.output_variables[0]
 
     def panel(self):
         print("Setting output card...")
-        print(self.output_variables)
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_output", 0)):
             with vuetify.VExpansionPanel():
                 vuetify.VExpansionPanelHeader(
@@ -25,7 +24,8 @@ class OutputManager:
                         with vuetify.VCol():
                             vuetify.VSelect(
                                 v_model=("displayed_output",),
-                                items=("Output", self.output_variables),
+                                items=("Output", state.output_variables),
+                                change="flushState('output_variables')",
                                 dense=True,
                                 style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
                             )
