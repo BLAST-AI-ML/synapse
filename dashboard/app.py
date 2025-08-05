@@ -20,7 +20,6 @@ from utils import (
     load_variables,
     plot,
 )
-import random
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -329,13 +328,6 @@ def nersc_route():
                         load_sfapi_card()
 
 
-def create_new_error():
-    add_error(
-        "Random int error",
-        f"Oh no! an error! random iskajdhfa sfkhaskjdfh askjdf aksjdhf kajsh fdkajshdfl kajshflkjashd \nlfkjhasd kfj hnt: {random.randint(0, 100)}",
-    )
-
-
 # GUI layout
 def gui_setup():
     print("Setting GUI layout...")
@@ -372,8 +364,6 @@ def gui_setup():
                         vuetify.VIcon("mdi-lan-connect")
                     with vuetify.VListItemContent():
                         vuetify.VListItemTitle("NERSC")
-                with vuetify.VBtn(click=create_new_error):
-                    html.P("Click me to make an error")
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
             with vuetify.VCard(style="overflow: hidden;"):
