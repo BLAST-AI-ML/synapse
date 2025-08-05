@@ -37,7 +37,7 @@ def initialize_sfapi():
         except Exception as e:
             add_error(
                 "Unable to initialize superfacility connection",
-                f"Failed to initialize siperfacility connection with error {e}",
+                f"Failed to initialize superfacility connection with error {e}",
             )
             print(f"An unexpected error occurred: {e}")
 
@@ -96,7 +96,7 @@ def update_sfapi_info():
         state.perlmutter_status = "unavailable"
         add_error(
             "Error occurred when connecting to Superfacility",
-            "Unable to connect to superfacility with error {e}",
+            f"Unable to connect to superfacility with error {e}",
         )
         print("Setting perlmutter status to unavailable")
 
