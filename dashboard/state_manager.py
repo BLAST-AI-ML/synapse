@@ -11,7 +11,7 @@ def initialize_state():
     """
     print("Initializing state variables at startup...")
     # experiment and model type
-    state.experiment = "qed_ip2"
+    state.experiment = "staging_injector"
     state.model_type = "Neural Network"
     state.model_training = False
     state.model_training_status = "Completed"

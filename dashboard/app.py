@@ -113,6 +113,7 @@ def update_on_change_experiment(**kwargs):
         print("Experiment changed...")
         update(
             reset_model=True,
+            reset_output=True,
             reset_parameters=True,
             reset_objectives=True,
             reset_calibration=True,
@@ -130,6 +131,7 @@ def update_on_change_model(**kwargs):
         print("Model type changed...")
         update(
             reset_model=True,
+            reset_output=False,
             reset_parameters=False,
             reset_objectives=False,
             reset_calibration=False,
@@ -141,6 +143,7 @@ def update_on_change_model(**kwargs):
 
 
 @state.change(
+    "displayed_output",
     "parameters",
     "opacity",
     "parameters_min",
@@ -153,6 +156,7 @@ def update_on_change_others(**kwargs):
         print("Parameters, opacity changed...")
         update(
             reset_model=False,
+            reset_output=False,
             reset_parameters=False,
             reset_objectives=False,
             reset_calibration=False,
