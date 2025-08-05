@@ -95,8 +95,8 @@ def update_sfapi_info():
         state.perlmutter_description = "Unavailable"
         state.perlmutter_status = "unavailable"
         add_error(
-            "Error occurred when connecting to Superfacility",
-            f"Unable to connect to superfacility with error {e}",
+            "Error occurred when connecting to NERSC",
+            f"Unable to connect to NERSC through the Superfacility API: {e}",
         )
         print("Setting perlmutter status to unavailable")
 
