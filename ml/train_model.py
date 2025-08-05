@@ -96,12 +96,14 @@ for _, value in simulation_calibration.items():
 variables = input_names + output_names + ['experiment_flag']
 if model_type != 'GP':
     #Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
     sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)#random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-
-    df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
-    df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
-
+    if len(df_exp) > 0:
+        exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
+        df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
+        df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
+    else:
+        df_train = sim_train_df[variables]
+        df_val = sim_val_df[variables]
 else:
     # No split: all the data is training data
     if len(df_exp) > 0:
