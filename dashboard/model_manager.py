@@ -12,8 +12,9 @@ import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import load_config_file, metadata_match, monitor_sfapi_job
+from utils import load_config_file, metadata_match
 from datetime import datetime
+from sfapi_manager import monitor_sfapi_job
 
 from state_manager import state
 
@@ -223,7 +224,7 @@ class ModelManager:
                 state.flush()
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
-                await monitor_sfapi_job(sfapi_job, "model_training_status")
+                return await monitor_sfapi_job(sfapi_job, "model_training_status")
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -234,14 +235,14 @@ class ModelManager:
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            await self.training_kernel()
-            print("Training job completed")
+            if await self.training_kernel():
+                state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                print(f"Finished training model at {state.model_training_time}")
+            else:
+                print("Unable to complete training job.")
             # flush state and enable button
             state.model_training = False
-            state.model_training_status = "Completed"
-            state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
             state.flush()
-            print(f"Finished training model at {state.model_training_time}")
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 

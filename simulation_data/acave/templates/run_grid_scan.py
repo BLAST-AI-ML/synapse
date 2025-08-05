@@ -1,5 +1,5 @@
 """ Run parameter scan for A-cave experiment """
-
+import os
 from optimas.core import Parameter, VaryingParameter, Objective
 from optimas.generators import GridSamplingGenerator
 from optimas.evaluators import TemplateEvaluator,FunctionEvaluator,ChainEvaluator
@@ -29,21 +29,21 @@ gen = GridSamplingGenerator(
 
 # Create evaluators
 ev_pre = TemplateEvaluator(
-    sim_template="../templates/prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
+    sim_template="templates/prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
     sim_files=[
-        "../templates/retrieval01_spectrum.csv"
+        "templates/retrieval01_spectrum.csv"
     ],
     n_procs=1
 )
 ev_main = TemplateEvaluator(
-    sim_template="../templates/warpx_input_script",
+    sim_template="templates/warpx_input_script",
     analysis_func=analysis_func_main,
-    executable="../templates/warpx.rz",
+    executable="templates/warpx.rz",
     n_gpus=12,  # GPUs per individual evaluation
     env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
 )
 ev_post = TemplateEvaluator(
-    sim_template="../templates/analyze_simulation.py",
+    sim_template="templates/analyze_simulation.py",
     n_procs=1
 )
 
@@ -53,12 +53,17 @@ ev_chain = ChainEvaluator(
 )
 
 # Create exploration.
+
+# Save simulation results in the shared folder, in a subfolder with the job id
+save_dir = '/global/cfs/cdirs/m558/superfacility/simulation_data/acave/multi_' + os.environ['SLURM_JOB_ID']
+
 exp = Exploration(
     generator=gen,
     evaluator=ev_chain,
     max_evals=n_total,
     sim_workers=sim_workers,
     run_async=True,  # with the GridSamplingGenerator it should not matter if we run in batches,
+    exploration_dir_path=save_dir,
 )
 
 # To safely perform exploration, run it in the block below (this is needed
