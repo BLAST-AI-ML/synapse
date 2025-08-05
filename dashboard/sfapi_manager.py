@@ -83,8 +83,8 @@ def update_sfapi_info():
                 state.perlmutter_description = "Unavailable"
                 state.perlmutter_status = "unavailable"
                 add_error(
-                    "sfapi key is expired",
-                    f"sfapi key expired on {expiration.strftime(user_format)}",
+                    "Error occurred when loading the Superfacility API key",
+                    f"The Superfacility API key expired on {expiration.strftime(user_format)}",
                 )
                 print("Key is expired, setting perlmutter status to unavailable")
     except Exception as e:
