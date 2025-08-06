@@ -224,15 +224,21 @@ def find_simulation(event, db):
 
 
 def open_simulation_dialog(event):
-    data_directory, file_path = find_simulation(event, db)
-    state.simulation_video = file_path.endswith(".mp4")
-    assets = LocalFileManager(data_directory)
-    assets.url(
-        key="simulation_key",
-        file_path=file_path,
-    )
-    state.simulation_url = assets["simulation_key"]
-    state.simulation_dialog = True
+    try:
+        data_directory, file_path = find_simulation(event, db)
+        state.simulation_video = file_path.endswith(".mp4")
+        assets = LocalFileManager(data_directory)
+        assets.url(
+            key="simulation_key",
+            file_path=file_path,
+        )
+        state.simulation_url = assets["simulation_key"]
+        state.simulation_dialog = True
+    except Exception as e:
+        title = "Unable to open simulation dialog"
+        msg = f"Error occurred when opening simulation dialog: {e}"
+        add_error(title, msg)
+        print(msg)
 
 
 def close_simulation_dialog(**kwargs):
