@@ -1,8 +1,8 @@
 """ Run parameter scan for A-cave experiment """
 
-from optimas.core import VaryingParameter, Objective
+from optimas.core import Parameter, VaryingParameter, Objective
 from optimas.generators import GridSamplingGenerator
-from optimas.evaluators import TemplateEvaluator,ChainEvaluator
+from optimas.evaluators import TemplateEvaluator, FunctionEvaluator, ChainEvaluator
 from optimas.explorations import Exploration
 
 import pandas as pd
@@ -14,14 +14,14 @@ parser.add_argument('--single-simulation-parameters', default=None,
     help='Path to the CSV file containing simulation parameters ; if not provided, a grid scan will be run')
 args = parser.parse_args()
 
-#if args.single_simulation_parameters is None:
-#    # Grid scan with parallel simulations
-#    n_var_1 = 5
-#    n_var_2 = 5
-#    sim_workers = 5
-#    var_1 = VaryingParameter("target_to_focus_distance", -0.1, 0.1)
-#    var_2 = VaryingParameter("fused_silica_thickness", -667, 667)
-#else:
+if args.single_simulation_parameters is None:
+    # Grid scan with parallel simulations
+    n_var_1 = 5
+    n_var_2 = 5
+    sim_workers = 5
+    var_1 = VaryingParameter("target_to_focus_distance", -0.1, 0.1)
+    var_2 = VaryingParameter("fused_silica_thickness", -667, 667)
+else:
 # Single simulation, with parameters provided in the CSV file
 n_var_1 = 1
 n_var_2 = 1
@@ -60,8 +60,8 @@ ev_main = TemplateEvaluator(
     sim_template="../templates/warpx_input_script",
     analysis_func=analysis_func_main,
     executable="../templates/warpx.rz",
-    n_gpus= 1 #12,  # GPUs per individual evaluation
-#    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
+    n_gpus= 12,  # GPUs per individual evaluation
+    env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
 )
 ev_post = TemplateEvaluator(
     sim_template="../templates/analyze_simulation.py",
@@ -70,8 +70,8 @@ ev_post = TemplateEvaluator(
 
 # Create chain of evaluators
 ev_chain = ChainEvaluator(
-    #evaluators=[ev_pre, ev_main, ev_post]
-    evaluators=[ev_main]
+    evaluators=[ev_pre, ev_main, ev_post]
+    
 )
 
 # Create exploration.
