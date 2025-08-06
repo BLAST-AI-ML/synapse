@@ -20,8 +20,8 @@ from state_manager import state
 
 model_type_tag_dict = {
     "Gaussian Process": "GP",
-    "Neural Network": "NN",
-    "Ensemble NN": "ensemble_NN",
+    "Neural Network (single)": "NN",
+    "Neural Network (ensemble)": "ensemble_NN",
 }
 
 class ModelManager:
@@ -33,7 +33,7 @@ class ModelManager:
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
-        self.__is_ensemble = False
+        self.__is_neural_network_ensemble = False
 
         # Download model information from the database
         collection = db['models']
@@ -54,7 +54,7 @@ class ModelManager:
 
             with open(os.path.join(temp_dir, model_filename), 'w') as f:
                 f.write(yaml_file_content)    
-            if state.model_type == "Ensemble NN":
+            if state.model_type == "Neural Network (ensemble)":
                 for key, value in document.items():
                     if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml')):
                         with open(os.path.join(temp_dir, key), 'wb') as f:
@@ -93,11 +93,11 @@ class ModelManager:
 
             # Load model with lume_model
             try:
-                if state.model_type == "Neural Network":
+                if state.model_type == "Neural Network (single)":
                     self.__is_neural_network = True
                     self.__model = TorchModel(model_file)
-                elif state.model_type == "Ensemble NN":
-                    self.__is_ensemble = True
+                elif state.model_type == "Neural Network (ensemble)":
+                    self.__is_neural_network_ensemble = True
                     self.__model = NNEnsemble(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
@@ -122,8 +122,8 @@ class ModelManager:
         return self.__is_gaussian_process
     
     @property
-    def is_ensemble(self):
-        return self.__is_ensemble
+    def is_neural_network_ensemble(self):
+        return self.__is_neural_network_ensemble
 
     def evaluate(self, parameters):
         print("Evaluating model...")
@@ -139,12 +139,12 @@ class ModelManager:
                 # compute mean and mean error
                 mean = list(output_dict.values())[0]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
-            elif self.__is_gaussian_process or self.__is_ensemble:
+            elif self.__is_gaussian_process or self.__is_neural_network_ensemble:
                 if self.__is_gaussian_process:
                     # TODO use "exp" only once experimental data is available for all experiments
                     task_tag = "exp" if state.experiment == "ip2" else "sim"
                     output_key = [key for key in output_dict.keys() if task_tag in key][0]
-                elif self.__is_ensemble:
+                elif self.__is_neural_network_ensemble:
                     output_key = list(output_dict.keys())[0]
 
                 # compute mean, standard deviation and mean error
@@ -229,23 +229,10 @@ class ModelManager:
                     script_job = file.read()
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
-                if state.model_type == "Neural Network":
-                    script_job = re.sub(
+                script_job = re.sub(
                         pattern=r"--experiment (.*)",
-                        repl=rf"--experiment {state.experiment} --model NN",
+                        repl=rf"--experiment {state.experiment} --model {model_type_tag_dict[state.model_type]}",
                         string=script_job,
-                    )
-                elif state.model_type == "Ensemble NN":
-                    script_job = re.sub(
-                        pattern=r"--experiment (.*)",
-                        repl=rf"--experiment {state.experiment} --model ensemble_NN",
-                        string=script_job,
-                    )
-                if state.model_type == "Gaussian Process":
-                    script_job = re.sub(
-                        pattern=r"--experiment (.*)",
-                        repl=rf"--experiment {state.experiment} --model GP",
-                            string=script_job,
                     )
                 # submit the training job through the Superfacility API
                 sfapi_job = perlmutter.submit_job(script_job)
@@ -283,8 +270,8 @@ class ModelManager:
         # list of available model types
         model_type_list = [
             "Gaussian Process",
-            "Neural Network",
-            "Ensemble NN",
+            "Neural Network (single)",
+            "Neural Network (ensemble)",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
             with vuetify.VExpansionPanel():
