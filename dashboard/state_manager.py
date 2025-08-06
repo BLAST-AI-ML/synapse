@@ -27,3 +27,6 @@ def initialize_state():
     state.simulation_url = None
     state.simulation_dialog = False
     state.simulation_video = False
+    # simulation jobs
+    state.simulation_job_status = "Completed"
+    state.simulation_job = False

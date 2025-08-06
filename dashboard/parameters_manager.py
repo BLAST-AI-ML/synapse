@@ -8,7 +8,9 @@ from sfapi_client import Client
 from sfapi_client.compute import Machine
 from calibration_manager import SimulationCalibrationManager
 from state_manager import state
+import asyncio
 from utils import load_variables
+from utils import monitor_sfapi_job
 
 class ParametersManager:
     def __init__(self, model, input_variables):
@@ -53,7 +55,7 @@ class ParametersManager:
         # optimize parameters through model
         self.__model.optimize()
 
-    def simulate(self):
+    async def simulate(self):
         setup = state.experiment
         print(f"\nExperiment parameters ({setup}):")
         print(state.parameters)
@@ -108,10 +110,12 @@ class ParametersManager:
                     script_job = file.read()
                 # submit the training job through the Superfacility API
                 sfapi_job = perlmutter.submit_job(script_job)
+                state.simulation_job_status = "Submitted"
+                state.flush()
                 # print some logs
                 print(f"Simulation job submitted (job ID: {sfapi_job.jobid})")
                 # wait for the job to move into a terminal state
-                sfapi_job.complete()
+                return await monitor_sfapi_job(sfapi_job, "simulation_job_status")
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -211,9 +215,17 @@ class ParametersManager:
                                 click=self.optimize,
                                 style=" margin-top: 12px; text-transform: none;",
                             )
+                    with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Simulate",
                                 click=self.simulate,
                                 style="margin-right: 4px; margin-top: 12px; text-transform: none;",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("simulation_job_status",),
+                                label="Simulation Status",
+                                readonly=True,
+                                style="width: 100px;",
                             )
