@@ -149,8 +149,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # FIXME generalize for multiple objectives
         objective_name = list(state.objectives.keys())[0]
     except Exception as e:
-        add_error("Error occurred when plotting the objectives", "Unable to get the objectives name: {e}")
-        print(f"An unexpected error occurred: {e}")
+        title = "Unable to find objective to plot"
+        msg = f"Error occurred when searching for objective to plot: {e}"
+        add_error(title, msg)
+        print(msg)
         objective_name = ""
     # set auxiliary properties
     df_cds = ["blue", "red"]

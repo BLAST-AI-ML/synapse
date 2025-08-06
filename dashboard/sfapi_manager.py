@@ -35,11 +35,10 @@ def initialize_sfapi():
                 # update Superfacility API info
                 update_sfapi_info()
         except Exception as e:
-            add_error(
-                "Error occurred when initializing the Superfacility API connection",
-                f"Unable to initialize the Superfacility API connection: {e}",
-            )
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to initialize the Superfacility API connection"
+            msg = f"Error occurred when initializing the Superfacility API connection: {e}"
+            add_error(title, msg)
+            print(msg)
 
 
 def update_sfapi_info():
@@ -82,11 +81,10 @@ def update_sfapi_info():
                 # reset Perlmutter status
                 state.perlmutter_description = "Unavailable"
                 state.perlmutter_status = "unavailable"
-                add_error(
-                    "Error occurred when loading the Superfacility API key",
-                    f"The Superfacility API key expired on {expiration.strftime(user_format)}",
-                )
-                print("Key is expired, setting perlmutter status to unavailable")
+                title = "Unable to find a valid Superfacility API key"
+                msg = f"Superfacility API key expired on {expiration.strftime(user_format)}"
+                add_error(title, msg)
+                print(msg)
     except Exception as e:
         print(f"An unexpected error occurred when connecting to superfacility:\n{e}")
         # reset key expiration date
@@ -94,11 +92,10 @@ def update_sfapi_info():
         # reset Perlmutter status
         state.perlmutter_description = "Unavailable"
         state.perlmutter_status = "unavailable"
-        add_error(
-            "Error occurred when connecting to NERSC",
-            f"Unable to connect to NERSC through the Superfacility API: {e}",
-        )
-        print("Setting perlmutter status to unavailable")
+        title = "Unable to connect to NERSC"
+        msg = f"Error occurred when connecting to NERSC through the Superfacility API: {e}"
+        add_error(title, msg)
+        print(msg)
 
 
 @state.change("sfapi_key_dict")

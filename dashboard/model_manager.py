@@ -91,11 +91,10 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
-                add_error(
-                    f"Unable to load model {state.model_type}",
-                    f"Failed to load model with exception {e}",
-                )
-                print(f"An unexpected error occurred: {e}")
+                title = f"Unable to load model {state.model_type}"
+                msg = f"Error occurred when loading model: {e}"
+                add_error(title, msg)
+                print(msg)
 
     def avail(self):
         print("Checking model availability...")
@@ -227,8 +226,10 @@ class ModelManager:
                 # wait for the job to move into a terminal state
                 sfapi_job.complete()
         except Exception as e:
-            add_error("Unable to train kernel", "Failed to train kernel with error {e}")
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to complete training kernel"
+            msg = f"Error occurred when executing training kernel: {e}"
+            add_error(title, msg)
+            print(msg)
 
     async def training_async(self):
         try:
@@ -242,8 +243,10 @@ class ModelManager:
             state.flush()
             print(f"Finished training model at {state.model_training_time}")
         except Exception as e:
-            add_error("Unable to train model", f"Failed to load model with error {e}")
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def training_trigger(self):
         try:
@@ -253,8 +256,10 @@ class ModelManager:
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
-            add_error("Unable to train model", f"Failed to load model with error {e}")
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def panel(self):
         print("Setting model card...")

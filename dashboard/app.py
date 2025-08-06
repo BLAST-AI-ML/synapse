@@ -166,11 +166,10 @@ def find_simulation(event, db):
             }
             print(f"Clicked on data point ({this_point_parameters})")
         else:
-            print(f"Could not find database document that matches ID {this_point_id}")
-            add_error(
-                "Database document not found",
-                f"Could not find database document that matches ID {this_point_id}",
-            )
+            title = "Unable to find database document"
+            msg = f"Error occurred when searching for database document that matches ID {this_point_id}"
+            add_error(title, msg)
+            print(msg)
             return
         # get data directory from the document
         data_directory = documents[0]["data_directory"]
@@ -218,11 +217,10 @@ def find_simulation(event, db):
         # store a URL encoded file content under a given key name
         return data_directory, file_path
     except Exception as e:
-        add_error(
-            "Could not find simulation",
-            f"Error occured when trying to find simulation: {e}",
-        )
-        print(f"An unexpected error occurred: {e}")
+        title = "Unable to find simulation"
+        msg = f"Error occured when searching for simulation: {e}"
+        add_error(title, msg)
+        print(msg)
 
 
 def open_simulation_dialog(event):
