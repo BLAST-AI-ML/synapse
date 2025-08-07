@@ -9,7 +9,7 @@ import torch
 import yaml
 import shutil
 import asyncio
-from sfapi_client.jobs import TERMINAL_STATES
+from sfapi_client.jobs import TERMINAL_STATES, JobState
 from state_manager import state
 
 
@@ -22,6 +22,7 @@ async def monitor_sfapi_job(sfapi_job, state_variable):
         state[state_variable] = sfapi_job.state.value.replace("_", " ").title()
         state.flush()
         print("sfapi job status: ", state.model_training_status)
+    return sfapi_job.state == JobState.COMPLETED
 
 def load_config_file():
     print("Reading configuration file...")

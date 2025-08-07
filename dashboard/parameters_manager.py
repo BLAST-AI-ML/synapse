@@ -110,6 +110,12 @@ class ParametersManager:
                     script_job = file.read()
                 # submit the training job through the Superfacility API
                 sfapi_job = perlmutter.submit_job(script_job)
+                if sfapi_job is None:
+                    print("Error: Job submission failed")
+                    state.simulation_job_status = "Submission Failed"
+                    state.fluch()
+                    return
+
                 state.simulation_job_status = "Submitted"
                 state.flush()
                 # print some logs
