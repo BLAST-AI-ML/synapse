@@ -225,10 +225,7 @@ def find_simulation(event, db):
 
 def open_simulation_dialog(event):
     try:
-        data_directory, file_path = (
-            os.path.abspath("./"),
-            os.path.abspath("./simulation.mp4"),
-        )
+        data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
         assets = LocalFileManager(data_directory)
         assets.url(
