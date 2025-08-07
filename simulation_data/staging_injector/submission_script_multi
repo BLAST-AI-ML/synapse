@@ -1,14 +1,13 @@
 #!/bin/bash -l
 
-#SBATCH -t 06:00:00
-#SBATCH -N 20
+#SBATCH -t 00:10:00
+#SBATCH -N 2
 #SBATCH -A m558_g
-#SBATCH -q regular
+#SBATCH -q debug
 #SBATCH -C gpu
 #SBATCH --exclusive
 #SBATCH --gpu-bind=none
 #SBATCH --ntasks-per-node=4
-#SBATCH --gpus-per-node=4
 
 # Source environment
 source $HOME/db.profile

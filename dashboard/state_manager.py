@@ -1,6 +1,6 @@
 from trame.app import get_server
 
-server = get_server(client_type="vue2")
+server = get_server(client_type="vue3")
 state = server.state
 ctrl = server.controller
 
@@ -15,6 +15,7 @@ def initialize_state():
     state.model_type = "Neural Network"
     state.model_training = False
     state.model_training_status = "Completed"
+    state.model_training_time = None
     # opacity
     state.opacity = 0.05
     # Superfacility API
@@ -22,7 +23,8 @@ def initialize_state():
     state.sfapi_key = None
     state.sfapi_key_dict = None
     state.sfapi_key_expiration = "Unavailable"
-    state.perlmutter_status = "Unavailable"
+    state.perlmutter_description = "Unavailable"
+    state.perlmutter_status = "unavailable"
     # simulation plots in interactive dialog
     state.simulation_url = None
     state.simulation_dialog = False
@@ -30,3 +32,6 @@ def initialize_state():
     # simulation jobs
     state.simulation_job_status = "Completed"
     state.simulation_job = False
+    # Errors management
+    state.errors = []
+    state.error_counter = 0

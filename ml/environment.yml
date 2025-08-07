@@ -1,0 +1,14 @@
+
+
+
+name: ml-training
+channels:
+  - conda-forge
+dependencies:
+  - pip:
+    - gpytorch
+    - botorch
+    - lume-model
+    - pandas
+    - pymongo
+    - pyyaml
