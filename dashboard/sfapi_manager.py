@@ -2,7 +2,7 @@ from datetime import datetime
 import os
 from sfapi_client import Client
 from sfapi_client.compute import Machine
-from trame.widgets import vuetify2 as vuetify
+from trame.widgets import vuetify3 as vuetify
 import asyncio
 from sfapi_client.jobs import TERMINAL_STATES, JobState
 

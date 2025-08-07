@@ -10,7 +10,7 @@ from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
-from trame.widgets import vuetify2 as vuetify
+from trame.widgets import vuetify3 as vuetify
 from utils import load_config_file, metadata_match
 from error_manager import add_error
 from datetime import datetime
@@ -272,11 +272,11 @@ class ModelManager:
             "Neural Network",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
-            with vuetify.VExpansionPanel():
-                vuetify.VExpansionPanelHeader(
-                    "Control: Models", style="font-size: 20px; font-weight: 500;"
-                )
-                with vuetify.VExpansionPanelContent():
+            with vuetify.VExpansionPanel(
+                title="Control: Models",
+                style="font-size: 20px; font-weight: 500;",
+            ):
+                with vuetify.VExpansionPanelText():
                     # create a row for the model selector
                     with vuetify.VRow():
                         vuetify.VSelect(
@@ -284,7 +284,7 @@ class ModelManager:
                             items=("Models", model_type_list),
                             dense=True,
                             prepend_icon="mdi-brain",
-                            style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
+                            style="margin-left: 16px; margin-top: 24px; max-width: 250px;",
                         )
                     # create a row for the switches and buttons
                     with vuetify.VRow():
@@ -302,5 +302,5 @@ class ModelManager:
                                 v_model_number=("model_training_status",),
                                 label="Training status",
                                 readonly=True,
-                                style="width: 100px;",
+                                style="width: 150px;",
                             )
