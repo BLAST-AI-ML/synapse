@@ -45,9 +45,8 @@ def error_panel():
                     v_for="(alert, i) in errors",
                     key="alert.id",
                     dense=True,
-                    closeable=True,
-                    close_icon=("mdi-close",),
-                    input=(remove_error, "[i]"),
+                    closable=True,
+                    click_close=(remove_error, "[i]"),
                 ):
                     html.H4("{{alert.title}}")
                     html.P("{{alert.msg}}")
