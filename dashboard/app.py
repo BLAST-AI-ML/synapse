@@ -13,6 +13,7 @@ from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
+from error_manager import error_panel, add_error
 from utils import (
     load_experiments,
     load_database,
@@ -181,7 +182,10 @@ def find_simulation(event, db):
             }
             print(f"Clicked on data point ({this_point_parameters})")
         else:
-            print(f"Could not find database document that matches ID {this_point_id}")
+            title = "Unable to find database document"
+            msg = f"Error occurred when searching for database document that matches ID {this_point_id}"
+            add_error(title, msg)
+            print(msg)
             return
         # get data directory from the document
         data_directory = documents[0]["data_directory"]
@@ -229,19 +233,28 @@ def find_simulation(event, db):
         # store a URL encoded file content under a given key name
         return data_directory, file_path
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        title = "Unable to find simulation"
+        msg = f"Error occured when searching for simulation: {e}"
+        add_error(title, msg)
+        print(msg)
 
 
 def open_simulation_dialog(event):
-    data_directory, file_path = find_simulation(event, db)
-    state.simulation_video = file_path.endswith(".mp4")
-    assets = LocalFileManager(data_directory)
-    assets.url(
-        key="simulation_key",
-        file_path=file_path,
-    )
-    state.simulation_url = assets["simulation_key"]
-    state.simulation_dialog = True
+    try:
+        data_directory, file_path = find_simulation(event, db)
+        state.simulation_video = file_path.endswith(".mp4")
+        assets = LocalFileManager(data_directory)
+        assets.url(
+            key="simulation_key",
+            file_path=file_path,
+        )
+        state.simulation_url = assets["simulation_key"]
+        state.simulation_dialog = True
+    except Exception as e:
+        title = "Unable to open simulation dialog"
+        msg = f"Error occurred when opening simulation dialog: {e}"
+        add_error(title, msg)
+        print(msg)
 
 
 def close_simulation_dialog(**kwargs):
@@ -356,6 +369,7 @@ def gui_setup():
             )
         # set up router view
         with layout.content:
+            error_panel()
             with vuetify.VContainer():
                 router.RouterView()
         # add router components to the drawer

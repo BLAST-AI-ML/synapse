@@ -8,11 +8,11 @@ import re
 from scipy.optimize import minimize
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify2 as vuetify
 from utils import load_config_file, metadata_match
+from error_manager import add_error
 from datetime import datetime
 from sfapi_manager import monitor_sfapi_job
 
@@ -92,8 +92,10 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
-                print(f"An unexpected error occurred: {e}")
-                sys.exit(1)
+                title = f"Unable to load model {state.model_type}"
+                msg = f"Error occurred when loading model: {e}"
+                add_error(title, msg)
+                print(msg)
 
     def avail(self):
         print("Checking model availability...")
@@ -222,7 +224,10 @@ class ModelManager:
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
 
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to complete training kernel"
+            msg = f"Error occurred when executing training kernel: {e}"
+            add_error(title, msg)
+            print(msg)
 
     async def training_async(self):
         try:
@@ -239,14 +244,20 @@ class ModelManager:
             state.model_training = False
             state.flush()
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def training_trigger(self):
         try:
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def panel(self):
         print("Setting model card...")

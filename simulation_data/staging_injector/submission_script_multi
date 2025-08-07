@@ -13,9 +13,5 @@
 source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
-# Create new directory
-mkdir multi_$SLURM_JOB_ID
-cd multi_$SLURM_JOB_ID
-
 # Run optimas scan
-python ../templates/run_grid_scan.py
+python templates/run_grid_scan.py

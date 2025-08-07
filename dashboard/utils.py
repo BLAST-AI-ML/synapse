@@ -8,6 +8,7 @@ import pymongo
 import torch
 import yaml
 from state_manager import state
+from error_manager import add_error
 
 
 def load_config_file():
@@ -150,7 +151,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     try:
         objective_name = state.displayed_output
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        title = "Unable to find objective to plot"
+        msg = f"Error occurred when searching for objective to plot: {e}"
+        add_error(title, msg)
+        print(msg)
         objective_name = ""
     # set auxiliary properties
     df_cds = ["blue", "red"]
