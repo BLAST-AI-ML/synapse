@@ -312,16 +312,9 @@ with tempfile.TemporaryDirectory() as temp_dir:
     if count > 1:
         print(f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them.")
         db['models'].delete_many(query)
-        count = db['models'].count_documents(query)
-    if count == 0:
-        print("Uploading new model to database")
-        db['models'].insert_one(document)
-        print("Model uploaded to database")
     elif count == 1:
-        print('Model already exists in database ; updating it.')
-        db['models'].update_one(query, {'$set': document})
-    else:
-        # Raise error, this should not happen
-        raise ValueError(f"Multiple models found for experiment: {experiment} and model type: {model_type}!")
-
-    print("Model updated in database")
+        print(f"Model already exists for experiment: {experiment} and model type: {model_type}! Removing it.")
+        db['models'].delete_one(query)
+    print("Uploading new model to database")
+    db['models'].insert_one(document)
+    print("Model uploaded to database")
