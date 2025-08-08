@@ -8,11 +8,11 @@ import re
 from scipy.optimize import minimize
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-import sys
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
-from trame.widgets import vuetify2 as vuetify
+from trame.widgets import vuetify3 as vuetify
 from utils import load_config_file, metadata_match
+from error_manager import add_error
 from datetime import datetime
 from sfapi_manager import monitor_sfapi_job
 
@@ -92,8 +92,10 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
-                print(f"An unexpected error occurred: {e}")
-                sys.exit(1)
+                title = f"Unable to load model {state.model_type}"
+                msg = f"Error occurred when loading model: {e}"
+                add_error(title, msg)
+                print(msg)
 
     def avail(self):
         print("Checking model availability...")
@@ -227,7 +229,10 @@ class ModelManager:
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
 
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to complete training kernel"
+            msg = f"Error occurred when executing training kernel: {e}"
+            add_error(title, msg)
+            print(msg)
 
     async def training_async(self):
         try:
@@ -244,14 +249,20 @@ class ModelManager:
             state.model_training = False
             state.flush()
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def training_trigger(self):
         try:
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def panel(self):
         print("Setting model card...")
@@ -261,11 +272,11 @@ class ModelManager:
             "Neural Network",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
-            with vuetify.VExpansionPanel():
-                vuetify.VExpansionPanelHeader(
-                    "Control: Models", style="font-size: 20px; font-weight: 500;"
-                )
-                with vuetify.VExpansionPanelContent():
+            with vuetify.VExpansionPanel(
+                title="Control: Models",
+                style="font-size: 20px; font-weight: 500;",
+            ):
+                with vuetify.VExpansionPanelText():
                     # create a row for the model selector
                     with vuetify.VRow():
                         vuetify.VSelect(
@@ -273,7 +284,7 @@ class ModelManager:
                             items=("Models", model_type_list),
                             dense=True,
                             prepend_icon="mdi-brain",
-                            style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
+                            style="margin-left: 16px; margin-top: 24px; max-width: 250px;",
                         )
                     # create a row for the switches and buttons
                     with vuetify.VRow():
@@ -291,5 +302,5 @@ class ModelManager:
                                 v_model_number=("model_training_status",),
                                 label="Training status",
                                 readonly=True,
-                                style="width: 100px;",
+                                style="width: 150px;",
                             )

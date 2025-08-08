@@ -1,6 +1,6 @@
 from trame.app import get_server
 
-server = get_server(client_type="vue2")
+server = get_server(client_type="vue3")
 state = server.state
 ctrl = server.controller
 
@@ -29,3 +29,6 @@ def initialize_state():
     state.simulation_url = None
     state.simulation_dialog = False
     state.simulation_video = False
+    # Errors management
+    state.errors = []
+    state.error_counter = 0
