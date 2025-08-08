@@ -23,7 +23,7 @@ This repo contains scripts and code to show ML predictions from simulations and 
 
 ![IFE Superfacility Overview](overview_image.png)
 
-One of the main component is the app that runs on NERSC Spin, for which the code is in the `dashboard/` folder. In particular, when running on NERSC Spin, the app needs to access to different sources of information, for different functionalities:
+One of the main component is the app that runs on NERSC Spin, for which the code is in the [`dashboard/`](dashboard/) folder. In particular, when running on NERSC Spin, the app needs to access to different sources of information, for different functionalities:
 
 ### To display predictions
 
