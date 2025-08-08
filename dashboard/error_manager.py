@@ -1,4 +1,4 @@
-from trame.widgets import vuetify2 as vuetify, html
+from trame.widgets import vuetify3 as vuetify, html
 from state_manager import state
 
 
@@ -33,32 +33,28 @@ def error_panel():
     ):
         with vuetify.VExpansionPanel(
             dense=True,
+            title=("errors.length + ' Errors Generated'",),
+            expand_icon="mdi-alert",
+            disable_icon_rotate=True,
+            color="error",
         ):
-            vuetify.VExpansionPanelHeader(
-                "{{errors.length}} Errors Generated",
-                expand_icon="mdi-alert",
-                disable_icon_rotate=True,
-                color="error",
-            )
-            with vuetify.VExpansionPanelContent(
+            with vuetify.VExpansionPanelText(
                 dense=True,
             ):
                 with vuetify.VAlert(
                     v_for="(alert, i) in errors",
                     key="alert.id",
                     dense=True,
-                    dismissible=True,
-                    close_icon="mdi-close",
-                    input=(remove_error, "[i]"),
+                    closable=True,
+                    click_close=(remove_error, "[i]"),
                 ):
                     html.H4("{{alert.title}}")
                     html.P("{{alert.msg}}")
                 vuetify.VBtn(
                     "Close all",
                     dense=True,
-                    dismissible=True,
                     click=remove_all_errors,
                     color="error",
-                    text=True,
+                    variant="text",
                     block=True,
                 )

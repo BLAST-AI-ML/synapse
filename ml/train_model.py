@@ -48,6 +48,7 @@ parser.add_argument(
 args = parser.parse_args()
 experiment = args.experiment
 model_type = args.model
+print(f"Experiment: {experiment}, Model type: {model_type}")
 start_time = time.time()
 if model_type not in ['NN', 'ensemble_NN', 'GP']:
     raise ValueError(f"Invalid model type: {model_type}")
@@ -77,13 +78,15 @@ input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
-
 # Extract data from the database as pandas dataframe
 collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
 df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 # Apply calibration to the simulation results
-simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+if "simulation_calibration" in yaml_dict[experiment]:
+    simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+else:
+    simulation_calibration = {}
 for _, value in simulation_calibration.items():
     sim_name = value["name"]
     exp_name = value["depends_on"]
@@ -93,14 +96,20 @@ for _, value in simulation_calibration.items():
 variables = input_names + output_names + ['experiment_flag']
 if model_type != 'GP':
     #Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-    exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
     sim_train_df, sim_val_df = train_test_split(df_sim, test_size=0.2, random_state=None, shuffle=True)#random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-    df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
-    df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
-
+    if len(df_exp) > 0:
+        exp_train_df, exp_val_df = train_test_split(df_exp, test_size=0.2, random_state=None, shuffle=True)# 20% of the data will go in validation test, no fixing the
+        df_train = pd.concat( (exp_train_df[variables], sim_train_df[variables]) )
+        df_val = pd.concat( (exp_val_df[variables], sim_val_df[variables]) )
+    else:
+        df_train = sim_train_df[variables]
+        df_val = sim_val_df[variables]
 else:
     # No split: all the data is training data
-    df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
+    if len(df_exp) > 0:
+        df_train = pd.concat( (df_exp[variables], df_sim[variables]) )
+    else:
+        df_train = df_sim[variables]
 
 # Normalize with Affine Input Transformer
 # Define the input and output normalizations
@@ -218,7 +227,7 @@ if model_type != 'GP':
 # Guassian Process Creation and training
 ###############################################################
 else:
-    if experiment != 'acave':
+    if len(df_exp) > 0:
         gp_model = MultiTaskGP(
             torch.tensor( norm_df_train[['experiment_flag']+input_names].values ),
             torch.tensor( norm_df_train[output_names].values ),
@@ -252,7 +261,7 @@ else:
 
     input_variables = [ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ]
 
-    if experiment != 'acave':
+    if len(df_exp) > 0:
         output_variables = [
             DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
             for name in output_names

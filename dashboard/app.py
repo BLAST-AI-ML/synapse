@@ -3,8 +3,8 @@ import os
 import re
 from trame.assets.local import LocalFileManager
 from trame.ui.router import RouterViewLayout
-from trame.ui.vuetify2 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify2 as vuetify, html
+from trame.ui.vuetify3 import SinglePageWithDrawerLayout
+from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
 from outputs_manager import OutputManager
@@ -292,15 +292,14 @@ def home_route():
                         with vuetify.VExpansionPanels(
                             v_model=("expand_panel_control_plots", 0)
                         ):
-                            with vuetify.VExpansionPanel():
-                                vuetify.VExpansionPanelHeader(
-                                    "Control: Plots",
-                                    style="font-size: 20px; font-weight: 500;",
-                                )
-                                with vuetify.VExpansionPanelContent():
+                            with vuetify.VExpansionPanel(
+                                title="Control: Plots",
+                                style="font-size: 20px; font-weight: 500;",
+                            ):
+                                with vuetify.VExpansionPanelText():
                                     # create a row for the slider label
                                     with vuetify.VRow():
-                                        vuetify.VSubheader(
+                                        vuetify.VListSubheader(
                                             "Projected Data Depth",
                                             style="margin-top: 16px;",
                                         )
@@ -370,31 +369,37 @@ def gui_setup():
         # set up router view
         with layout.content:
             error_panel()
-            with vuetify.VContainer():
+            with vuetify.VContainer(style="height: 100vh; overflow-y: auto"):
                 router.RouterView()
         # add router components to the drawer
         with layout.drawer:
             with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
-                vuetify.VSubheader("")
+                vuetify.VListSubheader("")
                 # Home route
-                with vuetify.VListItem(to="/"):
-                    with vuetify.VListItemIcon():
-                        vuetify.VIcon("mdi-home")
-                    with vuetify.VListItemContent():
-                        vuetify.VListItemTitle("Home")
+                vuetify.VListItem(
+                    to="/",
+                    prepend_icon="mdi-home",
+                    title="Home",
+                )
                 # NERSC route
-                with vuetify.VListItem(to="/nersc"):
-                    with vuetify.VListItemIcon():
-                        vuetify.VIcon("mdi-lan-connect")
-                    with vuetify.VListItemContent():
-                        vuetify.VListItemTitle("NERSC")
+                vuetify.VListItem(
+                    to="/nersc",
+                    prepend_icon="mdi-lan-connect",
+                    title="NERSC",
+                )
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
             with vuetify.VCard(style="overflow: hidden;"):
-                with vuetify.VCardTitle("Simulation Plots"):
+                with vuetify.VCardTitle(
+                    "Simulation Plots",
+                    classes="d-flex align-center",
+                ):
                     vuetify.VSpacer()
-                    with vuetify.VBtn(icon=True, click=close_simulation_dialog):
-                        vuetify.VIcon("mdi-close")
+                    vuetify.VBtn(
+                        click=close_simulation_dialog,
+                        icon="mdi-close",
+                        variant="plain",
+                    )
                 with vuetify.VRow(align="center", justify="center"):
                     html.Video(
                         v_if=("simulation_video",),
