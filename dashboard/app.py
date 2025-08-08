@@ -370,15 +370,16 @@ def gui_setup():
         # interactive dialog for simulation plots
         with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
             with vuetify.VCard(style="overflow: hidden;"):
-                with vuetify.VCardTitle():
-                    with vuetify.VRow(align="center"):
-                        html.H3("Simulation Plots")
-                        vuetify.VSpacer()
-                        vuetify.VBtn(
-                            click=close_simulation_dialog,
-                            icon="mdi-close",
-                            variant="plain",
-                        )
+                with vuetify.VCardTitle(
+                    "Simulation Plots",
+                    classes="d-flex align-center",
+                ):
+                    vuetify.VSpacer()
+                    vuetify.VBtn(
+                        click=close_simulation_dialog,
+                        icon="mdi-close",
+                        variant="plain",
+                    )
                 with vuetify.VRow(align="center", justify="center"):
                     html.Video(
                         v_if=("simulation_video",),
