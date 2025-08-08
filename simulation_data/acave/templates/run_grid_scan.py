@@ -22,16 +22,16 @@ if args.single_simulation_parameters is None:
     var_1 = VaryingParameter("target_to_focus_distance", -0.1, 0.1)
     var_2 = VaryingParameter("fused_silica_thickness", -667, 667)
 else:
-# Single simulation, with parameters provided in the CSV file
-n_var_1 = 1
-n_var_2 = 1
-sim_workers = 1
-# Extract parameters from the CSV file
-df = pd.read_csv(args.single_simulation_parameters)
-# Set the varying parameters with the same min and max value,
-# so that the simulation is run exactly with the provided parameters
-var_1 = VaryingParameter("target_to_focus_distance", df["sim_val"].iloc[0], df["sim_val"].iloc[0])
-var_2 = VaryingParameter("fused_silica_thickness", df["sim_val"].iloc[1], df["sim_val"].iloc[1])
+    # Single simulation, with parameters provided in the CSV file
+    n_var_1 = 1
+    n_var_2 = 1
+    sim_workers = 1
+    # Extract parameters from the CSV file
+    df = pd.read_csv(args.single_simulation_parameters)
+    # Set the varying parameters with the same min and max value,
+    # so that the simulation is run exactly with the provided parameters
+    var_1 = VaryingParameter("target_to_focus_distance", df["sim_val"].iloc[0], df["sim_val"].iloc[0])
+    var_2 = VaryingParameter("fused_silica_thickness", df["sim_val"].iloc[1], df["sim_val"].iloc[1])
     
 # Specify the analysis function.
 def analysis_func_main(work_dir, output_params):
@@ -57,9 +57,9 @@ ev_pre = TemplateEvaluator(
     n_procs=1
 )
 ev_main = TemplateEvaluator(
-    sim_template="templates/warpx_input_script",
+    sim_template="../templates/warpx_input_script",
     analysis_func=analysis_func_main,
-    executable="templates/warpx.rz",
+    executable="../templates/warpx.rz",
     n_gpus=12,  # GPUs per individual evaluation
     env_mpi='srun',  # dunno if that is really necessary ... potentially OPTIONAL,
 )

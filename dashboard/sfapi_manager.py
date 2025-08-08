@@ -17,7 +17,7 @@ async def monitor_sfapi_job(sfapi_job, state_variable):
         # Make the status more readable by putting in spaces and capitalizing the words
         state[state_variable] = sfapi_job.state.value.replace("_", " ").title()
         state.flush()
-        print("sfapi job status: ", state.model_training_status)
+        print("sfapi job status: ", state[state_variable])
     return sfapi_job.state == JobState.COMPLETED
 
 

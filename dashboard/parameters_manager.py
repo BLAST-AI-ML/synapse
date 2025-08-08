@@ -77,7 +77,7 @@ class ParametersManager:
         data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
         print("simulation values saved to csv")
         try:
-            with AsyncClient(
+            async with AsyncClient(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
