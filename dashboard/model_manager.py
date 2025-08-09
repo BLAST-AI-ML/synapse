@@ -122,7 +122,7 @@ class ModelManager:
             elif self.__is_gaussian_process:
                 # TODO use "exp" only once experimental data is available for all experiments
                 task_tag = "exp" if state.experiment == "ip2" else "sim"
-                output_key = [key for key in output_dict.keys() if task_tag in key][0]
+                output_key = state.displayed_output + "_" + task_tag + "_task"
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
                 mean = output_dict[output_key].mean.detach()
