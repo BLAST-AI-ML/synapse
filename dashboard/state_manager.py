@@ -1,6 +1,6 @@
 from trame.app import get_server
 
-server = get_server(client_type="vue2")
+server = get_server(client_type="vue3")
 state = server.state
 ctrl = server.controller
 
