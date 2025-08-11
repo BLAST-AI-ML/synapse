@@ -386,19 +386,19 @@ def gui_setup():
                 with vuetify.VRow(
                     align="center",
                     justify="center",
-                    style="flex: 1 1 auto; width: 100%; height: 100%;",
+                    style="width: 100%; height: 100%;",
                 ):
                     html.Video(
                         v_if=("simulation_video",),
                         controls=True,
                         src=("simulation_url",),
-                        style="width: 100%; height: 100%; object-fit: contain;",
+                        style="width: 100%; height: 100%",
                     )
                     vuetify.VImg(
                         v_if=("!simulation_video",),
                         src=("simulation_url",),
                         contain=True,
-                        style="width: 100%; height: 100%; object-fit: contain;",
+                        style="width: 100%; height: 100%",
                     )
 
 
