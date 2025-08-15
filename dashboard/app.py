@@ -341,6 +341,7 @@ def gui_setup():
             vuetify.VSpacer()
             vuetify.VSelect(
                 v_model=("experiment",),
+                label="Experiments",
                 items=("experiments", experiment_list),
                 dense=True,
                 prepend_icon="mdi-atom",
