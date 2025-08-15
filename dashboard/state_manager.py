@@ -17,6 +17,7 @@ def initialize_state():
     state.model_training_status = None
     state.model_training_time = None
     # optimization
+    state.optimization_type = "Maximize"
     state.optimization_status = None
     # opacity
     state.opacity = 0.05

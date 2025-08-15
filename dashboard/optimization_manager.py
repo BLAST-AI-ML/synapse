@@ -44,6 +44,10 @@ class OptimizationManager:
 
     def panel(self):
         print("Setting optimization card...")
+        # list of available optimization operations
+        optimization_type_list = [
+            "Maximize",
+        ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_optimization", 0)):
             with vuetify.VExpansionPanel(
                 title="Control: Optimization",
@@ -53,9 +57,9 @@ class OptimizationManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
-                                v_model=("optimizer_type",),
+                                v_model=("optimization_type",),
                                 label="Optimization type",
-                                items=("optimization", []),
+                                items=("optimization", optimization_type_list),
                                 dense=True,
                             )
                         with vuetify.VCol():
