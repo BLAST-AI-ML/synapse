@@ -295,7 +295,7 @@ class ModelManager:
                                 disabled=(
                                     "model_training || perlmutter_status != 'active'",
                                 ),
-                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
+                                style="text-transform: none",
                             )
                         with vuetify.VCol():
                             vuetify.VTextField(

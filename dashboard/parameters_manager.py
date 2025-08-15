@@ -133,11 +133,11 @@ class ParametersManager:
                                 vuetify.VBtn(
                                     "Reset",
                                     click=self.reset,
-                                    style="margin-left: 4px; margin-top: 12px; text-transform: none;",
+                                    style="text-transform: none",
                                 )
                             with vuetify.VCol():
                                 vuetify.VBtn(
                                     "Optimize",
                                     click=self.optimize,
-                                    style="margin-left: 12px; margin-top: 12px; text-transform: none;",
+                                    style="text-transform: none",
                                 )
