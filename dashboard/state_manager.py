@@ -16,6 +16,8 @@ def initialize_state():
     state.model_training = False
     state.model_training_status = None
     state.model_training_time = None
+    # optimization
+    state.optimization_status = None
     # opacity
     state.opacity = 0.05
     # Superfacility API

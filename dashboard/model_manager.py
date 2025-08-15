@@ -1,11 +1,9 @@
 import asyncio
-import numpy as np
 from pathlib import Path
 import tempfile
 import os
 import yaml
 import re
-from scipy.optimize import minimize
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
@@ -144,37 +142,6 @@ class ModelManager:
                 mean = float(mean)
             return (mean, lower, upper)
 
-    def model_wrapper(self, parameters_array):
-        print("Wrapping model...")
-        # convert array of parameters to dictionary
-        parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
-        # change sign to the result in order to maximize when optimizing
-        mean, lower, upper = self.evaluate(parameters_dict)
-        res = -mean
-        return res
-
-    def optimize(self):
-        # info print statement skipped to avoid redundancy
-        if self.__model is not None:
-            # get array of current parameters from state
-            parameters_values = np.array(list(state.parameters.values()))
-            # define parameters bounds for optimization
-            parameters_bounds = []
-            for key in state.parameters.keys():
-                parameters_bounds.append(
-                    (state.parameters_min[key], state.parameters_max[key])
-                )
-            # optimize model (maximize output value)
-            res = minimize(
-                fun=self.model_wrapper,
-                x0=parameters_values,
-                bounds=parameters_bounds,
-            )
-            # update parameters in state with optimal values
-            state.parameters = dict(zip(state.parameters.keys(), res.x))
-            # push again at flush time
-            state.dirty("parameters")
-
     def get_output_transformers(self):
         print("Getting output transformers...")
         if self.__model is not None:
@@ -282,7 +249,7 @@ class ModelManager:
                             vuetify.VSelect(
                                 v_model=("model_type",),
                                 label="Model type",
-                                items=("Models", model_type_list),
+                                items=("models", model_type_list),
                                 dense=True,
                             )
                         with vuetify.VCol():

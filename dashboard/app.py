@@ -8,6 +8,7 @@ from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
 from objectives_manager import ObjectivesManager
+from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
@@ -28,6 +29,7 @@ from utils import (
 mod_manager = None
 par_manager = None
 obj_manager = None
+opt_manager = None
 cal_manager = None
 
 # load database
@@ -55,12 +57,14 @@ def update(
     global mod_manager
     global par_manager
     global obj_manager
+    global opt_manager
     global cal_manager
     # load data
     exp_data, sim_data = load_data(db)
     # reset model
     if reset_model:
         mod_manager = ModelManager(db)
+        opt_manager = OptimizationManager(mod_manager)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables()
     # reset parameters
@@ -262,6 +266,10 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.panel()
+                # optimization control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        opt_manager.panel()
                 # model control panel
                 with vuetify.VRow():
                     with vuetify.VCol():

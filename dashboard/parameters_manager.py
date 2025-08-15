@@ -42,11 +42,6 @@ class ParametersManager:
         # push again at flush time
         state.dirty("parameters")
 
-    def optimize(self):
-        print("Optimizing parameters...")
-        # optimize parameters through model
-        self.__model.optimize()
-
     def panel(self):
         print("Setting parameters card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
@@ -133,11 +128,5 @@ class ParametersManager:
                                 vuetify.VBtn(
                                     "Reset",
                                     click=self.reset,
-                                    style="text-transform: none",
-                                )
-                            with vuetify.VCol():
-                                vuetify.VBtn(
-                                    "Optimize",
-                                    click=self.optimize,
                                     style="text-transform: none",
                                 )
