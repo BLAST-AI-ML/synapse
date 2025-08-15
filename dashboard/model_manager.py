@@ -277,16 +277,19 @@ class ModelManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
-                    # create a row for the model selector
                     with vuetify.VRow():
-                        vuetify.VSelect(
-                            v_model=("model_type",),
-                            items=("Models", model_type_list),
-                            dense=True,
-                            prepend_icon="mdi-brain",
-                            style="margin-left: 16px; margin-top: 24px; max-width: 250px;",
-                        )
-                    # create a row for the switches and buttons
+                        with vuetify.VCol():
+                            vuetify.VSelect(
+                                v_model=("model_type",),
+                                items=("Models", model_type_list),
+                                dense=True,
+                            )
+                        with vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("model_training_status",),
+                                label="Training status",
+                                readonly=True,
+                            )
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VBtn(
@@ -296,11 +299,4 @@ class ModelManager:
                                     "model_training || perlmutter_status != 'active'",
                                 ),
                                 style="text-transform: none",
-                            )
-                        with vuetify.VCol():
-                            vuetify.VTextField(
-                                v_model_number=("model_training_status",),
-                                label="Training status",
-                                readonly=True,
-                                style="width: 150px;",
                             )
