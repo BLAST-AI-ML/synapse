@@ -44,7 +44,6 @@ class OptimizationManager:
             state.optimization_status = "Success" if res.success else "Failed"
             # push again at flush time
             state.dirty("parameters")
-            state.flush()
 
     def panel(self):
         print("Setting optimization card...")
