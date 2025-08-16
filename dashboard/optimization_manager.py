@@ -39,10 +39,11 @@ class OptimizationManager:
                 bounds=parameters_bounds,
                 method="Nelder-Mead",
             )
+            print(f"Optimization result:\n{res}")
             # update parameters in state with optimal values
             state.parameters = dict(zip(state.parameters.keys(), res.x))
             # update optimization status
-            state.optimization_status = "Success" if res.success else "Failed"
+            state.optimization_status = "Completed" if res.success else "Failed"
             # push again at flush time
             state.dirty("parameters")
 
