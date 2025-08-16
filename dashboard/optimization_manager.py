@@ -36,11 +36,15 @@ class OptimizationManager:
                 fun=self.model_wrapper,
                 x0=parameters_values,
                 bounds=parameters_bounds,
+                method="Nelder-Mead",
             )
             # update parameters in state with optimal values
             state.parameters = dict(zip(state.parameters.keys(), res.x))
+            # update optimization status
+            state.optimization_status = "Success" if res.success else "Failed"
             # push again at flush time
             state.dirty("parameters")
+            state.flush()
 
     def panel(self):
         print("Setting optimization card...")
