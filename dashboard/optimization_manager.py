@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 from trame.widgets import vuetify3 as vuetify
 
+from error_manager import add_error
 from state_manager import state
 
 
@@ -45,6 +46,15 @@ class OptimizationManager:
             # push again at flush time
             state.dirty("parameters")
 
+    def optimize_trigger(self):
+        try:
+            self.optimize()
+        except Exception as e:
+            title = "Unable to optimize parameters"
+            msg = f"Error occurred when optimizing parameters: {e}"
+            add_error(title, msg)
+            print(msg)
+
     def panel(self):
         print("Setting optimization card...")
         # list of available optimization operations
@@ -75,6 +85,6 @@ class OptimizationManager:
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Optimize",
-                                click=self.optimize,
+                                click=self.optimize_trigger,
                                 style="text-transform: none",
                             )
