@@ -318,4 +318,3 @@ with tempfile.TemporaryDirectory() as temp_dir:
     print("Uploading new model to database")
     db['models'].insert_one(document)
     print("Model uploaded to database")
-    
