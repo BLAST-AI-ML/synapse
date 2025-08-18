@@ -93,7 +93,7 @@ class CombinedNN(nn.Module):
                 sim_outputs = self(sim_inputs)
                 loss += self.criterion( sim_targets, sim_outputs )
             if len(exp_inputs) > 0:
-                exp_outputs = self.sim_to_exp_calibration( self(exp_inputs) )
+                exp_outputs = self.calibrate( self(exp_inputs) )
                 loss += self.criterion( exp_targets, exp_outputs )
             loss.backward()
 
