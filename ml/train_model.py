@@ -26,7 +26,7 @@ import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 # Automatically select device for training of GP
-device = 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device selected: ', device)
 
 ############################################
