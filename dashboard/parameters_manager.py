@@ -59,9 +59,9 @@ class ParametersManager:
         setup = state.experiment
         print(f"\nExperiment parameters ({setup}):")
         print(state.parameters)
-        
+
         input_variables, output_variables, simulation_calibration = load_variables()
-        
+
         print(f"\nSimulation parameters ({setup}):")
         sim_data = {
             "var_name": [],
@@ -125,8 +125,8 @@ class ParametersManager:
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-            
-        
+
+
     def panel(self):
         print("Setting parameters card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
@@ -222,17 +222,6 @@ class ParametersManager:
                                     style="margin-left: 12px; margin-top: 12px; text-transform: none;",
                                 )
 
-                            with vuetify.VCol(style="min-width: 100px;"):
-                                vuetify.VCheckbox(
-                                    v_model=(
-                                        f"parameters_show_all['{key}']",
-                                        False,
-                                    ),
-                                    density="compact",
-                                    change="flushState('parameters_show_all')",
-                                    label="Show all",
-                                )
-                        
                         with vuetify.VRow():
                             with vuetify.VCol():
                                 vuetify.VBtn(
