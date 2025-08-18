@@ -42,10 +42,12 @@ class OptimizationManager:
             print(f"Optimization result:\n{res}")
             # update parameters in state with optimal values
             state.parameters = dict(zip(state.parameters.keys(), res.x))
-            # update optimization status
-            state.optimization_status = "Completed" if res.success else "Failed"
             # push again at flush time
             state.dirty("parameters")
+            # Force flush now (TODO fix state change listeners, remove workaround)
+            state.flush()
+            # update optimization status
+            state.optimization_status = "Completed" if res.success else "Failed"
 
     def optimize_trigger(self):
         try:
