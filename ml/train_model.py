@@ -26,7 +26,7 @@ import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 # Automatically select device for training of GP
-device = 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device selected: ', device)
 
 ############################################
@@ -318,3 +318,4 @@ with tempfile.TemporaryDirectory() as temp_dir:
     print("Uploading new model to database")
     db['models'].insert_one(document)
     print("Model uploaded to database")
+    
