@@ -183,8 +183,8 @@ if model_type != 'GP':
     for model_nn in ensemble:
         calibration_transform = AffineInputTransform(
             len(output_names),
-            coefficient=model_nn.sim_to_exp_calibration.weight.clone().detach().cpu(),
-            offset=model_nn.sim_to_exp_calibration.bias.clone().detach().cpu() )
+            coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
+            offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu() )
 
         # Fix mismatch in name between the config file and the expected lume-model format
         for k in input_variables:

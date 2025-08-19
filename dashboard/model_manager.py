@@ -116,18 +116,13 @@ class ModelManager:
             # evaluate model
             output_dict = self.__model.evaluate(parameters)
             if self.__is_neural_network:
-                # expected only one value
-                if len(output_dict.values()) != 1:
-                    raise ValueError(
-                        f"Expected 1 output value, but found {len(output_dict.values())}"
-                    )
                 # compute mean and mean error
-                mean = list(output_dict.values())[0]
+                mean = output_dict[state.displayed_output]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
             elif self.__is_gaussian_process:
                 # TODO use "exp" only once experimental data is available for all experiments
                 task_tag = "exp" if state.experiment == "ip2" else "sim"
-                output_key = [key for key in output_dict.keys() if task_tag in key][0]
+                output_key = state.displayed_output + "_" + task_tag + "_task"
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
                 mean = output_dict[output_key].mean.detach()
