@@ -9,6 +9,7 @@ from trame.widgets import plotly, router, vuetify3 as vuetify, html
 from model_manager import ModelManager
 from outputs_manager import OutputManager
 from objectives_manager import ObjectivesManager
+from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
@@ -30,6 +31,7 @@ out_manager = None
 mod_manager = None
 par_manager = None
 obj_manager = None
+opt_manager = None
 cal_manager = None
 
 # load database
@@ -59,12 +61,14 @@ def update(
     global out_manager
     global par_manager
     global obj_manager
+    global opt_manager
     global cal_manager
     # load data
     exp_data, sim_data = load_data(db)
     # reset model
     if reset_model:
         mod_manager = ModelManager(db)
+        opt_manager = OptimizationManager(mod_manager)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables()
     # reset output
@@ -81,7 +85,11 @@ def update(
         # Select the current objective
         obj_manager = ObjectivesManager(
             mod_manager,
-            {k: v for k, v in output_variables.items() if output_variables[k]['name'] == state.displayed_output},
+            {
+                k: v
+                for k, v in output_variables.items()
+                if output_variables[k]["name"] == state.displayed_output
+            },
             # This creates a dictionary with only one key, to adapt to the expected interface
         )
     # reset calibration
@@ -282,6 +290,10 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.panel()
+                # optimization control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        opt_manager.panel()
                 # model control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
@@ -361,10 +373,12 @@ def gui_setup():
             vuetify.VSpacer()
             vuetify.VSelect(
                 v_model=("experiment",),
+                label="Experiments",
                 items=("experiments", experiment_list),
                 dense=True,
+                hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 210px;",
+                style="max-width: 250px",
             )
         # set up router view
         with layout.content:
