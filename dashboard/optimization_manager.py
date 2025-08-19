@@ -47,7 +47,13 @@ class OptimizationManager:
             # Force flush now (TODO fix state change listeners, remove workaround)
             state.flush()
             # update optimization status
-            state.optimization_status = "Completed" if res.success else "Failed"
+            if res.success:
+                state.optimization_status = "Completed"
+            else:
+                state.optimization_status = "Failed"
+                title = "Unable to optimize parameters"
+                msg = f"Error occurred when optimizing parameters: {res.message}"
+                add_error(title, msg)
 
     def optimize_trigger(self):
         try:
