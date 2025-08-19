@@ -85,7 +85,11 @@ def update(
         # Select the current objective
         obj_manager = ObjectivesManager(
             mod_manager,
-            {k: v for k, v in output_variables.items() if output_variables[k]['name'] == state.displayed_output},
+            {
+                k: v
+                for k, v in output_variables.items()
+                if output_variables[k]["name"] == state.displayed_output
+            },
             # This creates a dictionary with only one key, to adapt to the expected interface
         )
     # reset calibration
@@ -372,8 +376,9 @@ def gui_setup():
                 label="Experiments",
                 items=("experiments", experiment_list),
                 dense=True,
+                hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 210px;",
+                style="max-width: 250px",
             )
         # set up router view
         with layout.content:
