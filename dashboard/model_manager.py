@@ -244,7 +244,7 @@ class ModelManager:
                             vuetify.VSelect(
                                 v_model=("model_type",),
                                 label="Model type",
-                                items=("models", model_type_list),
+                                items=(model_type_list,),
                                 dense=True,
                             )
                         with vuetify.VCol():

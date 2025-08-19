@@ -374,7 +374,7 @@ def gui_setup():
             vuetify.VSelect(
                 v_model=("experiment",),
                 label="Experiments",
-                items=("experiments", experiment_list),
+                items=(experiment_list,),
                 dense=True,
                 hide_details=True,
                 prepend_icon="mdi-atom",
