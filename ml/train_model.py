@@ -9,6 +9,7 @@ import argparse
 import torch
 from botorch.models.transforms.input import AffineInputTransform
 from botorch.models import MultiTaskGP, SingleTaskGP
+from gpytorch.models import ModelListGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
@@ -224,34 +225,86 @@ if model_type != 'GP':
 
 
 ###############################################################
-# Guassian Process Creation and training
+# Gaussian Process Creation and training
 ###############################################################
 else:
-    if len(df_exp) > 0:
-        gp_model = MultiTaskGP(
-            torch.tensor( norm_df_train[['experiment_flag']+input_names].values ),
-            torch.tensor( norm_df_train[output_names].values ),
-            task_feature=0,
-            covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-            outcome_transform=None,
-        ).to(device)
-        cov = gp_model.task_covar_module._eval_covar_matrix()
-        print( 'Correlation: ', cov[1,0]/torch.sqrt(cov[0,0]*cov[1,1]).item() )
+    # Create separate GP models for each output to handle NaN values
 
+    gp_models = []
+    print(f"Creating separate GP models for {len(output_names)} outputs...")
+
+    for i, output_name in enumerate(output_names):
+        print(f"Processing output {i+1}/{len(output_names)}: {output_name}")
+
+        # Get data where this output is not NaN
+        output_data = norm_df_train[output_names].values[:, i]
+        valid_mask = ~torch.isnan(torch.tensor(output_data))
+        n_valid = torch.sum(valid_mask).item()
+
+        if n_valid == 0:
+            print(f"Warning: All values are NaN for output {output_name}, skipping...")
+            continue
+        elif n_valid < 10:
+            print(f"Warning: Only {n_valid} valid values for output {output_name}, this may cause training issues")
+
+        print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
+
+        # Prepare input and output data for this output
+        X_valid = torch.tensor(norm_df_train[input_names].values[valid_mask], dtype=torch.float64)
+        y_valid = torch.tensor(output_data[valid_mask], dtype=torch.float64).unsqueeze(-1)
+
+        # Create GP model based on whether we have experimental data
+        if len(df_exp) > 0:
+            # MultiTaskGP for experimental vs simulation data
+            exp_flag_valid = torch.tensor(norm_df_train[['experiment_flag']].values[valid_mask], dtype=torch.float64)
+            X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
+
+            gp_model = MultiTaskGP(
+                X_with_task, y_valid,
+                task_feature=0,
+                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+                outcome_transform=None,
+            ).to(device)
+
+            # Print correlation for this output
+            cov = gp_model.task_covar_module._eval_covar_matrix()
+            print(f'  Correlation for {output_name}: {cov[1,0]/torch.sqrt(cov[0,0]*cov[1,1]).item():.3f}')
+        else:
+            # SingleTaskGP for simulation data only
+            gp_model = SingleTaskGP(
+                X_valid, y_valid,
+                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+                outcome_transform=None,
+            ).to(device)
+
+        gp_models.append(gp_model)
+
+    if len(gp_models) == 0:
+        raise ValueError("No valid outputs found! All outputs contain only NaN values.")
+    elif len(gp_models) == 1:
+        gp_model = gp_models[0]
+        print(f"Single GP model created for output")
     else:
-        gp_model = SingleTaskGP(
-            torch.tensor(norm_df_train[input_names].values, dtype=torch.float64),
-            torch.tensor(norm_df_train[output_names].values, dtype=torch.float64),
-            covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-            outcome_transform=None,
-        ).to(device)
+        gp_model = ModelListGP(*gp_models)
+        print(f"ModelListGP created with {len(gp_models)} separate GP models")
 
-    # Fit the model
-    mll = ExactMarginalLogLikelihood(gp_model.likelihood, gp_model)
-    GP_start_time = time.time()
-    fit_gpytorch_mll(mll)
-    GP_end_time = time.time()
-    print(f"GP time taken: {GP_end_time - GP_start_time:.2f} seconds")
+    # Fit the model(s)
+    if len(gp_models) == 1:
+        # Single model - use standard fitting
+        mll = ExactMarginalLogLikelihood(gp_model.likelihood, gp_model)
+        GP_start_time = time.time()
+        fit_gpytorch_mll(mll)
+        GP_end_time = time.time()
+        print(f"Single GP training time: {GP_end_time - GP_start_time:.2f} seconds")
+    else:
+        # Multiple models - fit each separately
+        GP_start_time = time.time()
+        for i, model in enumerate(gp_models):
+            print(f"Training GP model {i+1}/{len(gp_models)}...")
+            mll = ExactMarginalLogLikelihood(model.likelihood, model)
+            fit_gpytorch_mll(mll)
+        GP_end_time = time.time()
+        print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
@@ -261,18 +314,26 @@ else:
 
     input_variables = [ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ]
 
-    if len(df_exp) > 0:
-        output_variables = [
-            DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
-            for name in output_names
-            for suffix in ["sim_task", "exp_task"]
-        ]
-    else:
-        output_variables = [
-            DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
-            for name in output_names
-            for suffix in ["sim_task"]
-        ]
+    # Create output variables for each output that has a valid GP model
+    output_variables = []
+    for i, output_name in enumerate(output_names):
+        # Check if this output has a valid model (wasn't skipped due to all NaN)
+        output_data = norm_df_train[output_names].values[:, i]
+        valid_mask = ~torch.isnan(torch.tensor(output_data))
+        n_valid = torch.sum(valid_mask).item()
+
+        if n_valid > 0:  # Only create variables for outputs with valid data
+            if len(df_exp) > 0:
+                # MultiTaskGP outputs
+                output_variables.extend([
+                    DistributionVariable(name=f"{output_name}_{suffix}", distribution_type="MultiVariateNormal")
+                    for suffix in ["sim_task", "exp_task"]
+                ])
+            else:
+                # SingleTaskGP outputs
+                output_variables.append(
+                    DistributionVariable(name=f"{output_name}_sim_task", distribution_type="MultiVariateNormal")
+                )
     #Save GP model
     gpmodel = GPModel(
         model=gp_model.cpu(),
