@@ -81,7 +81,7 @@ class OptimizationManager:
                             vuetify.VSelect(
                                 v_model=("optimization_type",),
                                 label="Optimization type",
-                                items=("optimization", optimization_type_list),
+                                items=(optimization_type_list,),
                                 dense=True,
                             )
                         with vuetify.VCol():
