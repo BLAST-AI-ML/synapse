@@ -7,6 +7,7 @@ from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
+from outputs_manager import OutputManager
 from objectives_manager import ObjectivesManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
@@ -26,6 +27,7 @@ from utils import (
 # Globals
 # -----------------------------------------------------------------------------
 
+out_manager = None
 mod_manager = None
 par_manager = None
 obj_manager = None
@@ -44,6 +46,7 @@ experiment_list = load_experiments()
 
 def update(
     reset_model=True,
+    reset_output=True,
     reset_parameters=True,
     reset_objectives=True,
     reset_calibration=True,
@@ -55,6 +58,7 @@ def update(
 ):
     print("Updating...")
     global mod_manager
+    global out_manager
     global par_manager
     global obj_manager
     global opt_manager
@@ -67,6 +71,9 @@ def update(
         opt_manager = OptimizationManager(mod_manager)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables()
+    # reset output
+    if reset_output:
+        out_manager = OutputManager(output_variables)
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -75,7 +82,12 @@ def update(
         par_manager.model = mod_manager
     # reset objectives
     if reset_objectives:
-        obj_manager = ObjectivesManager(mod_manager, output_variables)
+        # Select the current objective
+        obj_manager = ObjectivesManager(
+            mod_manager,
+            {k: v for k, v in output_variables.items() if output_variables[k]['name'] == state.displayed_output},
+            # This creates a dictionary with only one key, to adapt to the expected interface
+        )
     # reset calibration
     if reset_calibration:
         cal_manager = SimulationCalibrationManager(simulation_calibration)
@@ -106,6 +118,7 @@ def update_on_change_experiment(**kwargs):
         print("Experiment changed...")
         update(
             reset_model=True,
+            reset_output=True,
             reset_parameters=True,
             reset_objectives=True,
             reset_calibration=True,
@@ -123,6 +136,7 @@ def update_on_change_model(**kwargs):
         print("Model type changed...")
         update(
             reset_model=True,
+            reset_output=False,
             reset_parameters=False,
             reset_objectives=False,
             reset_calibration=False,
@@ -134,6 +148,7 @@ def update_on_change_model(**kwargs):
 
 
 @state.change(
+    "displayed_output",
     "parameters",
     "opacity",
     "parameters_min",
@@ -146,6 +161,7 @@ def update_on_change_others(**kwargs):
         print("Parameters, opacity changed...")
         update(
             reset_model=False,
+            reset_output=False,
             reset_parameters=False,
             reset_objectives=False,
             reset_calibration=False,
@@ -262,6 +278,10 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # objectives control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        out_manager.panel()
                 # parameters control panel
                 with vuetify.VRow():
                     with vuetify.VCol():

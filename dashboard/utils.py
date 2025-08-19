@@ -149,8 +149,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     parameters_max = state.parameters_max
     parameters_show_all = state.parameters_show_all
     try:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
+        objective_name = state.displayed_output
     except Exception as e:
         title = "Unable to find objective to plot"
         msg = f"Error occurred when searching for objective to plot: {e}"

@@ -32,6 +32,18 @@ staging_injector:
       name: "Trapped charge [pC]"
       type: scalar
 
+    output2:
+      name: "Beam mean energy [GeV]"
+      type: scalar
+
+    output3:
+      name: "Beam energy spread [%]"
+      type: scalar
+
+    output4:
+      name: "Mean laser wavelength [nm]"
+      type: scalar
+
 qed_ip2:
 
   input_variables:

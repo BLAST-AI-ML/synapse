@@ -27,7 +27,7 @@ class CombinedNN(nn.Module):
     """
     Model that trains a 5 layer neural network and a calibration layer
     """
-    def __init__(self, input_size, output_size, hidden_size=20, 
+    def __init__(self, input_size, output_size, hidden_size=20,
                  learning_rate=0.001, patience_LRreduction=100, patience_earlystopping=150, factor=0.5, threshold=1e-4):
         '''
         args:
@@ -47,13 +47,11 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
-        self.sim_to_exp_calibration = nn.Linear(1, 1)
-        with torch.no_grad():
-            # Initialize to reasonable value, so that, 
-            # if there is no experimental data this stays as is
-            self.sim_to_exp_calibration.weight[...] = 1.
-            self.sim_to_exp_calibration.bias[...] = 0.
-        
+        # Component-wise linear transformation: weight * input + bias
+        # where weight and bias are vectors of size output_size
+        self.sim_to_exp_calibration_weight = nn.Parameter(torch.ones(output_size))
+        self.sim_to_exp_calibration_bias = nn.Parameter(torch.zeros(output_size))
+
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
@@ -62,8 +60,8 @@ class CombinedNN(nn.Module):
 
     @torch.jit.export
     def calibrate(self, x):
-        """Expose sim_to_exp_calibration."""
-        return self.sim_to_exp_calibration(x)
+        """Apply component-wise linear transformation: weight * x + bias."""
+        return self.sim_to_exp_calibration_weight * x + self.sim_to_exp_calibration_bias
 
     def forward(self, x):
         '''
@@ -95,7 +93,7 @@ class CombinedNN(nn.Module):
                 sim_outputs = self(sim_inputs)
                 loss += self.criterion( sim_targets, sim_outputs )
             if len(exp_inputs) > 0:
-                exp_outputs = self.sim_to_exp_calibration( self(exp_inputs) )
+                exp_outputs = self.calibrate( self(exp_inputs) )
                 loss += self.criterion( exp_targets, exp_outputs )
             loss.backward()
 
@@ -150,7 +148,7 @@ class CombinedNN(nn.Module):
         inputs = inputs.to(torch.float32)
         self.eval()
         with torch.no_grad():
-            output = self.sim_to_exp_calibration(self(inputs))
+            output = self.calibrate(self(inputs))
             predictions = output.detach().numpy()
 
         return predictions
