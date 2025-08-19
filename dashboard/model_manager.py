@@ -1,11 +1,9 @@
 import asyncio
-import numpy as np
 from pathlib import Path
 import tempfile
 import os
 import yaml
 import re
-from scipy.optimize import minimize
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
@@ -139,37 +137,6 @@ class ModelManager:
                 mean = float(mean)
             return (mean, lower, upper)
 
-    def model_wrapper(self, parameters_array):
-        print("Wrapping model...")
-        # convert array of parameters to dictionary
-        parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
-        # change sign to the result in order to maximize when optimizing
-        mean, lower, upper = self.evaluate(parameters_dict)
-        res = -mean
-        return res
-
-    def optimize(self):
-        # info print statement skipped to avoid redundancy
-        if self.__model is not None:
-            # get array of current parameters from state
-            parameters_values = np.array(list(state.parameters.values()))
-            # define parameters bounds for optimization
-            parameters_bounds = []
-            for key in state.parameters.keys():
-                parameters_bounds.append(
-                    (state.parameters_min[key], state.parameters_max[key])
-                )
-            # optimize model (maximize output value)
-            res = minimize(
-                fun=self.model_wrapper,
-                x0=parameters_values,
-                bounds=parameters_bounds,
-            )
-            # update parameters in state with optimal values
-            state.parameters = dict(zip(state.parameters.keys(), res.x))
-            # push again at flush time
-            state.dirty("parameters")
-
     def get_output_transformers(self):
         print("Getting output transformers...")
         if self.__model is not None:
@@ -272,16 +239,20 @@ class ModelManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
-                    # create a row for the model selector
                     with vuetify.VRow():
-                        vuetify.VSelect(
-                            v_model=("model_type",),
-                            items=("Models", model_type_list),
-                            dense=True,
-                            prepend_icon="mdi-brain",
-                            style="margin-left: 16px; margin-top: 24px; max-width: 250px;",
-                        )
-                    # create a row for the switches and buttons
+                        with vuetify.VCol():
+                            vuetify.VSelect(
+                                v_model=("model_type",),
+                                label="Model type",
+                                items=("models", model_type_list),
+                                dense=True,
+                            )
+                        with vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("model_training_status",),
+                                label="Training status",
+                                readonly=True,
+                            )
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VBtn(
@@ -290,12 +261,5 @@ class ModelManager:
                                 disabled=(
                                     "model_training || perlmutter_status != 'active'",
                                 ),
-                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
-                            )
-                        with vuetify.VCol():
-                            vuetify.VTextField(
-                                v_model_number=("model_training_status",),
-                                label="Training status",
-                                readonly=True,
-                                style="width: 150px;",
+                                style="text-transform: none",
                             )
