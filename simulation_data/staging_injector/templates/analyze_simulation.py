@@ -119,13 +119,15 @@ def analyze_simulation():
 
         # Plot of energy and energy spread
         fig.add_subplot(gs[2,0])
-        plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
-        plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
-                         0.511e-3*(gamma+dgamma), color='b', alpha=0.3)
-        plt.ylabel('Beam energy [GeV]')
-        plt.grid()
-        plt.axvline(x=1e2*current_z_las, color='k', ls='--')
-        plt.xlim(0, 1e2*stage_length)
+        # Skip this plot if there are no electrons
+        if not np.all(np.isnan(gamma)):
+            plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
+            plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
+                            0.511e-3*(gamma+dgamma), color='b', alpha=0.3)
+            plt.ylabel('Beam energy [GeV]')
+            plt.grid()
+            plt.axvline(x=1e2*current_z_las, color='k', ls='--')
+            plt.xlim(0, 1e2*stage_length)
 
         # Plot of a0 and w0 as a function of z
         fig.add_subplot(gs[3,0])
@@ -162,12 +164,14 @@ def analyze_simulation():
 
         # Plot of the electron energy spectrum
         fig.add_subplot(gs[2,1])
-        uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
-            select={'uz':[uz_threshold, None]}, species='electrons_n1')
-        plt.hist( 0.511e-3*uz, weights=w, bins=200,
-                 range=[0, 1.2*0.511e-3*np.nanmax(gamma)] )
-        plt.xlabel(r'Energy [GeV]')
-        plt.title('Electron energy spectrum')
+        # Skip this plot if there are no electrons
+        if not np.all(np.isnan(gamma)):
+            uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
+                select={'uz':[uz_threshold, None]}, species='electrons_n1')
+            plt.hist( 0.511e-3*uz, weights=w, bins=200,
+                    range=[0, 1.2*0.511e-3*np.nanmax(gamma)] )
+            plt.xlabel(r'Energy [GeV]')
+            plt.title('Electron energy spectrum')
 
         # Plot of the laser spectrum
         fig.add_subplot(gs[3,1])
