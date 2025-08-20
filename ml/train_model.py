@@ -8,7 +8,7 @@ import tempfile
 import argparse
 import torch
 from botorch.models.transforms.input import AffineInputTransform
-from botorch.models import MultiTaskGP, SingleTaskGP
+from botorch.models import MultiTaskGP, SingleTaskGP, ModelListGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
@@ -78,6 +78,7 @@ input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
+n_outputs = len(output_names)
 # Extract data from the database as pandas dataframe
 collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
@@ -119,11 +120,14 @@ input_transform = AffineInputTransform(
     coefficient=X_train.std(axis=0),
     offset=X_train.mean(axis=0)
 )
+# For output normalization, we need to handle potential NaN values
 y_train = torch.tensor( df_train[ output_names ].values, dtype=torch.float )
+y_mean = torch.nanmean(y_train, dim=0)
+y_std = torch.sqrt( torch.nanmean( (y_train-y_mean)**2, dim=0) )
 output_transform = AffineInputTransform(
-    len(output_names),
-    coefficient=y_train.std(axis=0),
-    offset=y_train.mean(axis=0)
+    n_outputs,
+    coefficient=y_std,
+    offset=y_mean
 )
 
 # Apply normalization to the training data set
@@ -165,7 +169,7 @@ if model_type != 'GP':
 
     ensemble = []
     for i in range(num_models):
-        model = CombinedNN(len(input_names), len(output_names), learning_rate=0.0001)
+        model = CombinedNN(len(input_names), n_outputs, learning_rate=0.0001)
         model.to(device) # moving to GPU
         NNmodel_start_time = time.time()
         model.train_model(
@@ -182,7 +186,7 @@ if model_type != 'GP':
     torch_models = []
     for model_nn in ensemble:
         calibration_transform = AffineInputTransform(
-            len(output_names),
+            n_outputs,
             coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
             offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu() )
 
@@ -224,34 +228,61 @@ if model_type != 'GP':
 
 
 ###############################################################
-# Guassian Process Creation and training
+# Gaussian Process Creation and training
 ###############################################################
 else:
-    if len(df_exp) > 0:
-        gp_model = MultiTaskGP(
-            torch.tensor( norm_df_train[['experiment_flag']+input_names].values ),
-            torch.tensor( norm_df_train[output_names].values ),
-            task_feature=0,
-            covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-            outcome_transform=None,
-        ).to(device)
-        cov = gp_model.task_covar_module._eval_covar_matrix()
-        print( 'Correlation: ', cov[1,0]/torch.sqrt(cov[0,0]*cov[1,1]).item() )
+    # Create separate GP models for each output to handle NaN values
 
-    else:
-        gp_model = SingleTaskGP(
-            torch.tensor(norm_df_train[input_names].values, dtype=torch.float64),
-            torch.tensor(norm_df_train[output_names].values, dtype=torch.float64),
-            covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-            outcome_transform=None,
-        ).to(device)
+    gp_models = []
+    print(f"Creating separate GP models for {n_outputs} outputs...")
 
-    # Fit the model
-    mll = ExactMarginalLogLikelihood(gp_model.likelihood, gp_model)
+    for i, output_name in enumerate(output_names):
+        print(f"Processing output {i+1}/{n_outputs}: {output_name}")
+
+        # Get data where this output is not NaN
+        output_data = norm_df_train[output_name].values
+        valid_mask = torch.logical_not( torch.isnan(torch.tensor(output_data)) )
+        n_valid = torch.sum(valid_mask).item()
+        print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
+
+        # Prepare input and output data for this output
+        X_valid = torch.tensor(norm_df_train[input_names].values[valid_mask], dtype=torch.float64)
+        y_valid = torch.tensor(output_data[valid_mask], dtype=torch.float64).unsqueeze(-1)
+
+        # Create GP model based on whether we have experimental data
+        if len(df_exp) > 0:
+            # MultiTaskGP for experimental vs simulation data
+            exp_flag_valid = torch.tensor(norm_df_train[['experiment_flag']].values[valid_mask], dtype=torch.float64)
+            X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
+
+            gp_model = MultiTaskGP(
+                X_with_task, y_valid,
+                task_feature=0,
+                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+                outcome_transform=None,
+            ).to(device)
+
+        else:
+            # SingleTaskGP for simulation data only
+            gp_model = SingleTaskGP(
+                X_valid, y_valid,
+                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+                outcome_transform=None,
+            ).to(device)
+
+        gp_models.append(gp_model)
+
+    # Combine the models in a ModelListGP
+    gp_model = ModelListGP(*gp_models)
+    print(f"ModelListGP created with {len(gp_models)} separate GP models")
+    # Fit each separately
     GP_start_time = time.time()
-    fit_gpytorch_mll(mll)
+    for i, model in enumerate(gp_models):
+        print(f"Training GP model {i+1}/{len(gp_models)}...")
+        mll = ExactMarginalLogLikelihood(model.likelihood, model)
+        fit_gpytorch_mll(mll)
     GP_end_time = time.time()
-    print(f"GP time taken: {GP_end_time - GP_start_time:.2f} seconds")
+    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
