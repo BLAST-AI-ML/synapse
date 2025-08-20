@@ -240,7 +240,7 @@ else:
         print(f"Processing output {i+1}/{n_outputs}: {output_name}")
 
         # Get data where this output is not NaN
-        output_data = norm_df_train[output_names].values[:, i]
+        output_data = norm_df_train[output_name].values
         valid_mask = torch.logical_not( torch.isnan(torch.tensor(output_data)) )
         n_valid = torch.sum(valid_mask).item()
         print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
