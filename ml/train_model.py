@@ -292,21 +292,18 @@ else:
 
     input_variables = [ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ]
 
-    # Create output variables for each output that has a GP model
-    output_variables = []
-    for i, output_name in enumerate(output_names):
-        if len(df_exp) > 0:
-            # MultiTaskGP outputs
-            output_variables.extend([
-                DistributionVariable(name=f"{output_name}_{suffix}", distribution_type="MultiVariateNormal")
-                for suffix in ["sim_task", "exp_task"]
-            ])
-        else:
-            # SingleTaskGP outputs
-            output_variables.append(
-                DistributionVariable(name=f"{output_name}_sim_task", distribution_type="MultiVariateNormal")
-            )
-
+    if len(df_exp) > 0:
+        output_variables = [
+            DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
+            for name in output_names
+            for suffix in ["sim_task", "exp_task"]
+        ]
+    else:
+        output_variables = [
+            DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
+            for name in output_names
+            for suffix in ["sim_task"]
+        ]
     #Save GP model
     gpmodel = GPModel(
         model=gp_model.cpu(),
