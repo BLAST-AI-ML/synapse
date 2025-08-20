@@ -121,7 +121,7 @@ def analyze_simulation():
         fig.add_subplot(gs[2,0])
         plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
         plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
-                         0.511e-3*(gamma-dgamma), color='b', alpha=0.3)
+                         0.511e-3*(gamma+dgamma), color='b', alpha=0.3)
         plt.ylabel('Beam energy [GeV]')
         plt.grid()
         plt.axvline(x=1e2*current_z_las, color='k', ls='--')
