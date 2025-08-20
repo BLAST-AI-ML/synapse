@@ -214,7 +214,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 y=objective_name,
                 opacity=df_copy_filtered["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
-                hover_data=list(state.parameters.keys()),
+                hover_data=list(state.parameters.keys()) + state.output_variables,
                 custom_data="_id",
             )
             # do now show default legend affected by opacity map
