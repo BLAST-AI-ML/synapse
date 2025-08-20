@@ -243,7 +243,7 @@ else:
         output_data = norm_df_train[output_names].values[:, i]
         valid_mask = ~torch.isnan(torch.tensor(output_data))
         n_valid = torch.sum(valid_mask).item()
-        print(f"Output {output_name}: {n_valid}/{n_outputs} valid data points")
+        print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
 
         # Prepare input and output data for this output
         X_valid = torch.tensor(norm_df_train[input_names].values[valid_mask], dtype=torch.float64)
