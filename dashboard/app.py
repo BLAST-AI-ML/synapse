@@ -8,7 +8,6 @@ from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
 from outputs_manager import OutputManager
-from objectives_manager import ObjectivesManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
@@ -30,7 +29,6 @@ from utils import (
 out_manager = None
 mod_manager = None
 par_manager = None
-obj_manager = None
 opt_manager = None
 cal_manager = None
 
@@ -48,7 +46,6 @@ def update(
     reset_model=True,
     reset_output=True,
     reset_parameters=True,
-    reset_objectives=True,
     reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
@@ -60,7 +57,6 @@ def update(
     global mod_manager
     global out_manager
     global par_manager
-    global obj_manager
     global opt_manager
     global cal_manager
     # load data
@@ -80,18 +76,6 @@ def update(
     elif reset_model:
         # if resetting only model, model attribute must be updated
         par_manager.model = mod_manager
-    # reset objectives
-    if reset_objectives:
-        # Select the current objective
-        obj_manager = ObjectivesManager(
-            mod_manager,
-            {
-                k: v
-                for k, v in output_variables.items()
-                if output_variables[k]["name"] == state.displayed_output
-            },
-            # This creates a dictionary with only one key, to adapt to the expected interface
-        )
     # reset calibration
     if reset_calibration:
         cal_manager = SimulationCalibrationManager(simulation_calibration)
@@ -124,7 +108,6 @@ def update_on_change_experiment(**kwargs):
             reset_model=True,
             reset_output=True,
             reset_parameters=True,
-            reset_objectives=True,
             reset_calibration=True,
             reset_plots=True,
             reset_gui_route_home=True,
@@ -142,7 +125,6 @@ def update_on_change_model(**kwargs):
             reset_model=True,
             reset_output=False,
             reset_parameters=False,
-            reset_objectives=False,
             reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=True,
@@ -167,7 +149,6 @@ def update_on_change_others(**kwargs):
             reset_model=False,
             reset_output=False,
             reset_parameters=False,
-            reset_objectives=False,
             reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=False,
@@ -282,7 +263,7 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
-                # objectives control panel
+                # output control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
                         out_manager.panel()
