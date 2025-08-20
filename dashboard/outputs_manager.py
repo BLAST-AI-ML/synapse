@@ -18,14 +18,10 @@ class OutputManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
-                    # create a row for the switches and buttons
                     with vuetify.VRow():
-                        with vuetify.VCol():
-                            vuetify.VSelect(
-                                v_model=("displayed_output",),
-                                items=(state.output_variables,),
-                                change="flushState('displayed_output')",
-                                dense=True,
-                            )
-                        with vuetify.VCol():
-                            pass  # empty column to match alignment of selectors in other panels
+                        vuetify.VSelect(
+                            v_model=("displayed_output",),
+                            items=(state.output_variables,),
+                            change="flushState('displayed_output')",
+                            dense=True,
+                        )
