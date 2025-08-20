@@ -78,6 +78,7 @@ input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]
 output_names = [ v['name'] for v in output_variables.values() ]
+n_outputs = len(output_names)
 # Extract data from the database as pandas dataframe
 collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
@@ -116,14 +117,17 @@ else:
 X_train = torch.tensor( df_train[ input_names ].values, dtype=torch.float )
 input_transform = AffineInputTransform(
     len(input_names),
-    coefficient=torch.nanstd(X_train, axis=0),
-    offset=torch.nanmean(X_train, axis=0)
+    coefficient=torch.std(X_train, axis=0),
+    offset=torch.mean(X_train, axis=0)
 )
+# For output normalization, we need to handle potential NaN values
 y_train = torch.tensor( df_train[ output_names ].values, dtype=torch.float )
+mean = torch.tensor([ torch.mean(y_train[i, ~torch.isnan(y_train[i])]) for i in range(n_outputs) ], dtype=torch.float)
+std = torch.tensor([ torch.std(y_train[i, ~torch.isnan(y_train[i])]) for i in range(n_outputs) ], dtype=torch.float)
 output_transform = AffineInputTransform(
-    len(output_names),
-    coefficient=torch.nanstd(y_train, axis=0),
-    offset=torch.nanmean(y_train, axis=0)
+    n_outputs,
+    coefficient=std,
+    offset=mean
 )
 
 # Apply normalization to the training data set
@@ -165,7 +169,7 @@ if model_type != 'GP':
 
     ensemble = []
     for i in range(num_models):
-        model = CombinedNN(len(input_names), len(output_names), learning_rate=0.0001)
+        model = CombinedNN(len(input_names), n_outputs, learning_rate=0.0001)
         model.to(device) # moving to GPU
         NNmodel_start_time = time.time()
         model.train_model(
@@ -182,7 +186,7 @@ if model_type != 'GP':
     torch_models = []
     for model_nn in ensemble:
         calibration_transform = AffineInputTransform(
-            len(output_names),
+            n_outputs,
             coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
             offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu() )
 
@@ -230,16 +234,16 @@ else:
     # Create separate GP models for each output to handle NaN values
 
     gp_models = []
-    print(f"Creating separate GP models for {len(output_names)} outputs...")
+    print(f"Creating separate GP models for {n_outputs} outputs...")
 
     for i, output_name in enumerate(output_names):
-        print(f"Processing output {i+1}/{len(output_names)}: {output_name}")
+        print(f"Processing output {i+1}/{n_outputs}: {output_name}")
 
         # Get data where this output is not NaN
         output_data = norm_df_train[output_names].values[:, i]
         valid_mask = ~torch.isnan(torch.tensor(output_data))
         n_valid = torch.sum(valid_mask).item()
-        print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
+        print(f"Output {output_name}: {n_valid}/{n_outputs} valid data points")
 
         # Prepare input and output data for this output
         X_valid = torch.tensor(norm_df_train[input_names].values[valid_mask], dtype=torch.float64)
