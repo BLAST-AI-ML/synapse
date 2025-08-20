@@ -117,8 +117,8 @@ else:
 X_train = torch.tensor( df_train[ input_names ].values, dtype=torch.float )
 input_transform = AffineInputTransform(
     len(input_names),
-    coefficient=torch.std(X_train, axis=0),
-    offset=torch.mean(X_train, axis=0)
+    coefficient=X_train.std(axis=0),
+    offset=X_train.mean(axis=0)
 )
 # For output normalization, we need to handle potential NaN values
 y_train = torch.tensor( df_train[ output_names ].values, dtype=torch.float )
