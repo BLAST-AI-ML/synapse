@@ -122,12 +122,12 @@ input_transform = AffineInputTransform(
 )
 # For output normalization, we need to handle potential NaN values
 y_train = torch.tensor( df_train[ output_names ].values, dtype=torch.float )
-mean = torch.tensor([ torch.mean(y_train[i, ~torch.isnan(y_train[i])]) for i in range(n_outputs) ], dtype=torch.float)
-std = torch.tensor([ torch.std(y_train[i, ~torch.isnan(y_train[i])]) for i in range(n_outputs) ], dtype=torch.float)
+y_mean = torch.nanmean(y_train, dim=0)
+y_std = torch.sqrt( torch.nanmean( (y_train-y_mean)**2, dim=0) )
 output_transform = AffineInputTransform(
     n_outputs,
-    coefficient=std,
-    offset=mean
+    coefficient=y_std,
+    offset=y_mean
 )
 
 # Apply normalization to the training data set
@@ -241,7 +241,7 @@ else:
 
         # Get data where this output is not NaN
         output_data = norm_df_train[output_names].values[:, i]
-        valid_mask = ~torch.isnan(torch.tensor(output_data))
+        valid_mask = torch.logical_not( torch.isnan(torch.tensor(output_data)) )
         n_valid = torch.sum(valid_mask).item()
         print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
 
