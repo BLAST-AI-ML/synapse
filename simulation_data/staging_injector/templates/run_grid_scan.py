@@ -16,8 +16,8 @@ var_3 = VaryingParameter("dopant_concentration", 0, 10)
 var_4 = VaryingParameter("background_density", 3, 5)
 obj = Objective("f", minimize=False)
 
-n_steps = [2, 2, 2, 2]
-sim_workers = 8
+n_steps = [5, 7, 5, 7]
+sim_workers = 240
 
 # Compute total number of steps
 n_total = 1
