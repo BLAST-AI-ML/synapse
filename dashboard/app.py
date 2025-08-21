@@ -61,15 +61,15 @@ def update(
     global cal_manager
     # load data
     exp_data, sim_data = load_data(db)
-    # reset model
-    if reset_model:
-        mod_manager = ModelManager(db)
-        opt_manager = OptimizationManager(mod_manager)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables()
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
+    # reset model
+    if reset_model:
+        mod_manager = ModelManager(db)
+        opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)

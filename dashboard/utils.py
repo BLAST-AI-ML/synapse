@@ -253,7 +253,9 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
-            mean, lower, upper = model_manager.evaluate(input_dict_loc)
+            mean, lower, upper = model_manager.evaluate(
+                input_dict_loc, state.displayed_output
+            )
 
             global_ymin = min(global_ymin, lower.numpy().min())
             global_ymax = max(global_ymax, upper.numpy().max())

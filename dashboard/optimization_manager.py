@@ -10,13 +10,16 @@ class OptimizationManager:
     def __init__(self, model):
         print("Initializing optimization manager...")
         self.__model = model
+        state.optimization_target = state.output_variables[0]
 
     def model_wrapper(self, parameters_array):
         print("Wrapping model...")
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
-        mean, lower, upper = self.__model.evaluate(parameters_dict)
+        mean, lower, upper = self.__model.evaluate(
+            parameters_dict, state.optimization_target
+        )
         res = -mean
         return res
 
@@ -37,7 +40,7 @@ class OptimizationManager:
                 fun=self.model_wrapper,
                 x0=parameters_values,
                 bounds=parameters_bounds,
-                method="Nelder-Mead",
+                method="Powell",
             )
             print(f"Optimization result:\n{res}")
             # update parameters in state with optimal values
@@ -79,16 +82,17 @@ class OptimizationManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
+                                v_model=("optimization_target",),
+                                label="Optimization target",
+                                items=(state.output_variables,),
+                                dense=True,
+                            )
+                        with vuetify.VCol():
+                            vuetify.VSelect(
                                 v_model=("optimization_type",),
                                 label="Optimization type",
                                 items=(optimization_type_list,),
                                 dense=True,
-                            )
-                        with vuetify.VCol():
-                            vuetify.VTextField(
-                                v_model_number=("optimization_status",),
-                                label="Optimization status",
-                                readonly=True,
                             )
                     with vuetify.VRow():
                         with vuetify.VCol():
