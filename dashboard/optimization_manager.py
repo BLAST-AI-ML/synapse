@@ -10,7 +10,7 @@ class OptimizationManager:
     def __init__(self, model):
         print("Initializing optimization manager...")
         self.__model = model
-        state.optimization_target = state.output_variables[0]
+        state.optimization_target = state.displayed_output
 
     def model_wrapper(self, parameters_array):
         print("Wrapping model...")
