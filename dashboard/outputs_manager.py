@@ -22,6 +22,5 @@ class OutputManager:
                         vuetify.VSelect(
                             v_model=("displayed_output",),
                             items=(state.output_variables,),
-                            change="flushState('displayed_output')",
                             dense=True,
                         )
