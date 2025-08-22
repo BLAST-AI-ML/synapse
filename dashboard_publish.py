@@ -1,7 +1,7 @@
 import subprocess
 
 
-def run(command: str, proceed: bool = False):
+def run(command: str, proceed: str):
     if proceed in ["y"]:
         try:
             subprocess.run(
