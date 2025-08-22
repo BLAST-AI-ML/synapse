@@ -14,7 +14,7 @@ def run(cmd: str, proceed: bool = False):
         except Exception as msg:
             print(msg)
     else:
-        print("Exiting...")
+        print("Skipping...")
 
 
 if __name__ == "__main__":
