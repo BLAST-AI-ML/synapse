@@ -20,7 +20,7 @@ class OptimizationManager:
         mean, lower, upper = self.__model.evaluate(
             parameters_dict, state.optimization_target
         )
-        res = -mean
+        res = -mean if state.optimization_type == "Maximize" else mean
         return res
 
     def optimize(self):
@@ -72,6 +72,7 @@ class OptimizationManager:
         # list of available optimization operations
         optimization_type_list = [
             "Maximize",
+            "Minimize",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_optimization", 0)):
             with vuetify.VExpansionPanel(
