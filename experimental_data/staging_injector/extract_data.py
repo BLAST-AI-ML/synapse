@@ -30,9 +30,9 @@ data_to_extract = {
     'HEX-PL1-1 xpos': 'HEX-PL1-1 xpos',
     'Valve01': 'MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01',
     'Cap downstream (torr)': 'GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)',
+    'EBeamPrf charge [pC]': 'EBeamPrf charge [pC]',
 }
 unavailable_data = [
-    "Trapped charge [pC]",
     "Beam mean energy [GeV]",
     "Beam energy spread [%]",
     "Mean laser wavelength [nm]",

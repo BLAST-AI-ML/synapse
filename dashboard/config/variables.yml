@@ -56,10 +56,17 @@ staging_injector:
       alpha: 0.0161
       beta: 0.0
 
+    input5:
+      name: "Trapped charge [pC]"
+      unit: "pC"
+      depends_on: "EBeamPrf charge [pC]"
+      alpha: 1.0
+      beta: 0.0
+
   output_variables:
 
     output1:
-      name: "Trapped charge [pC]"
+      name: "EBeamPrf charge [pC]"
       type: scalar
 
     output2:
