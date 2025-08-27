@@ -10,13 +10,13 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("laser_energy", 12, 17)
-var_2 = VaryingParameter("target_to_focus_distance", 0, 2)
-var_3 = VaryingParameter("dopant_concentration", 0, 10)
-var_4 = VaryingParameter("background_density", 3, 5)
+var_1 = VaryingParameter("laser_energy", 12, 15)
+var_2 = VaryingParameter("target_to_focus_distance", 0, 1)
+var_3 = VaryingParameter("dopant_concentration", 0, 3)
+var_4 = VaryingParameter("background_density", 0, 5)
 obj = Objective("f", minimize=False)
 
-n_steps = [5, 7, 5, 7]
+n_steps = [3, 5, 7, 7]
 sim_workers = 240
 
 # Compute total number of steps
