@@ -16,6 +16,7 @@ from datetime import datetime
 import pandas as pd
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import numpy as np
 
 # LabVIEW epoch (1904-01-01) to Unix epoch (1970-01-01) offset in seconds
 LABVIEW_EPOCH_OFFSET = 2082844800
@@ -30,6 +31,12 @@ data_to_extract = {
     'Valve01': 'MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01',
     'Cap downstream (torr)': 'GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)',
 }
+unavailable_data = [
+    "Trapped charge [pC]",
+    "Beam mean energy [GeV]",
+    "Beam energy spread [%]",
+    "Mean laser wavelength [nm]",
+]
 
 def extract_info_more_scan_file( path_to_scan_file ):
     # Open the scan file
@@ -65,6 +72,10 @@ def extract_info_more_scan_file( path_to_scan_file ):
                 print(f"Skipping shot {i} because it already exists in the database")
                 continue
 
+            # Set unavailable data to NaN
+            for key in unavailable_data:
+                data[key] = np.nan
+
             # Extract required data
             for key, value in data_to_extract.items():
                 data[key] = s_file[value].iloc[i]
@@ -91,7 +102,7 @@ class MyHandler(FileSystemEventHandler):
 if __name__ == '__main__':
 
     # Open credential file for database
-    with open('C:/Users/rlehe.BELLAAPPSERVER/Documents/db.profile') as f:
+    with open('/Users/rlehe/db.profile') as f:
         db_profile = f.read()
     # Connect to the MongoDB database with read-only access
     db = pymongo.MongoClient(
