@@ -31,11 +31,12 @@ data_to_extract = {
     'Valve01': 'MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01',
     'Cap downstream (torr)': 'GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)',
     'EBeamPrf charge [pC]': 'EBeamPrf charge [pC]',
+    'SPEC-AA-Hamamastsu lambda_b': 'SPEC-AA-Hamamastsu lambda_b',
+    'SPEC-AA-Hamamastsu lambda_r': 'SPEC-AA-Hamamastsu lambda_r',
 }
 unavailable_data = [
     "Beam mean energy [GeV]",
     "Beam energy spread [%]",
-    "Mean laser wavelength [nm]",
 ]
 
 def extract_info_more_scan_file( path_to_scan_file ):
@@ -78,7 +79,7 @@ def extract_info_more_scan_file( path_to_scan_file ):
 
             # Extract required data
             for key, value in data_to_extract.items():
-                data[key] = s_file[value].iloc[i]
+                data[key] = np.float(s_file[value].iloc[i])
 
             # Add to the database
             print('Uploading: ', data)
