@@ -73,6 +73,7 @@ def analyze_simulation():
     # - beam charge
     Q = ts.iterate( ts.get_charge, species='electrons_n1',
                    select={'uz':[uz_threshold, None]})
+    no_trapped_electrons = np.all(Q == 0) # check if there are any trapped electrons in this simulation
     gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
 
     data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
@@ -120,7 +121,7 @@ def analyze_simulation():
         # Plot of energy and energy spread
         fig.add_subplot(gs[2,0])
         # Skip this plot if there are no electrons
-        if not np.all(np.isnan(gamma)):
+        if not no_trapped_electrons:
             plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
             plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
                             0.511e-3*(gamma+dgamma), color='b', alpha=0.3)
@@ -165,7 +166,7 @@ def analyze_simulation():
         # Plot of the electron energy spectrum
         fig.add_subplot(gs[2,1])
         # Skip this plot if there are no electrons
-        if not np.all(np.isnan(gamma)):
+        if not no_trapped_electrons:
             uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
                 select={'uz':[uz_threshold, None]}, species='electrons_n1')
             plt.hist( 0.511e-3*uz, weights=w, bins=200,
