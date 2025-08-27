@@ -103,7 +103,7 @@ if __name__ == '__main__':
     # Open credential file for database
     with open('C:/Users/rlehe.BELLAAPPSERVER/Documents/db.profile') as f:
         db_profile = f.read()
-    # Connect to the MongoDB database with read-only access
+    # Connect to the MongoDB database with read-write access
     db = pymongo.MongoClient(
         host="mongodb05.nersc.gov",
         username="bella_sf_admin",
