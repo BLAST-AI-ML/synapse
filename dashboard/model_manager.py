@@ -108,19 +108,19 @@ class ModelManager:
     def is_gaussian_process(self):
         return self.__is_gaussian_process
 
-    def evaluate(self, parameters):
+    def evaluate(self, parameters, output):
         print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
             output_dict = self.__model.evaluate(parameters)
             if self.__is_neural_network:
                 # compute mean and mean error
-                mean = output_dict[state.displayed_output]
+                mean = output_dict[output]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
             elif self.__is_gaussian_process:
                 # TODO use "exp" only once experimental data is available for all experiments
                 task_tag = "exp" if state.experiment == "ip2" else "sim"
-                output_key = state.displayed_output + "_" + task_tag + "_task"
+                output_key = output + "_" + task_tag + "_task"
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
                 mean = output_dict[output_key].mean.detach()

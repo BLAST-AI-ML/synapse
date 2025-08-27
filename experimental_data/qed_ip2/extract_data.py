@@ -25,7 +25,7 @@ LABVIEW_EPOCH_OFFSET = 2082844800
 
 # data to be extracted
 watched_folder = r'N:\data\Y2025\05-May'
-experiment = 'staging_injector'
+experiment = 'qed_ip2'
 data_to_extract = {
     'Target focus': 'IP2-TC-ESP5 Position.Axis 1 Alias:Target focus',
     'Prepulse Delay': 'MANPAR-BELLA-General value10 Alias:prepulse_delay'
