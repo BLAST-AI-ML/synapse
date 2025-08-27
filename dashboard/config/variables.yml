@@ -3,28 +3,58 @@ staging_injector:
   input_variables:
 
     input1:
-      name: "Laser energy [J]"
+      name: "Amplifier 3 [J]"
       type: scalar
-      default: 12
-      value_range: [12, 17]
+      default: 21
+      value_range: [19, 30]
 
     input2:
-      name: "Target-to-focus distance [cm]"
+      name: "HEX-PL1-1 xpos"
       type: scalar
-      default: 1
-      value_range: [0, 2]
+      default: -10
+      value_range: [-20, 0]
 
     input3:
-      name: "Dopant concentration [%]"
+      name: "Valve01"
       type: scalar
       default: 5
-      value_range: [0, 10]
+      value_range: [0, 0.1]
 
     input4:
-      name: "Background density [1e18/cm^3]"
+      name: "Cap downstream (torr)"
       type: scalar
       default: 4
       value_range: [3, 5]
+
+  simulation_calibration:
+
+    input1:
+      name: "Laser energy [J]"
+      unit: "J"
+      depends_on: "Amplifier 3 [J]"
+      alpha: 0.586
+      beta: 0.0
+
+    input2:
+      name: "Target-to-focus distance [cm]"
+      unit: "cm"
+      depends_on: "HEX-PL1-1 xpos"
+      alpha: -0.1
+      beta: 0.0
+
+    input3:
+      name: "Dopant concentration [%]"
+      unit: "%"
+      depends_on: "Valve01"
+      alpha: 100
+      beta: 0.0
+
+    input4:
+      name: "Background density [1e18/cm^3]"
+      unit: "cm^-3"
+      depends_on: "Cap downstream (torr)"
+      alpha: 0.0161
+      beta: 0.0
 
   output_variables:
 
