@@ -24,7 +24,7 @@ staging_injector:
       name: "Cap downstream (torr)"
       type: scalar
       default: 10
-      value_range: [0, 20]
+      value_range: [0, 30]
 
   simulation_calibration:
 
@@ -53,7 +53,7 @@ staging_injector:
       name: "Background density [1e18/cm^3]"
       unit: "cm^-3"
       depends_on: "Cap downstream (torr)"
-      alpha: 0.0161
+      alpha: 0.161
       beta: 0.0
 
     input5:
