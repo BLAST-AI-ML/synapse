@@ -102,7 +102,7 @@ class MyHandler(FileSystemEventHandler):
 if __name__ == '__main__':
 
     # Open credential file for database
-    with open('/Users/rlehe/db.profile') as f:
+    with open('C:/Users/rlehe.BELLAAPPSERVER/Documents/db.profile') as f:
         db_profile = f.read()
     # Connect to the MongoDB database with read-only access
     db = pymongo.MongoClient(
