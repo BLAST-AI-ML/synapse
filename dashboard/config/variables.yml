@@ -17,14 +17,14 @@ staging_injector:
     input3:
       name: "Valve01"
       type: scalar
-      default: 5
-      value_range: [0, 0.1]
+      default: 0.01
+      value_range: [0, 0.03]
 
     input4:
       name: "Cap downstream (torr)"
       type: scalar
-      default: 4
-      value_range: [3, 5]
+      default: 10
+      value_range: [0, 20]
 
   simulation_calibration:
 
