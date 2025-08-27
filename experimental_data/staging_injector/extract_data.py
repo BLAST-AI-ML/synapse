@@ -79,7 +79,7 @@ def extract_info_more_scan_file( path_to_scan_file ):
 
             # Extract required data
             for key, value in data_to_extract.items():
-                data[key] = np.float(s_file[value].iloc[i])
+                data[key] = np.float64(s_file[value].iloc[i])
 
             # Add to the database
             print('Uploading: ', data)
