@@ -78,7 +78,11 @@ staging_injector:
       type: scalar
 
     output4:
-      name: "Mean laser wavelength [nm]"
+      name: "SPEC-AA-Hamamastsu lambda_b"
+      type: scalar
+
+    output5:
+      name: "SPEC-AA-Hamamastsu lambda_r"
       type: scalar
 
 qed_ip2:
