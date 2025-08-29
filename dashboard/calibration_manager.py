@@ -20,7 +20,7 @@ class SimulationCalibrationManager:
         print("Setting calibration card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_calibration", 0)):
             with vuetify.VExpansionPanel(
-                title="Control: Calibration",
+                title="Control: Calibrate simulation points",
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
@@ -40,7 +40,7 @@ class SimulationCalibrationManager:
                                 with vuetify.VCol():
                                     vuetify.VTextField(
                                         v_model_number=(f"simulation_calibration['{key}']['alpha']",),
-                                        #change=f"flushState('simulation_calibration['{key}']['alpha']')",
+                                        change=f"flushState('simulation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         style="width: 100px;",
@@ -50,7 +50,7 @@ class SimulationCalibrationManager:
                                 with vuetify.VCol():
                                     vuetify.VTextField(
                                         v_model_number=(f"simulation_calibration['{key}']['beta']",),
-                                        #change=f"flushState('simulation_calibration['{key}']['beta']')",
+                                        change=f"flushState('simulation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         style="width: 100px;",
