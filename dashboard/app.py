@@ -280,6 +280,10 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         mod_manager.panel()
+                # calibration control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        cal_manager.panel()
                 # plots control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
