@@ -28,8 +28,10 @@ class SimulationCalibrationManager:
                         for count, key in enumerate(state.simulation_calibration.keys()):
                             # create a row for the parameter label
                             with vuetify.VRow():
+                                title = "<strong>" + state.simulation_calibration[key]["name"] + "</strong><br>"
+                                title += "= α × (" + state.simulation_calibration[key]["depends_on"] + " - β)"
                                 vuetify.VListSubheader(
-                                    state.simulation_calibration[key]["name"],
+                                    title,
                                     style=(
                                         "margin-top: 16px;"
                                         if count == 0
@@ -45,15 +47,15 @@ class SimulationCalibrationManager:
                                         hide_details=True,
                                         style="width: 100px;",
                                         type="number",
-                                        label="alpha",
+                                        label="α",
                                     )
                                 with vuetify.VCol():
                                     vuetify.VTextField(
                                         v_model_number=(f"simulation_calibration['{key}']['beta']",),
-                                        change=f"flushState('simulation_calibration')",
+                                        change=f"flushState('simu lation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         style="width: 100px;",
                                         type="number",
-                                        label="beta",
+                                        label="β",
                                     )
