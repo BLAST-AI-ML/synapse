@@ -70,19 +70,15 @@ staging_injector:
       type: scalar
 
     output2:
-      name: "Beam mean energy [GeV]"
+      name: "EBeamPrf fwhm div x [mrad]"
       type: scalar
 
     output3:
-      name: "Beam energy spread [%]"
+      name: "Beam mean energy [GeV]"
       type: scalar
 
     output4:
-      name: "SPEC-AA-Hamamastsu lambda_b"
-      type: scalar
-
-    output5:
-      name: "SPEC-AA-Hamamastsu lambda_r"
+      name: "Beam energy spread [%]"
       type: scalar
 
 qed_ip2:
