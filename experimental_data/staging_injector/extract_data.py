@@ -29,6 +29,7 @@ data_to_extract = {
     "Amplifier 3 [J]": "EM-LB-2 Reading.Channel 2 Alias:Amplifier 3 [J]",
     "HEX-PL1-1 xpos": "HEX-PL1-1 xpos",
     "Valve01": "MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01",
+    "Cap Up (torr)": "GAUGE-PL1-CapPressure pressure1 Alias:Cap Up (torr)",
     "Cap downstream (torr)": "GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)",
     "EBeamPrf charge [pC]": "EBeamPrf charge [pC]",
     "EBeamPrf fwhm div x [mrad]": "EBeamPrf fwhm div x [mrad]",
