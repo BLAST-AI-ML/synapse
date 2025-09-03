@@ -11,26 +11,25 @@ FROM continuumio/miniconda3:latest
 # Set the working directory in the container
 WORKDIR /app/dashboard
 
-# Copy content into the container at /app
-COPY --exclude=*.pem dashboard /app/dashboard
-COPY ml/training_pm.sbatch /app/dashboard
-
 # Silence pip error to install in root dirs
 ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install any needed packages specified in the environment file
+COPY dashboard/gui-lock.yml /app/dashboard/gui-lock.yml
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name gui gui-lock.yml \
     && conda clean --all -y
 
-# Copy the entrypoint script
+# Configure an exectuable entrypoint script
 COPY dashboard/entrypoint.sh /entrypoint.sh
-
-# Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
 
 # Define the entrypoint to activate the environment in interactive and CMD use
 ENTRYPOINT ["/entrypoint.sh"]
+
+# Copy content into the container at /app
+COPY --exclude=*.pem dashboard /app/dashboard
+COPY ml/training_pm.sbatch /app/dashboard
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
