@@ -25,14 +25,10 @@ if [[ -z "${experiment}" ]]; then
     echo "Must pass the experiment name/tag as a command line argument"
 fi
 
-# pull container file ahead of time from a login node!
-#docker login registry.nersc.gov
-#podman-hpc --squash-dir /global/cfs/cdirs/m558/superfacility/model_training/containers pull registry.nersc.gov/m558/superfacility/ml-training:latest
-
-# Note that we read from the projected DVS filesystem location for container startup speed.
-# https://docs.nersc.gov/performance/io/dvs
-export PODMANHPC_ADDITIONAL_STORES=/dvs_ro/cfs/cdirs/m558/superfacility/model_training/containers
-
+# login to the registry
+source $HOME/registry.profile  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
+podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" registry.nersc.gov
+podman-hpc pull registry.nersc.gov/m558/superfacility/ml-training:latest
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m

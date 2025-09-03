@@ -42,39 +42,32 @@ conda activate ml-training
    docker push -a registry.nersc.gov/m558/superfacility/ml-training
    ```
 
-5. Cache & Share the Docker container on Perlmutter:
+5. Optional test: Run the Docker container manually on Perlmutter:
    ```console
    ssh perlmutter-p1.nersc.gov
 
    podman-hpc login --username $USER registry.nersc.gov
    # Password: your NERSC password without 2FA
 
-   podman-hpc --squash-dir /global/cfs/cdirs/m558/superfacility/model_training/containers pull registry.nersc.gov/m558/superfacility/ml-training:latest
-   
-   find /global/cfs/cdirs/m558/superfacility/model_training/containers -type f -exec chmod g+r {} \;
-   find /global/cfs/cdirs/m558/superfacility/model_training/containers -type d -exec chmod g+rx {} \;
+   podman-hpc pull registry.nersc.gov/m558/superfacility/ml-training:latest
    ```
 
-6. Optional test: Run the Docker container manually on Perlmutter:
-   One-time preparation (already done!).
-   Become the superfacility pseudo user:
-   ```console
-   ssh <username>@dtn03.nersc.gov
-   collabsu sf558
-   # Password: your NERSC password without 2FA
-   ```
    Ensure the file `$HOME/db.profile` contains a line `export SF_DB_ADMIN_PASSWORD=...` with the write password to the database.
 
-   Then, on perlmutter:
    ```console
    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
 
-   export PODMANHPC_ADDITIONAL_STORES=/dvs_ro/cfs/cdirs/m558/superfacility/model_training/containers
    podman-hpc run --gpu -v $HOME/db.profile:/root/db.profile --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --experiment ip2 --model NN
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
-   Note that we read from the [projected DVS filesystem location](https://docs.nersc.gov/performance/io/dvs/) for container startup speed.
 
+Note: for our interactive dashboard, we run ML training jobs via the NERSC superfacility using the collaboration account `sf558`.
+Since this is a non-interactive, non-user account, we also use a custom user to pull the image from https://registry.nersc.gov to perlmutter.
+The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
+```bash
+export REGISTRY_USER=robot$m558+perlmutter-nersc-gov
+export REGISTRY_PASSWORD=...  # request this from Remi/Axel
+```
 
 ## References
 
