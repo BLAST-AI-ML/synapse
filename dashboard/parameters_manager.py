@@ -1,5 +1,5 @@
 import copy
-from trame.widgets import vuetify2 as vuetify
+from trame.widgets import client, vuetify3 as vuetify
 
 from state_manager import state
 
@@ -42,102 +42,91 @@ class ParametersManager:
         # push again at flush time
         state.dirty("parameters")
 
-    def optimize(self):
-        print("Optimizing parameters...")
-        # optimize parameters through model
-        self.__model.optimize()
-
     def panel(self):
         print("Setting parameters card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
-            with vuetify.VExpansionPanel():
-                vuetify.VExpansionPanelHeader(
-                    "Control: Parameters",
-                    style="font-size: 20px; font-weight: 500;",
-                )
-                with vuetify.VExpansionPanelContent():
-                    for count, key in enumerate(state.parameters.keys()):
-                        # create a row for the parameter label
-                        with vuetify.VRow():
-                            vuetify.VSubheader(
-                                key,
-                                style=(
-                                    "margin-top: 16px;"
-                                    if count == 0
-                                    else "margin-top: 0px;"
-                                ),
-                            )
-                        with vuetify.VRow(no_gutters=True):
-                            with vuetify.VSlider(
-                                v_model_number=(f"parameters['{key}']",),
-                                change="flushState('parameters')",
-                                hide_details=True,
-                                min=(f"parameters_min['{key}']",),
-                                max=(f"parameters_max['{key}']",),
-                                step=(
-                                    f"(parameters_max['{key}'] - parameters_min['{key}']) / 100",
-                                ),
-                                style="align-items: center;",
-                            ):
-                                with vuetify.Template(v_slot_append=True):
+            with vuetify.VExpansionPanel(
+                title="Control: Parameters",
+                style="font-size: 20px; font-weight: 500;",
+            ):
+                with vuetify.VExpansionPanelText():
+                    with client.DeepReactive("parameters"):
+                        for count, key in enumerate(state.parameters.keys()):
+                            # create a row for the parameter label
+                            with vuetify.VRow():
+                                vuetify.VListSubheader(
+                                    key,
+                                    style=(
+                                        "margin-top: 16px;"
+                                        if count == 0
+                                        else "margin-top: 0px;"
+                                    ),
+                                )
+                            with vuetify.VRow(no_gutters=True):
+                                with vuetify.VSlider(
+                                    v_model_number=(f"parameters['{key}']",),
+                                    change="flushState('parameters')",
+                                    hide_details=True,
+                                    min=(f"parameters_min['{key}']",),
+                                    max=(f"parameters_max['{key}']",),
+                                    step=(
+                                        f"(parameters_max['{key}'] - parameters_min['{key}']) / 100",
+                                    ),
+                                    style="align-items: center;",
+                                ):
+                                    with vuetify.Template(v_slot_append=True):
+                                        vuetify.VTextField(
+                                            v_model_number=(f"parameters['{key}']",),
+                                            density="compact",
+                                            hide_details=True,
+                                            readonly=True,
+                                            single_line=True,
+                                            style="margin-top: 0px; padding-top: 0px; width: 100px;",
+                                            type="number",
+                                        )
+                            step = self.parameters_step[key]
+                            with vuetify.VRow(no_gutters=True):
+                                with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"parameters['{key}']",),
+                                        v_model_number=(f"parameters_min['{key}']",),
+                                        change="flushState('parameters_min')",
                                         density="compact",
                                         hide_details=True,
-                                        readonly=True,
-                                        single_line=True,
-                                        style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                        disabled=(f"parameters_show_all['{key}']",),
+                                        step=step,
+                                        __properties=["step"],
+                                        style="width: 100px;",
                                         type="number",
+                                        label="min",
                                     )
-                        step = self.parameters_step[key]
-                        with vuetify.VRow(no_gutters=True):
+                                with vuetify.VCol():
+                                    vuetify.VTextField(
+                                        v_model_number=(f"parameters_max['{key}']",),
+                                        change="flushState('parameters_max')",
+                                        density="compact",
+                                        hide_details=True,
+                                        disabled=(f"parameters_show_all['{key}']",),
+                                        step=step,
+                                        __properties=["step"],
+                                        style="width: 100px;",
+                                        type="number",
+                                        label="max",
+                                    )
+                                with vuetify.VCol(style="min-width: 100px;"):
+                                    vuetify.VCheckbox(
+                                        v_model=(
+                                            f"parameters_show_all['{key}']",
+                                            False,
+                                        ),
+                                        density="compact",
+                                        change="flushState('parameters_show_all')",
+                                        label="Show all",
+                                    )
+                        # create a row for the buttons
+                        with vuetify.VRow():
                             with vuetify.VCol():
-                                vuetify.VTextField(
-                                    v_model_number=(f"parameters_min['{key}']",),
-                                    change="flushState('parameters_min')",
-                                    density="compact",
-                                    hide_details=True,
-                                    disabled=(f"parameters_show_all['{key}']",),
-                                    step=step,
-                                    __properties=["step"],
-                                    style="width: 80px;",
-                                    type="number",
-                                    label="min",
+                                vuetify.VBtn(
+                                    "Reset",
+                                    click=self.reset,
+                                    style="text-transform: none",
                                 )
-                            with vuetify.VCol():
-                                vuetify.VTextField(
-                                    v_model_number=(f"parameters_max['{key}']",),
-                                    change="flushState('parameters_max')",
-                                    density="compact",
-                                    hide_details=True,
-                                    disabled=(f"parameters_show_all['{key}']",),
-                                    step=step,
-                                    __properties=["step"],
-                                    style="width: 80px;",
-                                    type="number",
-                                    label="max",
-                                )
-                            with vuetify.VCol(style="min-width: 100px;"):
-                                vuetify.VCheckbox(
-                                    v_model=(
-                                        f"parameters_show_all['{key}']",
-                                        False,
-                                    ),
-                                    density="compact",
-                                    change="flushState('parameters_show_all')",
-                                    label="Show all",
-                                )
-                    # create a row for the buttons
-                    with vuetify.VRow():
-                        with vuetify.VCol():
-                            vuetify.VBtn(
-                                "Reset",
-                                click=self.reset,
-                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
-                            )
-                        with vuetify.VCol():
-                            vuetify.VBtn(
-                                "Optimize",
-                                click=self.optimize,
-                                style="margin-left: 12px; margin-top: 12px; text-transform: none;",
-                            )

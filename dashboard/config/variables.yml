@@ -1,3 +1,90 @@
+staging_injector:
+
+  input_variables:
+
+    input1:
+      name: "Amplifier 3 [J]"
+      type: scalar
+      default: 21
+      value_range: [19, 30]
+
+    input2:
+      name: "HEX-PL1-1 xpos"
+      type: scalar
+      default: -10
+      value_range: [-20, 0]
+
+    input3:
+      name: "Valve01"
+      type: scalar
+      default: 0.01
+      value_range: [0, 0.03]
+
+    input4:
+      name: "Cap downstream (torr)"
+      type: scalar
+      default: 10
+      value_range: [0, 30]
+
+  simulation_calibration:
+
+    input1:
+      name: "Laser energy [J]"
+      unit: "J"
+      depends_on: "Amplifier 3 [J]"
+      alpha: 0.586
+      beta: 0.0
+
+    input2:
+      name: "Target-to-focus distance [cm]"
+      unit: "cm"
+      depends_on: "HEX-PL1-1 xpos"
+      alpha: -0.1
+      beta: 0.0
+
+    input3:
+      name: "Dopant concentration [%]"
+      unit: "%"
+      depends_on: "Valve01"
+      alpha: 100
+      beta: 0.0
+
+    input4:
+      name: "Background density [1e18/cm^3]"
+      unit: "cm^-3"
+      depends_on: "Cap downstream (torr)"
+      alpha: 0.0644
+      beta: 0.0
+
+    input5:
+      name: "Trapped charge [pC]"
+      unit: "pC"
+      depends_on: "EBeamPrf charge [pC]"
+      alpha: 1.0
+      beta: 0.0
+
+  output_variables:
+
+    output1:
+      name: "EBeamPrf charge [pC]"
+      type: scalar
+
+    output2:
+      name: "Beam mean energy [GeV]"
+      type: scalar
+
+    output3:
+      name: "Beam energy spread [%]"
+      type: scalar
+
+    output4:
+      name: "SPEC-AA-Hamamastsu lambda_b"
+      type: scalar
+
+    output5:
+      name: "SPEC-AA-Hamamastsu lambda_r"
+      type: scalar
+
 qed_ip2:
 
   input_variables:

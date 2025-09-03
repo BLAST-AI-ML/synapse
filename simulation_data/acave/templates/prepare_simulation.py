@@ -75,7 +75,7 @@ def create_laser_pulse():
         hi=hi[-1])
     # focal distance from calculation above (expressed via target z-position and projection due to angle of incidence)
     trans_profile = GaussianTransverseProfile(waist, wavelength=mean_wavelength)
-    laser_profile = CombinedLongitudinalTransverseProfile(mean_wavelength, pol, laser_energy, long_profile, trans_profile)
+    laser_profile = CombinedLongitudinalTransverseProfile(mean_wavelength, pol, long_profile, trans_profile, laser_energy)
 
     # Define laser on a grid
     laser = Laser(dimensions, lo, hi, num_points, laser_profile)
@@ -101,7 +101,7 @@ def create_laser_pulse():
     plt.title('Pulse for fused_silica_thickness = %d' %input_params['fused_silica_thickness'])
 
     plt.subplot(212)
-    laser.show(cmap='gist_heat_r')
+    laser.show()
 
     os.makedirs('diags/plots', exist_ok=True)
     plt.savefig('diags/plots/initial_laser.png')
