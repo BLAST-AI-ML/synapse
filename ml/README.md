@@ -65,8 +65,8 @@ Note: for our interactive dashboard, we run ML training jobs via the NERSC super
 Since this is a non-interactive, non-user account, we also use a custom user to pull the image from https://registry.nersc.gov to perlmutter.
 The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
 ```bash
-export REGISTRY_USER=robot$m558+perlmutter-nersc-gov
-export REGISTRY_PASSWORD=...  # request this from Remi/Axel
+export REGISTRY_USER="robot$m558+perlmutter-nersc-gov"
+export REGISTRY_PASSWORD="..."  # request this from Remi/Axel
 ```
 
 ## References
