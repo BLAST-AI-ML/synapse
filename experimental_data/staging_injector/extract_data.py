@@ -59,6 +59,19 @@ def extract_info_more_scan_file(path_to_scan_file):
     if not missing_column:
         # Loop over shots
         for i in range(len(s_file)):
+
+            # Check is this shot should be uploaded
+            # (charge should be higher than 10 pC ; beam should be within 0.5 mrad of the center)
+            skip_shot = False
+            if s_file["EBeamPrf charge [pC]"].iloc[i] < 10:
+                skip_shot = True
+            elif abs(s_file["EBeamPrf mean angle x [mrad]"].iloc[i]) > 0.5:
+                skip_shot = True
+            elif abs(s_file["EBeamPrf mean angle y [mrad]"].iloc[i]) > 0.5:
+                skip_shot = True
+            if skip_shot:
+                continue
+
             # Extract data for each shot
             data = {}
             data["experiment_flag"] = 1
