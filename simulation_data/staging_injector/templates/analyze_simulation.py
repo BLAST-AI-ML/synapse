@@ -80,11 +80,16 @@ def analyze_simulation():
     Q = ts.iterate( ts.get_charge, species='electrons_n1',
                    select={'uz':[uz_threshold, None]})
     no_trapped_electrons = np.all(Q == 0) # check if there are any trapped electrons in this simulation
+    # - energy and energy spread
     gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
 
     data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
     data['Beam energy spread [%]'] = 100*dgamma[-1]/gamma[-1]
     data['Trapped charge [pC]'] = -Q[-1]*1e12
+
+    # Extract divergence at the last iteration
+    div_x, _ = ts.get_divergence(iteration=ts.iterations[-1], species='electrons_n1')
+    data['Beam RMS div x [mrad]'] = div_x*1e3 # convert from rad to mrad
 
     # Write to the data base
     db = pymongo.MongoClient(
