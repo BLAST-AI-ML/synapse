@@ -63,7 +63,7 @@ my_constants.ppc_z1  = 3
 ##### plasma parameters #########
 #################################
 
-my_constants.n_atom = {{background_density}}e23 # number of electrons per m^3
+my_constants.n_atom = {{background_density}}e24 # number of electrons per m^3
 my_constants.ramp_length = 0.4e-2
 my_constants.stage_length = 3.3e-2
 my_constants.dopant_length = 0.4e-2
