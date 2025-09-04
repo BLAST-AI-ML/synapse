@@ -63,6 +63,13 @@ staging_injector:
       alpha: 1.0
       beta: 0.0
 
+    input6:
+      name: "Beam RMS div x [mrad]"
+      unit: "mrad"
+      depends_on: "EBeamPrf fwhm div x [mrad]"
+      alpha: 1.0
+      beta: 0.0
+
   output_variables:
 
     output1:
@@ -70,19 +77,15 @@ staging_injector:
       type: scalar
 
     output2:
-      name: "Beam mean energy [GeV]"
+      name: "EBeamPrf fwhm div x [mrad]"
       type: scalar
 
     output3:
-      name: "Beam energy spread [%]"
+      name: "Beam mean energy [GeV]"
       type: scalar
 
     output4:
-      name: "SPEC-AA-Hamamastsu lambda_b"
-      type: scalar
-
-    output5:
-      name: "SPEC-AA-Hamamastsu lambda_r"
+      name: "Beam energy spread [%]"
       type: scalar
 
 qed_ip2:
