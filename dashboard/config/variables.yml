@@ -2,35 +2,35 @@ staging_injector:
 
   input_variables:
 
-    input1:
-      name: "Amplifier 3 [J]"
+    input0:
+      name: "Cap Up (torr)"
       type: scalar
-      default: 21
-      value_range: [19, 30]
+      default: 16.5
+      value_range: [10, 25]
+
+    input1:
+      name: "Cap downstream (torr)"
+      type: scalar
+      default: 7.8
+      value_range: [0, 20]
 
     input2:
       name: "HEX-PL1-1 xpos"
       type: scalar
-      default: -10
-      value_range: [-20, 0]
+      default: -5
+      value_range: [-10, 0]
 
     input3:
       name: "Valve01"
       type: scalar
-      default: 0.01
+      default: 0.02
       value_range: [0, 0.03]
 
     input4:
-      name: "Cap Up (torr)"
+      name: "Amplifier 3 [J]"
       type: scalar
-      default: 10
-      value_range: [0, 30]
-
-    input5:
-      name: "Cap downstream (torr)"
-      type: scalar
-      default: 10
-      value_range: [0, 30]
+      default: 22.25
+      value_range: [20, 24]
 
   simulation_calibration:
 
@@ -56,20 +56,27 @@ staging_injector:
       beta: 0.0
 
     input4:
-      name: "Background density [1e18/cm^3]"
+      name: "Upstream density [1e18/cm^3]"
+      unit: "cm^-3"
+      depends_on: "Cap Up (torr)"
+      alpha: 0.0644
+      beta: 0.0
+
+    input5:
+      name: "Downstream density [1e18/cm^3]"
       unit: "cm^-3"
       depends_on: "Cap downstream (torr)"
       alpha: 0.0644
       beta: 0.0
 
-    input5:
+    input6:
       name: "Trapped charge [pC]"
       unit: "pC"
       depends_on: "EBeamPrf charge [pC]"
       alpha: 1.0
       beta: 0.0
 
-    input6:
+    input7:
       name: "Beam RMS div x [mrad]"
       unit: "mrad"
       depends_on: "EBeamPrf fwhm div x [mrad]"
