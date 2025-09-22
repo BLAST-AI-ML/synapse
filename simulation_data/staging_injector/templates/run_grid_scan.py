@@ -27,7 +27,7 @@ for n_step in n_steps:
 
 # Create generator
 gen = GridSamplingGenerator(
-    varying_parameters=[var_1,var_2,var_3,var_4],
+    varying_parameters=[var_1,var_2,var_3,var_4,var_5],
     objectives=[obj],
     n_steps=n_steps,
 )
