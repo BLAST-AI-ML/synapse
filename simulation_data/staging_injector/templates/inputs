@@ -148,4 +148,5 @@ diag.dt_snapshots_lab = 2.75e-12
 diag.intervals = 1:40
 diag.format = openpmd
 diag.fields_to_plot = Er Et Ez
-diag.species = electrons_n1
+diag.species = electrons_n1 electrons1
+diag.electrons1.plot_filter_function(t,x,y,z,ux,uy,uz) = (uz>10)
