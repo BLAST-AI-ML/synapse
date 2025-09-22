@@ -3,16 +3,16 @@ staging_injector:
   input_variables:
 
     input1:
-      name: "Amplifier 3 [J]"
+      name: "Cap downstream (torr)"
       type: scalar
-      default: 21
-      value_range: [19, 30]
+      default: 10
+      value_range: [0, 20]
 
     input2:
       name: "HEX-PL1-1 xpos"
       type: scalar
-      default: -10
-      value_range: [-20, 0]
+      default: -5
+      value_range: [-10, 0]
 
     input3:
       name: "Valve01"
@@ -21,10 +21,10 @@ staging_injector:
       value_range: [0, 0.03]
 
     input4:
-      name: "Cap downstream (torr)"
+      name: "Amplifier 3 [J]"
       type: scalar
-      default: 10
-      value_range: [0, 30]
+      default: 22.25
+      value_range: [20, 24]
 
   simulation_calibration:
 
