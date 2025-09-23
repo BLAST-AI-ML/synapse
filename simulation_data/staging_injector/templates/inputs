@@ -97,7 +97,7 @@ hydrogen1.xmin = 0
 hydrogen1.xmax = 0.9*x_max
 hydrogen1.zmin = 0
 hydrogen1.zmax = stage_length
-hydrogen1.density_function(x,y,z) = "(1 - dopant_fraction*(z<dopant_length))**( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
+hydrogen1.density_function(x,y,z) = "(1 - dopant_fraction*(z<dopant_length))*( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
 hydrogen1.profile = parse_density_function
 hydrogen1.momentum_distribution_type = constant
 hydrogen1.do_continuous_injection=1
@@ -110,7 +110,7 @@ nitrogen1.xmin = 0
 nitrogen1.xmax = 0.9*x_max
 nitrogen1.zmin = 0
 nitrogen1.zmax = dopant_length
-nitrogen1.density_function(x,y,z) = "(z<dopant_length)*dopant_fraction**( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
+nitrogen1.density_function(x,y,z) = "(z<dopant_length)*dopant_fraction*( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
 nitrogen1.profile = parse_density_function
 nitrogen1.momentum_distribution_type = constant
 nitrogen1.do_field_ionization = 1
