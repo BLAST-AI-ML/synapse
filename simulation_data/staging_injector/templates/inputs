@@ -63,7 +63,8 @@ my_constants.ppc_z1  = 3
 ##### plasma parameters #########
 #################################
 
-my_constants.n_atom = {{background_density}}e24 # number of electrons per m^3
+my_constants.n_upstream_atom = {{upstream_density}}e24 # number of electrons per m^3
+my_constants.n_downstream_atom = {{downstream_density}}e24 # number of electrons per m^3
 my_constants.ramp_length = 0.4e-2
 my_constants.stage_length = 3.3e-2
 my_constants.dopant_length = 0.4e-2
@@ -83,7 +84,7 @@ electrons1.xmin = 0
 electrons1.xmax = 0.9*x_max
 electrons1.zmin = 0
 electrons1.zmax = stage_length
-electrons1.density_function(x,y,z) = "(1 + 4*dopant_fraction*(z<dopant_length))*n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1 + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length))"
+electrons1.density_function(x,y,z) = "(1 + 4*dopant_fraction*(z<dopant_length))*( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
 electrons1.profile = parse_density_function
 electrons1.momentum_distribution_type = constant
 electrons1.do_continuous_injection=1
@@ -96,7 +97,7 @@ hydrogen1.xmin = 0
 hydrogen1.xmax = 0.9*x_max
 hydrogen1.zmin = 0
 hydrogen1.zmax = stage_length
-hydrogen1.density_function(x,y,z) = "(1 - dopant_fraction*(z<dopant_length))*n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1 + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length))"
+hydrogen1.density_function(x,y,z) = "(1 - dopant_fraction*(z<dopant_length))*( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
 hydrogen1.profile = parse_density_function
 hydrogen1.momentum_distribution_type = constant
 hydrogen1.do_continuous_injection=1
@@ -109,7 +110,7 @@ nitrogen1.xmin = 0
 nitrogen1.xmax = 0.9*x_max
 nitrogen1.zmin = 0
 nitrogen1.zmax = dopant_length
-nitrogen1.density_function(x,y,z) = "(z<dopant_length)*dopant_fraction*n_atom*( (z<ramp_length)*sqrt(z/ramp_length) + (z>=ramp_length)*(z<stage_length-ramp_length)*1 + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length))"
+nitrogen1.density_function(x,y,z) = "(z<dopant_length)*dopant_fraction*( (z<ramp_length)*sqrt(z/ramp_length)*n_upstream_atom + (z>=ramp_length)*(z<stage_length-ramp_length)*(n_upstream_atom + n_downstream_atom*(z-ramp_length)/stage_length) + (z>=stage_length-ramp_length)*(z<stage_length)*sqrt((stage_length-z)/ramp_length)*n_downstream_atom)"
 nitrogen1.profile = parse_density_function
 nitrogen1.momentum_distribution_type = constant
 nitrogen1.do_field_ionization = 1
@@ -148,4 +149,5 @@ diag.dt_snapshots_lab = 2.75e-12
 diag.intervals = 1:40
 diag.format = openpmd
 diag.fields_to_plot = Er Et Ez
-diag.species = electrons_n1
+diag.species = electrons_n1 electrons1
+diag.electrons1.plot_filter_function(t,x,y,z,ux,uy,uz) = (uz>10)

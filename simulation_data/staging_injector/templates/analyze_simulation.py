@@ -44,7 +44,8 @@ def analyze_simulation():
         ramp_length = float( re.findall(r'my_constants\.ramp_length = (.+)', text)[0] )
         dopant_length = float( re.findall(r'my_constants\.dopant_length = (.+)', text)[0] )
         dopant_fraction = float( re.findall(r'my_constants\.dopant_fraction = (.+)', text)[0] )
-        n_atom = float( re.findall(r'my_constants\.n_atom = (.+)', text)[0] )
+        n_upstream_atom = float( re.findall(r'my_constants\.n_upstream_atom = (.+)', text)[0] )
+        n_downstream_atom = float( re.findall(r'my_constants\.n_downstream_atom = (.+)', text)[0] )
         hydrogen_density_function = re.findall(r'hydrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
         nitrogen_density_function = re.findall(r'nitrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
 
