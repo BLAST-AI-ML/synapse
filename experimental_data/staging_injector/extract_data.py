@@ -31,7 +31,7 @@ data_to_extract = {
     "Valve01": "MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01",
     "Cap Up (torr)": "GAUGE-PL1-CapPressure pressure Alias:Cap Up (torr)",
     "Cap downstream (torr)": "GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)",
-    "Beam mean energy [GeV]": "ANALY-TEA-MagSpecSticher-interpSpec gaussian fit energy [GeV]",
+    "Beam mean energy [GeV]": "MGS meanMomentum_GeV/c",
     "EBeamPrf charge [pC]": "EBeamPrf charge [pC]",
     "EBeamPrf fwhm div x [mrad]": "EBeamPrf fwhm div x [mrad]",
     "SPEC-AA-Hamamastsu lambda_b": "SPEC-AA-Hamamastsu lambda_b",
