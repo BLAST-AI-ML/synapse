@@ -30,13 +30,13 @@ data_to_extract = {
     "HEX-PL1-1 xpos": "HEX-PL1-1 xpos",
     "Valve01": "MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01",
     "Cap downstream (torr)": "GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)",
+    "Beam mean energy [GeV]": "ANALY-TEA-MagSpecSticher-interpSpec gaussian fit energy [GeV]",
     "EBeamPrf charge [pC]": "EBeamPrf charge [pC]",
     "EBeamPrf fwhm div x [mrad]": "EBeamPrf fwhm div x [mrad]",
     "SPEC-AA-Hamamastsu lambda_b": "SPEC-AA-Hamamastsu lambda_b",
     "SPEC-AA-Hamamastsu lambda_r": "SPEC-AA-Hamamastsu lambda_r",
 }
 unavailable_data = [
-    "Beam mean energy [GeV]",
     "Beam energy spread [%]",
 ]
 
