@@ -2,6 +2,12 @@ staging_injector:
 
   input_variables:
 
+    input0:
+      name: "Cap Up (torr)"
+      type: scalar
+      default: 16.5
+      value_range: [10, 25]
+
     input1:
       name: "Cap downstream (torr)"
       type: scalar
@@ -50,20 +56,27 @@ staging_injector:
       beta: 0.0
 
     input4:
-      name: "Background density [1e18/cm^3]"
+      name: "Upstream density [1e18/cm^3]"
+      unit: "cm^-3"
+      depends_on: "Cap Up (torr)"
+      alpha: 0.0644
+      beta: 0.0
+
+    input5:
+      name: "Downstream density [1e18/cm^3]"
       unit: "cm^-3"
       depends_on: "Cap downstream (torr)"
       alpha: 0.0644
       beta: 0.0
 
-    input5:
+    input6:
       name: "Trapped charge [pC]"
       unit: "pC"
       depends_on: "EBeamPrf charge [pC]"
       alpha: 1.0
       beta: 0.0
 
-    input6:
+    input7:
       name: "Beam RMS div x [mrad]"
       unit: "mrad"
       depends_on: "EBeamPrf fwhm div x [mrad]"

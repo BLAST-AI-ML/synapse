@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH -t 02:15:00
+#SBATCH -t 04:00:00
 #SBATCH -N 60
 #SBATCH -A m558_g
 #SBATCH -q regular
