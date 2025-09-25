@@ -48,7 +48,9 @@ def analyze_simulation():
         n_downstream_atom = float( re.findall(r'my_constants\.n_downstream_atom = (.+)', text)[0] )
         hydrogen_density_function = re.findall(r'hydrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
         nitrogen_density_function = re.findall(r'nitrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
+        plateau_length = eval( re.findall(r'my_constants\.plateau_length = (.+)', text)[0] )
 
+    
     # Compute red/blue shift: wavelength such that 13.5%/86.5% of the spectrum energy is below
     S, info = ts.get_laser_spectral_intensity(
         iteration=ts.iterations[-1], pol=pol)
