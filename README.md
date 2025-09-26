@@ -1,4 +1,4 @@
-# SYNergistic software platform for AI, Physics Simulations, and Experiments 
+# SYNergistic software platform for AI, Physics Simulations, and Experiments (SYNAPSE)
 
 ## Overview of the repository
 
