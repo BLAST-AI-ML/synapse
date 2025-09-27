@@ -271,14 +271,6 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.panel()
-                # optimization control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        opt_manager.panel()
-                # model control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        mod_manager.panel()
                 # plots control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
@@ -317,6 +309,16 @@ def home_route():
                                                     style="margin-top: 0px; padding-top: 0px; width: 80px;",
                                                     type="number",
                                                 )
+
+                # optimization control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        opt_manager.panel()
+                # model control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        mod_manager.panel()
+
             # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
