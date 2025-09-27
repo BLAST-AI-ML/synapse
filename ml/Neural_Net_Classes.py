@@ -52,7 +52,7 @@ def nan_mse_loss( target, pred ):
     return mse_loss
 
 
-class CombinedNN(nn.Module):()
+class CombinedNN(nn.Module):
     """
     Model that trains a 5 layer neural network and a calibration layer
     """
