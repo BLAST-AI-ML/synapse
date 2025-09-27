@@ -23,14 +23,14 @@ class EarlyStopping:
                 self.early_stop = True
 
 
-def nan_mse_loss(pred, target):
+def nan_mse_loss( target, pred ):
     """
-    Custom MSE loss that handles NaN values in targets.
-    Computes mean squared error while ignoring NaN values.
+    Custom MSE loss that ignores NaN values in targets
+    (Here, NaN often correspond to missing values in the target data)
 
     Args:
-        pred: predicted values
         target: target values (may contain NaN)
+        pred: predicted values
 
     Returns:
         mean squared error ignoring NaN values
@@ -39,10 +39,19 @@ def nan_mse_loss(pred, target):
     squared_diff = (pred - target) ** 2
 
     # Use nanmean to ignore NaN values
-    return torch.nanmean(squared_diff)
+    mse_loss = torch.nanmean(squared_diff)
+
+    # Prevent NaN from contaminating backpropagation
+    if pred.requires_grad:
+        nan_mask = torch.isnan(squared_diff)
+        def mask_grad_hook(grad):
+            return torch.where(nan_mask, 0, grad)
+        pred.register_hook(mask_grad_hook)
+
+    return mse_loss
 
 
-class CombinedNN(nn.Module):
+class CombinedNN(nn.Module):()
     """
     Model that trains a 5 layer neural network and a calibration layer
     """
