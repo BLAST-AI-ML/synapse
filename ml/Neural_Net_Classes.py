@@ -42,6 +42,7 @@ def nan_mse_loss( target, pred ):
     mse_loss = torch.nanmean(squared_diff)
 
     # Prevent NaN from contaminating backpropagation
+    # See https://github.com/pytorch/pytorch/issues/4132
     if pred.requires_grad:
         nan_mask = torch.isnan(squared_diff)
         def mask_grad_hook(grad):
