@@ -250,7 +250,7 @@ else:
         y_valid = torch.tensor(output_data[valid_mask], dtype=torch.float64).unsqueeze(-1)
 
         # Create GP model based on whether we have experimental data
-        if len(df_exp) > 0:
+        if False: # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
             # MultiTaskGP for experimental vs simulation data
             exp_flag_valid = torch.tensor(norm_df_train[['experiment_flag']].values[valid_mask], dtype=torch.float64)
             X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
@@ -292,7 +292,7 @@ else:
 
     input_variables = [ ScalarVariable(**input_variables[k]) for k in input_variables.keys() ]
 
-    if len(df_exp) > 0:
+    if False: #len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
         output_variables = [
             DistributionVariable(name=f"{name}_{suffix}", distribution_type="MultiVariateNormal")
             for name in output_names

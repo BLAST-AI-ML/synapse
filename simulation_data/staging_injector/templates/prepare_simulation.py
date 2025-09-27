@@ -18,7 +18,8 @@ def record_simulation_parameters():
         "Laser energy [J]": {{laser_energy}},
         "Target-to-focus distance [cm]": {{target_to_focus_distance}},
         "Dopant concentration [%]": {{dopant_concentration}},
-        "Background density [1e18/cm^3]": {{background_density}},
+        "Upstream density [1e18/cm^3]": {{upstream_density}},
+        "Downstream density [1e18/cm^3]": {{downstream_density}},
     }
     # Dump input parameters, to be read in analysis file
     with open('input_params.json', 'w') as file:
