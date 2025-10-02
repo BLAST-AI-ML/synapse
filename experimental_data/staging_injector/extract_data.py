@@ -29,13 +29,15 @@ data_to_extract = {
     "Amplifier 3 [J]": "EM-LB-2 Reading.Channel 2 Alias:Amplifier 3 [J]",
     "HEX-PL1-1 xpos": "HEX-PL1-1 xpos",
     "Valve01": "MANPAR-BELLA-ValveN2Frac value1 Alias:Valve01",
+    "Cap Up (torr)": "GAUGE-PL1-CapPressure pressure Alias:Cap Up (torr)",
     "Cap downstream (torr)": "GAUGE-PL1-CapPressure pressure2 Alias:Cap downstream (torr)",
+    "Beam mean energy [GeV]": "MGS peakMomentum_GeV/c",
     "EBeamPrf charge [pC]": "EBeamPrf charge [pC]",
+    "EBeamPrf fwhm div x [mrad]": "EBeamPrf fwhm div x [mrad]",
     "SPEC-AA-Hamamastsu lambda_b": "SPEC-AA-Hamamastsu lambda_b",
     "SPEC-AA-Hamamastsu lambda_r": "SPEC-AA-Hamamastsu lambda_r",
 }
 unavailable_data = [
-    "Beam mean energy [GeV]",
     "Beam energy spread [%]",
 ]
 
@@ -58,6 +60,21 @@ def extract_info_more_scan_file(path_to_scan_file):
     if not missing_column:
         # Loop over shots
         for i in range(len(s_file)):
+
+            # Check is this shot should be uploaded
+            # (charge should be higher than 10 pC ; beam should be within 0.5 mrad of the center)
+            skip_shot = False
+            if s_file["EBeamPrf charge [pC]"].iloc[i] < 10:
+                skip_shot = True
+            elif abs(s_file["EBeamPrf mean angle x [mrad]"].iloc[i]) > 0.5:
+                skip_shot = True
+            elif abs(s_file["EBeamPrf mean angle y [mrad]"].iloc[i]) > 0.5:
+                skip_shot = True
+            elif ('25_0827' in path_to_scan_file) and ((scan_number < 19) or (scan_number==21)):
+                skip_shot = True
+            if skip_shot:
+                continue
+
             # Extract data for each shot
             data = {}
             data["experiment_flag"] = 1
@@ -118,7 +135,7 @@ if __name__ == "__main__":
 
     # Upload existing data in the database
     folders_to_upload = [
-        os.path.join(watched_folder, r"25_0826\analysis"),
+        os.path.join(watched_folder, r"25_0827\analysis"),
     ]
     for folder_to_upload in folders_to_upload:
         for filename in os.listdir(folder_to_upload):
