@@ -1,6 +1,5 @@
 import copy
 import os
-import yaml
 import pandas as pd
 from pathlib import Path
 from sfapi_client import AsyncClient
@@ -8,9 +7,9 @@ from sfapi_client.compute import Machine
 from calibration_manager import SimulationCalibrationManager
 from trame.widgets import client, vuetify3 as vuetify
 from state_manager import state
-import asyncio
 from utils import load_variables
 from sfapi_manager import monitor_sfapi_job
+
 
 class ParametersManager:
     def __init__(self, model, input_variables):
@@ -50,11 +49,6 @@ class ParametersManager:
         # push again at flush time
         state.dirty("parameters")
 
-    def optimize(self):
-        print("Optimizing parameters...")
-        # optimize parameters through model
-        self.__model.optimize()
-
     async def simulate(self):
         setup = state.experiment
         print(f"\nExperiment parameters ({setup}):")
@@ -63,10 +57,7 @@ class ParametersManager:
         input_variables, output_variables, simulation_calibration = load_variables()
 
         print(f"\nSimulation parameters ({setup}):")
-        sim_data = {
-            "var_name": [],
-            "sim_val": []
-             }
+        sim_data = {"var_name": [], "sim_val": []}
 
         getsim = SimulationCalibrationManager(simulation_calibration)
         sim_vals = getsim.convert_exp_to_sim(state.parameters, sim_data)
@@ -82,17 +73,25 @@ class ParametersManager:
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # set the target path where auxiliary files will be copied
-                target_path1 = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
+                target_path1 = (
+                    f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
+                )
                 [target_path1] = await perlmutter.ls(target_path1, directory=True)
                 target_path2 = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/templates"
                 [target_path2] = await perlmutter.ls(target_path2, directory=True)
                 source_path = Path.cwd().parent
                 source_path_list = [
-                    Path(source_path / f"simulation_data/{setup}/templates/run_grid_scan.py"),
-                    Path(source_path / f"simulation_data/{setup}/templates/warpx_input_script"),
-                    Path(source_path / f"simulation_data/{setup}/single_sim_vals.csv")
+                    Path(
+                        source_path
+                        / f"simulation_data/{setup}/templates/run_grid_scan.py"
+                    ),
+                    Path(
+                        source_path
+                        / f"simulation_data/{setup}/templates/warpx_input_script"
+                    ),
+                    Path(source_path / f"simulation_data/{setup}/single_sim_vals.csv"),
                 ]
-                #copy auxiliary files to NERSC
+                # copy auxiliary files to NERSC
                 count = 1
                 for path in source_path_list:
                     with open(path, "rb") as f:
@@ -102,7 +101,7 @@ class ParametersManager:
                         else:
                             await target_path2.upload(f)
                         count += 1
-                #set the path of the script used to submit the training job on NERSC
+                # set the path of the script used to submit the training job on NERSC
                 script_path = Path(
                     source_path / f"simulation_data/{setup}/submission_script_single"
                 )
@@ -125,7 +124,6 @@ class ParametersManager:
 
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-
 
     def panel(self):
         print("Setting parameters card...")
@@ -213,13 +211,7 @@ class ParametersManager:
                                 vuetify.VBtn(
                                     "Reset",
                                     click=self.reset,
-                                    style="margin-left: 4px; margin-top: 12px; text-transform: none;",
-                                )
-                            with vuetify.VCol():
-                                vuetify.VBtn(
-                                    "Optimize",
-                                    click=self.optimize,
-                                    style="margin-left: 12px; margin-top: 12px; text-transform: none;",
+                                    style="text-transform: none",
                                 )
 
                         with vuetify.VRow():

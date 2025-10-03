@@ -11,7 +11,6 @@ from state_manager import state
 from error_manager import add_error
 
 
-
 def load_config_file():
     print("Reading configuration file...")
     # find configuration file in the local file system
@@ -150,8 +149,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     parameters_max = state.parameters_max
     parameters_show_all = state.parameters_show_all
     try:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
+        objective_name = state.displayed_output
     except Exception as e:
         title = "Unable to find objective to plot"
         msg = f"Error occurred when searching for objective to plot: {e}"
@@ -209,6 +207,19 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 global_ymin = min(global_ymin, y_vals.min())
                 global_ymax = max(global_ymax, y_vals.max())
 
+            # Determine which data is shown when hovering over the plot
+            hover_data = list(state.parameters.keys()) + state.output_variables
+            if df_leg[df_count] == "Experiment":
+                hover_data += [
+                    name
+                    for name in ["date", "scan_number", "shot_number"]
+                    if name in df_copy_filtered.columns
+                ]
+            elif df_leg[df_count] == "Simulation":
+                hover_data += [
+                    v["name"] for v in cal_manager.simulation_calibration.values()
+                ]
+
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy_filtered,
@@ -216,7 +227,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 y=objective_name,
                 opacity=df_copy_filtered["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
-                hover_data=list(state.parameters.keys()),
+                hover_data=hover_data,
                 custom_data="_id",
             )
             # do now show default legend affected by opacity map
@@ -255,7 +266,9 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
-            mean, lower, upper = model_manager.evaluate(input_dict_loc)
+            mean, lower, upper = model_manager.evaluate(
+                input_dict_loc, state.displayed_output
+            )
 
             global_ymin = min(global_ymin, lower.numpy().min())
             global_ymax = max(global_ymax, upper.numpy().max())

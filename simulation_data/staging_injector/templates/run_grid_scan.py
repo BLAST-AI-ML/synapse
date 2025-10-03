@@ -10,14 +10,15 @@ def analysis_func_main(work_dir, output_params):
     output_params['f'] = 0
 
 # Create varying parameters and objectives.
-var_1 = VaryingParameter("laser_energy", 12, 17)
-var_2 = VaryingParameter("target_to_focus_distance", 0, 2)
-var_3 = VaryingParameter("dopant_concentration", 0, 10)
-var_4 = VaryingParameter("background_density", 3, 5)
+var_1 = VaryingParameter("laser_energy", 12.5, 13.5)
+var_2 = VaryingParameter("target_to_focus_distance", 0, 1)
+var_3 = VaryingParameter("dopant_concentration", 0, 3)
+var_4 = VaryingParameter("upstream_density", 0.9, 1.54)
+var_5 = VaryingParameter("downstream_density", 0.33, 1.1)
 obj = Objective("f", minimize=False)
 
-n_steps = [2, 2, 2, 2]
-sim_workers = 8
+n_steps = [3, 5, 4, 6, 6]
+sim_workers = 240
 
 # Compute total number of steps
 n_total = 1
@@ -26,7 +27,7 @@ for n_step in n_steps:
 
 # Create generator
 gen = GridSamplingGenerator(
-    varying_parameters=[var_1,var_2,var_3,var_4],
+    varying_parameters=[var_1,var_2,var_3,var_4,var_5],
     objectives=[obj],
     n_steps=n_steps,
 )

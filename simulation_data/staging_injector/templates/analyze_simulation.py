@@ -44,15 +44,24 @@ def analyze_simulation():
         ramp_length = float( re.findall(r'my_constants\.ramp_length = (.+)', text)[0] )
         dopant_length = float( re.findall(r'my_constants\.dopant_length = (.+)', text)[0] )
         dopant_fraction = float( re.findall(r'my_constants\.dopant_fraction = (.+)', text)[0] )
-        n_atom = float( re.findall(r'my_constants\.n_atom = (.+)', text)[0] )
+        n_upstream_atom = float( re.findall(r'my_constants\.n_upstream_atom = (.+)', text)[0] )
+        n_downstream_atom = float( re.findall(r'my_constants\.n_downstream_atom = (.+)', text)[0] )
         hydrogen_density_function = re.findall(r'hydrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
         nitrogen_density_function = re.findall(r'nitrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
+        plateau_length = eval( re.findall(r'my_constants\.plateau_length = (.+)', text)[0] )
 
-    # Compute average wavelength at the last iteration and add it to the data
+    
+    # Compute red/blue shift: wavelength such that 13.5%/86.5% of the spectrum energy is below
     S, info = ts.get_laser_spectral_intensity(
         iteration=ts.iterations[-1], pol=pol)
-    lambda_avg = np.average( 2*np.pi/info.k[1:], weights=S[1:] )
-    data['Mean laser wavelength [nm]'] = lambda_avg*1e9 # convert from m to nm
+    cumulated_S = np.cumsum(S)/np.sum(S)
+    kr = np.argmin(abs(cumulated_S-0.135))
+    kb = np.argmin(abs(cumulated_S-0.865))
+    lambda_r = 2*np.pi/info.k[kr]
+    lambda_b = 2*np.pi/info.k[kb]
+    # Add to the data base
+    data['SPEC-AA-Hamamastsu lambda_r'] = lambda_r*1e9 # convert from m to nm
+    data['SPEC-AA-Hamamastsu lambda_b'] = lambda_b*1e9 # convert from m to nm
 
     # Create plots of the interaction
 
@@ -73,11 +82,17 @@ def analyze_simulation():
     # - beam charge
     Q = ts.iterate( ts.get_charge, species='electrons_n1',
                    select={'uz':[uz_threshold, None]})
+    no_trapped_electrons = np.all(Q == 0) # check if there are any trapped electrons in this simulation
+    # - energy and energy spread
     gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
 
     data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
     data['Beam energy spread [%]'] = 100*dgamma[-1]/gamma[-1]
     data['Trapped charge [pC]'] = -Q[-1]*1e12
+
+    # Extract divergence at the last iteration
+    div_x, _ = ts.get_divergence(iteration=ts.iterations[-1], species='electrons_n1')
+    data['Beam RMS div x [mrad]'] = div_x*1e3 # convert from rad to mrad
 
     # Write to the data base
     db = pymongo.MongoClient(
@@ -119,13 +134,15 @@ def analyze_simulation():
 
         # Plot of energy and energy spread
         fig.add_subplot(gs[2,0])
-        plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
-        plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
-                         0.511e-3*(gamma-dgamma), color='b', alpha=0.3)
-        plt.ylabel('Beam energy [GeV]')
-        plt.grid()
-        plt.axvline(x=1e2*current_z_las, color='k', ls='--')
-        plt.xlim(0, 1e2*stage_length)
+        # Skip this plot if there are no electrons
+        if not no_trapped_electrons:
+            plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
+            plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
+                            0.511e-3*(gamma+dgamma), color='b', alpha=0.3)
+            plt.ylabel('Beam energy [GeV]')
+            plt.grid()
+            plt.axvline(x=1e2*current_z_las, color='k', ls='--')
+            plt.xlim(0, 1e2*stage_length)
 
         # Plot of a0 and w0 as a function of z
         fig.add_subplot(gs[3,0])
@@ -162,12 +179,14 @@ def analyze_simulation():
 
         # Plot of the electron energy spectrum
         fig.add_subplot(gs[2,1])
-        uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
-            select={'uz':[uz_threshold, None]}, species='electrons_n1')
-        plt.hist( 0.511e-3*uz, weights=w, bins=200,
-                 range=[0, 1.2*0.511e-3*np.nanmax(gamma)] )
-        plt.xlabel(r'Energy [GeV]')
-        plt.title('Electron energy spectrum')
+        # Skip this plot if there are no electrons
+        if not no_trapped_electrons:
+            uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
+                select={'uz':[uz_threshold, None]}, species='electrons_n1')
+            plt.hist( 0.511e-3*uz, weights=w, bins=200,
+                    range=[0, 1.2*0.511e-3*np.nanmax(gamma)] )
+            plt.xlabel(r'Energy [GeV]')
+            plt.title('Electron energy spectrum')
 
         # Plot of the laser spectrum
         fig.add_subplot(gs[3,1])

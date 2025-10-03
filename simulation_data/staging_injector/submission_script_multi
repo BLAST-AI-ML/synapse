@@ -1,9 +1,9 @@
 #!/bin/bash -l
 
-#SBATCH -t 00:10:00
-#SBATCH -N 2
+#SBATCH -t 04:00:00
+#SBATCH -N 60
 #SBATCH -A m558_g
-#SBATCH -q debug
+#SBATCH -q regular
 #SBATCH -C gpu
 #SBATCH --exclusive
 #SBATCH --gpu-bind=none

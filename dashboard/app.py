@@ -7,7 +7,8 @@ from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
-from objectives_manager import ObjectivesManager
+from outputs_manager import OutputManager
+from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
@@ -25,9 +26,10 @@ from utils import (
 # Globals
 # -----------------------------------------------------------------------------
 
+out_manager = None
 mod_manager = None
 par_manager = None
-obj_manager = None
+opt_manager = None
 cal_manager = None
 
 # load database
@@ -42,8 +44,8 @@ experiment_list = load_experiments()
 
 def update(
     reset_model=True,
+    reset_output=True,
     reset_parameters=True,
-    reset_objectives=True,
     reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
@@ -53,25 +55,27 @@ def update(
 ):
     print("Updating...")
     global mod_manager
+    global out_manager
     global par_manager
-    global obj_manager
+    global opt_manager
     global cal_manager
     # load data
     exp_data, sim_data = load_data(db)
+    # load input and output variables
+    input_variables, output_variables, simulation_calibration = load_variables()
+    # reset output
+    if reset_output:
+        out_manager = OutputManager(output_variables)
     # reset model
     if reset_model:
         mod_manager = ModelManager(db)
-    # load input and output variables
-    input_variables, output_variables, simulation_calibration = load_variables()
+        opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
     elif reset_model:
         # if resetting only model, model attribute must be updated
         par_manager.model = mod_manager
-    # reset objectives
-    if reset_objectives:
-        obj_manager = ObjectivesManager(mod_manager, output_variables)
     # reset calibration
     if reset_calibration:
         cal_manager = SimulationCalibrationManager(simulation_calibration)
@@ -102,8 +106,8 @@ def update_on_change_experiment(**kwargs):
         print("Experiment changed...")
         update(
             reset_model=True,
+            reset_output=True,
             reset_parameters=True,
-            reset_objectives=True,
             reset_calibration=True,
             reset_plots=True,
             reset_gui_route_home=True,
@@ -119,8 +123,8 @@ def update_on_change_model(**kwargs):
         print("Model type changed...")
         update(
             reset_model=True,
+            reset_output=False,
             reset_parameters=False,
-            reset_objectives=False,
             reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=True,
@@ -130,6 +134,7 @@ def update_on_change_model(**kwargs):
 
 
 @state.change(
+    "displayed_output",
     "parameters",
     "opacity",
     "parameters_min",
@@ -142,8 +147,8 @@ def update_on_change_others(**kwargs):
         print("Parameters, opacity changed...")
         update(
             reset_model=False,
+            reset_output=False,
             reset_parameters=False,
-            reset_objectives=False,
             reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=False,
@@ -258,10 +263,18 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
+                # output control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        out_manager.panel()
                 # parameters control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
                         par_manager.panel()
+                # optimization control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        opt_manager.panel()
                 # model control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
@@ -341,10 +354,12 @@ def gui_setup():
             vuetify.VSpacer()
             vuetify.VSelect(
                 v_model=("experiment",),
-                items=("experiments", experiment_list),
+                label="Experiments",
+                items=(experiment_list,),
                 dense=True,
+                hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 210px;",
+                style="max-width: 250px",
             )
         # set up router view
         with layout.content:
@@ -368,24 +383,37 @@ def gui_setup():
                     title="NERSC",
                 )
         # interactive dialog for simulation plots
-        with vuetify.VDialog(v_model=("simulation_dialog",), max_width="600"):
-            with vuetify.VCard(style="overflow: hidden;"):
-                with vuetify.VCardTitle("Simulation Plots"):
+        with vuetify.VDialog(
+            v_model=("simulation_dialog",),
+            content_class="d-flex align-center justify-center",
+        ):
+            with vuetify.VCard(style="width: 80vw; height: 80vh;"):
+                with vuetify.VCardTitle(
+                    "Simulation Plots",
+                    classes="d-flex align-center",
+                ):
                     vuetify.VSpacer()
-                    with vuetify.VBtn(icon=True, click=close_simulation_dialog):
-                        vuetify.VIcon("mdi-close")
-                with vuetify.VRow(align="center", justify="center"):
+                    vuetify.VBtn(
+                        click=close_simulation_dialog,
+                        icon="mdi-close",
+                        variant="plain",
+                    )
+                with vuetify.VRow(
+                    align="center",
+                    justify="center",
+                    style="width: 100%; height: 100%;",
+                ):
                     html.Video(
                         v_if=("simulation_video",),
                         controls=True,
                         src=("simulation_url",),
-                        height="480",
+                        style="width: 100%; height: 100%",
                     )
                     vuetify.VImg(
                         v_if=("!simulation_video",),
                         src=("simulation_url",),
                         contain=True,
-                        height="480",
+                        style="width: 100%; height: 100%",
                     )
 
 
