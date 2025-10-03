@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 Script to rerun analysis for a specified evaluations directory.
@@ -11,7 +10,7 @@ import sys
 sys.path.append("templates")
 from analyze_simulation import analyze_simulation
 
-from mip4py import MPI
+from mpi4py import MPI
 rank = MPI.COMM_WORLD.Get_rank()
 num_ranks = MPI.COMM_WORLD.Get_size()
 
