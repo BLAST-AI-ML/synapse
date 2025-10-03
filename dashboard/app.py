@@ -15,6 +15,7 @@ from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
+    data_depth_panel,
     load_experiments,
     load_database,
     load_data,
@@ -274,42 +275,7 @@ def home_route():
                 # plots control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        with vuetify.VExpansionPanels(
-                            v_model=("expand_panel_control_plots", 0)
-                        ):
-                            with vuetify.VExpansionPanel(
-                                title="Control: Plots",
-                                style="font-size: 20px; font-weight: 500;",
-                            ):
-                                with vuetify.VExpansionPanelText():
-                                    # create a row for the slider label
-                                    with vuetify.VRow():
-                                        vuetify.VListSubheader(
-                                            "Projected Data Depth",
-                                            style="margin-top: 16px;",
-                                        )
-                                    # create a row for the slider and text field
-                                    with vuetify.VRow(no_gutters=True):
-                                        with vuetify.VSlider(
-                                            v_model_number=("opacity",),
-                                            change="flushState('opacity')",
-                                            hide_details=True,
-                                            max=1.0,
-                                            min=0.0,
-                                            step=0.025,
-                                            style="align-items: center;",
-                                        ):
-                                            with vuetify.Template(v_slot_append=True):
-                                                vuetify.VTextField(
-                                                    v_model_number=("opacity",),
-                                                    density="compact",
-                                                    hide_details=True,
-                                                    readonly=True,
-                                                    single_line=True,
-                                                    style="margin-top: 0px; padding-top: 0px; width: 80px;",
-                                                    type="number",
-                                                )
-
+                        data_depth_panel()
                 # optimization control panel
                 with vuetify.VRow():
                     with vuetify.VCol():
