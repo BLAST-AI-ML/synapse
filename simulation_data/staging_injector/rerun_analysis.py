@@ -37,6 +37,10 @@ if __name__ == "__main__":
 
     # Loop through simulations in parallel
     for i in range(rank, n_sims, num_ranks):
+
         print(f"Rank {rank} analyzing simulation {simulation_folders[i]}")
-        analyze_simulation( os.path.join(args.evaluations_directory, simulation_folders[i]) )
+
+        sim_folder = os.path.join(args.evaluations_directory, simulation_folders[i])
+        analyze_simulation( sim_folder, upload_to_db=False )
+
         print(f"Rank {rank} finished analyzing simulation {simulation_folders[i]}")
