@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
     # List all simulation folder in the evaluations directory
     simulation_folders = [ f for f in os.listdir(args.evaluations_directory) if f.startswith("sim") ]
+    simulation_folders.sort()
     n_sims = len(simulation_folders)
 
     # Loop through simulations in parallel
