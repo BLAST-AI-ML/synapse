@@ -190,7 +190,7 @@ def analyze_simulation():
         # Plot of the laser spectrum
         fig.add_subplot(gs[3,1])
         S, info = ts.get_laser_spectral_intensity(iteration=iteration, pol=pol)
-        lambd = 2*np.pi*c/info.omega[1:]
+        lambd = 2*np.pi/info.k[1:]
         plt.xlabel(r'Wavelength [$\mu m$]')
         plt.title('Laser spectrum [J/\mu m]')
         plt.plot( 1.e6*lambd, 1e-6*S[1:]/lambd**2, color='r' )
