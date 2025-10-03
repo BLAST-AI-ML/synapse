@@ -23,10 +23,17 @@ except ImportError:
 pol = 'y'
 uz_threshold = 10
 
-def analyze_simulation():
+def analyze_simulation( simulation_directory, upload_to_db=True ):
+    """
+    Analyze a simulation and upload the results to the database.
+    Parameters:
+        simulation_directory: str
+        upload_to_db: bool, default True
+            Whether to upload the results to the database.
+    """
 
     # Get current directory
-    data_directory = os.path.join( os.getcwd(), 'diags' )
+    data_directory = os.path.join( simulation_directory, 'diags' )
     ts = LpaDiagnostics( os.path.join(data_directory, 'diag') )
 
     # Load input parameters
@@ -67,6 +74,7 @@ def analyze_simulation():
     # First compute quantities across the interaction:
     # - Density
     z = np.linspace(0, stage_length, 1000)
+
     sqrt = np.sqrt
     n_H = eval( hydrogen_density_function )
     n_N = eval( nitrogen_density_function )
@@ -94,13 +102,14 @@ def analyze_simulation():
     data['Beam RMS div x [mrad]'] = div_x*1e3 # convert from rad to mrad
 
     # Write to the data base
-    db = pymongo.MongoClient(
-        host="mongodb05.nersc.gov",
-        username="bella_sf_admin",
-        password=os.getenv("SF_DB_ADMIN_PASSWORD"),
-        authSource="bella_sf")["bella_sf"]
-    collection = db["staging_injector"]
-    collection.insert_one(data)
+    if upload_to_db:
+        db = pymongo.MongoClient(
+            host="mongodb05.nersc.gov",
+            username="bella_sf_admin",
+            password=os.getenv("SF_DB_ADMIN_PASSWORD"),
+            authSource="bella_sf")["bella_sf"]
+        collection = db["staging_injector"]
+        collection.insert_one(data)
 
     def visualize_iteration(iteration):
 
@@ -197,22 +206,23 @@ def analyze_simulation():
         plt.xlim(0.5,1.2)
 
         plt.subplots_adjust(hspace=0.5)
-        plt.savefig('diags/plots/iteration_%05d.png' % iteration)
+        plt.savefig( os.path.join( data_directory, 'plots', 'iteration_%05d.png' % iteration) )
 
     # Create directory
-    os.makedirs( 'diags/plots/', exist_ok=True )
+    os.makedirs( os.path.join( data_directory, 'plots' ), exist_ok=True )
 
     # Create images
     plt.figure(figsize=(12, 12))
     ts.iterate( visualize_iteration )
 
     # Load images and convert to MP4
-    image_files = ['diags/plots/iteration_%05d.png' % iteration for iteration in ts.iterations]
-    with imageio.get_writer('diags/plots/animation.mp4', fps=5) as writer:
+    image_files = [
+        os.path.join( data_directory, 'plots', 'iteration_%05d.png' % iteration)
+        for iteration in ts.iterations]
+    with imageio.get_writer(os.path.join( data_directory, 'plots', 'animation.mp4'), fps=5) as writer:
         for filename in image_files:
             image = imageio.imread(filename)
             writer.append_data(image)
-    print("animation.mp4 created successfully!")
 
 
 if __name__ == '__main__':
@@ -221,4 +231,4 @@ if __name__ == '__main__':
     # it might be run by multiple processes
     # but we only need to run it once
     if rank == 0:
-        analyze_simulation()
+        analyze_simulation( os.getcwd(), upload_to_db=True )
