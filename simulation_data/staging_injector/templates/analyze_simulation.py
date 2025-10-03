@@ -37,7 +37,7 @@ def analyze_simulation( simulation_directory, upload_to_db=True ):
     ts = LpaDiagnostics( os.path.join(data_directory, 'diag') )
 
     # Load input parameters
-    with open('input_params.json') as file:
+    with open( os.path.join( simulation_directory, 'input_params.json') ) as file:
         data = json.load(file)
     # Additional metadata
     data['experiment_flag'] = 0
@@ -45,7 +45,7 @@ def analyze_simulation( simulation_directory, upload_to_db=True ):
     data['data_directory'] = data_directory
 
     # Parse the warpx_used_output
-    with open('warpx_used_inputs') as f:
+    with open( os.path.join( simulation_directory, 'warpx_used_inputs') ) as f:
         text = f.read()
         stage_length = float( re.findall(r'my_constants\.stage_length = (.+)', text)[0] )
         ramp_length = float( re.findall(r'my_constants\.ramp_length = (.+)', text)[0] )
