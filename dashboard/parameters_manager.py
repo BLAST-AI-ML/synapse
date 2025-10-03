@@ -1,14 +1,17 @@
+import asyncio
 import copy
-import os
+from datetime import datetime
 import pandas as pd
 from pathlib import Path
+import os
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-from calibration_manager import SimulationCalibrationManager
 from trame.widgets import client, vuetify3 as vuetify
-from state_manager import state
 from utils import load_variables
+from calibration_manager import SimulationCalibrationManager
+from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
+from state_manager import state
 
 
 class ParametersManager:
@@ -49,24 +52,16 @@ class ParametersManager:
         # push again at flush time
         state.dirty("parameters")
 
-    async def simulate(self):
+    async def simulation_kernel(self):
+        # FIXME clean up the hardcoded logic here
         setup = state.experiment
-        print(f"\nExperiment parameters ({setup}):")
-        print(state.parameters)
-
         input_variables, output_variables, simulation_calibration = load_variables()
-
-        print(f"\nSimulation parameters ({setup}):")
         sim_data = {"var_name": [], "sim_val": []}
-
         getsim = SimulationCalibrationManager(simulation_calibration)
         sim_vals = getsim.convert_exp_to_sim(state.parameters, sim_data)
-        print(sim_vals)
-
         save_dir = f"../simulation_data/{setup}"
         data_df = pd.DataFrame(sim_vals)
         data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
-        print("simulation values saved to csv")
         try:
             async with AsyncClient(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
@@ -79,6 +74,7 @@ class ParametersManager:
                 [target_path1] = await perlmutter.ls(target_path1, directory=True)
                 target_path2 = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/templates"
                 [target_path2] = await perlmutter.ls(target_path2, directory=True)
+                # set the source path where auxiliary files are copied from
                 source_path = Path.cwd().parent
                 source_path_list = [
                     Path(
@@ -92,6 +88,7 @@ class ParametersManager:
                     Path(source_path / f"simulation_data/{setup}/single_sim_vals.csv"),
                 ]
                 # copy auxiliary files to NERSC
+                # FIXME clean up the hardcoded logic here
                 count = 1
                 for path in source_path_list:
                     with open(path, "rb") as f:
@@ -101,29 +98,54 @@ class ParametersManager:
                         else:
                             await target_path2.upload(f)
                         count += 1
-                # set the path of the script used to submit the training job on NERSC
+                # set the path of the script used to submit the simulation job on NERSC
                 script_path = Path(
                     source_path / f"simulation_data/{setup}/submission_script_single"
                 )
                 with open(script_path, "r") as file:
                     script_job = file.read()
-                # submit the training job through the Superfacility API
+                # submit the simulation job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(script_job)
-                if sfapi_job is None:
-                    print("Error: Job submission failed")
-                    state.simulation_job_status = "Submission Failed"
-                    state.fluch()
-                    return
-
-                state.simulation_job_status = "Submitted"
+                state.simulation_run_status = "Submitted"
                 state.flush()
                 # print some logs
                 print(f"Simulation job submitted (job ID: {sfapi_job.jobid})")
-                # wait for the job to move into a terminal state
-                return await monitor_sfapi_job(sfapi_job, "simulation_job_status")
-
+                return await monitor_sfapi_job(sfapi_job, "simulation_run_status")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to complete simulation kernel"
+            msg = f"Error occurred when executing simulation kernel: {e}"
+            add_error(title, msg)
+            print(msg)
+
+    async def simulation_async(self):
+        try:
+            print("Running simulation...")
+            state.simulation_run = True
+            state.simulation_run_status = "Submitting"
+            state.flush()
+            if await self.simulation_kernel():
+                state.simulation_run_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                print(f"Finished running simulation at {state.simulation_run_time}")
+            else:
+                print("Unable to complete simulation job.")
+            # flush state and enable button
+            state.simulation_run = False
+            state.flush()
+        except Exception as e:
+            title = "Unable to run simulation"
+            msg = f"Error occurred when running simulation: {e}"
+            add_error(title, msg)
+            print(msg)
+
+    def simulation_trigger(self):
+        try:
+            # schedule asynchronous job
+            asyncio.create_task(self.simulation_async())
+        except Exception as e:
+            title = "Unable to run simulation"
+            msg = f"Error occurred when running simulation: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def panel(self):
         print("Setting parameters card...")
@@ -205,7 +227,6 @@ class ParametersManager:
                                         change="flushState('parameters_show_all')",
                                         label="Show all",
                                     )
-                        # create a row for the buttons
                         with vuetify.VRow():
                             with vuetify.VCol():
                                 vuetify.VBtn(
@@ -213,18 +234,19 @@ class ParametersManager:
                                     click=self.reset,
                                     style="text-transform: none",
                                 )
-
                         with vuetify.VRow():
                             with vuetify.VCol():
                                 vuetify.VBtn(
                                     "Simulate",
-                                    click=self.simulate,
-                                    style="margin-right: 4px; margin-top: 12px; text-transform: none;",
+                                    click=self.simulation_trigger,
+                                    disabled=(
+                                        "simulation_run || perlmutter_status != 'active'",
+                                    ),
+                                    style="text-transform: none;",
                                 )
                             with vuetify.VCol():
                                 vuetify.VTextField(
-                                    v_model_number=("simulation_job_status",),
-                                    label="Simulation Status",
+                                    v_model_number=("simulation_run_status",),
+                                    label="Simulation status",
                                     readonly=True,
-                                    style="width: 100px;",
                                 )
