@@ -192,8 +192,8 @@ def analyze_simulation():
         S, info = ts.get_laser_spectral_intensity(iteration=iteration, pol=pol)
         lambd = 2*np.pi*c/info.omega[1:]
         plt.xlabel(r'Wavelength [$\mu m$]')
-        plt.title('Laser spectrum [J/m]')
-        plt.plot( 1.e6*lambd, S[1:]/lambd**2, color='r' )
+        plt.title('Laser spectrum [J/\mu m]')
+        plt.plot( 1.e6*lambd, 1e-6*S[1:]/lambd**2, color='r' )
         plt.xlim(0.5,1.2)
 
         plt.subplots_adjust(hspace=0.5)
