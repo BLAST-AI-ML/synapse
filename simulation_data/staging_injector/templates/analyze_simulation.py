@@ -50,7 +50,6 @@ def analyze_simulation():
         nitrogen_density_function = re.findall(r'nitrogen1\.density_function\(x,y,z\) = (.+)', text)[0]
         plateau_length = eval( re.findall(r'my_constants\.plateau_length = (.+)', text)[0] )
 
-    
     # Compute red/blue shift: wavelength such that 13.5%/86.5% of the spectrum energy is below
     S, info = ts.get_laser_spectral_intensity(
         iteration=ts.iterations[-1], pol=pol)
@@ -190,11 +189,11 @@ def analyze_simulation():
 
         # Plot of the laser spectrum
         fig.add_subplot(gs[3,1])
-        S, info = ts.get_spectrum(iteration=iteration, pol=pol)
-        lambd = 2*np.pi*c/info.omega[1:]
+        S, info = ts.get_laser_spectral_intensity(iteration=iteration, pol=pol)
+        lambd = 2*np.pi/info.k[1:]
         plt.xlabel(r'Wavelength [$\mu m$]')
-        plt.title('Laser spectrum')
-        plt.plot( 1.e6*lambd, 1e3*S[1:], color='r' )
+        plt.title('Laser spectrum [$J/\mu m$]')
+        plt.plot( 1.e6*lambd, 1e-6*S[1:]/lambd**2, color='r' )
         plt.xlim(0.5,1.2)
 
         plt.subplots_adjust(hspace=0.5)
