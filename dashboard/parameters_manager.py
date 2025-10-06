@@ -53,54 +53,55 @@ class ParametersManager:
         state.dirty("parameters")
 
     async def simulation_kernel(self):
-        # FIXME clean up the hardcoded logic here
-        setup = state.experiment
+        # store the current simulation parameters in a csv file
+        experiment = state.experiment
         input_variables, output_variables, simulation_calibration = load_variables()
-        sim_data = {"var_name": [], "sim_val": []}
-        getsim = SimulationCalibrationManager(simulation_calibration)
-        sim_vals = getsim.convert_exp_to_sim(state.parameters, sim_data)
-        save_dir = f"../simulation_data/{setup}"
-        data_df = pd.DataFrame(sim_vals)
-        data_df.to_csv(os.path.join(save_dir, "single_sim_vals.csv"), index=False)
+        sim_cal = SimulationCalibrationManager(simulation_calibration)
+        sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
+        save_dir = f"../simulation_data/{experiment}"
+        data_df = pd.DataFrame(sim_dict)
+        data_df.to_csv(os.path.join(save_dir, "single_sim_params.csv"), index=False)
         try:
+            # create an authenticated client
             async with AsyncClient(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # set the target path where auxiliary files will be copied
-                target_path1 = (
-                    f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/"
-                )
-                [target_path1] = await perlmutter.ls(target_path1, directory=True)
-                target_path2 = f"/global/cfs/cdirs/m558/superfacility/simulation_data/{setup}/templates"
-                [target_path2] = await perlmutter.ls(target_path2, directory=True)
+                target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{experiment}/src"
+                [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the source path where auxiliary files are copied from
                 source_path = Path.cwd().parent
                 source_path_list = [
                     Path(
-                        source_path
-                        / f"simulation_data/{setup}/templates/run_grid_scan.py"
+                        source_path / f"simulation_data/{experiment}/templates/inputs"
                     ),
                     Path(
                         source_path
-                        / f"simulation_data/{setup}/templates/warpx_input_script"
+                        / f"simulation_data/{experiment}/templates/prepare_simulation.py"
                     ),
-                    Path(source_path / f"simulation_data/{setup}/single_sim_vals.csv"),
+                    Path(
+                        source_path
+                        / f"simulation_data/{experiment}/templates/run_grid_scan.py"
+                    ),
+                    Path(
+                        source_path
+                        / f"simulation_data/{experiment}/templates/analyze_simulation.py"
+                    ),
+                    Path(
+                        source_path
+                        / f"simulation_data/{experiment}/single_sim_params.csv"
+                    ),
                 ]
                 # copy auxiliary files to NERSC
-                # FIXME clean up the hardcoded logic here
-                count = 1
                 for path in source_path_list:
                     with open(path, "rb") as f:
                         f.filename = path.name
-                        if count == 3:
-                            await target_path1.upload(f)
-                        else:
-                            await target_path2.upload(f)
-                        count += 1
+                        await target_path.upload(f)
                 # set the path of the script used to submit the simulation job on NERSC
                 script_path = Path(
-                    source_path / f"simulation_data/{setup}/submission_script_single"
+                    source_path
+                    / f"simulation_data/{experiment}/submission_script_single"
                 )
                 with open(script_path, "r") as file:
                     script_job = file.read()

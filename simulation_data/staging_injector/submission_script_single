@@ -15,9 +15,10 @@ source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
 # Prepare simulation directory
-cd /global/cfs/cdirs/m558/superfacility/simulation_data/acave
+cd /global/cfs/cdirs/m558/superfacility/simulation_data/staging_injector
 mkdir single_$SLURM_JOB_ID
 cd single_$SLURM_JOB_ID
 
 # Run single simulation
-python ../templates/run_grid_scan.py --single-simulation-parameters ../single_sim_params.csv
+# FIXME uncomment the following line once run_grid_scan.py is updated to run single simulations
+#python ../templates/run_grid_scan.py --single-simulation-parameters ../single_sim_params.csv
