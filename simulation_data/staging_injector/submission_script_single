@@ -20,5 +20,4 @@ mkdir single_$SLURM_JOB_ID
 cd single_$SLURM_JOB_ID
 
 # Run single simulation
-# FIXME uncomment the following line once run_grid_scan.py is updated to run single simulations
-#python ../templates/run_grid_scan.py --single-simulation-parameters ../single_sim_params.csv
+python ../templates/run_grid_scan.py --single-simulation-parameters ../single_sim_params.csv
