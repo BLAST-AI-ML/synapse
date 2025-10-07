@@ -77,16 +77,16 @@ class ParametersManager:
                     file
                     for file in (experiment_path / "templates/").rglob("*")
                     if file.is_file()
-                ] + [experiment_path / "/single_sim_params.csv"]
+                ] + [experiment_path / "single_sim_params.csv"]
 
-                print(f"Uploading files to NERSC: {source_paths}")
                 # copy auxiliary files to NERSC
                 for path in source_paths:
+                    print(f"Uploading file to NERSC: {path}")
                     with open(path, "rb") as f:
                         f.filename = path.name
                         await target_path.upload(f)
                 # set the path of the script used to submit the simulation job on NERSC
-                with open(experiment_path / "/submission_script_single", "r") as file:
+                with open(experiment_path / "submission_script_single", "r") as file:
                     submission_script = file.read()
                 # submit the simulation job through the Superfacility API
                 print("Submitting job to NERSC")
