@@ -55,7 +55,7 @@ class ParametersManager:
     async def simulation_kernel(self):
         # store the current simulation parameters in a csv file
         experiment = state.experiment
-        input_variables, output_variables, simulation_calibration = load_variables()
+        _, _, simulation_calibration = load_variables()
         sim_cal = SimulationCalibrationManager(simulation_calibration)
         sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
         save_dir = f"../simulation_data/{experiment}"
@@ -71,42 +71,26 @@ class ParametersManager:
                 target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{experiment}/src"
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the source path where auxiliary files are copied from
-                source_path = Path.cwd().parent
-                source_path_list = [
-                    Path(
-                        source_path / f"simulation_data/{experiment}/templates/inputs"
-                    ),
-                    Path(
-                        source_path
-                        / f"simulation_data/{experiment}/templates/prepare_simulation.py"
-                    ),
-                    Path(
-                        source_path
-                        / f"simulation_data/{experiment}/templates/run_grid_scan.py"
-                    ),
-                    Path(
-                        source_path
-                        / f"simulation_data/{experiment}/templates/analyze_simulation.py"
-                    ),
-                    Path(
-                        source_path
-                        / f"simulation_data/{experiment}/single_sim_params.csv"
-                    ),
-                ]
+                experiment_path = Path.cwd().parent / f"simulation_data/{experiment}/"
+
+                source_paths = [
+                    file
+                    for file in (experiment_path / "templates/").rglob("*")
+                    if file.is_file()
+                ] + [experiment_path / "/single_sim_params.csv"]
+
+                print(f"Uploading files to NERSC: {source_paths}")
                 # copy auxiliary files to NERSC
-                for path in source_path_list:
+                for path in source_paths:
                     with open(path, "rb") as f:
                         f.filename = path.name
                         await target_path.upload(f)
                 # set the path of the script used to submit the simulation job on NERSC
-                script_path = Path(
-                    source_path
-                    / f"simulation_data/{experiment}/submission_script_single"
-                )
-                with open(script_path, "r") as file:
-                    script_job = file.read()
+                with open(experiment_path / "/submission_script_single", "r") as file:
+                    submission_script = file.read()
                 # submit the simulation job through the Superfacility API
-                sfapi_job = await perlmutter.submit_job(script_job)
+                print("Submitting job to NERSC")
+                sfapi_job = await perlmutter.submit_job(submission_script)
                 state.simulation_run_status = "Submitted"
                 state.flush()
                 # print some logs
@@ -117,6 +101,7 @@ class ParametersManager:
             msg = f"Error occurred when executing simulation kernel: {e}"
             add_error(title, msg)
             print(msg)
+            state.simulation_run_status = "Failed"
 
     async def simulation_async(self):
         try:
