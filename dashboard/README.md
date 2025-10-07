@@ -118,7 +118,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 3. Scroll down to the section "Superfacility API Clients" and click "New Client".
 
-4. Enter a client name (e.g., "BELLA Superfacility"), choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
+4. Enter a client name (e.g., "BELLA Superfacility"), choose `sf588` for the user, choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
 
 5. Download the private key file (in pem format) and save it as `priv_key.pem` in the root directory of the GUI.
    Each time the GUI is launched, it will automatically find the existing key file and load the corresponding credentials.
