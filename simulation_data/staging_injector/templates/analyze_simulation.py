@@ -78,9 +78,12 @@ def analyze_simulation():
         env, info = ts.get_laser_envelope( pol=pol, iteration=iteration, slice_across='r' )
         return np.average( info.z, weights=env )
     z_laser = ts.iterate( get_mean_laser_position )
-    # - beam charge
-    Q = ts.iterate( ts.get_charge, species='electrons_n1',
+    # - beam charge (for both species)
+    Q1 = ts.iterate( ts.get_charge, species='electrons1',
                    select={'uz':[uz_threshold, None]})
+    Q_n1 = ts.iterate( ts.get_charge, species='electrons_n1',
+                   select={'uz':[uz_threshold, None]})
+    Q = Q1 + Q_n1
     no_trapped_electrons = np.all(Q == 0) # check if there are any trapped electrons in this simulation
     # - energy and energy spread
     gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
@@ -115,8 +118,8 @@ def analyze_simulation():
 
          # Plot of density as a function of z
         fig.add_subplot(gs[0,0])
-        plt.plot( 1e2*z, 1e-6*n_H, label='Hydrogen' )
-        plt.plot( 1e2*z, 1e-6*n_N, label='Nitrogen' )
+        plt.plot( 1e2*z, 1e-6*n_H, label='Hydrogen', color='green' )
+        plt.plot( 1e2*z, 1e-6*n_N, label='Nitrogen', color='orange' )
         plt.ylabel('Atomic density [$cm^{-3}$]')
         plt.legend(loc=0)
         plt.grid()
@@ -125,7 +128,8 @@ def analyze_simulation():
 
         # Plot of charge
         fig.add_subplot(gs[1,0])
-        plt.plot( 1e2*z_laser, -1e12*Q, color='b' )
+        plt.plot( 1e2*z_laser, -1e12*Q1, color='green' )
+        plt.plot( 1e2*z_laser, -1e12*Q_n1, color='orange' )
         plt.ylabel('Trapped charge [pC]')
         plt.grid()
         plt.axvline(x=1e2*current_z_las, color='k', ls='--')
@@ -168,9 +172,10 @@ def analyze_simulation():
             aspect='auto', gam=0.3,
             extent=[1e6*(info.zmin-ct), 1e6*(info.zmax-ct),
                     1e6*info.rmin, 1e6*info.rmax] )
-        xp, zp = ts.get_particle(['x', 'z'], iteration=iteration,
-            species='electrons_n1')
-        plt.plot(1e6*(zp-ct), 1e6*xp, '.', color='orange', ms=1 )
+        for species, color in zip(['electrons1', 'electrons_n1'], ['green', 'orange']):
+            xp, zp = ts.get_particle(['x', 'z'], iteration=iteration,
+                species=species, select={'uz':[uz_threshold, None]})
+            plt.plot(1e6*(zp-ct), 1e6*xp, '.', color=color, ms=1 )
         plt.xlabel(r'$z - ct \;[\mu m]$')
         plt.ylabel(r'$x [\mu m]$')
         plt.title(r'$|E_z|$ (blue), laser envelope (red)')
