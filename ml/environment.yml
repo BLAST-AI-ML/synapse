@@ -5,12 +5,12 @@ channels:
   - nodefaults
 
 dependencies:
+  - botorch
+  - gpytorch
+  - pandas
   - pip
   - python
+  - pymongo
+  - pyyaml
   - pip:
-    - gpytorch
-    - botorch
     - lume-model
-    - pandas
-    - pymongo
-    - pyyaml
