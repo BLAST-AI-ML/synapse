@@ -7,7 +7,6 @@ from optimas.evaluators import TemplateEvaluator, ChainEvaluator
 from optimas.explorations import Exploration
 
 import yaml
-import pandas as pd
 import argparse
 
 # Parse arguments to determine whether to run a single simulation or a grid scan
@@ -26,38 +25,52 @@ def analysis_func_main(work_dir, output_params):
 
 
 # Create varying parameters and objectives.
+# TODO Use a parameter list to make this more compact
 if args.single_simulation_parameters is None:
     var_1 = VaryingParameter("laser_energy", 12.5, 13.5)
     var_2 = VaryingParameter("target_to_focus_distance", 0, 1)
     var_3 = VaryingParameter("dopant_concentration", 0, 3)
     var_4 = VaryingParameter("upstream_density", 0.9, 1.54)
     var_5 = VaryingParameter("downstream_density", 0.33, 1.1)
-
+    # Number of steps for each varying parameter
     n_steps = [3, 5, 4, 6, 6]
     sim_workers = 240
 else:
     # Read the simulation parameters from the input YAML file
     with open(args.single_simulation_parameters, "r") as f:
-        yaml_data = yaml.safe_load(f)
-    df = pd.DataFrame(yaml_data.items(), columns=["exp_name", "sim_val"])
-
-    # FIXME Avoid hardcoding the order of parameters
+        single_simulation_parameters_dict = yaml.safe_load(f)
+    # Define varying parameters with identical lower and upper bounds
+    var_name = "laser_energy"
     var_1 = VaryingParameter(
-        "laser_energy", df["sim_val"].iloc[0], df["sim_val"].iloc[0]
+        name=var_name,
+        lower_bound=single_simulation_parameters_dict[var_name],
+        upper_bound=single_simulation_parameters_dict[var_name],
     )
+    var_name = "target_to_focus_distance"
     var_2 = VaryingParameter(
-        "target_to_focus_distance", df["sim_val"].iloc[1], df["sim_val"].iloc[1]
+        name=var_name,
+        lower_bound=single_simulation_parameters_dict[var_name],
+        upper_bound=single_simulation_parameters_dict[var_name],
     )
+    var_name = "dopant_concentration"
     var_3 = VaryingParameter(
-        "dopant_concentration", df["sim_val"].iloc[2], df["sim_val"].iloc[2]
+        name=var_name,
+        lower_bound=single_simulation_parameters_dict[var_name],
+        upper_bound=single_simulation_parameters_dict[var_name],
     )
+    var_name = "upstream_density"
     var_4 = VaryingParameter(
-        "upstream_density", df["sim_val"].iloc[3], df["sim_val"].iloc[3]
+        name=var_name,
+        lower_bound=single_simulation_parameters_dict[var_name],
+        upper_bound=single_simulation_parameters_dict[var_name],
     )
+    var_name = "downstream_density"
     var_5 = VaryingParameter(
-        "downstream_density", df["sim_val"].iloc[4], df["sim_val"].iloc[4]
+        name=var_name,
+        lower_bound=single_simulation_parameters_dict[var_name],
+        upper_bound=single_simulation_parameters_dict[var_name],
     )
-
+    # Only one step for each varying parameter
     n_steps = [1, 1, 1, 1, 1]
     sim_workers = 1
 

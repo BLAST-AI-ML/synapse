@@ -18,9 +18,21 @@ class SimulationCalibrationManager:
         parameters for simulations on NERSC
         """
         sim_dict = {}
-        for sim_name, values in self.simulation_calibration.items():
-            exp_name = values["depends_on"]
+        for _, value in self.simulation_calibration.items():
+            sim_name = value["name"]
+            exp_name = value["depends_on"]
+            # strip characters after '[' parenthesis to remove units, strip
+            # leading/trailing white spaces, replace white spaces and '-' with '_',
+            # and convert to lower case
+            sim_name = (
+                sim_name.split("[")[0]
+                .strip()
+                .replace(" ", "_")
+                .replace("-", "_")
+                .lower()
+            )
+            # fill the dictionary
             if exp_name in exp_dict:
-                sim_val = (exp_dict[exp_name] - values["beta"]) * values["alpha"]
-                sim_dict[exp_name] = sim_val
+                sim_val = (exp_dict[exp_name] - value["beta"]) * value["alpha"]
+                sim_dict[sim_name] = sim_val
         return sim_dict
