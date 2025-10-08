@@ -9,16 +9,13 @@
 #SBATCH --gpu-bind=none
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=4
+#SBATCH -o /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/logs/run.o%j
+#SBATCH -e /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/logs/run.e%j
 
 # Source environment
 source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
-# Prepare simulation directory
-simulation_data_dir="/global/cfs/cdirs/m558/superfacility/simulation_data/staging_injector/single_${SLURM_JOB_ID}"
-mkdir ${simulation_data_dir}
-cd ${simulation_data_dir}
-
 # Run single simulation
-simulation_running_dir="/global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/src"
-python ${simulation_running_dir}/run_grid_scan.py --single-simulation-parameters ${simulation_running_dir}/single_simulation_parameters.yaml
+cd /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector
+srun python templates/run_grid_scan.py --single-simulation-parameters templates/single_simulation_parameters.yaml

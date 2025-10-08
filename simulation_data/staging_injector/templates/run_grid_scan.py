@@ -90,13 +90,13 @@ gen = GridSamplingGenerator(
 
 # Create evaluators
 ev_pre = TemplateEvaluator(
-    sim_template="../templates/prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
+    sim_template="templates/prepare_simulation.py",  # this creates the lasy input files for the WarpX simulations
     n_procs=1,
 )
 ev_main = TemplateEvaluator(
-    sim_template="templates/inputs",
+    sim_template="templates/warpx_input_script",
     analysis_func=analysis_func_main,
-    executable="../templates/warpx",
+    executable="templates/warpx",
     n_gpus=1,  # GPUs per individual evaluation
     env_mpi="srun",
 )
@@ -105,14 +105,14 @@ ev_post = TemplateEvaluator(sim_template="templates/analyze_simulation.py", n_pr
 # Create chain of evaluators
 ev_chain = ChainEvaluator(evaluators=[ev_pre, ev_main, ev_post])
 
-# Create exploration.
-
 # Save simulation results in the shared folder, in a subfolder with the job id
+save_dir_prefix = "single" if args.single_simulation_parameters else "multi"
 save_dir = (
-    "/global/cfs/cdirs/m558/superfacility/simulation_data/staging_injector/multi_"
+    f"/global/cfs/cdirs/m558/superfacility/simulation_data/staging_injector/{save_dir_prefix}_"
     + os.environ["SLURM_JOB_ID"]
 )
 
+# Create exploration
 exp = Exploration(
     generator=gen,
     evaluator=ev_chain,

@@ -7,6 +7,7 @@ from plotly.subplots import make_subplots
 import pymongo
 import torch
 import yaml
+from trame.widgets import vuetify3 as vuetify
 from state_manager import state
 from error_manager import add_error
 
@@ -356,3 +357,39 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
     fig.update_layout(clickmode="event")
     return fig
+
+
+def data_depth_panel():
+    with vuetify.VExpansionPanels(v_model=("expand_panel_control_plots", 0)):
+        with vuetify.VExpansionPanel(
+            title="Control: Plots",
+            style="font-size: 20px; font-weight: 500;",
+        ):
+            with vuetify.VExpansionPanelText():
+                # create a row for the slider label
+                with vuetify.VRow():
+                    vuetify.VListSubheader(
+                        "Projected Data Depth",
+                        style="margin-top: 16px;",
+                    )
+                # create a row for the slider and text field
+                with vuetify.VRow(no_gutters=True):
+                    with vuetify.VSlider(
+                        v_model_number=("opacity",),
+                        change="flushState('opacity')",
+                        hide_details=True,
+                        max=1.0,
+                        min=0.0,
+                        step=0.025,
+                        style="align-items: center;",
+                    ):
+                        with vuetify.Template(v_slot_append=True):
+                            vuetify.VTextField(
+                                v_model_number=("opacity",),
+                                density="compact",
+                                hide_details=True,
+                                readonly=True,
+                                single_line=True,
+                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                type="number",
+                            )
