@@ -67,7 +67,7 @@ class ParametersManager:
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # set the target path where auxiliary files will be copied
-                target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{experiment}/src"
+                target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{experiment}/templates"
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the source path where auxiliary files are copied from
                 experiment_path = Path.cwd().parent / f"simulation_data/{experiment}/"
