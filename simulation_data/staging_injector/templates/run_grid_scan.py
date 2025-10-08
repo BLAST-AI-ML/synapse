@@ -6,6 +6,7 @@ from optimas.generators import GridSamplingGenerator
 from optimas.evaluators import TemplateEvaluator, ChainEvaluator
 from optimas.explorations import Exploration
 
+import yaml
 import pandas as pd
 import argparse
 
@@ -14,7 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--single-simulation-parameters",
     default=None,
-    help="Path to the CSV file containing simulation parameters ; if not provided, a grid scan will be run",
+    help="Path to the YAML file containing simulation parameters ; if not provided, a grid scan will be run",
 )
 args = parser.parse_args()
 
@@ -35,8 +36,12 @@ if args.single_simulation_parameters is None:
     n_steps = [3, 5, 4, 6, 6]
     sim_workers = 240
 else:
-    df = pd.read_csv(args.single_simulation_parameters)
+    # Read the simulation parameters from the input YAML file
+    with open(args.single_simulation_parameters, "r") as f:
+        yaml_data = yaml.safe_load(f)
+    df = pd.DataFrame(yaml_data.items(), columns=["exp_name", "sim_val"])
 
+    # FIXME Avoid hardcoding the order of parameters
     var_1 = VaryingParameter(
         "laser_energy", df["sim_val"].iloc[0], df["sim_val"].iloc[0]
     )

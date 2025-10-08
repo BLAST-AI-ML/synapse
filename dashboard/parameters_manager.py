@@ -1,9 +1,8 @@
 import asyncio
 import copy
 from datetime import datetime
-import pandas as pd
+import yaml
 from pathlib import Path
-import os
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import client, vuetify3 as vuetify
@@ -58,9 +57,9 @@ class ParametersManager:
         _, _, simulation_calibration = load_variables()
         sim_cal = SimulationCalibrationManager(simulation_calibration)
         sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
-        save_dir = f"../simulation_data/{experiment}"
-        data_df = pd.DataFrame(sim_dict)
-        data_df.to_csv(os.path.join(save_dir, "single_sim_params.csv"), index=False)
+        filename = f"../simulation_data/{experiment}/single_simulation_parameters.yaml"
+        with open(filename, "w") as f:
+            yaml.dump(sim_dict, f)
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -72,13 +71,11 @@ class ParametersManager:
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the source path where auxiliary files are copied from
                 experiment_path = Path.cwd().parent / f"simulation_data/{experiment}/"
-
                 source_paths = [
                     file
                     for file in (experiment_path / "templates/").rglob("*")
                     if file.is_file()
-                ] + [experiment_path / "single_sim_params.csv"]
-
+                ] + [experiment_path / "single_simulation_parameters.yaml"]
                 # copy auxiliary files to NERSC
                 for path in source_paths:
                     print(f"Uploading file to NERSC: {path}")
