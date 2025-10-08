@@ -12,6 +12,10 @@
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/logs/run.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/logs/run.e%j
 
+# Treat unset variables as an error when performing parameter expansion and
+# exit immediately if a command exits with a non-zero status or if a pipeline fails
+set -o nounset errexit pipefail
+
 # Source environment
 source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
