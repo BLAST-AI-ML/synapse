@@ -38,7 +38,7 @@ ev_pre = TemplateEvaluator(
     n_procs=1
 )
 ev_main = TemplateEvaluator(
-    sim_template="templates/inputs",
+    sim_template="templates/warpx_input_script",
     analysis_func=analysis_func_main,
     executable="templates/warpx",
     n_gpus=1,  # GPUs per individual evaluation
