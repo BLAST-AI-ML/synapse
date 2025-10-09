@@ -1,6 +1,7 @@
-from trame.widgets import client, vuetify3 as vuetify
+from trame.widgets import client, vuetify3 as vuetify, html
 from state_manager import state
 import copy
+
 
 class SimulationCalibrationManager:
     def __init__(self, simulation_calibration):
@@ -19,30 +20,26 @@ class SimulationCalibrationManager:
     def panel(self):
         print("Setting calibration card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_calibration", 0)):
-            with vuetify.VExpansionPanel(
-                title="Control: Calibrate simulation points",
-                style="font-size: 20px; font-weight: 500;",
-            ):
+            with vuetify.VExpansionPanel(title="Control: Calibrate simulation points"):
                 with vuetify.VExpansionPanelText():
                     with client.DeepReactive("simulation_calibration"):
-                        for count, key in enumerate(state.simulation_calibration.keys()):
+                        for key in state.simulation_calibration.keys():
                             # create a row for the parameter label
                             with vuetify.VRow():
-                                title = "<strong>" + state.simulation_calibration[key]["name"] + "</strong><br>"
-                                title += "= α × (" + state.simulation_calibration[key]["depends_on"] + " - β)"
                                 vuetify.VListSubheader(
-                                    title,
-                                    style=(
-                                        "margin-top: 16px;"
-                                        if count == 0
-                                        else "margin-top: 0px;"
-                                    ),
+                                    state.simulation_calibration[key]["name"]
                                 )
-                            with vuetify.VRow(no_gutters=True):
+                            with vuetify.VRow():
+                                html.Small(
+                                    f"= α × ({state.simulation_calibration[key]['depends_on']} - β)"
+                                )
+                            with vuetify.VRow():
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"simulation_calibration['{key}']['alpha']",),
-                                        change=f"flushState('simulation_calibration')",
+                                        v_model_number=(
+                                            f"simulation_calibration['{key}']['alpha']",
+                                        ),
+                                        change="flushState('simulation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         style="width: 100px;",
@@ -51,8 +48,10 @@ class SimulationCalibrationManager:
                                     )
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"simulation_calibration['{key}']['beta']",),
-                                        change=f"flushState('simu lation_calibration')",
+                                        v_model_number=(
+                                            f"simulation_calibration['{key}']['beta']",
+                                        ),
+                                        change="flushState('simu lation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         style="width: 100px;",
