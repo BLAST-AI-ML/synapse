@@ -33,7 +33,7 @@ def initialize_state():
     state.simulation_dialog = False
     state.simulation_video = False
     # simulation jobs
-    state.simulation_run = False
+    state.simulation_running = False
     state.simulation_run_status = None
     state.simulation_run_time = None
     # Errors management

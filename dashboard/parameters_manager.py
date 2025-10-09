@@ -103,7 +103,7 @@ class ParametersManager:
     async def simulation_async(self):
         try:
             print("Running simulation...")
-            state.simulation_run = True
+            state.simulation_running = True
             state.simulation_run_status = "Submitting"
             state.flush()
             if await self.simulation_kernel():
@@ -112,7 +112,7 @@ class ParametersManager:
             else:
                 print("Unable to complete simulation job.")
             # flush state and enable button
-            state.simulation_run = False
+            state.simulation_running = False
             state.flush()
         except Exception as e:
             title = "Unable to run simulation"
@@ -223,7 +223,7 @@ class ParametersManager:
                                     "Simulate",
                                     click=self.simulation_trigger,
                                     disabled=(
-                                        "simulation_run || perlmutter_status != 'active'",
+                                        "simulation_running || perlmutter_status != 'active'",
                                     ),
                                     style="text-transform: none;",
                                 )
