@@ -12,5 +12,4 @@ dependencies:
   - python
   - pymongo
   - pyyaml
-  - pip:
-    - lume-model
+  - lume-model
