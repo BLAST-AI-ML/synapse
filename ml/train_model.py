@@ -63,7 +63,7 @@ with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
 db = pymongo.MongoClient(
     host="mongodb05.nersc.gov",
     username="bella_sf_admin",
-    password=re.findall('SF_DB_ADMIN_PASSWORD=(.+)', db_profile)[0],
+    password=re.findall("SF_DB_ADMIN_PASSWORD=\'(.+)\'", db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
 # Extract the name of inputs and outputs for this experiment
