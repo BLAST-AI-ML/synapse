@@ -88,27 +88,27 @@ class ParametersManager:
                 # submit the simulation job through the Superfacility API
                 print("Submitting job to NERSC")
                 sfapi_job = await perlmutter.submit_job(submission_script)
-                state.simulation_run_status = "Submitted"
+                state.simulation_running_status = "Submitted"
                 state.flush()
                 # print some logs
                 print(f"Simulation job submitted (job ID: {sfapi_job.jobid})")
-                return await monitor_sfapi_job(sfapi_job, "simulation_run_status")
+                return await monitor_sfapi_job(sfapi_job, "simulation_running_status")
         except Exception as e:
             title = "Unable to complete simulation kernel"
             msg = f"Error occurred when executing simulation kernel: {e}"
             add_error(title, msg)
             print(msg)
-            state.simulation_run_status = "Failed"
+            state.simulation_running_status = "Failed"
 
     async def simulation_async(self):
         try:
             print("Running simulation...")
             state.simulation_running = True
-            state.simulation_run_status = "Submitting"
+            state.simulation_running_status = "Submitting"
             state.flush()
             if await self.simulation_kernel():
-                state.simulation_run_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-                print(f"Finished running simulation at {state.simulation_run_time}")
+                state.simulation_running_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                print(f"Finished running simulation at {state.simulation_running_time}")
             else:
                 print("Unable to complete simulation job.")
             # flush state and enable button
@@ -229,7 +229,7 @@ class ParametersManager:
                                 )
                             with vuetify.VCol():
                                 vuetify.VTextField(
-                                    v_model_number=("simulation_run_status",),
+                                    v_model_number=("simulation_running_status",),
                                     label="Simulation status",
                                     readonly=True,
                                 )
