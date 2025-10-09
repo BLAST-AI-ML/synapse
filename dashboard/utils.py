@@ -217,9 +217,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                     if name in df_copy_filtered.columns
                 ]
             elif df_leg[df_count] == "Simulation":
-                hover_data += [
-                    v["name"] for v in cal_manager.simulation_calibration.values()
-                ]
+                hover_data += [v["name"] for v in state.simulation_calibration.values()]
 
             # scatter plot with opacity
             exp_fig = px.scatter(

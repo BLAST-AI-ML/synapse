@@ -141,6 +141,7 @@ def update_on_change_model(**kwargs):
     "parameters_min",
     "parameters_max",
     "parameters_show_all",
+    "simulation_calibration",
 )
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
@@ -284,7 +285,10 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         mod_manager.panel()
-
+                # calibration control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        cal_manager.panel()
             # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
