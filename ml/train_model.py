@@ -192,7 +192,6 @@ if model_type != 'GP':
 
         # Fix mismatch in name between the config file and the expected lume-model format
         for k in input_variables:
-            print(input_variables[k])
             input_variables[k]['default_value'] = input_variables[k]['default']
 
         torch_model = TorchModel(
@@ -286,7 +285,6 @@ else:
 
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
-        print(input_variables[k])
         input_variables[k]['default_value'] = input_variables[k]['default']
         del input_variables[k]['default']
 
@@ -331,7 +329,6 @@ with tempfile.TemporaryDirectory() as temp_dir:
         'model_type': model_type,
         'yaml_file_content': yaml_file_content
     }
-    print(document)
     model_info = yaml.safe_load(yaml_file_content)
     for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
