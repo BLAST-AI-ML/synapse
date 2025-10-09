@@ -51,7 +51,7 @@ class SimulationCalibrationManager:
                                         v_model_number=(
                                             f"simulation_calibration['{key}']['beta']",
                                         ),
-                                        change="flushState('simu lation_calibration')",
+                                        change="flushState('simulation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         style="width: 100px;",
