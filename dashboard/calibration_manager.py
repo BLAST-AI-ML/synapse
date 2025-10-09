@@ -23,7 +23,7 @@ class SimulationCalibrationManager:
         parameters for simulations on NERSC
         """
         sim_dict = {}
-        for _, value in self.simulation_calibration.items():
+        for _, value in state.simulation_calibration.items():
             sim_name = value["name"]
             exp_name = value["depends_on"]
             # strip characters after '[' parenthesis to remove units, strip
