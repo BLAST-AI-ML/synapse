@@ -5,12 +5,23 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pymongo
+import time
 import torch
 import yaml
 from trame.widgets import vuetify3 as vuetify
 from state_manager import state
 from error_manager import add_error
 
+
+def timer(function):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = function(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"Executed in {elapsed_time:.4f} seconds")
+        return result
+    return wrapper
 
 def load_config_file():
     print("Reading configuration file...")
@@ -59,6 +70,7 @@ def load_variables():
     return (input_variables, output_variables, simulation_calibration)
 
 
+@timer
 def load_data(db):
     print("Loading data from database...")
     # load experiment and simulation data points in dataframes
@@ -101,6 +113,7 @@ def metadata_match(config_file, model_file):
     return match
 
 
+@ timer
 def load_database():
     print("Loading database...")
     # load database
