@@ -3,7 +3,7 @@
 #SBATCH -t 00:15:00
 #SBATCH -N 1
 #SBATCH -A m558_g
-#SBATCH -q debug
+#SBATCH -q regular
 #SBATCH -C gpu
 #SBATCH --exclusive
 #SBATCH --gpu-bind=none
