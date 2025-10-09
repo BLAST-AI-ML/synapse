@@ -22,4 +22,4 @@ source $HOME/perlmutter_gpu_warpx.profile
 
 # Run single simulation
 cd /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector
-srun python templates/run_grid_scan.py --single-simulation-parameters templates/single_simulation_parameters.yaml
+python templates/run_grid_scan.py --single-simulation-parameters templates/single_simulation_parameters.yaml
