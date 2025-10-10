@@ -67,6 +67,7 @@
     ```
     If you run the GUI as a desktop application, make sure to set the following environment variable first:
     ```console
+    python -m pip install pywebview[qt]
     export PYWEBVIEW_GUI=qt
     ```
 
