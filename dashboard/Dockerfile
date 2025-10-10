@@ -22,8 +22,6 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # Copy content into the container at /app
 COPY dashboard /app/dashboard
-COPY ml/train_model.py /app/ml/train_model.py
-COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
 
 # Check that we have no secrets (*.pem) files in this container, otherwise abort
