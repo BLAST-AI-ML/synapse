@@ -15,9 +15,11 @@ async def monitor_sfapi_job(sfapi_job, state_variable):
         await asyncio.sleep(5)
         await sfapi_job.update()
         # Make the status more readable by putting in spaces and capitalizing the words
-        state[state_variable] = sfapi_job.state.value.replace("_", " ").title()
-        state.flush()
-        print("sfapi job status: ", state.model_training_status)
+        job_status = sfapi_job.state.value.replace("_", " ").title()
+        if state[state_variable] != job_status:
+            state[state_variable] = job_status
+            state.flush()
+            print(f"Job status: {state.model_training_status}")
     return sfapi_job.state == JobState.COMPLETED
 
 
