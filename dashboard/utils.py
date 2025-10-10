@@ -211,10 +211,13 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # Determine which data is shown when hovering over the plot
             hover_data = list(state.parameters.keys()) + state.output_variables
             if df_leg[df_count] == "Experiment":
-                hover_data += [ name for name in ["date", "scan_number", "shot_number"] if name in df_copy_filtered.columns ]
+                hover_data += [
+                    name
+                    for name in ["date", "scan_number", "shot_number"]
+                    if name in df_copy_filtered.columns
+                ]
             elif df_leg[df_count] == "Simulation":
                 hover_data += [v["name"] for v in state.simulation_calibration.values()]
-
 
             # scatter plot with opacity
             exp_fig = px.scatter(
