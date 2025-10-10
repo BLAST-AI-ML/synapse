@@ -28,7 +28,9 @@ fi
 # login to the registry
 source $HOME/registry.profile  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" registry.nersc.gov
+SECONDS=0  # built-in bash timer: reset
 podman-hpc pull registry.nersc.gov/m558/superfacility/ml-training:latest
+echo "Container pull took ${SECONDS} seconds."
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
