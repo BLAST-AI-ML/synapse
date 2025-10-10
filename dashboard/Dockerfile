@@ -1,10 +1,3 @@
-# syntax=docker/dockerfile:1.7-labs
-# Declare the syntax version to use for the build,
-# as the --exclude flag in the COPY command is not
-# yet available in stable syntax:
-# - https://docs.docker.com/reference/dockerfile/#syntax
-# - https://docs.docker.com/reference/dockerfile/#copy---exclude
-
 # Use an official Python runtime as a parent image
 FROM continuumio/miniconda3:latest
 
@@ -28,10 +21,14 @@ RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Copy content into the container at /app
-COPY --exclude=*.pem dashboard /app/dashboard
+COPY dashboard /app/dashboard
 COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
+
+# Check that we have no secrets (*.pem) files in this container, otherwise abort
+RUN found=$(find /app -type f -name "*.pem") && \
+    [ -z "$found" ] || { echo "\nError: PEM files (secrets) found:"; echo "$found\n"; exit 1; }
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
