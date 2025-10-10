@@ -19,7 +19,7 @@ async def monitor_sfapi_job(sfapi_job, state_variable):
         if state[state_variable] != job_status:
             state[state_variable] = job_status
             state.flush()
-            print(f"Job status: {state.model_training_status}")
+            print("Job status: ", state[state_variable])
     return sfapi_job.state == JobState.COMPLETED
 
 
