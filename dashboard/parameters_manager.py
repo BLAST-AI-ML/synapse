@@ -52,7 +52,7 @@ class ParametersManager:
         state.dirty("parameters")
 
     async def simulation_kernel(self):
-        # store the current simulation parameters in a csv file
+        # store the current simulation parameters in a yaml file
         experiment = state.experiment
         _, _, simulation_calibration = load_variables()
         sim_cal = SimulationCalibrationManager(simulation_calibration)
