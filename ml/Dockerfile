@@ -20,7 +20,6 @@ RUN chmod +x /app/ml/entrypoint.sh
 ENTRYPOINT ["/app/ml/entrypoint.sh"]
 
 # Copy ML scripts & configs into the container at /app/ml/
-COPY ml/environment.yml /app/ml/environment.yml
 COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY dashboard/config/variables.yml /app/ml/variables.yml
