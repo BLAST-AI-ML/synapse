@@ -4,6 +4,9 @@
 ## Author : Revathi Jambunathan
 ## Date : January, 2025
 import time
+
+import_start_time = time.time()
+
 import tempfile
 import argparse
 import torch
@@ -24,6 +27,11 @@ from sklearn.model_selection import train_test_split
 import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
+
+# measure the time it took to import everything
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f"Imports took {elapsed_time:.1f} seconds.")
 
 # Automatically select device for training of GP
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
