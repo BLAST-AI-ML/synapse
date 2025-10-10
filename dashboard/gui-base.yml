@@ -1,3 +1,5 @@
+
+
 # Install latest dependencies with
 #   conda create -n gui -f gui-base.yml
 #
@@ -11,7 +13,6 @@ channels:
   - nodefaults
 dependencies:
   - botorch==0.11.0
-  - conda
   - cpuonly
   - lume-model>=1.9.0
   - mlflow
