@@ -13,10 +13,10 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: 9da37cf23fd2516072e59f418ab8c3b10fb3f97a9ed089b2f08d7438611c8f4a
-    osx-arm64: 9f12f90e846c52d2bde057103ece2caddbed4f1072248da7bcef261924e33b48
-    osx-64: c851b9bef5974be980fcd80816445060e959fc0c329386d6641b1cffb7fedb90
-    win-64: b7fee75412c6c84aca5356f42c2b3bb195c5bb4d58bc03023f61dcdd2db73e5b
+    linux-64: 536dc21010a97d9ba8cc427a1419692228b8f8a0450695ff3b1776863aac6511
+    osx-arm64: e38d30c9573c8d463411d5d356fae834268d0fa802aba94176695860483c7516
+    osx-64: 72721d2dcace0a03594983fc1b4afcb74e720195dea6302ad640810e81bcf561
+    win-64: 861c85cec7b67e0baa8b2a197957e291677e03dcac3723634a37c698d13a4d3e
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -18588,6 +18588,46 @@ package:
   url: https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl
   hash:
     sha256: ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9
+  category: main
+  optional: false
+- name: platformdirs
+  version: 4.5.0
+  manager: pip
+  platform: linux-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/73/cb/ac7874b3e5d58441674fb70742e6c374b28b0c7cb988d37d991cde47166c/platformdirs-4.5.0-py3-none-any.whl
+  hash:
+    sha256: e578a81bb873cbb89a41fcc904c7ef523cc18284b7e3b3ccf06aca1403b7ebd3
+  category: main
+  optional: false
+- name: platformdirs
+  version: 4.5.0
+  manager: pip
+  platform: osx-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/73/cb/ac7874b3e5d58441674fb70742e6c374b28b0c7cb988d37d991cde47166c/platformdirs-4.5.0-py3-none-any.whl
+  hash:
+    sha256: e578a81bb873cbb89a41fcc904c7ef523cc18284b7e3b3ccf06aca1403b7ebd3
+  category: main
+  optional: false
+- name: platformdirs
+  version: 4.5.0
+  manager: pip
+  platform: osx-arm64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/73/cb/ac7874b3e5d58441674fb70742e6c374b28b0c7cb988d37d991cde47166c/platformdirs-4.5.0-py3-none-any.whl
+  hash:
+    sha256: e578a81bb873cbb89a41fcc904c7ef523cc18284b7e3b3ccf06aca1403b7ebd3
+  category: main
+  optional: false
+- name: platformdirs
+  version: 4.5.0
+  manager: pip
+  platform: win-64
+  dependencies: {}
+  url: https://files.pythonhosted.org/packages/73/cb/ac7874b3e5d58441674fb70742e6c374b28b0c7cb988d37d991cde47166c/platformdirs-4.5.0-py3-none-any.whl
+  hash:
+    sha256: e578a81bb873cbb89a41fcc904c7ef523cc18284b7e3b3ccf06aca1403b7ebd3
   category: main
   optional: false
 - name: pre-commit
