@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-#SBATCH -t 06:00:00
-#SBATCH -N 20
+#SBATCH -t 00:15:00
+#SBATCH -N 1
 #SBATCH -A m558_g
 #SBATCH -q regular
 #SBATCH -C gpu
@@ -9,6 +9,8 @@
 #SBATCH --gpu-bind=none
 #SBATCH --ntasks-per-node=4
 #SBATCH --gpus-per-node=4
+#SBATCH -o /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/logs/run.o%j
+#SBATCH -e /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector/logs/run.e%j
 
 # Treat unset variables as an error when performing parameter expansion and
 # exit immediately if a command exits with a non-zero status or if a pipeline fails
@@ -18,5 +20,6 @@ set -o nounset errexit pipefail
 source $HOME/db.profile
 source $HOME/perlmutter_gpu_warpx.profile
 
-# Run optimas scan
-python templates/run_grid_scan.py
+# Run single simulation
+cd /global/cfs/cdirs/m558/superfacility/simulation_running/staging_injector
+python templates/run_grid_scan.py --single-simulation-parameters templates/single_simulation_parameters.yaml

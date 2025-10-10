@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from pathlib import Path
 import tempfile
 import os
@@ -11,9 +12,7 @@ from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
 from utils import load_config_file, metadata_match
 from error_manager import add_error
-from datetime import datetime
 from sfapi_manager import monitor_sfapi_job
-
 from state_manager import state
 
 model_type_tag_dict = {
@@ -182,7 +181,6 @@ class ModelManager:
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
-
         except Exception as e:
             title = "Unable to complete training kernel"
             msg = f"Error occurred when executing training kernel: {e}"

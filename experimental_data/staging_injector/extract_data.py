@@ -128,7 +128,7 @@ if __name__ == "__main__":
     db = pymongo.MongoClient(
         host="mongodb05.nersc.gov",
         username="bella_sf_admin",
-        password=re.findall("SF_DB_ADMIN_PASSWORD=(.+)", db_profile)[0],
+        password=re.findall("SF_DB_ADMIN_PASSWORD=\'(.+)\'", db_profile)[0],
         authSource="bella_sf",
     )["bella_sf"]
     collection = db[experiment]

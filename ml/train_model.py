@@ -65,7 +65,7 @@ with open(os.path.join(os.getenv('HOME'), 'db.profile')) as f:
 db = pymongo.MongoClient(
     host="mongodb05.nersc.gov",
     username="bella_sf_admin",
-    password=re.findall('SF_DB_ADMIN_PASSWORD=(.+)', db_profile)[0],
+    password=re.findall("SF_DB_ADMIN_PASSWORD=\'(.+)\'", db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
 # Extract configurations of experiments & models
@@ -199,7 +199,6 @@ if model_type != 'GP':
 
         # Fix mismatch in name between the config file and the expected lume-model format
         for k in input_variables:
-            print(input_variables[k])
             input_variables[k]['default_value'] = input_variables[k]['default']
 
         torch_model = TorchModel(
@@ -293,7 +292,6 @@ else:
 
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
-        print(input_variables[k])
         input_variables[k]['default_value'] = input_variables[k]['default']
         del input_variables[k]['default']
 
@@ -330,7 +328,6 @@ with tempfile.TemporaryDirectory() as temp_dir:
         model.dump(file=os.path.join(temp_dir, experiment+'.yml'), save_models=True )
     # Upload the model to the database
     # - Load the files that were just created into a dictionary
-    print("Loading model from temp dir")
     with open(os.path.join(temp_dir, experiment+'.yml')) as f:
         yaml_file_content = f.read()
     document = {
@@ -338,7 +335,6 @@ with tempfile.TemporaryDirectory() as temp_dir:
         'model_type': model_type,
         'yaml_file_content': yaml_file_content
     }
-    print(document)
     model_info = yaml.safe_load(yaml_file_content)
     for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
