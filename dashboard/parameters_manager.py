@@ -1,6 +1,15 @@
+import asyncio
 import copy
+from datetime import datetime
+import yaml
+from pathlib import Path
+from sfapi_client import AsyncClient
+from sfapi_client.compute import Machine
 from trame.widgets import client, vuetify3 as vuetify
-
+from utils import load_variables
+from calibration_manager import SimulationCalibrationManager
+from error_manager import add_error
+from sfapi_manager import monitor_sfapi_job
 from state_manager import state
 
 
@@ -41,6 +50,85 @@ class ParametersManager:
         state.parameters = copy.deepcopy(state.parameters_init)
         # push again at flush time
         state.dirty("parameters")
+
+    async def simulation_kernel(self):
+        # store the current simulation parameters in a yaml file
+        experiment = state.experiment
+        _, _, simulation_calibration = load_variables()
+        sim_cal = SimulationCalibrationManager(simulation_calibration)
+        sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
+        filename = f"../simulation_data/{experiment}/single_simulation_parameters.yaml"
+        with open(filename, "w") as f:
+            yaml.dump(sim_dict, f)
+        try:
+            # create an authenticated client
+            async with AsyncClient(
+                client_id=state.sfapi_client_id, secret=state.sfapi_key
+            ) as client:
+                perlmutter = await client.compute(Machine.perlmutter)
+                # set the target path where auxiliary files will be copied
+                target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{experiment}/templates"
+                [target_path] = await perlmutter.ls(target_path, directory=True)
+                # set the source path where auxiliary files are copied from
+                experiment_path = Path.cwd().parent / f"simulation_data/{experiment}/"
+                source_paths = [
+                    file
+                    for file in (experiment_path / "templates/").rglob("*")
+                    if file.is_file()
+                ] + [experiment_path / "single_simulation_parameters.yaml"]
+                # copy auxiliary files to NERSC
+                for path in source_paths:
+                    print(f"Uploading file to NERSC: {path}")
+                    with open(path, "rb") as f:
+                        f.filename = path.name
+                        await target_path.upload(f)
+                # set the path of the script used to submit the simulation job on NERSC
+                with open(experiment_path / "submission_script_single", "r") as file:
+                    submission_script = file.read()
+                # submit the simulation job through the Superfacility API
+                print("Submitting job to NERSC")
+                sfapi_job = await perlmutter.submit_job(submission_script)
+                state.simulation_running_status = "Submitted"
+                state.flush()
+                # print some logs
+                print(f"Simulation job submitted (job ID: {sfapi_job.jobid})")
+                return await monitor_sfapi_job(sfapi_job, "simulation_running_status")
+        except Exception as e:
+            title = "Unable to complete simulation kernel"
+            msg = f"Error occurred when executing simulation kernel: {e}"
+            add_error(title, msg)
+            print(msg)
+            state.simulation_running_status = "Failed"
+
+    async def simulation_async(self):
+        try:
+            print("Running simulation...")
+            state.simulation_running = True
+            state.simulation_running_status = "Submitting"
+            state.flush()
+            if await self.simulation_kernel():
+                state.simulation_running_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                print(f"Finished running simulation at {state.simulation_running_time}")
+            else:
+                print("Unable to complete simulation job.")
+            # flush state and enable button
+            state.simulation_running = False
+            state.flush()
+        except Exception as e:
+            title = "Unable to run simulation"
+            msg = f"Error occurred when running simulation: {e}"
+            add_error(title, msg)
+            print(msg)
+
+    def simulation_trigger(self):
+        try:
+            # schedule asynchronous job
+            asyncio.create_task(self.simulation_async())
+        except Exception as e:
+            title = "Unable to run simulation"
+            msg = f"Error occurred when running simulation: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def panel(self):
         print("Setting parameters card...")
@@ -122,11 +210,26 @@ class ParametersManager:
                                         change="flushState('parameters_show_all')",
                                         label="Show all",
                                     )
-                        # create a row for the buttons
                         with vuetify.VRow():
                             with vuetify.VCol():
                                 vuetify.VBtn(
                                     "Reset",
                                     click=self.reset,
                                     style="text-transform: none",
+                                )
+                        with vuetify.VRow():
+                            with vuetify.VCol():
+                                vuetify.VBtn(
+                                    "Simulate",
+                                    click=self.simulation_trigger,
+                                    disabled=(
+                                        "simulation_running || perlmutter_status != 'active'",
+                                    ),
+                                    style="text-transform: none;",
+                                )
+                            with vuetify.VCol():
+                                vuetify.VTextField(
+                                    v_model_number=("simulation_running_status",),
+                                    label="Simulation status",
+                                    readonly=True,
                                 )
