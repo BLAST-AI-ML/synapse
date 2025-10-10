@@ -29,5 +29,4 @@ dependencies:
   - trame-vuetify
   - pip:
     - pre-commit
-    - pywebview[qt]
     - sfapi_client
