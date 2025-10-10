@@ -150,6 +150,10 @@ class ModelManager:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # set the path of the script used to submit the training job on NERSC
                 script_job = None
+                # multiple locations supported, to make development easier
+                #   container (production): script is in cwd
+                #   development, starting the gui app from dashboard/: script is in ../ml/
+                #   development, starting the gui app from the repo root dir: script is in ml/
                 script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
                 for script_dir in script_locations:
                     script_path = script_dir / "training_pm.sbatch"
