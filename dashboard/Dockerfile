@@ -16,6 +16,8 @@ COPY --exclude=*.pem dashboard /app/dashboard
 COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
+COPY simulation_data/staging_injector/submission_script_multi /app/simulation_data/staging_injector/submission_script_multi
+COPY simulation_data/staging_injector/submission_script_single /app/simulation_data/staging_injector/submission_script_single
 
 # Install any needed packages specified in the environment file
 RUN conda install -c conda-forge conda-lock \

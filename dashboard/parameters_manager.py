@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import os
 import tempfile
 import yaml
 from datetime import datetime
@@ -54,19 +53,6 @@ class ParametersManager:
         state.dirty("parameters")
 
     async def simulation_kernel(self):
-        # store the current simulation parameters in a YAML temporary file
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".yaml",
-            prefix="single_simulation_parameters_",
-            delete=False,
-        ) as temp_file:
-            _, _, simulation_calibration = load_variables()
-            sim_cal = SimulationCalibrationManager(simulation_calibration)
-            sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
-            yaml.dump(sim_dict, temp_file)
-            temp_file.flush()
-            temp_file_path = Path(temp_file.name)
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -76,23 +62,33 @@ class ParametersManager:
                 # set the target path where auxiliary files will be copied
                 target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{state.experiment}/templates"
                 [target_path] = await perlmutter.ls(target_path, directory=True)
-                # set the source path where auxiliary files are copied from
+                # set the base path where auxiliary files are copied from
                 experiment_path = (
                     Path.cwd().parent / f"simulation_data/{state.experiment}/"
                 )
-                source_paths = [
-                    file
-                    for file in (experiment_path / "templates/").rglob("*")
-                    if file.is_file()
-                ] + [temp_file_path]
-                # copy auxiliary files to NERSC
-                for path in source_paths:
-                    print(f"Uploading file to NERSC: {path}")
-                    with open(path, "rb") as f:
-                        f.filename = path.name
-                        await target_path.upload(f)
-                # remove the temporary file
-                os.remove(temp_file_path)
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    # store the current simulation parameters in a YAML temporary file
+                    temp_file_path = (
+                        Path(temp_dir) / "single_simulation_parameters.yaml"
+                    )
+                    _, _, simulation_calibration = load_variables()
+                    sim_cal = SimulationCalibrationManager(simulation_calibration)
+                    sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
+                    with open(temp_file_path, "w") as temp_file:
+                        yaml.dump(sim_dict, temp_file)
+                        temp_file.flush()
+                    # set the source path where auxiliary files are copied from
+                    source_paths = [
+                        file
+                        for file in (experiment_path / "templates/").rglob("*")
+                        if file.is_file()
+                    ] + [temp_file_path]
+                    # copy auxiliary files to NERSC
+                    for path in source_paths:
+                        print(f"Uploading file to NERSC: {path}")
+                        with open(path, "rb") as f:
+                            f.filename = path.name
+                            await target_path.upload(f)
                 # set the path of the script used to submit the simulation job on NERSC
                 with open(experiment_path / "submission_script_single", "r") as file:
                     submission_script = file.read()
