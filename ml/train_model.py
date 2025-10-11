@@ -35,6 +35,11 @@ end_time = time.time()
 elapsed_time = end_time - start_time
 print(f"Imports took {elapsed_time:.1f} seconds.")
 
+# measure the time it took to import everything
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f"Imports took {elapsed_time:.1f} seconds.")
+
 # Automatically select device for training of GP
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print('Device selected: ', device)
