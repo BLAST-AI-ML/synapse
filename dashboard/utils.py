@@ -19,9 +19,13 @@ def timer(function):
         result = function(*args, **kwargs)
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"Executed in {elapsed_time:.4f} seconds")
+        print(
+            f"Executed '{function.__qualname__}' from module '{function.__module__}' in {elapsed_time:.4f} seconds"
+        )
         return result
+
     return wrapper
+
 
 def load_config_file():
     print("Reading configuration file...")
