@@ -2,17 +2,17 @@ name: ml-training
 
 channels:
   - conda-forge
-#  - nvidia
+  - nvidia
   - nodefaults
 
 dependencies:
   - botorch
-#  - cuda-version=12.4  # for Perlmutter (NERSC)
+  - cuda-version=12.4  # for Perlmutter (NERSC)
   - gpytorch
   - pandas
   - pip
   - python
-#  - pytorch-gpu
+  - pytorch-gpu
   - pymongo
   - pyyaml
   - lume-model
