@@ -29,8 +29,8 @@ import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 # measure the time it took to import everything
-end_time = time.time()
-elapsed_time = end_time - start_time
+import_end_time = time.time()
+elapsed_time = import_end_time - import_start_time
 print(f"Imports took {elapsed_time:.1f} seconds.")
 
 # Automatically select device for training of GP
