@@ -31,13 +31,8 @@ sys.path.append(".")
 from Neural_Net_Classes import CombinedNN as CombinedNN
 
 # measure the time it took to import everything
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Imports took {elapsed_time:.1f} seconds.")
-
-# measure the time it took to import everything
-end_time = time.time()
-elapsed_time = end_time - start_time
+import_end_time = time.time()
+elapsed_time = import_end_time - import_start_time
 print(f"Imports took {elapsed_time:.1f} seconds.")
 
 # Automatically select device for training of GP
