@@ -113,7 +113,7 @@ def metadata_match(config_file, model_file):
     return match
 
 
-@ timer
+@timer
 def load_database():
     print("Loading database...")
     # load database
