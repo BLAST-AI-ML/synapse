@@ -22,8 +22,6 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # Copy content into the container at /app
 COPY dashboard /app/dashboard
-COPY ml/train_model.py /app/ml/train_model.py
-COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
 COPY simulation_data/staging_injector/templates /app/simulation_data/staging_injector/templates
 COPY simulation_data/staging_injector/submission_script_single /app/simulation_data/staging_injector/submission_script_single
