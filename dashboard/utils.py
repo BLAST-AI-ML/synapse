@@ -241,8 +241,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             hover_output_variables = state.output_variables
             hover_customdata = hover_parameters + hover_output_variables
 
-            hover_template_lines = [f"<b>{df_leg[df_count]}</b>"]
-            hover_template_lines += hover_section(
+            hover_template_lines = hover_section(
                 "Parameters", hover_parameters, hover_customdata
             )
             hover_template_lines += hover_section(
