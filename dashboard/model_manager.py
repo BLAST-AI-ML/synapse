@@ -10,7 +10,7 @@ from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import load_config_file, metadata_match
+from utils import load_config_file, metadata_match, timer
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -107,6 +107,7 @@ class ModelManager:
     def is_gaussian_process(self):
         return self.__is_gaussian_process
 
+    @timer
     def evaluate(self, parameters, output):
         print("Evaluating model...")
         if self.__model is not None:
