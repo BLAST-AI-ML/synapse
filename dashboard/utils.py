@@ -208,38 +208,66 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 global_ymin = min(global_ymin, y_vals.min())
                 global_ymax = max(global_ymax, y_vals.max())
 
+            # Helper to build a section of the hover tooltip
+            def hover_section(title, cols, hover_data):
+                if not cols:
+                    return []
+                section = [f"<br><b>{title}</b>"]
+                section += [
+                    f"{col}=%{{customdata[{hover_data.index(col)}]:.6g}}"
+                    for col in cols
+                ]
+                return section
+
             # Determine which data is shown when hovering over the plot
-            hover_fields = list(state.parameters.keys()) + state.output_variables
+            hover_parameters = list(state.parameters.keys())
+            hover_output_variables = state.output_variables
+            hover_customdata = ["_id"] + hover_parameters + hover_output_variables
+
+            hover_template_lines = [
+                f"<b>{df_leg[df_count]}</b><br>ID: %{{customdata[0]}}"
+            ]
+            hover_template_lines += hover_section(
+                "Parameters", hover_parameters, hover_customdata
+            )
+            hover_template_lines += hover_section(
+                "Output variables", hover_output_variables, hover_customdata
+            )
             if df_leg[df_count] == "Experiment":
-                hover_fields += [
+                hover_experiment = [
                     name
                     for name in ["date", "scan_number", "shot_number"]
                     if name in df_copy_filtered.columns
                 ]
+                hover_customdata += hover_experiment
+                hover_template_lines += hover_section(
+                    "Experiment info", hover_experiment, hover_customdata
+                )
+
             elif df_leg[df_count] == "Simulation":
-                hover_fields += [
+                hover_simulation = [
                     v["name"] for v in state.simulation_calibration.values()
                 ]
-            df_copy_filtered["hover_text"] = df_copy_filtered.apply(
-                lambda row: "<br>".join(
-                    [
-                        f"{field}={row[field]:.6g}"
-                        for field in hover_fields
-                        if field not in [key, objective_name]
-                    ]
-                ),
-                axis=1,
-            )
-            # scatter plot with opacity
+                hover_customdata += hover_simulation
+                hover_template_lines += hover_section(
+                    "Simulation calibration variables",
+                    hover_simulation,
+                    hover_customdata,
+                )
+
             exp_fig = px.scatter(
                 df_copy_filtered,
                 x=key,
                 y=objective_name,
                 opacity=df_copy_filtered["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
-                hover_name="hover_text",
-                custom_data="_id",
             )
+
+            # Attach customdata:
+            exp_fig.update_traces(customdata=df_copy_filtered[hover_customdata].values)
+            hovertemplate = "<br>".join(hover_template_lines) + "<extra></extra>"
+            # Apply hovertemplate
+            exp_fig.update_traces(hovertemplate=hovertemplate)
             # do now show default legend affected by opacity map
             exp_fig["data"][0]["showlegend"] = False
             # create custom legend empty trace (i==0 only, avoid repetition)
