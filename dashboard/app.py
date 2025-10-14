@@ -232,12 +232,7 @@ def find_simulation(event, db):
 
 def open_simulation_dialog(event):
     try:
-        # data_directory, file_path = find_simulation(event, db)
-        data_directory = os.path.abspath(
-            "/Users/adhamrait/LBL/2024_IFE-superfacility/dashboard"
-        )
-        print(data_directory)
-        file_path = os.path.join(data_directory, "simulation_tall.mp4")
+        data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
         assets = LocalFileManager(data_directory)
         assets.url(
