@@ -36,6 +36,7 @@ def initialize_state():
     state.simulation_running = False
     state.simulation_running_status = None
     state.simulation_running_time = None
+    state.simulatable = False
     # Errors management
     state.errors = []
     state.error_counter = 0

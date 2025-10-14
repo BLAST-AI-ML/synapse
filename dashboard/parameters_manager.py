@@ -25,6 +25,9 @@ class ParametersManager:
         state.parameters_max = dict()
         state.parameters_show_all = dict()
         self.parameters_step = dict()
+        state.simulatable = (
+            self.experiment_path / "submission_script_single"
+        ).is_file()
         for _, parameter_dict in input_variables.items():
             key = parameter_dict["name"]
             pmin = float(parameter_dict["value_range"][0])
@@ -45,6 +48,10 @@ class ParametersManager:
     def model(self, model):
         self.__model = model
 
+    @property
+    def experiment_path(self):
+        return Path.cwd().parent / f"simulation_data/{state.experiment}/"
+
     def reset(self):
         print("Resetting parameters to default values...")
         # reset parameters to initial values
@@ -63,9 +70,6 @@ class ParametersManager:
                 target_path = f"/global/cfs/cdirs/m558/superfacility/simulation_running/{state.experiment}/templates"
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the base path where auxiliary files are copied from
-                experiment_path = (
-                    Path.cwd().parent / f"simulation_data/{state.experiment}/"
-                )
                 with tempfile.TemporaryDirectory() as temp_dir:
                     # store the current simulation parameters in a YAML temporary file
                     temp_file_path = (
@@ -80,7 +84,7 @@ class ParametersManager:
                     # set the source path where auxiliary files are copied from
                     source_paths = [
                         file
-                        for file in (experiment_path / "templates/").rglob("*")
+                        for file in (self.experiment_path / "templates/").rglob("*")
                         if file.is_file()
                     ] + [temp_file_path]
                     # copy auxiliary files to NERSC
@@ -90,7 +94,9 @@ class ParametersManager:
                             f.filename = path.name
                             await target_path.upload(f)
                 # set the path of the script used to submit the simulation job on NERSC
-                with open(experiment_path / "submission_script_single", "r") as file:
+                with open(
+                    self.experiment_path / "submission_script_single", "r"
+                ) as file:
                     submission_script = file.read()
                 # submit the simulation job through the Superfacility API
                 print("Submitting job to NERSC")
@@ -114,7 +120,9 @@ class ParametersManager:
             state.simulation_running_status = "Submitting"
             state.flush()
             if await self.simulation_kernel():
-                state.simulation_running_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                state.simulation_running_time = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M"
+                )
                 print(f"Finished running simulation at {state.simulation_running_time}")
             else:
                 print("Unable to complete simulation job.")
@@ -230,7 +238,7 @@ class ParametersManager:
                                     "Simulate",
                                     click=self.simulation_trigger,
                                     disabled=(
-                                        "simulation_running || perlmutter_status != 'active'",
+                                        "simulation_running || perlmutter_status != 'active' || !simulatable",
                                     ),
                                     style="text-transform: none;",
                                 )
