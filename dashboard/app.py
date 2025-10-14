@@ -232,7 +232,12 @@ def find_simulation(event, db):
 
 def open_simulation_dialog(event):
     try:
-        data_directory, file_path = find_simulation(event, db)
+        # data_directory, file_path = find_simulation(event, db)
+        data_directory = os.path.abspath(
+            "/Users/adhamrait/LBL/2024_IFE-superfacility/dashboard"
+        )
+        print(data_directory)
+        file_path = os.path.join(data_directory, "simulation_tall.mp4")
         state.simulation_video = file_path.endswith(".mp4")
         assets = LocalFileManager(data_directory)
         assets.url(
@@ -373,7 +378,7 @@ def gui_setup():
                 with vuetify.VRow(
                     align="center",
                     justify="center",
-                    style="width: 100%; height: 100%;",
+                    style="width: 80vw; height: 60vh;",
                 ):
                     html.Video(
                         v_if=("simulation_video",),
