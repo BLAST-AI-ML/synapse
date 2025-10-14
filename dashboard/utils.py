@@ -231,7 +231,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                     return []
                 section = [f"<br><b>{title}</b>"]
                 section += [
-                    f"{col}=%{{customdata[{hover_data.index(col)}]:.6g}}"
+                    f"{col}=%{{customdata[{hover_data.index(col)}]:.4g}}"
                     for col in cols
                 ]
                 return section
@@ -239,11 +239,9 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # Determine which data is shown when hovering over the plot
             hover_parameters = list(state.parameters.keys())
             hover_output_variables = state.output_variables
-            hover_customdata = ["_id"] + hover_parameters + hover_output_variables
+            hover_customdata = hover_parameters + hover_output_variables
 
-            hover_template_lines = [
-                f"<b>{df_leg[df_count]}</b><br>ID: %{{customdata[0]}}"
-            ]
+            hover_template_lines = [f"<b>{df_leg[df_count]}</b>"]
             hover_template_lines += hover_section(
                 "Parameters", hover_parameters, hover_customdata
             )
@@ -267,7 +265,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 ]
                 hover_customdata += hover_simulation
                 hover_template_lines += hover_section(
-                    "Simulation calibration variables",
+                    "Simulation variables",
                     hover_simulation,
                     hover_customdata,
                 )
