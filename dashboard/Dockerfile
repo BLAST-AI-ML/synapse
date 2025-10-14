@@ -1,35 +1,34 @@
-# syntax=docker/dockerfile:1.7-labs
-# Declare the syntax version to use for the build,
-# as the --exclude flag in the COPY command is not
-# yet available in stable syntax:
-# - https://docs.docker.com/reference/dockerfile/#syntax
-# - https://docs.docker.com/reference/dockerfile/#copy---exclude
-
 # Use an official Python runtime as a parent image
 FROM continuumio/miniconda3:latest
 
 # Set the working directory in the container
 WORKDIR /app/dashboard
 
-# Copy content into the container at /app
-COPY --exclude=*.pem dashboard /app/dashboard
-COPY ml/train_model.py /app/ml/train_model.py
-COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
-COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
+# Silence pip error to install in root dirs
+ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install any needed packages specified in the environment file
+COPY dashboard/gui-lock.yml /app/dashboard/gui-lock.yml
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name gui gui-lock.yml \
     && conda clean --all -y
 
-# Copy the entrypoint script
+# Configure an exectuable entrypoint script
 COPY dashboard/entrypoint.sh /entrypoint.sh
-
-# Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
 
 # Define the entrypoint to activate the environment in interactive and CMD use
 ENTRYPOINT ["/entrypoint.sh"]
+
+# Copy content into the container at /app
+COPY dashboard /app/dashboard
+COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
+COPY simulation_data/staging_injector/templates /app/simulation_data/staging_injector/templates
+COPY simulation_data/staging_injector/submission_script_single /app/simulation_data/staging_injector/submission_script_single
+
+# Check that we have no secrets (*.pem) files in this container, otherwise abort
+RUN found=$(find /app -type f -name "*.pem") && \
+    [ -z "$found" ] || { echo "\nError: PEM files (secrets) found:"; echo "$found\n"; exit 1; }
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080

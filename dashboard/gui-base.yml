@@ -10,10 +10,11 @@ name: gui
 channels:
   - conda-forge
   - pytorch
+  - nodefaults
 dependencies:
   - botorch==0.11.0
   - cpuonly
-  - lume-model
+  - lume-model>=1.9.0
   - mlflow
   - pandas
   - pip
@@ -29,5 +30,4 @@ dependencies:
   - trame-vuetify
   - pip:
     - pre-commit
-    - pywebview[qt]
     - sfapi_client
