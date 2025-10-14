@@ -149,25 +149,22 @@ class ModelManager:
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
-                # set the target path where auxiliary files will be copied
-                target_path = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
-                [target_path] = await perlmutter.ls(target_path, directory=True)
-                # set the source path where auxiliary files are copied from
-                source_path = Path.cwd().parent
-                source_path_list = [
-                    Path(source_path / "ml/train_model.py"),
-                    Path(source_path / "ml/Neural_Net_Classes.py"),
-                    Path(source_path / "dashboard/config/variables.yml"),
-                ]
-                # copy auxiliary files to NERSC
-                for path in source_path_list:
-                    with open(path, "rb") as f:
-                        f.filename = path.name
-                        await target_path.upload(f)
                 # set the path of the script used to submit the training job on NERSC
-                script_path = Path(source_path / "ml/training_pm.sbatch")
-                with open(script_path, "r") as file:
-                    script_job = file.read()
+                script_job = None
+                # multiple locations supported, to make development easier
+                #   container (production): script is in cwd
+                #   development, starting the gui app from dashboard/: script is in ../ml/
+                #   development, starting the gui app from the repo root dir: script is in ml/
+                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
+                for script_dir in script_locations:
+                    script_path = script_dir / "training_pm.sbatch"
+                    if os.path.exists(script_path):
+                        with open(script_path, "r") as file:
+                            script_job = file.read()
+                        break
+                if script_job is None:
+                    raise RuntimeError("Could not find training_pm.sbatch")
+
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
                 if state.model_type == "Neural Network":
