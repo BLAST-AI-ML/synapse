@@ -1,21 +1,21 @@
 import asyncio
-import numpy as np
+from datetime import datetime
 from pathlib import Path
 import tempfile
 import os
 import yaml
 import re
-from scipy.optimize import minimize
-from sfapi_client import Client
+from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 import sys
 import lume_model
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
-from trame.widgets import vuetify2 as vuetify
-from utils import load_config_file, metadata_match
-
+from trame.widgets import vuetify3 as vuetify
+from utils import load_config_file, metadata_match, timer
+from error_manager import add_error
+from sfapi_manager import monitor_sfapi_job
 from state_manager import state
 
 model_type_tag_dict = {
@@ -24,10 +24,9 @@ model_type_tag_dict = {
     "Neural Network (ensemble)": "ensemble_NN",
 }
 
+
 class ModelManager:
-
     def __init__(self, db):
-
         print("Initializing model manager...")
         # Set initial default values
         self.__model = None
@@ -36,14 +35,22 @@ class ModelManager:
         self.__is_neural_network_ensemble = False
 
         # Download model information from the database
-        collection = db['models']
+        collection = db["models"]
         model_type_tag = model_type_tag_dict[state.model_type]
-        query = {'experiment': state.experiment, 'model_type': model_type_tag,}
+        query = {"experiment": state.experiment, "model_type": model_type_tag}
         count = collection.count_documents(query)
-        
+
         if count == 0:
-            print(f'No model found for experiment: {state.experiment} and model type: {model_type_tag}')
+            print(
+                f"No model found for experiment: {state.experiment} and model type: {model_type_tag}"
+            )
             return
+        elif count > 1:
+            print(
+                f"Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!"
+            )
+            return
+
         # Load model information from the database
         document = collection.find_one(query)
         # Save model files in a temporary directory,
@@ -53,7 +60,7 @@ class ModelManager:
             model_filename = f"{state.experiment}.yml"
 
             with open(os.path.join(temp_dir, model_filename), 'w') as f:
-                f.write(yaml_file_content)    
+                f.write(yaml_file_content)
             if state.model_type == "Neural Network (ensemble)":
                 for key, value in document.items():
                     if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml')):
@@ -65,11 +72,11 @@ class ModelManager:
                         with open(py_path, 'w') as f:
                             f.write(py_code)
                         print(f"Wrote Python source file: {key} to {py_path}")
-                    
+
                         if temp_dir not in sys.path:
                             sys.path.insert(0, temp_dir)
                             print(f"Added {temp_dir} to sys.path for importing {key}")
-            
+
             else:
                 # - Save the corresponding binary files
                 model_info = yaml.safe_load(yaml_file_content)
@@ -79,7 +86,7 @@ class ModelManager:
                 for filename in filenames:
                     with open(os.path.join(temp_dir, filename), 'wb') as f:
                         f.write( document[filename] )
-             
+
             # Check consistency of the model file
             print("Reading model file...")
             config_file = load_config_file()
@@ -88,7 +95,9 @@ class ModelManager:
                 print(f"Model file {model_file} not found")
                 return
             elif not metadata_match(config_file, model_file):
-                print(f"Model file {model_file} does not match configuration file {config_file}")
+                print(
+                    f"Model file {model_file} does not match configuration file {config_file}"
+                )
                 return
 
             # Load model with lume_model
@@ -105,8 +114,10 @@ class ModelManager:
                 else:
                     raise ValueError(f"Unsupported model type: {state.model_type}")
             except Exception as e:
-                print(f"An unexpected error occurred: {e}")
-                sys.exit(1)
+                title = f"Unable to load model {state.model_type}"
+                msg = f"Error occurred when loading model: {e}"
+                add_error(title, msg)
+                print(msg)
 
     def avail(self):
         print("Checking model availability...")
@@ -120,24 +131,20 @@ class ModelManager:
     @property
     def is_gaussian_process(self):
         return self.__is_gaussian_process
-    
+
     @property
     def is_neural_network_ensemble(self):
         return self.__is_neural_network_ensemble
 
-    def evaluate(self, parameters):
+    @timer
+    def evaluate(self, parameters, output):
         print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
             output_dict = self.__model.evaluate(parameters)
             if self.__is_neural_network:
-                # expected only one value
-                if len(output_dict.values()) != 1:
-                    raise ValueError(
-                        f"Expected 1 output value, but found {len(output_dict.values())}"
-                    )
                 # compute mean and mean error
-                mean = list(output_dict.values())[0]
+                mean = output_dict[output]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
             elif self.__is_gaussian_process or self.__is_neural_network_ensemble:
                 if self.__is_gaussian_process:
@@ -163,70 +170,34 @@ class ModelManager:
                 mean = float(mean)
             return (mean, lower, upper)
 
-    def model_wrapper(self, parameters_array):
-        print("Wrapping model...")
-        # convert array of parameters to dictionary
-        parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
-        # change sign to the result in order to maximize when optimizing
-        mean, lower, upper = self.evaluate(parameters_dict)
-        res = -mean
-        return res
-
-    def optimize(self):
-        # info print statement skipped to avoid redundancy
-        if self.__model is not None:
-            # get array of current parameters from state
-            parameters_values = np.array(list(state.parameters.values()))
-            # define parameters bounds for optimization
-            parameters_bounds = []
-            for key in state.parameters.keys():
-                parameters_bounds.append(
-                    (state.parameters_min[key], state.parameters_max[key])
-                )
-            # optimize model (maximize output value)
-            res = minimize(
-                fun=self.model_wrapper,
-                x0=parameters_values,
-                bounds=parameters_bounds,
-            )
-            # update parameters in state with optimal values
-            state.parameters = dict(zip(state.parameters.keys(), res.x))
-            # push again at flush time
-            state.dirty("parameters")
-
     def get_output_transformers(self):
         print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers
 
-    def training_kernel(self):
+    async def training_kernel(self):
         try:
             # create an authenticated client
-            with Client(
+            async with AsyncClient(
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
-                perlmutter = client.compute(Machine.perlmutter)
-                # set the target path where auxiliary files will be copied
-                target_path = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
-                [target_path] = perlmutter.ls(target_path, directory=True)
-                # set the source path where auxiliary files are copied from
-                source_path = Path.cwd().parent
-                source_path_list = [
-                    Path(source_path / "ml/train_model.py"),
-                    Path(source_path / "ml/Neural_Net_Classes.py"),
-                    Path(source_path / "dashboard/config/variables.yml"),
-                ]
-                # copy auxiliary files to NERSC
-                for path in source_path_list:
-                    with open(path, "rb") as f:
-                        f.filename = path.name
-                        target_path.upload(f)
+                perlmutter = await client.compute(Machine.perlmutter)
                 # set the path of the script used to submit the training job on NERSC
-                script_path = Path(
-                    source_path / "ml/training_pm.sbatch"
-                )
-                with open(script_path, "r") as file:
-                    script_job = file.read()
+                script_job = None
+                # multiple locations supported, to make development easier
+                #   container (production): script is in cwd
+                #   development, starting the gui app from dashboard/: script is in ../ml/
+                #   development, starting the gui app from the repo root dir: script is in ml/
+                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
+                for script_dir in script_locations:
+                    script_path = script_dir / "training_pm.sbatch"
+                    if os.path.exists(script_path):
+                        with open(script_path, "r") as file:
+                            script_job = file.read()
+                        break
+                if script_job is None:
+                    raise RuntimeError("Could not find training_pm.sbatch")
+
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
                 script_job = re.sub(
@@ -235,35 +206,47 @@ class ModelManager:
                         string=script_job,
                     )
                 # submit the training job through the Superfacility API
-                sfapi_job = perlmutter.submit_job(script_job)
+                sfapi_job = await perlmutter.submit_job(script_job)
+                state.model_training_status = "Submitted"
+                state.flush()
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
-                # wait for the job to move into a terminal state
-                sfapi_job.complete()
+                return await monitor_sfapi_job(sfapi_job, "model_training_status")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to complete training kernel"
+            msg = f"Error occurred when executing training kernel: {e}"
+            add_error(title, msg)
+            print(msg)
 
     async def training_async(self):
         try:
             print("Training model...")
-            await asyncio.to_thread(self.training_kernel)
-            print("Training job completed")
+            state.model_training = True
+            state.model_training_status = "Submitting"
+            state.flush()
+            if await self.training_kernel():
+                state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                print(f"Finished training model at {state.model_training_time}")
+            else:
+                print("Unable to complete training job.")
             # flush state and enable button
             state.model_training = False
-            state.model_training_status = "Completed"
             state.flush()
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def training_trigger(self):
         try:
-            state.model_training = True
-            state.model_training_status = "Submitted"
-            state.flush()
             # schedule asynchronous job
             asyncio.create_task(self.training_async())
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to train model"
+            msg = f"Error occurred when training model: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def panel(self):
         print("Setting model card...")
@@ -274,33 +257,32 @@ class ModelManager:
             "Neural Network (ensemble)",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
-            with vuetify.VExpansionPanel():
-                vuetify.VExpansionPanelHeader(
-                    "Control: Models", style="font-size: 20px; font-weight: 500;"
-                )
-                with vuetify.VExpansionPanelContent():
-                    # create a row for the model selector
-                    with vuetify.VRow():
-                        vuetify.VSelect(
-                            v_model=("model_type",),
-                            items=("Models", model_type_list),
-                            dense=True,
-                            prepend_icon="mdi-brain",
-                            style="margin-left: 16px; margin-top: 24px; max-width: 210px;",
-                        )
-                    # create a row for the switches and buttons
+            with vuetify.VExpansionPanel(
+                title="Control: Models",
+                style="font-size: 20px; font-weight: 500;",
+            ):
+                with vuetify.VExpansionPanelText():
                     with vuetify.VRow():
                         with vuetify.VCol():
-                            vuetify.VBtn(
-                                "Train",
-                                click=self.training_trigger,
-                                disabled=("model_training",),
-                                style="margin-left: 4px; margin-top: 12px; text-transform: none;",
+                            vuetify.VSelect(
+                                v_model=("model_type",),
+                                label="Model type",
+                                items=(model_type_list,),
+                                dense=True,
                             )
                         with vuetify.VCol():
                             vuetify.VTextField(
                                 v_model_number=("model_training_status",),
                                 label="Training status",
                                 readonly=True,
-                                style="width: 100px;",
+                            )
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VBtn(
+                                "Train",
+                                click=self.training_trigger,
+                                disabled=(
+                                    "model_training || perlmutter_status != 'active'",
+                                ),
+                                style="text-transform: none",
                             )

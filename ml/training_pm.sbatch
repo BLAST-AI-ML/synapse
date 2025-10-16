@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-# Copyright 2024-2025 Revathi Jambunathan
+# Copyright 2024-2025 Revathi Jambunathan, Axel Huebl
 #
 # This file is part of IFE Superfacility LDRD
 #
@@ -8,29 +8,30 @@
 
 #SBATCH -t 00:15:00
 #SBATCH -N 1
-#SBATCH -J testsf
+#SBATCH -J trainsf
 #SBATCH -A m558
 #SBATCH -q realtime
 #SBATCH --constraint=gpu
 # ideally single:1, but NERSC cgroups issue
 #SBATCH --ntasks-per-node=1
+#SBATCH --gpus-per-node=1
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
-module load python
-conda activate /global/cfs/cdirs/m558/superfacility/model_training/env
-
-# threads for OpenMP and threaded compressors per MPI rank
-#   note: 16 avoids hyperthreading (32 virtual cores, 16 physical)
-export OMP_NUM_THREADS=1
-
-experiment=${1}
-model=${2}
+experiment=${1}  # e.g., "ip2"
+model=${2}  # e.g., "NN"
 
 if [[ -z "${experiment}" ]]; then
     echo "Must pass the experiment name/tag as a command line argument"
 fi
 
+# login to the registry
+source $HOME/registry.profile  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
+podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" registry.nersc.gov
+SECONDS=0  # built-in bash timer: reset
+podman-hpc pull registry.nersc.gov/m558/superfacility/ml-training:latest
+echo "Container pull took ${SECONDS} seconds."
+
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-srun python /global/cfs/cdirs/m558/superfacility/model_training/src/train_model.py --experiment ${experiment} --model ${model}
+srun podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --experiment ${experiment} --model ${model}

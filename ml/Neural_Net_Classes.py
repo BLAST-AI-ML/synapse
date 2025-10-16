@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-
 class EarlyStopping:
     def __init__(self, patience=50, min_delta=0):
         self.patience = patience
@@ -24,11 +23,40 @@ class EarlyStopping:
                 self.early_stop = True
 
 
+def nan_mse_loss( target, pred ):
+    """
+    Custom MSE loss that ignores NaN values in targets
+    (Here, NaN often correspond to missing values in the target data)
+
+    Args:
+        target: target values (may contain NaN)
+        pred: predicted values
+
+    Returns:
+        mean squared error ignoring NaN values
+    """
+    # Compute squared differences
+    squared_diff = (pred - target) ** 2
+
+    # Use nanmean to ignore NaN values
+    mse_loss = torch.nanmean(squared_diff)
+
+    # Prevent NaN from contaminating backpropagation
+    # See https://github.com/pytorch/pytorch/issues/4132
+    if pred.requires_grad:
+        nan_mask = torch.isnan(squared_diff)
+        def mask_grad_hook(grad):
+            return torch.where(nan_mask, 0, grad)
+        pred.register_hook(mask_grad_hook)
+
+    return mse_loss
+
+
 class CombinedNN(nn.Module):
     """
     Model that trains a 5 layer neural network and a calibration layer
     """
-    def __init__(self, input_size, output_size, hidden_size=20, 
+    def __init__(self, input_size, output_size, hidden_size=20,
                  learning_rate=0.001, patience_LRreduction=100, patience_earlystopping=150, factor=0.5, threshold=1e-4):
         '''
         args:
@@ -48,19 +76,12 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
-        self.sim_to_exp_calibration = nn.Linear(1, 1)
-        with torch.no_grad():
-            # Initialize to reasonable value, so that, 
-            # if there is no experimental data this stays as is
-            self.sim_to_exp_calibration.weight[...] = 1.
-            self.sim_to_exp_calibration.bias[...] = 0.
-        
-        self.loss_data = {
-            'loss':[],
-            'epoch_count':[]
-            }
+        # Component-wise linear transformation: weight * input + bias
+        # where weight and bias are vectors of size output_size
+        self.sim_to_exp_calibration_weight = nn.Parameter(torch.ones(output_size))
+        self.sim_to_exp_calibration_bias = nn.Parameter(torch.zeros(output_size))
 
-        self.criterion = nn.MSELoss()
+        # Use custom loss function instead of nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.scheduler = ReduceLROnPlateau(self.optimizer, 'min',
                                            factor=factor, patience=patience_LRreduction, threshold=threshold)
@@ -68,8 +89,8 @@ class CombinedNN(nn.Module):
 
     @torch.jit.export
     def calibrate(self, x):
-        """Expose sim_to_exp_calibration."""
-        return self.sim_to_exp_calibration(x)
+        """Apply component-wise linear transformation: weight * x + bias."""
+        return self.sim_to_exp_calibration_weight * x + self.sim_to_exp_calibration_bias
 
     def forward(self, x):
         '''
@@ -99,17 +120,15 @@ class CombinedNN(nn.Module):
             loss = 0
             if len(sim_inputs) > 0:
                 sim_outputs = self(sim_inputs)
-                loss += self.criterion( sim_targets, sim_outputs )
+                loss += nan_mse_loss( sim_targets, sim_outputs )
             if len(exp_inputs) > 0:
-                exp_outputs = self.sim_to_exp_calibration( self(exp_inputs) )
-                loss += self.criterion( exp_targets, exp_outputs )
+                exp_outputs = self.calibrate( self(exp_inputs) )
+                loss += nan_mse_loss( exp_targets, exp_outputs )
             loss.backward()
 
             self.optimizer.step()
 
             current_loss = loss.item()
-            self.loss_data['loss'].append(loss.detach().numpy())
-            self.loss_data['epoch_count'].append(epoch)
             self.scheduler.step(current_loss)
 
             # compute validation loss for early stopping
@@ -117,10 +136,10 @@ class CombinedNN(nn.Module):
                 val_loss = 0
                 if len(sim_inputs_val) > 0:
                     sim_outputs_val = self(sim_inputs_val)
-                    val_loss += self.criterion( sim_targets_val, sim_outputs_val )
+                    val_loss += nan_mse_loss( sim_targets_val, sim_outputs_val )
                 if len(exp_inputs_val) > 0:
                     exp_outputs_val = self(exp_inputs_val)
-                    val_loss += self.criterion( exp_targets_val, exp_outputs_val )
+                    val_loss += nan_mse_loss( exp_targets_val, exp_outputs_val )
 
 
             if(epoch+1) % (num_epochs/10) == 0:
@@ -131,25 +150,6 @@ class CombinedNN(nn.Module):
                 print(f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}' )
                 break
 
-
-
-    def plot_loss(self, filename=None):
-        '''
-        Args:
-            if a string is provided it will save the plot with the given name
-        return:
-            displays epochs vs loss graph
-        '''
-        fig, ax = plt.subplots()
-        ax.plot(self.loss_data['epoch_count'], self.loss_data['loss'], label='loss')
-        plt.title('epochs vs loss')
-        plt.xlabel('epochs')
-        plt.ylabel('loss')
-
-        if filename:
-            plt.savefig(filename+'.png')
-        else:
-            plt.show()
 
 
     def predict_sim(self, inputs):
@@ -177,7 +177,7 @@ class CombinedNN(nn.Module):
         inputs = inputs.to(torch.float32)
         self.eval()
         with torch.no_grad():
-            output = self.sim_to_exp_calibration(self(inputs))
+            output = self.calibrate(self(inputs))
             predictions = output.detach().numpy()
 
         return predictions

@@ -5,10 +5,26 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pymongo
+import time
 import torch
 import yaml
-import shutil
+from trame.widgets import vuetify3 as vuetify
 from state_manager import state
+from error_manager import add_error
+
+
+def timer(function):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = function(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(
+            f"Executed '{function.__qualname__}' from module '{function.__module__}' in {elapsed_time:.4f} seconds"
+        )
+        return result
+
+    return wrapper
 
 
 def load_config_file():
@@ -31,6 +47,7 @@ def load_config_dict():
     config_dict = yaml.safe_load(config_str)
     return config_dict
 
+
 def load_experiments():
     print("Reading experiments from configuration file...")
     # load configuration dictionary
@@ -50,20 +67,24 @@ def load_variables():
     # dictionary of output variables (objectives)
     output_variables = config_spec["output_variables"]
     # dictionary of calibration variables
-    simulation_calibration = config_spec["simulation_calibration"]
+    if "simulation_calibration" in config_spec:
+        simulation_calibration = config_spec["simulation_calibration"]
+    else:
+        simulation_calibration = {}
     return (input_variables, output_variables, simulation_calibration)
 
 
+@timer
 def load_data(db):
     print("Loading data from database...")
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
     # Make sure that the _id is stored as a string (important for interactivity in plotly)
-    if '_id' in exp_data.columns:
-        exp_data['_id'] = exp_data['_id'].astype(str)
-    if '_id' in sim_data.columns:
-        sim_data['_id'] = sim_data['_id'].astype(str)
+    if "_id" in exp_data.columns:
+        exp_data["_id"] = exp_data["_id"].astype(str)
+    if "_id" in sim_data.columns:
+        sim_data["_id"] = sim_data["_id"].astype(str)
     return (exp_data, sim_data)
 
 
@@ -96,6 +117,7 @@ def metadata_match(config_file, model_file):
     return match
 
 
+@timer
 def load_database():
     print("Loading database...")
     # load database
@@ -145,10 +167,12 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     parameters_max = state.parameters_max
     parameters_show_all = state.parameters_show_all
     try:
-        # FIXME generalize for multiple objectives
-        objective_name = list(state.objectives.keys())[0]
+        objective_name = state.displayed_output
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        title = "Unable to find objective to plot"
+        msg = f"Error occurred when searching for objective to plot: {e}"
+        add_error(title, msg)
+        print(msg)
         objective_name = ""
     # set auxiliary properties
     df_cds = ["blue", "red"]
@@ -201,6 +225,17 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 global_ymin = min(global_ymin, y_vals.min())
                 global_ymax = max(global_ymax, y_vals.max())
 
+            # Determine which data is shown when hovering over the plot
+            hover_data = list(state.parameters.keys()) + state.output_variables
+            if df_leg[df_count] == "Experiment":
+                hover_data += [
+                    name
+                    for name in ["date", "scan_number", "shot_number"]
+                    if name in df_copy_filtered.columns
+                ]
+            elif df_leg[df_count] == "Simulation":
+                hover_data += [v["name"] for v in state.simulation_calibration.values()]
+
             # scatter plot with opacity
             exp_fig = px.scatter(
                 df_copy_filtered,
@@ -208,7 +243,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 y=objective_name,
                 opacity=df_copy_filtered["opacity"],
                 color_discrete_sequence=[df_cds[df_count]],
-                hover_data=list(state.parameters.keys()),
+                hover_data=hover_data,
                 custom_data="_id",
             )
             # do now show default legend affected by opacity map
@@ -247,7 +282,9 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
-            mean, lower, upper = model_manager.evaluate(input_dict_loc)
+            mean, lower, upper = model_manager.evaluate(
+                input_dict_loc, state.displayed_output
+            )
 
             global_ymin = min(global_ymin, lower.numpy().min())
             global_ymax = max(global_ymax, upper.numpy().max())
@@ -335,3 +372,39 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
     fig.update_layout(clickmode="event")
     return fig
+
+
+def data_depth_panel():
+    with vuetify.VExpansionPanels(v_model=("expand_panel_control_plots", 0)):
+        with vuetify.VExpansionPanel(
+            title="Control: Plots",
+            style="font-size: 20px; font-weight: 500;",
+        ):
+            with vuetify.VExpansionPanelText():
+                # create a row for the slider label
+                with vuetify.VRow():
+                    vuetify.VListSubheader(
+                        "Projected Data Depth",
+                        style="margin-top: 16px;",
+                    )
+                # create a row for the slider and text field
+                with vuetify.VRow(no_gutters=True):
+                    with vuetify.VSlider(
+                        v_model_number=("opacity",),
+                        change="flushState('opacity')",
+                        hide_details=True,
+                        max=1.0,
+                        min=0.0,
+                        step=0.025,
+                        style="align-items: center;",
+                    ):
+                        with vuetify.Template(v_slot_append=True):
+                            vuetify.VTextField(
+                                v_model_number=("opacity",),
+                                density="compact",
+                                hide_details=True,
+                                readonly=True,
+                                single_line=True,
+                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                                type="number",
+                            )

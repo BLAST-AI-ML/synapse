@@ -2,9 +2,25 @@ from datetime import datetime
 import os
 from sfapi_client import Client
 from sfapi_client.compute import Machine
-from trame.widgets import vuetify2 as vuetify
+from trame.widgets import vuetify3 as vuetify
+import asyncio
+from sfapi_client.jobs import TERMINAL_STATES, JobState
 
 from state_manager import state
+from error_manager import add_error
+
+
+async def monitor_sfapi_job(sfapi_job, state_variable):
+    while sfapi_job.state not in TERMINAL_STATES:
+        await asyncio.sleep(5)
+        await sfapi_job.update()
+        # Make the status more readable by putting in spaces and capitalizing the words
+        job_status = sfapi_job.state.value.replace("_", " ").title()
+        if state[state_variable] != job_status:
+            state[state_variable] = job_status
+            state.flush()
+            print("Job status: ", state[state_variable])
+    return sfapi_job.state == JobState.COMPLETED
 
 
 def parse_sfapi_key(key_str):
@@ -34,7 +50,10 @@ def initialize_sfapi():
                 # update Superfacility API info
                 update_sfapi_info()
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            title = "Unable to initialize the Superfacility API connection"
+            msg = f"Error occurred when initializing the Superfacility API connection: {e}"
+            add_error(title, msg)
+            print(msg)
 
 
 def update_sfapi_info():
@@ -64,20 +83,34 @@ def update_sfapi_info():
                 )
                 # update Perlmutter status
                 status = client.compute(Machine.perlmutter)
-                state.perlmutter_status = f"{status.description}"
+                state.perlmutter_description = f"{status.description}"
+                state.perlmutter_status = f"{status.status.value}"
+                print(
+                    f"Perlmutter status is {state.perlmutter_status} with description '{state.perlmutter_description}'"
+                )
             else:
                 # reset key expiration date
                 state.sfapi_key_expiration = (
                     f"Expired On {expiration.strftime(user_format)}"
                 )
                 # reset Perlmutter status
-                state.perlmutter_status = "Unavailable"
+                state.perlmutter_description = "Unavailable"
+                state.perlmutter_status = "unavailable"
+                title = "Unable to find a valid Superfacility API key"
+                msg = f"Superfacility API key expired on {expiration.strftime(user_format)}"
+                add_error(title, msg)
+                print(msg)
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred when connecting to superfacility:\n{e}")
         # reset key expiration date
         state.sfapi_key_expiration = "Unavailable"
         # reset Perlmutter status
-        state.perlmutter_status = "Unavailable"
+        state.perlmutter_description = "Unavailable"
+        state.perlmutter_status = "unavailable"
+        title = "Unable to connect to NERSC"
+        msg = f"Error occurred when connecting to NERSC through the Superfacility API: {e}"
+        add_error(title, msg)
+        print(msg)
 
 
 @state.change("sfapi_key_dict")
@@ -120,7 +153,7 @@ def load_sfapi_card():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         vuetify.VTextField(
-                            v_model=("perlmutter_status",),
+                            v_model=("perlmutter_description",),
                             label="Perlmutter Status",
                             readonly=True,
                         )

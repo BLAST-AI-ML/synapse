@@ -67,6 +67,7 @@
     ```
     If you run the GUI as a desktop application, make sure to set the following environment variable first:
     ```console
+    python -m pip install pywebview[qt]
     export PYWEBVIEW_GUI=qt
     ```
 
@@ -102,6 +103,10 @@
     docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:$(date "+%y.%m")
     docker push -a registry.nersc.gov/m558/superfacility/gui
     ```
+    This has been also automated through the Python script [dashboard_publish.py](https://github.com/BLAST-AI-ML/synapse/blob/main/dashboard_publish.py), which can be executed via
+    ```console
+    python dashboard_publish.py
+    ```
 
 5. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
     ```console
@@ -118,7 +123,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 3. Scroll down to the section "Superfacility API Clients" and click "New Client".
 
-4. Enter a client name (e.g., "BELLA Superfacility"), choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
+4. Enter a client name (e.g., "BELLA Superfacility"), choose `sf558` for the user, choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
 
 5. Download the private key file (in pem format) and save it as `priv_key.pem` in the root directory of the GUI.
    Each time the GUI is launched, it will automatically find the existing key file and load the corresponding credentials.
