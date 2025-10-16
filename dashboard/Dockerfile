@@ -23,8 +23,8 @@ ENTRYPOINT ["/entrypoint.sh"]
 # Copy content into the container at /app
 COPY dashboard /app/dashboard
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
-COPY simulation_data/staging_injector/templates /app/simulation_data/staging_injector/templates
-COPY simulation_data/staging_injector/submission_script_single /app/simulation_data/staging_injector/submission_script_single
+COPY simulation_scripts/staging_injector/templates /app/simulation_scripts/staging_injector/templates
+COPY simulation_scripts/staging_injector/submission_script_single /app/simulation_scripts/staging_injector/submission_script_single
 
 # Check that we have no secrets (*.pem) files in this container, otherwise abort
 RUN found=$(find /app -type f -name "*.pem") && \

@@ -64,7 +64,7 @@ class ParametersManager:
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the base path where auxiliary files are copied from
                 experiment_path = (
-                    Path.cwd().parent / f"simulation_data/{state.experiment}/"
+                    Path.cwd().parent / f"simulation_scripts/{state.experiment}/"
                 )
                 with tempfile.TemporaryDirectory() as temp_dir:
                     # store the current simulation parameters in a YAML temporary file
