@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ## This notebook includes simulation and experimental data
 ## in a database using PyMongo
-## Author : Revathi Jambunathan
+## Author : Revathi Jambunathan, Axel Huebl
 ## Date : January, 2025
 import time
 
@@ -27,6 +27,8 @@ from sklearn.model_selection import train_test_split
 import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
+sys.path.append(".")
+from Neural_Net_Classes import CombinedNN as CombinedNN
 
 # measure the time it took to import everything
 import_end_time = time.time()
@@ -74,14 +76,19 @@ db = pymongo.MongoClient(
     password=re.findall("SF_DB_ADMIN_PASSWORD=\'(.+)\'", db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
-# Extract the name of inputs and outputs for this experiment
-path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/"
-path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
-sys.path.append(path_to_IFE_ml)
-from Neural_Net_Classes import CombinedNN as CombinedNN
+# Extract configurations of experiments & models
+yaml_dict = None
+current_file_directory = os.path.dirname(os.path.abspath(__file__))
+config_dir_locations = [current_file_directory, "./", "../dashboard/config/"]
+for config_dir in config_dir_locations:
+    file_path = config_dir + "variables.yml"
+    if os.path.exists(file_path):
+        with open(file_path) as f:
+            yaml_dict = yaml.safe_load( f.read() )
+        break
+if yaml_dict is None:
+    raise RuntimeError("File variables.yml not found.")
 
-with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
-    yaml_dict = yaml.safe_load( f.read() )
 input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]

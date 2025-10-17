@@ -50,7 +50,7 @@ class ParametersManager:
 
     @property
     def experiment_path(self):
-        return Path.cwd().parent / f"simulation_data/{state.experiment}/"
+        return Path.cwd().parent / f"simulation_scripts/{state.experiment}/"
 
     def reset(self):
         print("Resetting parameters to default values...")
