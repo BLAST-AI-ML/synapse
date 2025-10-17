@@ -43,7 +43,10 @@ REMOTE_SHA=$(curl -s -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     jq -r '.config.digest')
 
 if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
-    echo "Ids are different. Pulling the latest image..."
+    echo "Ids are different."
+    echo "  Local: ${LOCAL_SHA}"
+    echo "  Remote: ${REMOTE_SHA}"
+    echo "Pulling the latest image..."
     podman-hpc pull ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION}
 else
     echo "Local image is up to date."
