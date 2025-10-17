@@ -1,5 +1,6 @@
 """Run parameter scan for A-cave experiment"""
 
+import numpy as np
 import os
 from optimas.core import VaryingParameter, Objective
 from optimas.generators import GridSamplingGenerator
@@ -25,13 +26,22 @@ def analysis_func_main(work_dir, output_params):
 
 
 # Create varying parameters and objectives.
-# TODO Use a parameter list to make this more compact
+parameters_list = [
+    {"name": "laser_energy", "lower_bound": 12.5, "upper_bound": 13.5},
+    {"name": "target_to_focus_distance", "lower_bound": 0, "upper_bound": 1},
+    {"name": "dopant_concentration", "lower_bound": 0, "upper_bound": 3},
+    {"name": "upstream_density", "lower_bound": 0.9, "upper_bound": 1.54},
+    {"name": "downstream_density", "lower_bound": 0.33, "upper_bound": 1.1},
+]
 if args.single_simulation_parameters is None:
-    var_1 = VaryingParameter("laser_energy", 12.5, 13.5)
-    var_2 = VaryingParameter("target_to_focus_distance", 0, 1)
-    var_3 = VaryingParameter("dopant_concentration", 0, 3)
-    var_4 = VaryingParameter("upstream_density", 0.9, 1.54)
-    var_5 = VaryingParameter("downstream_density", 0.33, 1.1)
+    varying_parameters = [
+        VaryingParameter(
+            name=param["name"],
+            lower_bound=param["lower_bound"],
+            upper_bound=param["upper_bound"],
+        )
+        for param in parameters_list
+    ]
     # Number of steps for each varying parameter
     n_steps = [3, 5, 4, 6, 6]
     sim_workers = 240
@@ -40,36 +50,14 @@ else:
     with open(args.single_simulation_parameters, "r") as f:
         single_simulation_parameters_dict = yaml.safe_load(f)
     # Define varying parameters with identical lower and upper bounds
-    var_name = "laser_energy"
-    var_1 = VaryingParameter(
-        name=var_name,
-        lower_bound=single_simulation_parameters_dict[var_name],
-        upper_bound=single_simulation_parameters_dict[var_name],
-    )
-    var_name = "target_to_focus_distance"
-    var_2 = VaryingParameter(
-        name=var_name,
-        lower_bound=single_simulation_parameters_dict[var_name],
-        upper_bound=single_simulation_parameters_dict[var_name],
-    )
-    var_name = "dopant_concentration"
-    var_3 = VaryingParameter(
-        name=var_name,
-        lower_bound=single_simulation_parameters_dict[var_name],
-        upper_bound=single_simulation_parameters_dict[var_name],
-    )
-    var_name = "upstream_density"
-    var_4 = VaryingParameter(
-        name=var_name,
-        lower_bound=single_simulation_parameters_dict[var_name],
-        upper_bound=single_simulation_parameters_dict[var_name],
-    )
-    var_name = "downstream_density"
-    var_5 = VaryingParameter(
-        name=var_name,
-        lower_bound=single_simulation_parameters_dict[var_name],
-        upper_bound=single_simulation_parameters_dict[var_name],
-    )
+    varying_parameters = [
+        VaryingParameter(
+            name=param["name"],
+            lower_bound=single_simulation_parameters_dict[param["name"]],
+            upper_bound=single_simulation_parameters_dict[param["name"]],
+        )
+        for param in parameters_list
+    ]
     # Only one step for each varying parameter
     n_steps = [1, 1, 1, 1, 1]
     sim_workers = 1
@@ -77,13 +65,11 @@ else:
 obj = Objective("f", minimize=False)
 
 # Compute total number of steps
-n_total = 1
-for n_step in n_steps:
-    n_total *= n_step
+n_total = np.prod(n_steps)
 
 # Create generator
 gen = GridSamplingGenerator(
-    varying_parameters=[var_1, var_2, var_3, var_4, var_5],
+    varying_parameters,
     objectives=[obj],
     n_steps=n_steps,
 )
