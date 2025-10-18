@@ -37,7 +37,7 @@ IMAGE_NAME="m558/superfacility/ml-training"
 IMAGE_VERSION="latest"
 
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
-LOCAL_SHA="sha256:"$(podman-hpc inspect --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION})
+LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION})
 REMOTE_SHA=$(curl -s -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
     jq -r '.config.digest')
