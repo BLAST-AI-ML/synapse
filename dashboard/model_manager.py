@@ -62,23 +62,23 @@ class ModelManager:
                 f.write(yaml_file_content)
             if state.model_type == "Neural Network (ensemble)":
                 models_info = yaml.safe_load(yaml_file_content)
-                filenames = []
-                # Download yaml file for each model
+                files_to_download = []
+                # Download yaml file for each model within the ensemble
                 for model in models_info['models']:
                     yaml_file_name = model.replace('_model.jit', '.yml')
                     with open(os.path.join(temp_dir, yaml_file_name), 'wb') as f:
                         f.write( document[yaml_file_name] )
                         model_info = yaml.safe_load( document[yaml_file_name] )
-                    filenames += [ model_info['model'] ] + \
+                    files_to_download += [ model_info['model'] ] + \
                         model_info['input_transformers'] + \
                         model_info['output_transformers']
             else:
-                # - Save the corresponding binary files
                 model_info = yaml.safe_load(yaml_file_content)
-                filenames = [ model_info['model'] ] + \
+                files_to_download = [ model_info['model'] ] + \
                     model_info['input_transformers'] + \
                     model_info['output_transformers']
-            for filename in filenames:
+            # Download binary files that define the model(s)
+            for filename in files_to_download:
                 with open(os.path.join(temp_dir, filename), 'wb') as f:
                     f.write( document[filename] )
 
