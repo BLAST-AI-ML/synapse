@@ -63,20 +63,9 @@ class ModelManager:
                 f.write(yaml_file_content)
             if state.model_type == "Neural Network (ensemble)":
                 for key, value in document.items():
-                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.yml')):
+                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.jit') or key.endswith('.yml')):
                         with open(os.path.join(temp_dir, key), 'wb') as f:
                             f.write(value)
-                    elif key == "Neural_Net_Classes":
-                        py_code = value['py']
-                        py_path = os.path.join(temp_dir, 'Neural_Net_Classes.py')
-                        with open(py_path, 'w') as f:
-                            f.write(py_code)
-                        print(f"Wrote Python source file: {key} to {py_path}")
-
-                        if temp_dir not in sys.path:
-                            sys.path.insert(0, temp_dir)
-                            print(f"Added {temp_dir} to sys.path for importing {key}")
-
             else:
                 # - Save the corresponding binary files
                 model_info = yaml.safe_load(yaml_file_content)
