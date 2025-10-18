@@ -58,23 +58,29 @@ class ModelManager:
         with tempfile.TemporaryDirectory() as temp_dir:
             yaml_file_content = document['yaml_file_content']
             model_filename = f"{state.experiment}.yml"
-
             with open(os.path.join(temp_dir, model_filename), 'w') as f:
                 f.write(yaml_file_content)
             if state.model_type == "Neural Network (ensemble)":
-                for key, value in document.items():
-                    if isinstance(value, bytes) and (key.endswith('.pt') or key.endswith('.jit') or key.endswith('.yml')):
-                        with open(os.path.join(temp_dir, key), 'wb') as f:
-                            f.write(value)
+                models_info = yaml.safe_load(yaml_file_content)
+                filenames = []
+                # Download yaml file for each model
+                for model in models_info['models']:
+                    yaml_file_name = model.replace('_model.jit', '.yml')
+                    with open(os.path.join(temp_dir, yaml_file_name), 'wb') as f:
+                        f.write( document[yaml_file_name] )
+                        model_info = yaml.safe_load( document[yaml_file_name] )
+                    filenames += [ model_info['model'] ] + \
+                        model_info['input_transformers'] + \
+                        model_info['output_transformers']
             else:
                 # - Save the corresponding binary files
                 model_info = yaml.safe_load(yaml_file_content)
                 filenames = [ model_info['model'] ] + \
                     model_info['input_transformers'] + \
                     model_info['output_transformers']
-                for filename in filenames:
-                    with open(os.path.join(temp_dir, filename), 'wb') as f:
-                        f.write( document[filename] )
+            for filename in filenames:
+                with open(os.path.join(temp_dir, filename), 'wb') as f:
+                    f.write( document[filename] )
 
             # Check consistency of the model file
             print("Reading model file...")
