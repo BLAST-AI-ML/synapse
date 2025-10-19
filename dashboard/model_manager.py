@@ -7,8 +7,6 @@ import yaml
 import re
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-import sys
-import lume_model
 from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
@@ -56,31 +54,35 @@ class ModelManager:
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
-            yaml_file_content = document['yaml_file_content']
+            yaml_file_content = document["yaml_file_content"]
             model_filename = f"{state.experiment}.yml"
-            with open(os.path.join(temp_dir, model_filename), 'w') as f:
+            with open(os.path.join(temp_dir, model_filename), "w") as f:
                 f.write(yaml_file_content)
             if state.model_type == "Neural Network (ensemble)":
                 models_info = yaml.safe_load(yaml_file_content)
                 files_to_download = []
                 # Download yaml file for each model within the ensemble
-                for model in models_info['models']:
-                    yaml_file_name = model.replace('_model.jit', '.yml')
-                    with open(os.path.join(temp_dir, yaml_file_name), 'wb') as f:
-                        f.write( document[yaml_file_name] )
-                        model_info = yaml.safe_load( document[yaml_file_name] )
-                    files_to_download += [ model_info['model'] ] + \
-                        model_info['input_transformers'] + \
-                        model_info['output_transformers']
+                for model in models_info["models"]:
+                    yaml_file_name = model.replace("_model.jit", ".yml")
+                    with open(os.path.join(temp_dir, yaml_file_name), "wb") as f:
+                        f.write(document[yaml_file_name])
+                        model_info = yaml.safe_load(document[yaml_file_name])
+                    files_to_download += (
+                        [model_info["model"]]
+                        + model_info["input_transformers"]
+                        + model_info["output_transformers"]
+                    )
             else:
                 model_info = yaml.safe_load(yaml_file_content)
-                files_to_download = [ model_info['model'] ] + \
-                    model_info['input_transformers'] + \
-                    model_info['output_transformers']
+                files_to_download = (
+                    [model_info["model"]]
+                    + model_info["input_transformers"]
+                    + model_info["output_transformers"]
+                )
             # Download binary files that define the model(s)
             for filename in files_to_download:
-                with open(os.path.join(temp_dir, filename), 'wb') as f:
-                    f.write( document[filename] )
+                with open(os.path.join(temp_dir, filename), "wb") as f:
+                    f.write(document[filename])
 
             # Check consistency of the model file
             print("Reading model file...")
@@ -145,7 +147,9 @@ class ModelManager:
                 if self.__is_gaussian_process:
                     # TODO use "exp" only once experimental data is available for all experiments
                     task_tag = "exp" if state.experiment == "ip2" else "sim"
-                    output_key = [key for key in output_dict.keys() if task_tag in key][0]
+                    output_key = [key for key in output_dict.keys() if task_tag in key][
+                        0
+                    ]
                 elif self.__is_neural_network_ensemble:
                     output_key = list(output_dict.keys())[0]
 
@@ -196,10 +200,10 @@ class ModelManager:
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
                 script_job = re.sub(
-                        pattern=r"--experiment (.*)",
-                        repl=rf"--experiment {state.experiment} --model {model_type_tag_dict[state.model_type]}",
-                        string=script_job,
-                    )
+                    pattern=r"--experiment (.*)",
+                    repl=rf"--experiment {state.experiment} --model {model_type_tag_dict[state.model_type]}",
+                    string=script_job,
+                )
                 # submit the training job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(script_job)
                 state.model_training_status = "Submitted"
