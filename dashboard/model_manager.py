@@ -54,32 +54,39 @@ class ModelManager:
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
+
+            # Open content of the top-level YAML file
             yaml_file_content = document["yaml_file_content"]
             model_filename = f"{state.experiment}.yml"
             with open(os.path.join(temp_dir, model_filename), "w") as f:
                 f.write(yaml_file_content)
+
+            # Extract list of files to download
+            files_to_download = []
             if state.model_type == "Neural Network (ensemble)":
                 models_info = yaml.safe_load(yaml_file_content)
-                files_to_download = []
                 # Download yaml file for each model within the ensemble
                 for model in models_info["models"]:
                     yaml_file_name = model.replace("_model.jit", ".yml")
                     with open(os.path.join(temp_dir, yaml_file_name), "wb") as f:
                         f.write(document[yaml_file_name])
-                        model_info = yaml.safe_load(document[yaml_file_name])
+                    model_info = yaml.safe_load(document[yaml_file_name])
+                    # Extract files to download
                     files_to_download += (
                         [model_info["model"]]
                         + model_info["input_transformers"]
                         + model_info["output_transformers"]
                     )
             else:
+                # Extract files to download
                 model_info = yaml.safe_load(yaml_file_content)
                 files_to_download = (
                     [model_info["model"]]
                     + model_info["input_transformers"]
                     + model_info["output_transformers"]
                 )
-            # Download binary files that define the model(s)
+
+            # Download all the files that define the model(s)
             for filename in files_to_download:
                 with open(os.path.join(temp_dir, filename), "wb") as f:
                     f.write(document[filename])
