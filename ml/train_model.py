@@ -343,10 +343,35 @@ with tempfile.TemporaryDirectory() as temp_dir:
         'model_type': model_type,
         'yaml_file_content': yaml_file_content
     }
-    model_info = yaml.safe_load(yaml_file_content)
-    for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
+
+    # Extract list of files to upload
+    files_to_upload = []
+    if model_type == 'ensemble_NN':
+        models_info = yaml.safe_load(yaml_file_content)
+        for model in models_info['models']:
+            yaml_file_name = model.replace("_model.jit", ".yml")
+            files_to_upload.append(yaml_file_name)
+            with open(os.path.join(temp_dir, yaml_file_name)) as f:
+                model_info = yaml.safe_load(f.read())
+            # Extract files to upload
+            files_to_upload += (
+                [model_info["model"]]
+                + model_info["input_transformers"]
+                + model_info["output_transformers"])
+    else:
+        # Extract files to upload
+        model_info = yaml.safe_load(yaml_file_content)
+        files_to_upload += (
+            [model_info["model"]]
+            + model_info["input_transformers"]
+            + model_info["output_transformers"]
+        )
+
+    # Upload all the files that define the model(s)
+    for filename in files_to_upload:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
             document[filename] = f.read()
+
     # - Check whether there is already a model in the database
     query = {'experiment': experiment, 'model_type': model_type}
     count = db['models'].count_documents(query)
