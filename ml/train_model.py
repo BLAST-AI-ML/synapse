@@ -345,16 +345,16 @@ with tempfile.TemporaryDirectory() as temp_dir:
     }
 
     model_info = yaml.safe_load(yaml_file_content)
-    filenames = []
+    files_to_upload = []
     if model_type != 'ensemble_NN':
-        filenames = model_info['input_transformers'] + model_info['output_transformers']
-        filenames.append(model_info['model'])
+        files_to_upload = model_info['input_transformers'] + model_info['output_transformers']
+        files_to_upload.append(model_info['model'])
     else:
-        filenames = list(model_info['models'])
+        files_to_upload = list(model_info['models'])
         for model_file in model_info['models']:
-            base_name = model_file.replace('_model.pt', '')
+            base_name = model_file.replace('_model.jit', '')
             model_yml = f"{base_name}.yml"
-            filenames.append(model_yml)
+            files_to_upload.append(model_yml)
 
             sub_yml_path = os.path.join(temp_dir, model_yml)
             if not os.path.exists(sub_yml_path):
@@ -362,9 +362,9 @@ with tempfile.TemporaryDirectory() as temp_dir:
 
             with open(sub_yml_path) as sub_f:
                 sub_model_info = yaml.safe_load(sub_f)
-            filenames += sub_model_info.get('input_transformers', [])
-            filenames += sub_model_info.get('output_transformers', [])
-    for filename in filenames:
+            files_to_upload += sub_model_info.get('input_transformers', [])
+            files_to_upload += sub_model_info.get('output_transformers', [])
+    for filename in files_to_upload:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
             document[filename] = f.read()
     # - Check whether there is already a model in the database
