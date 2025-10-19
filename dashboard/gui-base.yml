@@ -31,3 +31,4 @@ dependencies:
   - pip:
     - pre-commit
     - sfapi_client
+    - git+https://github.com/RemiLehe/lume-model@main
