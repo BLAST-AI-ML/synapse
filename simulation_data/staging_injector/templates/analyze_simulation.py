@@ -89,7 +89,7 @@ def analyze_simulation():
     gamma_n1, dgamma_n1 = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
     gamma_1, dgamma_1 = ts.iterate( ts.get_mean_gamma, species='electrons1')
 
-    data['Beam mean energy [GeV]'] = gamma_n1[-1]*0.511e-3 # convert from m to nm
+    data['Beam mean energy [GeV]'] = gamma_n1[-1]*0.511e-3  # convert from MeV to GeV
     data['Beam energy spread [%]'] = 100*dgamma_n1[-1]/gamma_n1[-1]
     data['Trapped charge [pC]'] = -Q[-1]*1e12
 
