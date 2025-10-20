@@ -373,7 +373,7 @@ def gui_setup():
                 with vuetify.VRow(
                     align="center",
                     justify="center",
-                    style="width: 100%; height: 100%;",
+                    style="width: 80vw; height: 60vh;",
                 ):
                     html.Video(
                         v_if=("simulation_video",),

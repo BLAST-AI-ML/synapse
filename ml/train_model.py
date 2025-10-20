@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 ## This notebook includes simulation and experimental data
 ## in a database using PyMongo
-## Author : Revathi Jambunathan
+## Author : Revathi Jambunathan, Axel Huebl
 ## Date : January, 2025
 import time
+
+import_start_time = time.time()
+
 import tempfile
 import argparse
 import torch
@@ -24,6 +27,13 @@ from sklearn.model_selection import train_test_split
 import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
+sys.path.append(".")
+from Neural_Net_Classes import CombinedNN as CombinedNN
+
+# measure the time it took to import everything
+import_end_time = time.time()
+elapsed_time = import_end_time - import_start_time
+print(f"Imports took {elapsed_time:.1f} seconds.")
 
 # Automatically select device for training of GP
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -66,14 +76,19 @@ db = pymongo.MongoClient(
     password=re.findall("SF_DB_ADMIN_PASSWORD=\'(.+)\'", db_profile)[0],
     authSource="bella_sf")["bella_sf"]
 
-# Extract the name of inputs and outputs for this experiment
-path_to_IFE_sf_src = "/global/cfs/cdirs/m558/superfacility/"
-path_to_IFE_ml = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
-sys.path.append(path_to_IFE_ml)
-from Neural_Net_Classes import CombinedNN as CombinedNN
+# Extract configurations of experiments & models
+yaml_dict = None
+current_file_directory = os.path.dirname(os.path.abspath(__file__))
+config_dir_locations = [current_file_directory, "./", "../dashboard/config/"]
+for config_dir in config_dir_locations:
+    file_path = config_dir + "variables.yml"
+    if os.path.exists(file_path):
+        with open(file_path) as f:
+            yaml_dict = yaml.safe_load( f.read() )
+        break
+if yaml_dict is None:
+    raise RuntimeError("File variables.yml not found.")
 
-with open("/global/cfs/cdirs/m558/superfacility/model_training/src/variables.yml") as f:
-    yaml_dict = yaml.safe_load( f.read() )
 input_variables = yaml_dict[experiment]["input_variables"]
 input_names = [ v['name'] for v in input_variables.values() ]
 output_variables = yaml_dict[experiment]["output_variables"]
@@ -328,10 +343,35 @@ with tempfile.TemporaryDirectory() as temp_dir:
         'model_type': model_type,
         'yaml_file_content': yaml_file_content
     }
-    model_info = yaml.safe_load(yaml_file_content)
-    for filename in [ model_info['model'] ] + model_info['input_transformers'] + model_info['output_transformers']:
+
+    # Extract list of files to upload
+    files_to_upload = []
+    if model_type == 'ensemble_NN':
+        models_info = yaml.safe_load(yaml_file_content)
+        for model in models_info['models']:
+            yaml_file_name = model.replace("_model.jit", ".yml")
+            files_to_upload.append(yaml_file_name)
+            with open(os.path.join(temp_dir, yaml_file_name)) as f:
+                model_info = yaml.safe_load(f.read())
+            # Extract files to upload
+            files_to_upload += (
+                [model_info["model"]]
+                + model_info["input_transformers"]
+                + model_info["output_transformers"])
+    else:
+        # Extract files to upload
+        model_info = yaml.safe_load(yaml_file_content)
+        files_to_upload += (
+            [model_info["model"]]
+            + model_info["input_transformers"]
+            + model_info["output_transformers"]
+        )
+
+    # Upload all the files that define the model(s)
+    for filename in files_to_upload:
         with open(os.path.join(temp_dir, filename), 'rb') as f:
             document[filename] = f.read()
+
     # - Check whether there is already a model in the database
     query = {'experiment': experiment, 'model_type': model_type}
     count = db['models'].count_documents(query)
