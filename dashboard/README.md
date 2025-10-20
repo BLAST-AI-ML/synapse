@@ -105,7 +105,7 @@
     ```
     This has been also automated through the Python script [publish_dashboard.py](https://github.com/BLAST-AI-ML/synapse/blob/main/publish_dashboard.py), which can be executed via
     ```console
-    python publish_dashboard.py
+    python publish_container.py --gui
     ```
 
 5. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
