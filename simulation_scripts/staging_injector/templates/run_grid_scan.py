@@ -35,11 +35,7 @@ parameters_list = [
 ]
 if args.single_simulation_parameters is None:
     varying_parameters = [
-        VaryingParameter(
-            name=param["name"],
-            lower_bound=param["lower_bound"],
-            upper_bound=param["upper_bound"],
-        )
+        VaryingParameter(**param)
         for param in parameters_list
     ]
     # Number of steps for each varying parameter
