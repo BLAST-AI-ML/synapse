@@ -78,15 +78,19 @@ def analyze_simulation():
         env, info = ts.get_laser_envelope( pol=pol, iteration=iteration, slice_across='r' )
         return np.average( info.z, weights=env )
     z_laser = ts.iterate( get_mean_laser_position )
-    # - beam charge
-    Q = ts.iterate( ts.get_charge, species='electrons_n1',
+    # - beam charge (for both species)
+    Q1 = ts.iterate( ts.get_charge, species='electrons1',
                    select={'uz':[uz_threshold, None]})
+    Q_n1 = ts.iterate( ts.get_charge, species='electrons_n1',
+                   select={'uz':[uz_threshold, None]})
+    Q = Q1 + Q_n1
     no_trapped_electrons = np.all(Q == 0) # check if there are any trapped electrons in this simulation
     # - energy and energy spread
-    gamma, dgamma = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
+    gamma_n1, dgamma_n1 = ts.iterate( ts.get_mean_gamma, species='electrons_n1')
+    gamma_1, dgamma_1 = ts.iterate( ts.get_mean_gamma, species='electrons1')
 
-    data['Beam mean energy [GeV]'] = gamma[-1]*0.511e-3 # convert from m to nm
-    data['Beam energy spread [%]'] = 100*dgamma[-1]/gamma[-1]
+    data['Beam mean energy [GeV]'] = gamma_n1[-1]*0.511e-3  # convert from Lorentz factor to GeV
+    data['Beam energy spread [%]'] = 100*dgamma_n1[-1]/gamma_n1[-1]
     data['Trapped charge [pC]'] = -Q[-1]*1e12
 
     # Extract divergence at the last iteration
@@ -115,8 +119,8 @@ def analyze_simulation():
 
          # Plot of density as a function of z
         fig.add_subplot(gs[0,0])
-        plt.plot( 1e2*z, 1e-6*n_H, label='Hydrogen' )
-        plt.plot( 1e2*z, 1e-6*n_N, label='Nitrogen' )
+        plt.plot( 1e2*z, 1e-6*n_H, label='Hydrogen', color='green' )
+        plt.plot( 1e2*z, 1e-6*n_N, label='Nitrogen', color='orange' )
         plt.ylabel('Atomic density [$cm^{-3}$]')
         plt.legend(loc=0)
         plt.grid()
@@ -125,7 +129,8 @@ def analyze_simulation():
 
         # Plot of charge
         fig.add_subplot(gs[1,0])
-        plt.plot( 1e2*z_laser, -1e12*Q, color='b' )
+        plt.plot( 1e2*z_laser, -1e12*Q1, color='green' )
+        plt.plot( 1e2*z_laser, -1e12*Q_n1, color='orange' )
         plt.ylabel('Trapped charge [pC]')
         plt.grid()
         plt.axvline(x=1e2*current_z_las, color='k', ls='--')
@@ -135,9 +140,12 @@ def analyze_simulation():
         fig.add_subplot(gs[2,0])
         # Skip this plot if there are no electrons
         if not no_trapped_electrons:
-            plt.plot( 1e2*z_laser, 0.511e-3*gamma, color='b' )
-            plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma-dgamma),
-                            0.511e-3*(gamma+dgamma), color='b', alpha=0.3)
+            plt.plot( 1e2*z_laser, 0.511e-3*gamma_1, color='green' )
+            plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma_1-dgamma_1),
+                            0.511e-3*(gamma_1+dgamma_1), color='green', alpha=0.3)
+            plt.plot( 1e2*z_laser, 0.511e-3*gamma_n1, color='orange' )
+            plt.fill_between( 1e2*z_laser, 0.511e-3*(gamma_n1-dgamma_n1),
+                            0.511e-3*(gamma_n1+dgamma_n1), color='orange', alpha=0.3)
             plt.ylabel('Beam energy [GeV]')
             plt.grid()
             plt.axvline(x=1e2*current_z_las, color='k', ls='--')
@@ -168,9 +176,10 @@ def analyze_simulation():
             aspect='auto', gam=0.3,
             extent=[1e6*(info.zmin-ct), 1e6*(info.zmax-ct),
                     1e6*info.rmin, 1e6*info.rmax] )
-        xp, zp = ts.get_particle(['x', 'z'], iteration=iteration,
-            species='electrons_n1')
-        plt.plot(1e6*(zp-ct), 1e6*xp, '.', color='orange', ms=1 )
+        for species, color in zip(['electrons1', 'electrons_n1'], ['green', 'orange']):
+            xp, zp = ts.get_particle(['x', 'z'], iteration=iteration,
+                species=species, select={'uz':[uz_threshold, None]})
+            plt.plot(1e6*(zp-ct), 1e6*xp, '.', color=color, ms=1 )
         plt.xlabel(r'$z - ct \;[\mu m]$')
         plt.ylabel(r'$x [\mu m]$')
         plt.title(r'$|E_z|$ (blue), laser envelope (red)')
@@ -180,10 +189,12 @@ def analyze_simulation():
         fig.add_subplot(gs[2,1])
         # Skip this plot if there are no electrons
         if not no_trapped_electrons:
-            uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
-                select={'uz':[uz_threshold, None]}, species='electrons_n1')
-            plt.hist( 0.511e-3*uz, weights=w, bins=200,
-                    range=[0, 1.2*0.511e-3*np.nanmax(gamma)] )
+            max_gamma = np.nanmax( np.concatenate( [gamma_1, gamma_n1] ) )
+            for species, color in zip(['electrons1', 'electrons_n1'], ['green', 'orange']):
+                uz, w = ts.get_particle(['uz', 'w'], iteration=iteration,
+                    select={'uz':[uz_threshold, None]}, species=species)
+                plt.hist( 0.511e-3*uz, weights=w, bins=200,
+                        range=[0, 1.2*0.511e-3*max_gamma], color=color )
             plt.xlabel(r'Energy [GeV]')
             plt.title('Electron energy spectrum')
 
