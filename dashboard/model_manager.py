@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from pathlib import Path
 import tempfile
 import os
@@ -7,18 +8,18 @@ import re
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
+from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import load_config_file, metadata_match
+from utils import load_config_file, metadata_match, timer
 from error_manager import add_error
-from datetime import datetime
 from sfapi_manager import monitor_sfapi_job
-
 from state_manager import state
 
 model_type_tag_dict = {
     "Gaussian Process": "GP",
-    "Neural Network": "NN",
+    "Neural Network (single)": "NN",
+    "Neural Network (ensemble)": "ensemble_NN",
 }
 
 
@@ -29,12 +30,14 @@ class ModelManager:
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
+        self.__is_neural_network_ensemble = False
 
         # Download model information from the database
         collection = db["models"]
         model_type_tag = model_type_tag_dict[state.model_type]
         query = {"experiment": state.experiment, "model_type": model_type_tag}
         count = collection.count_documents(query)
+
         if count == 0:
             print(
                 f"No model found for experiment: {state.experiment} and model type: {model_type_tag}"
@@ -51,18 +54,40 @@ class ModelManager:
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
-            # - Save the model yaml file
+
+            # Open content of the top-level YAML file
             yaml_file_content = document["yaml_file_content"]
-            with open(os.path.join(temp_dir, state.experiment + ".yml"), "w") as f:
+            model_filename = f"{state.experiment}.yml"
+            with open(os.path.join(temp_dir, model_filename), "w") as f:
                 f.write(yaml_file_content)
-            # - Save the corresponding binary files
-            model_info = yaml.safe_load(yaml_file_content)
-            filenames = (
-                [model_info["model"]]
-                + model_info["input_transformers"]
-                + model_info["output_transformers"]
-            )
-            for filename in filenames:
+
+            # Extract list of files to download
+            files_to_download = []
+            if state.model_type == "Neural Network (ensemble)":
+                models_info = yaml.safe_load(yaml_file_content)
+                # Download yaml file for each model within the ensemble
+                for model in models_info["models"]:
+                    yaml_file_name = model.replace("_model.jit", ".yml")
+                    with open(os.path.join(temp_dir, yaml_file_name), "wb") as f:
+                        f.write(document[yaml_file_name])
+                    model_info = yaml.safe_load(document[yaml_file_name])
+                    # Extract files to download
+                    files_to_download += (
+                        [model_info["model"]]
+                        + model_info["input_transformers"]
+                        + model_info["output_transformers"]
+                    )
+            else:
+                # Extract files to download
+                model_info = yaml.safe_load(yaml_file_content)
+                files_to_download = (
+                    [model_info["model"]]
+                    + model_info["input_transformers"]
+                    + model_info["output_transformers"]
+                )
+
+            # Download all the files that define the model(s)
+            for filename in files_to_download:
                 with open(os.path.join(temp_dir, filename), "wb") as f:
                     f.write(document[filename])
 
@@ -81,9 +106,12 @@ class ModelManager:
 
             # Load model with lume_model
             try:
-                if state.model_type == "Neural Network":
+                if state.model_type == "Neural Network (single)":
                     self.__is_neural_network = True
                     self.__model = TorchModel(model_file)
+                elif state.model_type == "Neural Network (ensemble)":
+                    self.__is_neural_network_ensemble = True
+                    self.__model = NNEnsemble(model_file)
                 elif state.model_type == "Gaussian Process":
                     self.__is_gaussian_process = True
                     self.__model = GPModel.from_yaml(model_file)
@@ -108,6 +136,11 @@ class ModelManager:
     def is_gaussian_process(self):
         return self.__is_gaussian_process
 
+    @property
+    def is_neural_network_ensemble(self):
+        return self.__is_neural_network_ensemble
+
+    @timer
     def evaluate(self, parameters, output):
         print("Evaluating model...")
         if self.__model is not None:
@@ -117,10 +150,16 @@ class ModelManager:
                 # compute mean and mean error
                 mean = output_dict[output]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
-            elif self.__is_gaussian_process:
-                # TODO use "exp" only once experimental data is available for all experiments
-                task_tag = "exp" if state.experiment == "ip2" else "sim"
-                output_key = output + "_" + task_tag + "_task"
+            elif self.__is_gaussian_process or self.__is_neural_network_ensemble:
+                if self.__is_gaussian_process:
+                    # TODO use "exp" only once experimental data is available for all experiments
+                    task_tag = "exp" if state.experiment == "ip2" else "sim"
+                    output_key = [key for key in output_dict.keys() if task_tag in key][
+                        0
+                    ]
+                elif self.__is_neural_network_ensemble:
+                    output_key = list(output_dict.keys())[0]
+
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
                 mean = output_dict[output_key].mean.detach()
@@ -149,39 +188,29 @@ class ModelManager:
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
-                # set the target path where auxiliary files will be copied
-                target_path = "/global/cfs/cdirs/m558/superfacility/model_training/src/"
-                [target_path] = await perlmutter.ls(target_path, directory=True)
-                # set the source path where auxiliary files are copied from
-                source_path = Path.cwd().parent
-                source_path_list = [
-                    Path(source_path / "ml/train_model.py"),
-                    Path(source_path / "ml/Neural_Net_Classes.py"),
-                    Path(source_path / "dashboard/config/variables.yml"),
-                ]
-                # copy auxiliary files to NERSC
-                for path in source_path_list:
-                    with open(path, "rb") as f:
-                        f.filename = path.name
-                        await target_path.upload(f)
                 # set the path of the script used to submit the training job on NERSC
-                script_path = Path(source_path / "ml/training_pm.sbatch")
-                with open(script_path, "r") as file:
-                    script_job = file.read()
+                script_job = None
+                # multiple locations supported, to make development easier
+                #   container (production): script is in cwd
+                #   development, starting the gui app from dashboard/: script is in ../ml/
+                #   development, starting the gui app from the repo root dir: script is in ml/
+                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
+                for script_dir in script_locations:
+                    script_path = script_dir / "training_pm.sbatch"
+                    if os.path.exists(script_path):
+                        with open(script_path, "r") as file:
+                            script_job = file.read()
+                        break
+                if script_job is None:
+                    raise RuntimeError("Could not find training_pm.sbatch")
+
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
-                if state.model_type == "Neural Network":
-                    script_job = re.sub(
-                        pattern=r"--experiment (.*)",
-                        repl=rf"--experiment {state.experiment} --model NN",
-                        string=script_job,
-                    )
-                if state.model_type == "Gaussian Process":
-                    script_job = re.sub(
-                        pattern=r"--experiment (.*)",
-                        repl=rf"--experiment {state.experiment} --model GP",
-                        string=script_job,
-                    )
+                script_job = re.sub(
+                    pattern=r"--experiment (.*)",
+                    repl=rf"--experiment {state.experiment} --model {model_type_tag_dict[state.model_type]}",
+                    string=script_job,
+                )
                 # submit the training job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(script_job)
                 state.model_training_status = "Submitted"
@@ -189,7 +218,6 @@ class ModelManager:
                 # print some logs
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
-
         except Exception as e:
             title = "Unable to complete training kernel"
             msg = f"Error occurred when executing training kernel: {e}"
@@ -231,7 +259,8 @@ class ModelManager:
         # list of available model types
         model_type_list = [
             "Gaussian Process",
-            "Neural Network",
+            "Neural Network (single)",
+            "Neural Network (ensemble)",
         ]
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
             with vuetify.VExpansionPanel(

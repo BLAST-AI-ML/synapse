@@ -5,11 +5,26 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pymongo
+import time
 import torch
 import yaml
 from trame.widgets import vuetify3 as vuetify
 from state_manager import state
 from error_manager import add_error
+
+
+def timer(function):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = function(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(
+            f"Executed '{function.__qualname__}' from module '{function.__module__}' in {elapsed_time:.4f} seconds"
+        )
+        return result
+
+    return wrapper
 
 
 def load_config_file():
@@ -59,6 +74,7 @@ def load_variables():
     return (input_variables, output_variables, simulation_calibration)
 
 
+@timer
 def load_data(db):
     print("Loading data from database...")
     # load experiment and simulation data points in dataframes
@@ -101,6 +117,7 @@ def metadata_match(config_file, model_file):
     return match
 
 
+@timer
 def load_database():
     print("Loading database...")
     # load database
@@ -211,10 +228,13 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # Determine which data is shown when hovering over the plot
             hover_data = list(state.parameters.keys()) + state.output_variables
             if df_leg[df_count] == "Experiment":
-                hover_data += [ name for name in ["date", "scan_number", "shot_number"] if name in df_copy_filtered.columns ]
+                hover_data += [
+                    name
+                    for name in ["date", "scan_number", "shot_number"]
+                    if name in df_copy_filtered.columns
+                ]
             elif df_leg[df_count] == "Simulation":
-                hover_data += [v["name"] for v in cal_manager.simulation_calibration.values()]
-
+                hover_data += [v["name"] for v in state.simulation_calibration.values()]
 
             # scatter plot with opacity
             exp_fig = px.scatter(

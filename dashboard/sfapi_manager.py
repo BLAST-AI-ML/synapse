@@ -15,9 +15,11 @@ async def monitor_sfapi_job(sfapi_job, state_variable):
         await asyncio.sleep(5)
         await sfapi_job.update()
         # Make the status more readable by putting in spaces and capitalizing the words
-        state[state_variable] = sfapi_job.state.value.replace("_", " ").title()
-        state.flush()
-        print("sfapi job status: ", state.model_training_status)
+        job_status = sfapi_job.state.value.replace("_", " ").title()
+        if state[state_variable] != job_status:
+            state[state_variable] = job_status
+            state.flush()
+            print("Job status: ", state[state_variable])
     return sfapi_job.state == JobState.COMPLETED
 
 
@@ -84,7 +86,7 @@ def update_sfapi_info():
                 state.perlmutter_description = f"{status.description}"
                 state.perlmutter_status = f"{status.status.value}"
                 print(
-                    f"Perlmutter status is {state.perlmutter_status} with description {state.perlmutter_description}"
+                    f"Perlmutter status is {state.perlmutter_status} with description '{state.perlmutter_description}'"
                 )
             else:
                 # reset key expiration date

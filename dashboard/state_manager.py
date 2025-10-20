@@ -12,7 +12,7 @@ def initialize_state():
     print("Initializing state variables at startup...")
     # experiment and model type
     state.experiment = "staging_injector"
-    state.model_type = "Neural Network"
+    state.model_type = "Neural Network (single)"
     state.model_training = False
     state.model_training_status = None
     state.model_training_time = None
@@ -32,6 +32,10 @@ def initialize_state():
     state.simulation_url = None
     state.simulation_dialog = False
     state.simulation_video = False
+    # simulation jobs
+    state.simulation_running = False
+    state.simulation_running_status = None
+    state.simulation_running_time = None
     # Errors management
     state.errors = []
     state.error_counter = 0

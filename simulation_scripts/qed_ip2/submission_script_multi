@@ -1,13 +1,18 @@
 #!/bin/bash -l
 
-#SBATCH -t 04:00:00
-#SBATCH -N 60
+#SBATCH -t 06:00:00
+#SBATCH -N 20
 #SBATCH -A m558_g
 #SBATCH -q regular
 #SBATCH -C gpu
 #SBATCH --exclusive
 #SBATCH --gpu-bind=none
 #SBATCH --ntasks-per-node=4
+#SBATCH --gpus-per-node=4
+
+# Treat unset variables as an error when performing parameter expansion and
+# exit immediately if a command exits with a non-zero status or if a pipeline fails
+set -o nounset errexit pipefail
 
 # Source environment
 source $HOME/db.profile

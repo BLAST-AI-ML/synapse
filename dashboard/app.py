@@ -141,6 +141,7 @@ def update_on_change_model(**kwargs):
     "parameters_min",
     "parameters_max",
     "parameters_show_all",
+    "simulation_calibration",
 )
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
@@ -284,7 +285,10 @@ def home_route():
                 with vuetify.VRow():
                     with vuetify.VCol():
                         mod_manager.panel()
-
+                # calibration control panel
+                with vuetify.VRow():
+                    with vuetify.VCol():
+                        cal_manager.panel()
             # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
@@ -369,7 +373,7 @@ def gui_setup():
                 with vuetify.VRow(
                     align="center",
                     justify="center",
-                    style="width: 100%; height: 100%;",
+                    style="width: 80vw; height: 60vh;",
                 ):
                     html.Video(
                         v_if=("simulation_video",),
