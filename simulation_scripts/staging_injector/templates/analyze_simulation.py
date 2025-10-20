@@ -34,6 +34,7 @@ def analyze_simulation( simulation_directory, upload_to_db=True ):
 
     # Get current directory
     data_directory = os.path.join( simulation_directory, 'diags' )
+    plots_directory = os.path.join( data_directory, "plots" )
     ts = LpaDiagnostics( os.path.join(data_directory, 'diag') )
 
     # Load input parameters
@@ -206,10 +207,10 @@ def analyze_simulation( simulation_directory, upload_to_db=True ):
         plt.xlim(0.5,1.2)
 
         plt.subplots_adjust(hspace=0.5)
-        plt.savefig( os.path.join( data_directory, 'plots', 'iteration_%05d.png' % iteration) )
+        plt.savefig( os.path.join( plots_directory, 'iteration_%05d.png' % iteration) )
 
     # Create directory
-    os.makedirs( os.path.join( data_directory, 'plots' ), exist_ok=True )
+    os.makedirs( plots_directory, exist_ok=True )
 
     # Create images
     plt.figure(figsize=(12, 12))
@@ -217,9 +218,9 @@ def analyze_simulation( simulation_directory, upload_to_db=True ):
 
     # Load images and convert to MP4
     image_files = [
-        os.path.join( data_directory, 'plots', 'iteration_%05d.png' % iteration)
+        os.path.join( plots_directory, 'iteration_%05d.png' % iteration)
         for iteration in ts.iterations]
-    with imageio.get_writer(os.path.join( data_directory, 'plots', 'animation.mp4'), fps=5) as writer:
+    with imageio.get_writer(os.path.join( plots_directory, 'animation.mp4'), fps=5) as writer:
         for filename in image_files:
             image = imageio.imread(filename)
             writer.append_data(image)
