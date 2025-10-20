@@ -14,6 +14,7 @@ channels:
 dependencies:
   - botorch==0.11.0
   - cpuonly
+  - lume-model>=2.0.1
   - mlflow
   - pandas
   - pip
@@ -30,4 +31,3 @@ dependencies:
   - pip:
     - pre-commit
     - sfapi_client
-    - git+https://github.com/RemiLehe/lume-model@main
