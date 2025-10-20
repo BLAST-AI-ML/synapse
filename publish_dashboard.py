@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+"""
+Build the Dashboard (GUI) container for
+Perlmutter (NERSC) and publish it to registry.nersc.gov
+"""
 import subprocess
 
 

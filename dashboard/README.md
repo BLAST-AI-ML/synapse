@@ -103,9 +103,9 @@
     docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:$(date "+%y.%m")
     docker push -a registry.nersc.gov/m558/superfacility/gui
     ```
-    This has been also automated through the Python script [dashboard_publish.py](https://github.com/BLAST-AI-ML/synapse/blob/main/dashboard_publish.py), which can be executed via
+    This has been also automated through the Python script [publish_dashboard.py](https://github.com/BLAST-AI-ML/synapse/blob/main/publish_dashboard.py), which can be executed via
     ```console
-    python dashboard_publish.py
+    python publish_dashboard.py
     ```
 
 5. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
