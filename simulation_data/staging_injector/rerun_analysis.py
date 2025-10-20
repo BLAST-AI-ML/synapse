@@ -30,7 +30,7 @@ if __name__ == "__main__":
         print(f"Error: Directory '{args.evaluations_directory}' does not exist.")
         sys.exit(1)
 
-    # List all simulation folder in the evaluations directory
+    # List all simulation folders in the evaluations directory
     simulation_folders = [ f for f in os.listdir(args.evaluations_directory) if f.startswith("sim") ]
     simulation_folders.sort()
     n_sims = len(simulation_folders)

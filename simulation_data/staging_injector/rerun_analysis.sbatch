@@ -10,6 +10,10 @@
 #SBATCH --ntasks-per-node=16
 #SBATCH --exclusive
 
+# Treat unset variables as an error when performing parameter expansion and
+# exit immediately if a command exits with a non-zero status or if a pipeline fails
+set -o nounset errexit pipefail
+
 # Source environment
 source $HOME/perlmutter_gpu_warpx.profile
 
