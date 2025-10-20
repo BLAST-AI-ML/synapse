@@ -26,7 +26,7 @@ class ParametersManager:
         state.parameters_show_all = dict()
         self.parameters_step = dict()
         state.simulatable = (
-            self.experiment_path / "submission_script_single"
+            self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
         for _, parameter_dict in input_variables.items():
             key = parameter_dict["name"]
@@ -49,7 +49,7 @@ class ParametersManager:
         self.__model = model
 
     @property
-    def experiment_path(self):
+    def simulation_scripts_base_path(self):
         return Path.cwd().parent / f"simulation_scripts/{state.experiment}/"
 
     def reset(self):
@@ -84,7 +84,7 @@ class ParametersManager:
                     # set the source path where auxiliary files are copied from
                     source_paths = [
                         file
-                        for file in (self.experiment_path / "templates/").rglob("*")
+                        for file in (self.simulation_scripts_base_path / "templates/").rglob("*")
                         if file.is_file()
                     ] + [temp_file_path]
                     # copy auxiliary files to NERSC
@@ -95,7 +95,7 @@ class ParametersManager:
                             await target_path.upload(f)
                 # set the path of the script used to submit the simulation job on NERSC
                 with open(
-                    self.experiment_path / "submission_script_single", "r"
+                    self.simulation_scripts_base_path / "submission_script_single", "r"
                 ) as file:
                     submission_script = file.read()
                 # submit the simulation job through the Superfacility API
