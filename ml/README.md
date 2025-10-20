@@ -54,6 +54,10 @@ conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
    docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:$(date "+%y.%m")
    docker push -a registry.nersc.gov/m558/superfacility/ml-training
    ```
+    This has been also automated through the Python script [publish_ml.py](https://github.com/BLAST-AI-ML/synapse/blob/main/publish_ml.py), which can be executed via
+    ```console
+    python publish_ml.py
+    ```
 
 5. Optional test: Run the Docker container manually on Perlmutter:
    ```console
