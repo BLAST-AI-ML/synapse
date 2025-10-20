@@ -8,12 +8,25 @@
 
 ### How to set up the conda environment
 
+#### Local development
+
 For local development, create and activate the conda environment:
 ```bash
 conda env create -f environment.yml
 conda activate ml-training
 ```
+#### At NERSC
 
+At NERSC, use the following instead to install the environment
+```bash
+module load python
+conda env create --prefix /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training -f environment.yml
+```
+and subsequently use this to activate the environment
+```bash
+module load python
+conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
+```
 
 ### How to build and run the Docker container
 
