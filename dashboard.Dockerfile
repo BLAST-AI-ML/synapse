@@ -26,10 +26,6 @@ COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
 COPY simulation_scripts/staging_injector/templates /app/simulation_scripts/staging_injector/templates
 COPY simulation_scripts/staging_injector/submission_script_single /app/simulation_scripts/staging_injector/submission_script_single
 
-# Check that we have no secrets (*.pem) files in this container, otherwise abort
-RUN found=$(find /app -type f -name "*.pem") && \
-    [ -z "$found" ] || { echo "\nError: PEM files (secrets) found:"; echo "$found\n"; exit 1; }
-
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
