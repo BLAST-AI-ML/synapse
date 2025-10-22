@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # build the new image
     proceed = input("\nBuild new image? [y/N] ")
-    command = "docker build --platform linux/amd64 -t gui -f dashboard/Dockerfile ."
+    command = "docker build --platform linux/amd64 -t gui -f dashboard.Dockerfile ."
     run(command, proceed)
 
     # upload to the NERSC registry
