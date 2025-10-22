@@ -34,7 +34,7 @@ conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
 
 2. Build the Docker image based on `Dockerfile`:
    ```console
-   docker build --platform linux/amd64 -t ml-training -f ml/Dockerfile .
+   docker build --platform linux/amd64 -t ml-training -f ml.Dockerfile .
    ```
 
 3. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
