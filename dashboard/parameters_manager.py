@@ -7,7 +7,7 @@ from pathlib import Path
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import client, vuetify3 as vuetify
-from utils import load_variables
+from utils import load_variables, EXPERIMENTS_PATH
 from calibration_manager import SimulationCalibrationManager
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
@@ -50,7 +50,7 @@ class ParametersManager:
 
     @property
     def simulation_scripts_base_path(self):
-        return Path.cwd().parent / f"simulation_scripts/{state.experiment}/"
+        return EXPERIMENTS_PATH / f"{state.experiment}/simulation_scripts/"
 
     def reset(self):
         print("Resetting parameters to default values...")
@@ -75,7 +75,7 @@ class ParametersManager:
                     temp_file_path = (
                         Path(temp_dir) / "single_simulation_parameters.yaml"
                     )
-                    _, _, simulation_calibration = load_variables()
+                    _, _, simulation_calibration = load_variables(state.experiment)
                     sim_cal = SimulationCalibrationManager(simulation_calibration)
                     sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
                     with open(temp_file_path, "w") as temp_file:
@@ -84,7 +84,9 @@ class ParametersManager:
                     # set the source path where auxiliary files are copied from
                     source_paths = [
                         file
-                        for file in (self.simulation_scripts_base_path / "templates/").rglob("*")
+                        for file in (
+                            self.simulation_scripts_base_path / "templates/"
+                        ).rglob("*")
                         if file.is_file()
                     ] + [temp_file_path]
                     # copy auxiliary files to NERSC

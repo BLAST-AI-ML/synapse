@@ -8,9 +8,13 @@ import pymongo
 import time
 import torch
 import yaml
+from pathlib import Path
 from trame.widgets import vuetify3 as vuetify
 from state_manager import state
 from error_manager import add_error
+
+
+EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
 
 
 def timer(function):
@@ -27,20 +31,18 @@ def timer(function):
     return wrapper
 
 
-def load_config_file():
+def load_config_file(experiment):
     print("Reading configuration file...")
     # find configuration file in the local file system
-    config_dir = os.path.join(os.getcwd(), "config")
-    config_file = os.path.join(config_dir, "variables.yml")
-    if not os.path.isfile(config_file):
+    config_file = EXPERIMENTS_PATH / f"{experiment}/config.yaml"
+    if not config_file.is_file():
         raise ValueError(f"Configuration file {config_file} not found")
     return config_file
 
 
-def load_config_dict():
+def load_config_dict(experiment):
     print("Loading configuration dictionary...")
-    config_file = load_config_file()
-    # read configuration file
+    config_file = load_config_file(experiment)
     with open(config_file) as f:
         config_str = f.read()
     # load configuration dictionary
@@ -49,26 +51,21 @@ def load_config_dict():
 
 
 def load_experiments():
-    print("Reading experiments from configuration file...")
-    # load configuration dictionary
-    config_dict = load_config_dict()
-    # read list of available experiments from higher-level keys
-    experiment_list = list(config_dict.keys())
-    return experiment_list
+    print("Reading experiments from experiments directory")
+    return [d.name for d in EXPERIMENTS_PATH.iterdir() if d.is_dir()]
 
 
-def load_variables():
+def load_variables(experiment):
     print("Reading input/output variables from configuration file...")
     # load configuration dictionary
-    config_dict = load_config_dict()
-    config_spec = config_dict[state.experiment]
+    config_dict = load_config_dict(experiment)
     # dictionary of input variables (parameters)
-    input_variables = config_spec["input_variables"]
+    input_variables = config_dict["inputs"]
     # dictionary of output variables (objectives)
-    output_variables = config_spec["output_variables"]
+    output_variables = config_dict["outputs"]
     # dictionary of calibration variables
-    if "simulation_calibration" in config_spec:
-        simulation_calibration = config_spec["simulation_calibration"]
+    if "simulation_calibration" in config_dict:
+        simulation_calibration = config_dict["simulation_calibration"]
     else:
         simulation_calibration = {}
     return (input_variables, output_variables, simulation_calibration)
@@ -88,19 +85,11 @@ def load_data(db):
     return (exp_data, sim_data)
 
 
-def metadata_match(config_file, model_file):
+def verify_input_variables(model_file, experiment):
     print("Checking model consistency...")
-    match = False
     # read configuration file
-    with open(config_file) as f:
-        config_str = f.read()
-    # load configuration dictionary
-    config_dict = yaml.safe_load(config_str)
-    # load configuration input variables list
-    config_vars = [
-        value["name"]
-        for value in config_dict[state.experiment]["input_variables"].values()
-    ]
+    input_vars, _, _ = load_variables(experiment)
+    config_vars = [input_var["name"] for input_var in input_vars.values()]
     config_vars.sort()
     # read model file
     with open(model_file) as f:

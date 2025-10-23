@@ -36,7 +36,7 @@ cal_manager = None
 # load database
 db = load_database()
 # list of available experiments
-experiment_list = load_experiments()
+experiments = load_experiments()
 
 # -----------------------------------------------------------------------------
 # Functions and callbacks
@@ -63,7 +63,9 @@ def update(
     # load data
     exp_data, sim_data = load_data(db)
     # load input and output variables
-    input_variables, output_variables, simulation_calibration = load_variables()
+    input_variables, output_variables, simulation_calibration = load_variables(
+        state.experiment
+    )
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
@@ -327,7 +329,7 @@ def gui_setup():
             vuetify.VSelect(
                 v_model=("experiment",),
                 label="Experiments",
-                items=(experiment_list,),
+                items=(experiments,),
                 dense=True,
                 hide_details=True,
                 prepend_icon="mdi-atom",
