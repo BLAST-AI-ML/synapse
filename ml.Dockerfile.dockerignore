@@ -1,0 +1,3 @@
+# Only copy the config.yaml from each experiment
+experiments/*
+!experiments/*/config.yaml

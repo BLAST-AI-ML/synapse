@@ -79,19 +79,19 @@ db = pymongo.MongoClient(
 # Extract configurations of experiments & models
 yaml_dict = None
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
-config_dir_locations = [current_file_directory, "./", "../dashboard/config/"]
+config_dir_locations = [current_file_directory, "./", f"../experiments/{experiment}/"]
 for config_dir in config_dir_locations:
-    file_path = config_dir + "variables.yml"
+    file_path = config_dir + "config.yaml"
     if os.path.exists(file_path):
         with open(file_path) as f:
             yaml_dict = yaml.safe_load( f.read() )
         break
 if yaml_dict is None:
-    raise RuntimeError("File variables.yml not found.")
+    raise RuntimeError("File config.yaml not found.")
 
-input_variables = yaml_dict[experiment]["input_variables"]
+input_variables = yaml_dict["inputs"]
 input_names = [ v['name'] for v in input_variables.values() ]
-output_variables = yaml_dict[experiment]["output_variables"]
+output_variables = yaml_dict["outputs"]
 output_names = [ v['name'] for v in output_variables.values() ]
 n_outputs = len(output_names)
 # Extract data from the database as pandas dataframe
@@ -99,8 +99,8 @@ collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
 df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 # Apply calibration to the simulation results
-if "simulation_calibration" in yaml_dict[experiment]:
-    simulation_calibration = yaml_dict[experiment]["simulation_calibration"]
+if "simulation_calibration" in yaml_dict:
+    simulation_calibration = yaml_dict["simulation_calibration"]
 else:
     simulation_calibration = {}
 for _, value in simulation_calibration.items():

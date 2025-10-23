@@ -11,7 +11,7 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import load_config_file, metadata_match, timer
+from utils import verify_input_variables, timer
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -54,7 +54,6 @@ class ModelManager:
         # Save model files in a temporary directory,
         # so that it can then be loaded with lume_model
         with tempfile.TemporaryDirectory() as temp_dir:
-
             # Open content of the top-level YAML file
             yaml_file_content = document["yaml_file_content"]
             model_filename = f"{state.experiment}.yml"
@@ -93,15 +92,18 @@ class ModelManager:
 
             # Check consistency of the model file
             print("Reading model file...")
-            config_file = load_config_file()
             model_file = os.path.join(temp_dir, f"{state.experiment}.yml")
             if not os.path.isfile(model_file):
-                print(f"Model file {model_file} not found")
+                title = f"Model file {model_file} not found"
+                msg = f"Unable to find the model file for {state.experiment}"
+                add_error(title, msg)
+                print(msg)
                 return
-            elif not metadata_match(config_file, model_file):
-                print(
-                    f"Model file {model_file} does not match configuration file {config_file}"
-                )
+            elif not verify_input_variables(model_file, state.experiment):
+                title = "Model file input variable mismatch"
+                msg = f"Model file {model_file} has different input variables than the configuration file for {state.experiment}"
+                add_error(title, msg)
+                print(msg)
                 return
 
             # Load model with lume_model
