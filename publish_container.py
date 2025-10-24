@@ -4,6 +4,7 @@ Build the Dashboard (GUI) container or
 build the ML training container (with CUDA support) for
 Perlmutter (NERSC) and publish it to registry.nersc.gov
 """
+
 import argparse
 import subprocess
 
@@ -45,8 +46,8 @@ def build_container(container: str, auto_yes: bool):
     proceed = "y" if auto_yes else input(f"\nPublish new {container} image? [y/N] ")
     command_list = [
         "docker login registry.nersc.gov",
-        f"docker tag gui:latest registry.nersc.gov/m558/superfacility/{imagename[container]}:latest",
-        f"docker tag gui:latest registry.nersc.gov/m558/superfacility/{imagename[container]}:$(date '+%y.%m')",
+        f"docker tag {imagename[container]}:latest registry.nersc.gov/m558/superfacility/{imagename[container]}:latest",
+        f"docker tag {imagename[container]}:latest registry.nersc.gov/m558/superfacility/{imagename[container]}:$(date '+%y.%m')",
         f"docker push -a registry.nersc.gov/m558/superfacility/{imagename[container]}",
     ]
     command = " && ".join(command_list)
@@ -56,11 +57,18 @@ def build_container(container: str, auto_yes: bool):
 if __name__ == "__main__":
     # CLI options: --gui --ml
     parser = argparse.ArgumentParser(description="Containers to build:")
-    parser.add_argument('--gui', action='store_true', help='Build Dashboard GUI container')
-    parser.add_argument('--ml', action='store_true', help='Build ML training container')
-    parser.add_argument('-y', '--yes', action='store_true', help='Automatically answer yes to all prompts')
+    parser.add_argument(
+        "--gui", action="store_true", help="Build Dashboard GUI container"
+    )
+    parser.add_argument("--ml", action="store_true", help="Build ML training container")
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Automatically answer yes to all prompts",
+    )
     args = parser.parse_args()
-    
+
     containers = []
     containers += ["gui"] if args.gui else []
     containers += ["ml"] if args.ml else []
@@ -75,4 +83,3 @@ if __name__ == "__main__":
     # build new container images
     for container in containers:
         build_container(container, args.yes)
-
