@@ -1,1 +1,5 @@
 **/*.pem
+experiments/*/experiment_scripts/
+experiments/*/simulation_scripts/
+!experiments/*/simulation_scripts/templates/
+!experiments/*/simulation_scripts/submission_script_single

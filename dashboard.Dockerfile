@@ -22,9 +22,8 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # Copy content into the container at /app
 COPY dashboard /app/dashboard
+COPY experiments /app/experiments
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
-COPY simulation_scripts/staging_injector/templates /app/simulation_scripts/staging_injector/templates
-COPY simulation_scripts/staging_injector/submission_script_single /app/simulation_scripts/staging_injector/submission_script_single
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080

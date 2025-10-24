@@ -1,0 +1,52 @@
+experiment: "qed_ip2"
+
+inputs:
+  input1:
+    name: "Prepulse Delay"
+    type: scalar
+    default: 70
+    value_range: [67.41, 71.41]
+
+  input2:
+    name: "Target focus"
+    type: scalar
+    default: -56.84
+    value_range: [-56.87, -56.81]
+
+outputs:
+  output1:
+    name: "harmonic_signal"
+    type: scalar
+
+simulation_calibration:
+  input1:
+    name: "plasma_gradient_length"
+    unit: "nm"
+    depends_on: "Prepulse Delay"
+    # Model for the gradient length:
+    # Prepulse Delay is in mm, this is actually the motion of a stage
+    # Zero delay is 71.41 mm ; going to the left, the delay is increasing
+    # The prepulse is obtained with a 1cm hole in a 20cm beam, so it contains 1/400 of the energy
+    # i.e. 20 J / 400 = 0.05 J ; its waist will be 20 x 2.7 microns at focus, i.e. 54 microns.
+    # Thus, the fluence is 0.05 J / (pi x 54e-6 x 54e-6) = 5.5e6 J/m^2 = 0.55 kJ/cm^2
+    # The model for the gradient length from Henri Vincenti is
+    # L [nm] = alpha x sqrt(F[kJ/cm^2])* tau [ps] with alpha = 50 nm/ps
+    # L [nm] = alpha x sqrt(F[kJ/cm^2])* 2/clight* 1e-3/1e-12*(71.41 - prepulse_delay_mm)
+    alpha: -247.
+    beta: 71.41
+
+  input2:
+    name: "target_to_focus_distance"
+    unit: "um"
+    depends_on: "Target focus"
+    # Per meeting notes on 2025-05-22, target_focus is in mm and the origin is at 56.84 mm
+    # Increasing target_focus moves the target toward the parabola, i.e. the distance is decreasing
+    alpha: 1.0
+    beta: 56.84
+
+  output1:
+    name: "energy_in_harmonics"
+    unit: "J/m"
+    depends_on: "harmonic_signal"
+    alpha: 1.0
+    beta: 0.0

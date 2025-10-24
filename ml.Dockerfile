@@ -26,7 +26,7 @@ ENTRYPOINT ["/app/ml/entrypoint.sh"]
 # Copy ML scripts & configs into the container at /app/ml/
 COPY ml/train_model.py /app/ml/train_model.py
 COPY ml/Neural_Net_Classes.py /app/ml/Neural_Net_Classes.py
-COPY dashboard/config/variables.yml /app/ml/variables.yml
+COPY experiments /app/experiments
 
 # Run train_model.py when the container launches
 CMD ["python", "-u", "train_model.py"]
