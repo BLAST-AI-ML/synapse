@@ -40,3 +40,5 @@ def initialize_state():
     # Errors management
     state.errors = []
     state.error_counter = 0
+    # tabs
+    state.active_tab = "tab0"
