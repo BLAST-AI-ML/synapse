@@ -267,30 +267,43 @@ def home_route():
     with RouterViewLayout(server, "/"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
-                # output control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        out_manager.panel()
-                # parameters control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        par_manager.panel()
-                # plots control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        data_depth_panel()
-                # optimization control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        opt_manager.panel()
-                # model control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        mod_manager.panel()
-                # calibration control panel
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        cal_manager.panel()
+                with vuetify.VCard():
+                    with vuetify.VTabs(
+                        v_model=("active_tab", "parameters_tab"),
+                        color="primary",
+                        mandatory=True,
+                    ):
+                        vuetify.VTab("Parameters", value="parameters_tab")
+                        vuetify.VTab("Optimization", value="optimization_tab")
+                        vuetify.VTab("ML", value="ml_tab")
+                    with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
+                        with vuetify.VWindowItem(value="parameters_tab"):
+                            # output control panel
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    out_manager.panel()
+                            # parameters control panel
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    par_manager.panel()
+                            # plots control panel
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    data_depth_panel()
+                        with vuetify.VWindowItem(value="optimization_tab"):
+                            # optimization control panel
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    opt_manager.panel()
+                        with vuetify.VWindowItem(value="ml_tab"):
+                            # model control panel
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    mod_manager.panel()
+                            # calibration control panel
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    cal_manager.panel()
             # plots card
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
