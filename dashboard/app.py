@@ -268,12 +268,16 @@ def home_route():
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
                 with vuetify.VCard():
-                    with vuetify.VTabs(v_model=("active_tab", "tab0"), color="primary", mandatory=True):
-                        vuetify.VTab("Parameters", value="tab0")
-                        vuetify.VTab("Otimization", value="tab1")
-                        vuetify.VTab("ML", value="tab2")
-                    with vuetify.VWindow(v_model=("active_tab", "tab0"), mandatory=True):
-                        with vuetify.VWindowItem(value="tab0"):
+                    with vuetify.VTabs(
+                        v_model=("active_tab", "parameters_tab"),
+                        color="primary",
+                        mandatory=True,
+                    ):
+                        vuetify.VTab("Parameters", value="parameters_tab")
+                        vuetify.VTab("Optimization", value="optimization_tab")
+                        vuetify.VTab("ML", value="ml_tab")
+                    with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
+                        with vuetify.VWindowItem(value="parameters_tab"):
                             # output control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
@@ -286,12 +290,12 @@ def home_route():
                             with vuetify.VRow():
                                 with vuetify.VCol():
                                     data_depth_panel()
-                        with vuetify.VWindowItem(value="tab1"):
+                        with vuetify.VWindowItem(value="optimization_tab"):
                             # optimization control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
                                     opt_manager.panel()
-                        with vuetify.VWindowItem(value="tab2"):
+                        with vuetify.VWindowItem(value="ml_tab"):
                             # model control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
