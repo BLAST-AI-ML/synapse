@@ -90,7 +90,7 @@ ev_chain = ChainEvaluator(evaluators=[ev_pre, ev_main, ev_post])
 # Save simulation results in the shared folder, in a subfolder with the job id
 save_dir_prefix = "single" if args.single_simulation_parameters else "multi"
 slurm_job_id = os.environ["SLURM_JOB_ID"]
-save_dir = f"/global/cfs/cdirs/m558/superfacility/simulation_data/staging_injector/{save_dir_prefix}_{slurm_job_id}"
+save_dir = f"/global/cfs/cdirs/m558/superfacility/simulation_data/bella-staging-injector/{save_dir_prefix}_{slurm_job_id}"
 
 # Create exploration
 exp = Exploration(

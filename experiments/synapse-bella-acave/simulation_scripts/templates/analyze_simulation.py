@@ -52,7 +52,7 @@ def analyze_simulation():
         username="bella_sf_admin",
         password=os.getenv("SF_DB_ADMIN_PASSWORD"),
         authSource="bella_sf")["bella_sf"]
-    collection = db["acave"]
+    collection = db["bella-acave"]
     collection.insert_one(data)
 
     # Create plots of the interation
