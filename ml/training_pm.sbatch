@@ -1,11 +1,5 @@
 #!/bin/bash -l
 
-# Copyright 2024-2025 Revathi Jambunathan, Axel Huebl
-#
-# This file is part of IFE Superfacility LDRD
-#
-# License: BSD-3-Clause-LBNL
-
 #SBATCH -t 00:15:00
 #SBATCH -N 1
 #SBATCH -J trainsf

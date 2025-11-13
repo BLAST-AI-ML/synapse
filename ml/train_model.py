@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 ## This notebook includes simulation and experimental data
 ## in a database using PyMongo
-## Author : Revathi Jambunathan, Axel Huebl
-## Date : January, 2025
 import time
 
 import_start_time = time.time()
