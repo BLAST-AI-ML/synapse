@@ -1,4 +1,9 @@
+from pathlib import Path
 from trame.app import get_server
+
+
+EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
+
 
 server = get_server(client_type="vue3")
 state = server.state
@@ -10,16 +15,23 @@ def initialize_state():
     Helper function to initialize state variabes needed at startup.
     """
     print("Initializing state variables at startup...")
-    # experiment and model type
-    state.experiment = "staging_injector"
+    # Experiment
+    default_experiment = [
+        d.name.removeprefix("synapse-")
+        for d in EXPERIMENTS_PATH.iterdir()
+        if d.is_dir()
+    ][0]
+    print(f"Setting default experiment to {default_experiment}...")
+    state.experiment = default_experiment
+    # ML model
     state.model_type = "Neural Network (single)"
     state.model_training = False
     state.model_training_status = None
     state.model_training_time = None
-    # optimization
+    # Optimization
     state.optimization_type = "Maximize"
     state.optimization_status = None
-    # opacity
+    # Opacity
     state.opacity = 0.05
     # Superfacility API
     state.sfapi_client_id = None
@@ -28,11 +40,11 @@ def initialize_state():
     state.sfapi_key_expiration = "Unavailable"
     state.perlmutter_description = "Unavailable"
     state.perlmutter_status = "unavailable"
-    # simulation plots in interactive dialog
+    # Simulation plots in interactive dialog
     state.simulation_url = None
     state.simulation_dialog = False
     state.simulation_video = False
-    # simulation jobs
+    # Simulation jobs
     state.simulation_running = False
     state.simulation_running_status = None
     state.simulation_running_time = None

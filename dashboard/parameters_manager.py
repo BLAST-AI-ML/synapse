@@ -7,11 +7,11 @@ from pathlib import Path
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import client, vuetify3 as vuetify
-from utils import load_variables, EXPERIMENTS_PATH
+from utils import load_variables
 from calibration_manager import SimulationCalibrationManager
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
-from state_manager import state
+from state_manager import state, EXPERIMENTS_PATH
 
 
 class ParametersManager:
@@ -50,7 +50,7 @@ class ParametersManager:
 
     @property
     def simulation_scripts_base_path(self):
-        return EXPERIMENTS_PATH / f"{state.experiment}/simulation_scripts/"
+        return EXPERIMENTS_PATH / f"synapse-{state.experiment}/simulation_scripts/"
 
     def reset(self):
         print("Resetting parameters to default values...")

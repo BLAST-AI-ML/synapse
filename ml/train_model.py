@@ -79,7 +79,7 @@ db = pymongo.MongoClient(
 # Extract configurations of experiments & models
 yaml_dict = None
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
-config_dir_locations = [current_file_directory, "./", f"../experiments/{experiment}/"]
+config_dir_locations = [current_file_directory, "./", f"../experiments/synapse-{experiment}/"]
 for config_dir in config_dir_locations:
     file_path = config_dir + "config.yaml"
     if os.path.exists(file_path):

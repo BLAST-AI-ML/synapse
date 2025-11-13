@@ -8,13 +8,9 @@ import pymongo
 import time
 import torch
 import yaml
-from pathlib import Path
 from trame.widgets import vuetify3 as vuetify
-from state_manager import state
+from state_manager import state, EXPERIMENTS_PATH
 from error_manager import add_error
-
-
-EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
 
 
 def timer(function):
@@ -34,7 +30,7 @@ def timer(function):
 def load_config_file(experiment):
     print("Reading configuration file...")
     # find configuration file in the local file system
-    config_file = EXPERIMENTS_PATH / f"{experiment}/config.yaml"
+    config_file = EXPERIMENTS_PATH / f"synapse-{experiment}/config.yaml"
     if not config_file.is_file():
         raise ValueError(f"Configuration file {config_file} not found")
     return config_file
@@ -52,7 +48,11 @@ def load_config_dict(experiment):
 
 def load_experiments():
     print("Reading experiments from experiments directory")
-    return [d.name for d in EXPERIMENTS_PATH.iterdir() if d.is_dir()]
+    return [
+        d.name.removeprefix("synapse-")
+        for d in EXPERIMENTS_PATH.iterdir()
+        if d.is_dir()
+    ]
 
 
 def load_variables(experiment):
