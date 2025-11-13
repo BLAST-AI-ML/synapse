@@ -1,4 +1,4 @@
-experiment: "qed_ip2"
+experiment: "bella-qed-ip2"
 
 inputs:
   input1:

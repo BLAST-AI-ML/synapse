@@ -1,4 +1,4 @@
-experiment: "staging_injector"
+experiment: "bella-staging-injector"
 
 inputs:
   input0:
