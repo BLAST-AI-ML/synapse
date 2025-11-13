@@ -45,7 +45,10 @@ class SimulationCalibrationManager:
     def panel(self):
         print("Setting calibration card...")
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_calibration", 0)):
-            with vuetify.VExpansionPanel(title="Control: Calibrate simulation points"):
+            with vuetify.VExpansionPanel(
+                title="Control: Calibrate simulation points",
+                style="font-size: 20px; font-weight: 500;",
+            ):
                 with vuetify.VExpansionPanelText():
                     with client.DeepReactive("simulation_calibration"):
                         for key in state.simulation_calibration.keys():
