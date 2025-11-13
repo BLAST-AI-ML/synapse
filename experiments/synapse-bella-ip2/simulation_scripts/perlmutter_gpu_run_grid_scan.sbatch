@@ -1,11 +1,5 @@
 #!/bin/bash -l
 
-# Copyright 2021-2023 Axel Huebl, Kevin Gott
-#
-# This file is part of WarpX.
-#
-# License: BSD-3-Clause-LBNL
-
 #SBATCH -t 12:00:00
 #SBATCH -N 128
 #SBATCH -J WarpX
