@@ -234,6 +234,7 @@ class ModelManager:
             state.flush()
             if await self.training_kernel():
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                state.flush()
                 print(f"Finished training model at {state.model_training_time}")
             else:
                 print("Unable to complete training job.")
