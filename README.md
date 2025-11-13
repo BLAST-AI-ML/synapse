@@ -24,3 +24,17 @@ Retraining of models is done at NERSC using the SFAPI. The app needs the followi
 - **SFAPI credential file:** See [dashboard/README.md](dashboard/README.md) for instructions on how to generate the credential file and upload it into the Spin app.
 - **Submission script**: See [ml/training_pm.sbatch](ml/training_pm.sbatch). This file is copied into the Docker image that is pushed to Spin (see [dashboard/Dockerfile](dashboard/Dockerfile)), and is used as a template to form the SFAPI job submission, whenever the user requests training via the dashboard.
 - **Python scripts, and configuration files**: See [ml/train_model.py](ml/train_model.py), [ml/Neural_Net_Classes.py](ml/Neural_Net_Classes.py) and [dashboard/config/variables.yml](dashboard/config/variables.yml). These files are copied into the Docker image that is pushed to Spin (see [dashboard/Dockerfile](dashboard/Dockerfile)). Whenever the user requests training via the dashboard, these files are then copied to the Perlmutter shared file system (CFS) (in the folder `/global/cfs/cdirs/m558/superfacility/model_training/src/`), so that the Perlmutter job launched with the SFAPI can find these files.
+
+## Copyright Notice and License Agreement
+
+Synapse v1.0 Copyright (c) 2025, The Regents of the University of California,
+through Lawrence Berkeley National Laboratory (subject to receipt of
+any required approvals from the U.S. Dept. of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Intellectual Property Office at
+IPO@lbl.gov.
+
+Please find the full copyright notice in [NOTICE.txt](NOTICE.txt) and the full license agreement in [LICENSE.txt](LICENSE.txt).
+
+The SPDX license identifier is `BSD-3-Clause-LBNL`.
