@@ -58,7 +58,7 @@ def analyze_simulation():
         username="bella_sf_admin",
         password=os.getenv("SF_DB_ADMIN_PASSWORD"),
         authSource="bella_sf")["bella_sf"]
-    collection = db["qed_ip2"]
+    collection = db["bella-qed-ip2"]
     collection.insert_one(data)
 
     # Create plots of the interation

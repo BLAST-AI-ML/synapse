@@ -18,7 +18,7 @@
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
-experiment=${1}  # e.g., "ip2"
+experiment=${1}  # e.g., "bella-ip2"
 model=${2}  # e.g., "NN"
 
 if [[ -z "${experiment}" ]]; then

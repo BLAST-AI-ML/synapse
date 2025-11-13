@@ -31,8 +31,8 @@ WarpX should be compiled with this command:
    cmake -S . -B build_pm_gpu -DWarpX_COMPUTE=CUDA -DWarpX_FFT=ON -DWarpX_DIMS="RZ"
    cmake --build build_pm_gpu -j 16
 
-To run simulations, copy (or clone) the whole folder `simulation_scripts/acave` into your `$SCRATCH` folder.
-Then copy the compiled WarpX executable to `simulation_scripts/acave/templates/warpx.rz`.
+To run simulations, copy (or clone) the whole folder `simulation_scripts/bella-acave` into your `$SCRATCH` folder.
+Then copy the compiled WarpX executable to `simulation_scripts/bella-acave/templates/warpx.rz`.
 
 Scans of parameters can be run with
 

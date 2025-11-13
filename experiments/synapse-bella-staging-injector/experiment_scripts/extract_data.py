@@ -24,7 +24,7 @@ LABVIEW_EPOCH_OFFSET = 2082844800
 # data to be extracted
 watched_folder = r"N:\data\Y2025\08-Aug"
 watched_pattern = r"25_08"
-experiment = "staging_injector"
+experiment = "bella-staging-injector"
 data_to_extract = {
     "Amplifier 3 [J]": "EM-LB-2 Reading.Channel 2 Alias:Amplifier 3 [J]",
     "HEX-PL1-1 xpos": "HEX-PL1-1 xpos",

@@ -155,7 +155,7 @@ class ModelManager:
             elif self.__is_gaussian_process or self.__is_neural_network_ensemble:
                 if self.__is_gaussian_process:
                     # TODO use "exp" only once experimental data is available for all experiments
-                    task_tag = "exp" if state.experiment == "ip2" else "sim"
+                    task_tag = "exp" if state.experiment == "bella-ip2" else "sim"
                     output_key = [key for key in output_dict.keys() if task_tag in key][
                         0
                     ]

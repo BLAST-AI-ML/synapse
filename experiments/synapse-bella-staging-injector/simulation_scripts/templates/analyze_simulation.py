@@ -113,7 +113,7 @@ def analyze_simulation( simulation_directory, upload_to_db=True ):
             username="bella_sf_admin",
             password=os.getenv("SF_DB_ADMIN_PASSWORD"),
             authSource="bella_sf")["bella_sf"]
-        collection = db["staging_injector"]
+        collection = db["bella-staging-injector"]
         collection.insert_one(data)
 
     def visualize_iteration(iteration):

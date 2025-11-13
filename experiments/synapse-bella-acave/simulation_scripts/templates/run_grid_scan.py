@@ -55,7 +55,7 @@ ev_chain = ChainEvaluator(
 # Create exploration.
 
 # Save simulation results in the shared folder, in a subfolder with the job id
-save_dir = '/global/cfs/cdirs/m558/superfacility/simulation_data/acave/multi_' + os.environ['SLURM_JOB_ID']
+save_dir = '/global/cfs/cdirs/m558/superfacility/simulation_data/bella-acave/multi_' + os.environ['SLURM_JOB_ID']
 
 exp = Exploration(
     generator=gen,

@@ -45,7 +45,7 @@ ev_chain = ChainEvaluator(
 )
 
 # Create exploration.
-save_dir = '/global/cfs/cdirs/m558/superfacility/simulation_data/qed_ip2/multi_' + os.environ['SLURM_JOB_ID']
+save_dir = '/global/cfs/cdirs/m558/superfacility/simulation_data/bella-qed-ip2/multi_' + os.environ['SLURM_JOB_ID']
 
 exp = Exploration(
     generator=gen,

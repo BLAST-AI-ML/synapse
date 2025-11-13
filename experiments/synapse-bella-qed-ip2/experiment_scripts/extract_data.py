@@ -4,8 +4,7 @@ This script will watch for new scan files anywhere in the 05-May
 folder and uploads the experimental results to the database.
 
 This should be run with:
-
-python extract_qed_ip2_data.py
+python extract_data.py
 """
 
 import time
@@ -25,7 +24,7 @@ LABVIEW_EPOCH_OFFSET = 2082844800
 
 # data to be extracted
 watched_folder = r"N:\data\Y2025\05-May"
-experiment = "qed_ip2"
+experiment = "bella-qed-ip2"
 data_to_extract = {
     "Target focus": "IP2-TC-ESP5 Position.Axis 1 Alias:Target focus",
     "Prepulse Delay": "MANPAR-BELLA-General value10 Alias:prepulse_delay",
