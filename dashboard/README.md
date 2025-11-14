@@ -1,4 +1,6 @@
-## GUI how-to guide for users and developers
+## Dashboard
+
+Here are a few how-to guides on how to develop and use the dashboard.
 
 ### Prerequisites
 - Ensure you have Conda installed.
