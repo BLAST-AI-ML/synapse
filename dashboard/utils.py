@@ -264,9 +264,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 ]
                 hover_customdata += hover_simulation
                 hover_template_lines += hover_section(
-                    "Simulation",
-                    hover_simulation,
-                    hover_customdata,
+                    "Simulation", hover_simulation, hover_customdata
                 )
 
             exp_fig = px.scatter(
