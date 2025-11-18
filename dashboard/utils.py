@@ -242,7 +242,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             hover_customdata = hover_parameters + hover_output_variables
 
             hover_template_lines = hover_section(
-                "Parameters", hover_parameters, hover_customdata
+                "Input variables", hover_parameters, hover_customdata
             )
             hover_template_lines += hover_section(
                 "Output variables", hover_output_variables, hover_customdata
@@ -255,7 +255,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 ]
                 hover_customdata += hover_experiment
                 hover_template_lines += hover_section(
-                    "Experiment info", hover_experiment, hover_customdata
+                    "Experiment", hover_experiment, hover_customdata
                 )
 
             elif df_leg[df_count] == "Simulation":
@@ -264,7 +264,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 ]
                 hover_customdata += hover_simulation
                 hover_template_lines += hover_section(
-                    "Simulation variables",
+                    "Simulation",
                     hover_simulation,
                     hover_customdata,
                 )
