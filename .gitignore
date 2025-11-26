@@ -1,5 +1,8 @@
 *__pycache__/
 *.ipynb_checkpoints/
 
+# Experiments
+experiments/*/
+
 # JetBrains IDE idea directories
 .idea/
