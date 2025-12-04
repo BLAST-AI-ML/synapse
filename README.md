@@ -1,8 +1,8 @@
-# SYNergistic software platform for AI, Physics Simulations, and Experiments (SYNAPSE)
+# Synergistic Software Platform for AI, Physics Simulations, and Experiments (Synapse)
 
-## Overview of the repository
+## Overview
 
-This repo contains scripts and code to show ML predictions from simulations and experimental data, in the BELLA control room, as illustrated schematically here:
+Synapse is a software platform that enables experimental physicists in a control room to couple experimental data, simulations, and machine learning (ML) models trained on experimental data and simulations, as illustrated schematically here for the case of the Berkeley Lab Laser Accelerator Center (BELLA):
 
 ![IFE Superfacility Overview](overview_image.png)
 
