@@ -56,7 +56,9 @@ def build_container(container: str, auto_yes: bool):
 
 if __name__ == "__main__":
     # CLI options: --gui --ml
-    parser = argparse.ArgumentParser(description="Build a container image and push it to the NERSC registry.")
+    parser = argparse.ArgumentParser(
+        description="Build a container image and push it to the NERSC registry."
+    )
     parser.add_argument(
         "--gui", action="store_true", help="Build Dashboard GUI container"
     )
