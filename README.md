@@ -16,7 +16,7 @@ The application needs the following:
 - **Experiment configuration file**: A YAML file named `config.yaml` stored in the root directory of an experiment's repository.
 It defines the input, output, and calibration variables for the experiment.
 - **Simulation and experimental data points**: Each data point consists of values for the scalar inputs and outputs defined in the experiment configuration file.
-Data points are stored in a MongoDB database, where each experiment is represented by a separate collection.
+Data points are stored in a [MongoDB](https://www.mongodb.com/) database, where each experiment is represented by a separate collection.
 Experimental and simulation data points are stored in the same collection and are distinguished by the `experimental_flag` attribute.
 - **ML models**: Machine learning models that interpolate between data points.
 They are stored in a separate MongoDB collection named `models`.
