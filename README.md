@@ -24,7 +24,7 @@ This directory is mounted on the container image running on Spin.
 
 ### Launching ML training at NERSC
 
-The application requires the following:
+ML models can be trained by launching jobs on Perlmutter from the GUI, through the [NERSC Superfacility API](https://docs.nersc.gov/services/sfapi/). The application requires the following:
 
 - **Superfacility API credential file**: Instructions on generating and uploading the credential file from the GUI are in [dashboard/README.md](dashboard/README.md).
 - **Submission script**: The batch script [ml/training_pm.sbatch](ml/training_pm.sbatch) is copied into the container image pushed to the NERSC registry and deployed via Spin (see [dashboard.Dockerfile](dashboard.Dockerfile)). It serves as a template for Superfacility API job submission when users launch model training from the GUI.
