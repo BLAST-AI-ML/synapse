@@ -4,7 +4,7 @@
 
 Synapse is a software platform that enables experimental physicists in a control room to couple experimental data, simulations, and machine learning (ML) models trained on experimental data and simulations, as illustrated schematically here for the case of the Berkeley Lab Laser Accelerator Center (BELLA):
 
-![IFE Superfacility Overview](overview_image.png)
+![Synapse overview](synapse_overview.png)
 
 One of the main component is the app that runs on NERSC Spin, for which the code is in the [`dashboard/`](dashboard/) folder. In particular, when running on NERSC Spin, the app needs to access to different sources of information, for different functionalities:
 
