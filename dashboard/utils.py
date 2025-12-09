@@ -107,22 +107,16 @@ def verify_input_variables(model_file, experiment):
 
 
 @timer
-def load_database():
+def load_database(experiment):
     print("Loading database...")
-    # load database
-    db_defaults = {
-        "host": "mongodb05.nersc.gov",
-        "port": 27017,
-        "name": "bella_sf",
-        "auth": "bella_sf",
-        "user": "bella_sf_ro",
-    }
+    # load configuration dictionary
+    config_dict = load_config_dict(experiment)
     # read database information from environment variables (if unset, use defaults)
-    db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
-    db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
-    db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
-    db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
-    db_user = os.getenv("SF_DB_USER", db_defaults["user"])
+    db_auth = config_dict["database"]["auth"]
+    db_host = config_dict["database"]["host"]
+    db_name = config_dict["database"]["name"]
+    db_port = config_dict["database"]["port"]
+    db_user = config_dict["database"]["user"]
     # read database password from environment variable (no default provided)
     db_password = os.getenv("SF_DB_READONLY_PASSWORD")
     if db_password is None:
