@@ -11,7 +11,7 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import verify_input_variables, timer
+from utils import verify_input_variables, timer, load_config_dict
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -190,8 +190,23 @@ class ModelManager:
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
+                # Upload the config.yaml to nersc
+                config_dict = load_config_dict(state.experiment)
+                config_dict["simulation_calibration"] = state.simulation_calibration
+                target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
+                [target_path] = await perlmutter.ls(target_path, directory=True)
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_file_path = Path(temp_dir) / "config.yaml"
+                    with open(temp_file_path, "w") as temp_file:
+                        yaml.dump(config_dict, temp_file)
+                        temp_file.flush()
+                    with open(temp_file_path, "rb") as temp_file:
+                        print("Uploading config file to NERSC")
+                        temp_file.filename = "config.yaml"
+                        await target_path.upload(temp_file)
+
                 # set the path of the script used to submit the training job on NERSC
-                script_job = None
+                training_script = None
                 # multiple locations supported, to make development easier
                 #   container (production): script is in cwd
                 #   development, starting the gui app from dashboard/: script is in ../ml/
@@ -201,20 +216,20 @@ class ModelManager:
                     script_path = script_dir / "training_pm.sbatch"
                     if os.path.exists(script_path):
                         with open(script_path, "r") as file:
-                            script_job = file.read()
+                            training_script = file.read()
                         break
-                if script_job is None:
+                if training_script is None:
                     raise RuntimeError("Could not find training_pm.sbatch")
 
                 # replace the --experiment command line argument in the batch script
                 # with the current experiment in the state
-                script_job = re.sub(
+                training_script = re.sub(
                     pattern=r"--experiment (.*)",
                     repl=rf"--experiment {state.experiment} --model {model_type_tag_dict[state.model_type]}",
-                    string=script_job,
+                    string=training_script,
                 )
                 # submit the training job through the Superfacility API
-                sfapi_job = await perlmutter.submit_job(script_job)
+                sfapi_job = await perlmutter.submit_job(training_script)
                 state.model_training_status = "Submitted"
                 state.flush()
                 # print some logs
