@@ -54,12 +54,13 @@ class SimulationCalibrationManager:
                         for key in state.simulation_calibration.keys():
                             # create a row for the parameter label
                             with vuetify.VRow():
-                                vuetify.VListSubheader(
+                                vuetify.VListItemTitle(
                                     state.simulation_calibration[key]["name"]
                                 )
                             with vuetify.VRow():
                                 html.Small(
-                                    f"= α × ({state.simulation_calibration[key]['depends_on']} - β)"
+                                    f"= α × ({state.simulation_calibration[key]['depends_on']} - β)",
+                                    style="font-weight: lighter;",
                                 )
                             with vuetify.VRow():
                                 with vuetify.VCol():
