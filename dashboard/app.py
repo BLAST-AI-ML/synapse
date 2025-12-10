@@ -335,7 +335,7 @@ def nersc_route():
 def gui_setup():
     print("Setting GUI layout...")
     with SinglePageWithDrawerLayout(server) as layout:
-        layout.title.set_text("BELLA Superfacility")
+        layout.title.set_text("Synapse")
         # add toolbar components
         with layout.toolbar:
             vuetify.VSpacer()
