@@ -4,7 +4,7 @@ Synapse is a modular framework to build components of digital twins.
 It supports operators of machines and experiments with ML-assisted predictions, trained on a combination of continously measured and simulated data.
 Synapse embraces emerging [integrated research infrastructures](https://www.nersc.gov/what-we-do/computing-for-science/integrated-research-infrastructure), deploying a user-facing cloud service, using HPC/cloud compute, and exchanging modular components via container registries.
 
-At the moment, Synapse uses the NERSC Spin (control, dashboard), NERSC SuperFacilityAPI (simulation submission & ML training on PM), and NERSC container registry.
+At the moment, Synapse uses the NERSC Spin (control, dashboard), NERSC Superfacility API (simulation submission & ML training on Perlmutter), and NERSC container registry.
 Synapse is actively developed and broadened to an AI-accelerated, portable framework.
 
 ## Overview
