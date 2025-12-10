@@ -9,7 +9,7 @@ Synapse is actively developed and broadened to an AI-accelerated, portable frame
 
 ## Overview
 
-Synapse is a software platform that enables experimental physicists to couple experimental data, simulations, and machine learning (ML) models trained on experimental and simulation data.
+Synapse is a software platform that enables physicists to couple experimental data, simulations, and machine learning (ML) models trained on experimental and simulation data.
 As an example, the schematic below illustrates how Synapse is used at the Berkeley Lab Laser Accelerator Center (BELLA):
 
 ![Synapse overview](synapse_overview.png)
