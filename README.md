@@ -1,8 +1,16 @@
 # Synergistic Software Platform for AI, Physics Simulations, and Experiments (Synapse)
 
+Synapse is a modular framework to build components of digital twins.
+It supports operators of machines and experiments with ML-assisted predictions, trained on a combination of continously measured and simulated data.
+Synapse embraces emerging [integrated research infrastructures](https://www.nersc.gov/what-we-do/computing-for-science/integrated-research-infrastructure), deploying a user-facing cloud service, using HPC/cloud compute, and exchanging modular components via container registries.
+
+At the moment, Synapse uses the NERSC Spin (control, dashboard), NERSC SuperFacilityAPI (simulation submission & ML training on PM), and NERSC container registry.
+Synapse is actively developed and broadened to an AI-accelerated, portable framework.
+
 ## Overview
 
-Synapse is a software platform that enables experimental physicists to couple experimental data, simulations, and machine learning (ML) models trained on experimental and simulation data. The schematic below illustrates the architecture for the Berkeley Lab Laser Accelerator Center (BELLA):
+Synapse is a software platform that enables experimental physicists to couple experimental data, simulations, and machine learning (ML) models trained on experimental and simulation data.
+As an example, the schematic below illustrates how Synapse is used at the Berkeley Lab Laser Accelerator Center (BELLA):
 
 ![Synapse overview](synapse_overview.png)
 
