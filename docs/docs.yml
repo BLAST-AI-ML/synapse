@@ -1,0 +1,10 @@
+name: synapse-docs
+
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  - myst-parser
+  - sphinx
+  - sphinx-book-theme
