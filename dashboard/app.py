@@ -231,7 +231,7 @@ def find_simulation(event, db):
         print(msg)
 
 
-def open_simulation_dialog(event):
+def open_simulation_dialog(event, db):
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
@@ -313,7 +313,10 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(open_simulation_dialog, "[utils.safe($event)]"),
+                                click=(
+                                    open_simulation_dialog,
+                                    "[utils.safe($event), db]",
+                                ),
                             )
                             ctrl.figure_update = figure.update
 
