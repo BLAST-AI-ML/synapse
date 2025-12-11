@@ -111,7 +111,7 @@ def load_database(experiment):
     print("Loading database...")
     # load configuration dictionary
     config_dict = load_config_dict(experiment)
-    # read database information from environment variables (if unset, use defaults)
+    # read database information from configuration dictionary
     db_auth = config_dict["database"]["auth"]
     db_host = config_dict["database"]["host"]
     db_name = config_dict["database"]["name"]
