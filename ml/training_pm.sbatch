@@ -32,7 +32,9 @@ IMAGE_VERSION="latest"
 
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
 LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION})
-REMOTE_SHA=$(curl -s -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
+REMOTE_SHA=$(curl -s \
+    -H "Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+    -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
     jq -r '.config.digest')
 
