@@ -81,7 +81,6 @@ class SimulationCalibrationManager:
                                         v_model_number=(
                                             f"simulation_calibration['{key}']['alpha_uncertainty']",
                                         ),
-                                        change="flushState('simulation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         hide_spin_buttons=True,
@@ -110,7 +109,6 @@ class SimulationCalibrationManager:
                                         v_model_number=(
                                             f"simulation_calibration['{key}']['beta_uncertainty']",
                                         ),
-                                        change="flushState('simulation_calibration')",
                                         density="compact",
                                         hide_details=True,
                                         hide_spin_buttons=True,
