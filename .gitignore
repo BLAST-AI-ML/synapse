@@ -8,4 +8,4 @@ experiments/*/
 .idea/
 
 # Documentation
-docs/build/**
+docs/build/
