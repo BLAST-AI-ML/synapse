@@ -49,16 +49,19 @@ class SimulationCalibrationManager:
                 title="Control: Calibrate simulation points",
                 style="font-size: 20px; font-weight: 500;",
             ):
-                with vuetify.VExpansionPanelText():
+                with vuetify.VExpansionPanelText(
+                    style="font-weight: lighter; font-size: 16px;"
+                ):
                     with client.DeepReactive("simulation_calibration"):
                         for key in state.simulation_calibration.keys():
                             # create a row for the parameter label
                             with vuetify.VRow():
                                 html.Small(
                                     f"<b> {state.simulation_calibration[key]['name']}</b> = α × (<b>{state.simulation_calibration[key]['depends_on']}</b> - β)",
-                                    style="font-weight: lighter; font-size: 70%;",
                                 )
                             with vuetify.VRow():
+                                with vuetify.VCol():
+                                    html.Small("α = ", style="width: 100px;")
                                 with vuetify.VCol():
                                     vuetify.VTextField(
                                         v_model_number=(
@@ -70,8 +73,24 @@ class SimulationCalibrationManager:
                                         hide_spin_buttons=True,
                                         style="width: 100px;",
                                         type="number",
-                                        label="α",
                                     )
+                                with vuetify.VCol():
+                                    html.Small("±")
+                                with vuetify.VCol():
+                                    vuetify.VTextField(
+                                        v_model_number=(
+                                            f"simulation_calibration['{key}']['alpha_uncertainty']",
+                                        ),
+                                        change="flushState('simulation_calibration')",
+                                        density="compact",
+                                        hide_details=True,
+                                        hide_spin_buttons=True,
+                                        style="width: 100px;",
+                                        type="number",
+                                    )
+                            with vuetify.VRow():
+                                with vuetify.VCol():
+                                    html.Small("β = ")
                                 with vuetify.VCol():
                                     vuetify.VTextField(
                                         v_model_number=(
@@ -83,5 +102,18 @@ class SimulationCalibrationManager:
                                         hide_spin_buttons=True,
                                         style="width: 100px;",
                                         type="number",
-                                        label="β",
+                                    )
+                                with vuetify.VCol():
+                                    html.Small("±", style="width: 100px;")
+                                with vuetify.VCol():
+                                    vuetify.VTextField(
+                                        v_model_number=(
+                                            f"simulation_calibration['{key}']['beta_uncertainty']",
+                                        ),
+                                        change="flushState('simulation_calibration')",
+                                        density="compact",
+                                        hide_details=True,
+                                        hide_spin_buttons=True,
+                                        style="width: 100px;",
+                                        type="number",
                                     )
