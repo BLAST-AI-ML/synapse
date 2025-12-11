@@ -8,7 +8,7 @@
 
 project = "Synapse"
 copyright = "BSD-3-Clause-LBNL"
-author = "Arjun Dhamrait, Andrea Diaz, Marco Garten, Axel Huebl, Revathi Jambunathan, Remi Lehe, Ethan Rodriguez, Olga Shapoval, Edoardo Zoni"
+author = "Arjun Dhamrait, Andrea Diaz, Marco Garten, Axel Huebl, Revathi Jambunathan, Remi Lehe, Ethan Rodriguez, Olga Shapoval, Jean-Luc Vay, Edoardo Zoni"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
