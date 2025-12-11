@@ -6,5 +6,8 @@ channels:
 
 dependencies:
   - myst-parser
+  - pip
   - sphinx
   - sphinx-book-theme
+  - pip:
+    - pre-commit
