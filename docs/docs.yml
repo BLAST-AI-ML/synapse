@@ -8,6 +8,8 @@ dependencies:
   - myst-parser
   - pip
   - sphinx
+  - sphinx-autobuild
   - sphinx-book-theme
+  - sphinx-copybutton
   - pip:
     - pre-commit
