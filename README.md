@@ -38,7 +38,7 @@ ML models can be trained by launching jobs on Perlmutter from the GUI, through t
 - **Submission script**: The batch script [ml/training_pm.sbatch](ml/training_pm.sbatch) is copied into the container image pushed to the NERSC registry and deployed via Spin (see [dashboard.Dockerfile](dashboard.Dockerfile)). It serves as a template for Superfacility API job submission when users launch model training from the GUI.
 - **Python scripts and configuration files**: These include [ml/train_model.py](ml/train_model.py), [ml/Neural_Net_Classes.py](ml/Neural_Net_Classes.py), and the experiment configuration file `config.yaml`.
 They are copied into the container image pushed to the NERSC registry and deployed via Spin (see [dashboard.Dockerfile](dashboard.Dockerfile)).
-When users launch model training from the GUI, these files are copied to the Perlmutter shared file system at `/global/cfs/cdirs/m558/superfacility/model_training/src/` for access by the Superfacility API job.
+When users launch model training from the GUI, these files are copied to the Perlmutter shared file system at `/global/cfs/cdirs/m558/superfacility/model_training/src/` for access by the Superfacility API job. The `config.yaml` file is automatically populated with the configuration values specified in the GUI before being copied to the shared file system.
 
 ## Copyright Notice and License Agreement
 
