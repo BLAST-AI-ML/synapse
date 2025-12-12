@@ -33,8 +33,6 @@ par_manager = None
 opt_manager = None
 cal_manager = None
 
-# load database
-db = load_database()
 # list of available experiments
 experiments = load_experiments()
 
@@ -60,12 +58,13 @@ def update(
     global par_manager
     global opt_manager
     global cal_manager
-    # load data
-    exp_data, sim_data = load_data(db)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables(
         state.experiment
     )
+    # load data
+    db = load_database(state.experiment)
+    exp_data, sim_data = load_data(db)
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
@@ -232,7 +231,7 @@ def find_simulation(event, db):
         print(msg)
 
 
-def open_simulation_dialog(event):
+def open_simulation_dialog(event, db):
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
@@ -314,7 +313,10 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(open_simulation_dialog, "[utils.safe($event)]"),
+                                click=(
+                                    open_simulation_dialog,
+                                    "[utils.safe($event), db]",
+                                ),
                             )
                             ctrl.figure_update = figure.update
 
