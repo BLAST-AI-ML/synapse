@@ -228,7 +228,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # Determine which data is shown when hovering over the plot
             hover_parameters = list(state.parameters.keys())
             hover_output_variables = state.output_variables
-            hover_customdata = hover_parameters + hover_output_variables
+            hover_customdata = ["_id"] + hover_parameters + hover_output_variables
 
             hover_template_lines = hover_section(
                 "Input variables", hover_parameters, hover_customdata
