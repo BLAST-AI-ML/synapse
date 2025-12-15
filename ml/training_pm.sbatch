@@ -35,7 +35,6 @@ LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_N
 # OCI_FILE_TYPES defines the expected format, for the content returned by the `curl` command below
 # See https://specs.opencontainers.org/image-spec/manifest/#oci-image-manifest-specification
 OCI_FILE_TYPES="application/vnd.oci.image.manifest.v1+json"  # official spec for the modern OCI format
-OCI_FILE_TYPES+=", application/vnd.docker.distribution.manifest.v2+json"  # same, but for predecessor of the OCI format for portability
 REMOTE_SHA=$(curl -s \
     -H "Accept: ${OCI_FILE_TYPES}" \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
