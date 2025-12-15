@@ -32,7 +32,7 @@ IMAGE_VERSION="latest"
 
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
 LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION})
-OCI_FILE_TYPES="application/vnd.oci.image.manifest.v1+json"  # offiical spec for v1; NOTE: still expected in the request
+OCI_FILE_TYPES="application/vnd.oci.image.manifest.v1+json"  # official spec for v1; NOTE: still expected in the request
                                                              # on NERSC ranger even though we request and receive a v2 format
 OCI_FILE_TYPES+=", application/vnd.oci.image.index.v1+json"  # alternate used in some versions of registries, for portability
 OCI_FILE_TYPES+=", application/vnd.docker.distribution.manifest.v2+json"  # official spec for v2 that we use, for updates & portability
