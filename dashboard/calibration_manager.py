@@ -1,5 +1,6 @@
 from trame.widgets import client, vuetify3 as vuetify, html
 from state_manager import state
+from error_manager import add_error
 import copy
 
 
@@ -15,7 +16,23 @@ class SimulationCalibrationManager:
         for value in state.simulation_calibration.values():
             sim_name = value["name"]
             exp_name = value["depends_on"]
-            df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
+            df_sim[exp_name] = (
+                df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
+            )
+            if state.use_inferred_calibration:
+                if all(
+                    inferred_key in value.values()
+                    for inferred_key in ["alpha_inferred", "beta_inferred"]
+                ):
+                    df_sim[exp_name] = (
+                        df_sim[sim_name] / value["alpha_inferred"]
+                        + value["beta_inferred"]
+                    )
+                else:
+                    add_error(
+                        "Inferrred calibration does not exist",
+                        "Attempted to use the inferred calibration values to apply to the simulation points but calibration hasn't been inferred yet. Applying the guess calibration instead.",
+                    )
 
     def convert_exp_to_sim(self, exp_dict):
         """
@@ -38,8 +55,22 @@ class SimulationCalibrationManager:
             )
             # fill the dictionary
             if exp_name in exp_dict:
-                sim_val = (exp_dict[exp_name] - value["beta"]) * value["alpha"]
-                sim_dict[sim_name] = sim_val
+                if state.use_inferred_calibration:
+                    sim_dict[sim_name] = (
+                        exp_dict[exp_name] - value["beta_guess"]
+                    ) * value["alpha_guess"]
+                    if all(
+                        inferred_key in value.values()
+                        for inferred_key in ["alpha_inferred", "beta_inferred"]
+                    ):
+                        sim_dict[sim_name] = (
+                            exp_dict[exp_name] - value["beta_inferred"]
+                        ) * value["alpha_inferred"]
+                    else:
+                        add_error(
+                            "Inferred calibration does not exist",
+                            "Attempted to use the inferred calibration values to apply to the experimental points but the calibration hasn't been inferret yet. Applying the guess calibration instead.",
+                        )
         return sim_dict
 
     def panel(self):
@@ -52,6 +83,12 @@ class SimulationCalibrationManager:
                 with vuetify.VExpansionPanelText(
                     style="font-weight: lighter; font-size: 16px;"
                 ):
+                    with vuetify.VRow():
+                        vuetify.VCheckbox(
+                            v_model="use_inferred_calibration",
+                            density="compact",
+                            label="Use inferred calibration",
+                        )
                     with client.DeepReactive("simulation_calibration"):
                         for key in state.simulation_calibration.keys():
                             # create a row for the parameter label
@@ -59,59 +96,94 @@ class SimulationCalibrationManager:
                                 html.Small(
                                     f"<b> {state.simulation_calibration[key]['name']}</b> = α × (<b>{state.simulation_calibration[key]['depends_on']}</b> - β)",
                                 )
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    html.Small("α = ", style="width: 100px;")
-                                with vuetify.VCol():
-                                    vuetify.VTextField(
-                                        v_model_number=(
-                                            f"simulation_calibration['{key}']['alpha']",
-                                        ),
-                                        change="flushState('simulation_calibration')",
-                                        density="compact",
-                                        hide_details=True,
-                                        hide_spin_buttons=True,
-                                        style="width: 100px;",
-                                        type="number",
-                                    )
-                                with vuetify.VCol():
-                                    html.Small("±")
-                                with vuetify.VCol():
-                                    vuetify.VTextField(
-                                        v_model_number=(
-                                            f"simulation_calibration['{key}']['alpha_uncertainty']",
-                                        ),
-                                        density="compact",
-                                        hide_details=True,
-                                        hide_spin_buttons=True,
-                                        style="width: 100px;",
-                                        type="number",
-                                    )
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    html.Small("β = ")
-                                with vuetify.VCol():
-                                    vuetify.VTextField(
-                                        v_model_number=(
-                                            f"simulation_calibration['{key}']['beta']",
-                                        ),
-                                        change="flushState('simulation_calibration')",
-                                        density="compact",
-                                        hide_details=True,
-                                        hide_spin_buttons=True,
-                                        style="width: 100px;",
-                                        type="number",
-                                    )
-                                with vuetify.VCol():
-                                    html.Small("±", style="width: 100px;")
-                                with vuetify.VCol():
-                                    vuetify.VTextField(
-                                        v_model_number=(
-                                            f"simulation_calibration['{key}']['beta_uncertainty']",
-                                        ),
-                                        density="compact",
-                                        hide_details=True,
-                                        hide_spin_buttons=True,
-                                        style="width: 100px;",
-                                        type="number",
-                                    )
+                            with html.Div(
+                                style="display: flex; align-items: center; margin: 20px; justify-content: space-between;"
+                            ):
+                                html.Small("α = ")
+                                with vuetify.VCard(
+                                    subtitle="guess", density="comfortable"
+                                ):
+                                    with vuetify.VCardText():
+                                        with vuetify.VRow():
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"simulation_calibration['{key}']['alpha_guess']",
+                                                ),
+                                                change="flushState('simulation_calibration')",
+                                                density="compact",
+                                                hide_details=True,
+                                                hide_spin_buttons=True,
+                                                style="width: 100px;",
+                                                type="number",
+                                            )
+                                            html.Small("±")
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"simulation_calibration['{key}']['alpha_uncertainty']",
+                                                ),
+                                                density="compact",
+                                                hide_details=True,
+                                                hide_spin_buttons=True,
+                                                style="width: 100px;",
+                                                type="number",
+                                            )
+                                with vuetify.VCard(subtitle="inferred"):
+                                    with vuetify.VCardText():
+                                        with vuetify.VRow():
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"simulation_calibration['{key}']['alpha_inferred']",
+                                                ),
+                                                density="compact",
+                                                hide_details=True,
+                                                hide_spin_buttons=True,
+                                                style="width: 100px;",
+                                                type="number",
+                                                disabled=True,
+                                            )
+
+                            with html.Div(
+                                style="display: flex; align-items: center; margin: 20px; justify-content: space-between;"
+                            ):
+                                html.Small("β = ")
+                                with vuetify.VCard(
+                                    subtitle="guess", density="comfortable"
+                                ):
+                                    with vuetify.VCardText():
+                                        with vuetify.VRow():
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"simulation_calibration['{key}']['beta_guess']",
+                                                ),
+                                                change="flushState('simulation_calibration')",
+                                                density="compact",
+                                                hide_details=True,
+                                                hide_spin_buttons=True,
+                                                style="width: 100px;",
+                                                type="number",
+                                            )
+                                            html.Small("±")
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"simulation_calibration['{key}']['beta_uncertainty']",
+                                                ),
+                                                density="compact",
+                                                hide_details=True,
+                                                hide_spin_buttons=True,
+                                                style="width: 100px;",
+                                                type="number",
+                                            )
+                                with vuetify.VCard(subtitle="inferred"):
+                                    with vuetify.VCardText():
+                                        with vuetify.VRow():
+                                            vuetify.VTextField(
+                                                v_model_number=(
+                                                    f"simulation_calibration['{key}']['beta_inferred']",
+                                                ),
+                                                density="compact",
+                                                hide_details=True,
+                                                hide_spin_buttons=True,
+                                                style="width: 100px;",
+                                                type="number",
+                                                disabled=True,
+                                            )

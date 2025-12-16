@@ -144,6 +144,7 @@ def update_on_change_model(**kwargs):
     "parameters_max",
     "parameters_show_all",
     "simulation_calibration",
+    "use_inferred_calibration",
 )
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
