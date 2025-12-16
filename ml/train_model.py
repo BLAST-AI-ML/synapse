@@ -62,12 +62,6 @@ start_time = time.time()
 if model_type not in ["NN", "ensemble_NN", "GP"]:
     raise ValueError(f"Invalid model type: {model_type}")
 
-###############################################
-# Open credential file for database
-###############################################
-with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
-    db_profile = f.read()
-
 # Extract configurations of experiments & models
 yaml_dict = None
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
