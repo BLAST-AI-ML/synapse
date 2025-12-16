@@ -32,7 +32,12 @@ IMAGE_VERSION="latest"
 
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
 LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION})
-REMOTE_SHA=$(curl -s -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
+# OCI_FILE_TYPES defines the expected format
+# See https://specs.opencontainers.org/image-spec/manifest/#oci-image-manifest-specification
+OCI_FILE_TYPES="application/vnd.oci.image.manifest.v1+json"
+REMOTE_SHA=$(curl -s \
+    -H "Accept: ${OCI_FILE_TYPES}" \
+    -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
     jq -r '.config.digest')
 
