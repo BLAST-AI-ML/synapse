@@ -218,6 +218,7 @@ if model_type != "GP":
         model = CombinedNN(len(input_names), n_outputs, learning_rate=0.0001)
         model.to(device)  # moving to GPU
         NNmodel_start_time = time.time()
+        train_on_experiments = 1
         model.train_model(
             norm_sim_inputs_train.to(device),
             norm_sim_outputs_train.to(device),
@@ -228,6 +229,7 @@ if model_type != "GP":
             norm_expt_inputs_val.to(device),
             norm_expt_outputs_val.to(device),
             num_epochs=20000,
+            train_on_expt
         )
         NNmodel_end_time = time.time()
         print(f"Model_{i + 1} trained in ", NNmodel_end_time - NNmodel_start_time)
