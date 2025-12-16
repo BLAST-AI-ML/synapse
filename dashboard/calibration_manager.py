@@ -104,7 +104,7 @@ class SimulationCalibrationManager:
                                     subtitle="guess", density="comfortable"
                                 ):
                                     with vuetify.VCardText():
-                                        with vuetify.VRow():
+                                        with vuetify.VRow(style="align-items: center"):
                                             vuetify.VTextField(
                                                 v_model_number=(
                                                     f"simulation_calibration['{key}']['alpha_guess']",
@@ -150,7 +150,7 @@ class SimulationCalibrationManager:
                                     subtitle="guess", density="comfortable"
                                 ):
                                     with vuetify.VCardText():
-                                        with vuetify.VRow():
+                                        with vuetify.VRow(style="align-items: center"):
                                             vuetify.VTextField(
                                                 v_model_number=(
                                                     f"simulation_calibration['{key}']['beta_guess']",
