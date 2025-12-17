@@ -15,6 +15,7 @@ from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
 import os
+import re
 import yaml
 from lume_model.models import TorchModel
 from lume_model.models.ensemble import NNEnsemble
@@ -85,9 +86,13 @@ db_name = yaml_dict["database"]["name"]
 db_auth = yaml_dict["database"]["auth"]
 db_username = yaml_dict["database"]["username_rw"]
 db_password_env = yaml_dict["database"]["password_rw_env"]
-db_password = os.getenv(db_password_env)
-if db_password is None:
-    raise RuntimeError(f"Environment variable {db_password_env} must be set!")
+# Look for the password in the profile file
+with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
+    db_profile = f.read()
+match = re.search(f"{db_password_env}='([^']*)'", db_profile)
+if not match:
+    raise RuntimeError(f"Environment variable {db_password_env} must be set")
+db_password = match.group(1)
 db = pymongo.MongoClient(
     host=db_host,
     authSource=db_auth,
