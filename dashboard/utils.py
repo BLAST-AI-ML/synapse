@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pymongo
@@ -256,12 +255,17 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                     "Simulation", hover_simulation, hover_customdata
                 )
 
-            exp_fig = px.scatter(
-                df_copy_filtered,
-                x=key,
-                y=objective_name,
-                opacity=df_copy_filtered["opacity"],
-                color_discrete_sequence=[df_cds[df_count]],
+            exp_fig = go.Figure(
+                data=[
+                    go.Scatter(
+                        x=df_copy_filtered[key],
+                        y=df_copy_filtered[objective_name],
+                        mode="markers",
+                        marker=dict(
+                            color=df_cds[df_count], opacity=df_copy_filtered["opacity"]
+                        ),
+                    )
+                ]
             )
 
             # Attach customdata:
