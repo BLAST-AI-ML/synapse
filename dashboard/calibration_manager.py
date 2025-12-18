@@ -29,10 +29,13 @@ class SimulationCalibrationManager:
                         + value["beta_inferred"]
                     )
                 else:
+                    title = "Inferrred calibration does not exist"
+                    message = "Attempted to use the inferred calibration values to apply to the simulation points but calibration hasn't been inferred yet. Applying the guess calibration instead."
                     add_error(
-                        "Inferrred calibration does not exist",
-                        "Attempted to use the inferred calibration values to apply to the simulation points but calibration hasn't been inferred yet. Applying the guess calibration instead.",
+                        title,
+                        message,
                     )
+                    print(message)
 
     def convert_exp_to_sim(self, exp_dict):
         """
@@ -67,10 +70,16 @@ class SimulationCalibrationManager:
                             exp_dict[exp_name] - value["beta_inferred"]
                         ) * value["alpha_inferred"]
                     else:
-                        add_error(
-                            "Inferred calibration does not exist",
+                        title = "Inferrred calibration does not exist"
+                        message = (
                             "Attempted to use the inferred calibration values to apply to the experimental points but the calibration hasn't been inferret yet. Applying the guess calibration instead.",
                         )
+                        add_error(
+                            title,
+                            message,
+                        )
+                        print(message)
+
         return sim_dict
 
     def panel(self):
