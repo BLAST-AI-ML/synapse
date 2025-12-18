@@ -58,10 +58,10 @@ class SimulationCalibrationManager:
             )
             # fill the dictionary
             if exp_name in exp_dict:
+                sim_dict[sim_name] = (exp_dict[exp_name] - value["beta_guess"]) * value[
+                    "alpha_guess"
+                ]
                 if state.use_inferred_calibration:
-                    sim_dict[sim_name] = (
-                        exp_dict[exp_name] - value["beta_guess"]
-                    ) * value["alpha_guess"]
                     if all(
                         inferred_key in value.values()
                         for inferred_key in ["alpha_inferred", "beta_inferred"]
