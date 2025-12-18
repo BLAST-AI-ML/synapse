@@ -106,40 +106,29 @@ def verify_input_variables(model_file, experiment):
 
 
 @timer
-def load_database():
+def load_database(experiment):
     print("Loading database...")
-    # load database
-    db_defaults = {
-        "host": "mongodb05.nersc.gov",
-        "port": 27017,
-        "name": "bella_sf",
-        "auth": "bella_sf",
-        "user": "bella_sf_ro",
-    }
-    # read database information from environment variables (if unset, use defaults)
-    db_host = os.getenv("SF_DB_HOST", db_defaults["host"])
-    db_port = int(os.getenv("SF_DB_PORT", db_defaults["port"]))
-    db_name = os.getenv("SF_DB_NAME", db_defaults["name"])
-    db_auth = os.getenv("SF_DB_AUTH_SOURCE", db_defaults["auth"])
-    db_user = os.getenv("SF_DB_USER", db_defaults["user"])
-    # read database password from environment variable (no default provided)
-    db_password = os.getenv("SF_DB_READONLY_PASSWORD")
+    # load configuration dictionary
+    config_dict = load_config_dict(experiment)
+    # read database information from configuration dictionary
+    db_host = config_dict["database"]["host"]
+    db_port = config_dict["database"]["port"]
+    db_name = config_dict["database"]["name"]
+    db_auth = config_dict["database"]["auth"]
+    db_username = config_dict["database"]["username_ro"]
+    db_password_env = config_dict["database"]["password_ro_env"]
+    db_password = os.getenv(db_password_env)
     if db_password is None:
-        raise RuntimeError("Environment variable SF_DB_READONLY_PASSWORD must be set!")
-    # SSH forward?
-    if db_host == "localhost" or db_host == "127.0.0.1":
-        direct_connection = True
-    else:
-        direct_connection = False
+        raise RuntimeError(f"Environment variable {db_password_env} must be set!")
     # get database instance
     print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
     db = pymongo.MongoClient(
         host=db_host,
         port=db_port,
-        username=db_user,
-        password=db_password,
         authSource=db_auth,
-        directConnection=direct_connection,
+        username=db_username,
+        password=db_password,
+        directConnection=(db_host in ["localhost", "127.0.0.1"]),  # SSH forwarding
     )[db_name]
     return db
 
