@@ -13,20 +13,25 @@ class SimulationCalibrationManager:
         Apply calibration to the simulation points, so as to reconstruct
         the same input/output variables as the experimental points
         """
+
+        def convert(value, alpha, beta):
+            return value / alpha + beta
+
         for value in state.simulation_calibration.values():
             sim_name = value["name"]
             exp_name = value["depends_on"]
-            df_sim[exp_name] = (
-                df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
+            df_sim[exp_name] = convert(
+                df_sim[sim_name], value["alpha_guess"], value["beta_guess"]
             )
             if state.use_inferred_calibration:
                 if all(
                     inferred_key in value.values()
                     for inferred_key in ["alpha_inferred", "beta_inferred"]
                 ):
-                    df_sim[exp_name] = (
-                        df_sim[sim_name] / value["alpha_inferred"]
-                        + value["beta_inferred"]
+                    df_sim[exp_name] = convert(
+                        df_sim[sim_name],
+                        value["alpha_inferred"],
+                        value["beta_inferred"],
                     )
                 else:
                     title = "Inferrred calibration does not exist"
@@ -42,6 +47,10 @@ class SimulationCalibrationManager:
         Apply calibration to the experimental points, to be passed as
         parameters for simulations on NERSC
         """
+
+        def convert(value, alpha, beta):
+            return (value - beta) * alpha
+
         sim_dict = {}
         for _, value in state.simulation_calibration.items():
             sim_name = value["name"]
@@ -58,17 +67,19 @@ class SimulationCalibrationManager:
             )
             # fill the dictionary
             if exp_name in exp_dict:
-                sim_dict[sim_name] = (exp_dict[exp_name] - value["beta_guess"]) * value[
-                    "alpha_guess"
-                ]
+                sim_dict[sim_name] = convert(
+                    exp_dict[exp_name], value["alpha_guess"], value["beta_guess"]
+                )
                 if state.use_inferred_calibration:
                     if all(
                         inferred_key in value.values()
                         for inferred_key in ["alpha_inferred", "beta_inferred"]
                     ):
-                        sim_dict[sim_name] = (
-                            exp_dict[exp_name] - value["beta_inferred"]
-                        ) * value["alpha_inferred"]
+                        sim_dict[sim_name] = convert(
+                            exp_dict[exp_name],
+                            value["alpha_inferred"],
+                            value["beta_inferred"],
+                        )
                     else:
                         title = "Inferrred calibration does not exist"
                         message = (
