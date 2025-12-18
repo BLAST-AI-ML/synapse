@@ -12,8 +12,8 @@
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
-experiment=${1}  # e.g., "bella-ip2"
-model=${2}  # e.g., "NN"
+experiment=${1}  # e.g., "experiment_name"
+model=${2}       # e.g., "NN", "GP", etc.
 
 if [[ -z "${experiment}" ]]; then
     echo "Must pass the experiment name/tag as a command line argument"
