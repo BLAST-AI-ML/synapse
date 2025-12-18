@@ -105,7 +105,7 @@ class SimulationCalibrationManager:
                                 html.Small(
                                     f"<b> {state.simulation_calibration[key]['name']}</b> = α × (<b>{state.simulation_calibration[key]['depends_on']}</b> - β)",
                                 )
-                            with html.Div(
+                            with vuetify.VRow(
                                 style="display: flex; align-items: center; margin: 20px; justify-content: space-between;"
                             ):
                                 html.Small("α = ")
@@ -151,7 +151,7 @@ class SimulationCalibrationManager:
                                                 disabled=True,
                                             )
 
-                            with html.Div(
+                            with vuetify.VRow(
                                 style="display: flex; align-items: center; margin: 20px; justify-content: space-between;"
                             ):
                                 html.Small("β = ")
