@@ -104,6 +104,29 @@ def connect_to_db(config_dict):
         password=db_password,
     )[db_name]
 
+def normalize(df, input_names, input_transform, output_names, output_transform):
+    # Apply normalization to the training data set
+    norm_df = df.copy()
+    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
+    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
+
+    norm_exp_inputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 1][input_names].values,
+        dtype=torch.float,
+    )
+    norm_exp_outputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 1][output_names].values,
+        dtype=torch.float,
+    )
+    norm_sim_inputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 0][input_names].values,
+        dtype=torch.float,
+    )
+    norm_sim_outputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 0][output_names].values,
+        dtype=torch.float,
+    )
+    return norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
 def normalize(df, input_names, input_transform, output_names, output_transform):
     # Apply normalization to the training data set
@@ -129,7 +152,6 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     )
     return norm_df, norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
-
 def split_data(df_exp, df_sim, variables, model_type):
     if model_type == "GP":
         if len(df_exp) > 0:
@@ -152,7 +174,6 @@ def split_data(df_exp, df_sim, variables, model_type):
         else:
             return (sim_train_df[variables], sim_val_df[variables])
 
-
 def build_transforms(n_inputs, X_data, n_outputs, y_data):
     input_transform = AffineInputTransform(
         len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
@@ -162,7 +183,6 @@ def build_transforms(n_inputs, X_data, n_outputs, y_data):
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
     output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
     return input_transform, output_transform
-
 
 def train_nn_ensemble(
     model_type,
@@ -268,6 +288,7 @@ def train_gp(
 
     for i, output_name in enumerate(output_names):
         print(f"Processing output {i + 1}/{n_outputs}: {output_name}")
+        norm_df_train = None  # TODO: Remove this line, I just included it so that ruff allows me to commit...
 
         # Get data where this output is not NaN
         output_data = norm_df_train[output_name].values
