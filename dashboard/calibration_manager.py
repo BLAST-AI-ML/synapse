@@ -11,7 +11,7 @@ class SimulationCalibrationManager:
     def convert_sim_to_exp(self, df_sim):
         """
         Apply calibration to the simulation points, so as to reconstruct
-        the same input/output variables as the experimental points
+        the same input/output variables as the experimental points.
         """
 
         def convert(value, alpha, beta):
@@ -35,21 +35,18 @@ class SimulationCalibrationManager:
                     )
                 else:
                     title = "Inferrred calibration does not exist"
-                    message = "Attempted to use the inferred calibration values to apply to the simulation points but calibration hasn't been inferred yet. Applying the guess calibration instead."
-                    add_error(
-                        title,
-                        message,
-                    )
-                    print(message)
+                    msg = "Attempted to use the inferred calibration values to apply to the simulation points but calibration hasn't been inferred yet. Applying the guess calibration instead."
+                    add_error(title, msg)
+                    print(msg)
 
     def convert_exp_to_sim(self, exp_dict):
         """
         Apply calibration to the experimental points, to be passed as
-        parameters for simulations on NERSC
+        parameters for simulations on NERSC.
         """
 
         def convert(value, alpha, beta):
-            return (value - beta) * alpha
+            return alpha * (value - beta)
 
         sim_dict = {}
         for _, value in state.simulation_calibration.items():
@@ -82,14 +79,11 @@ class SimulationCalibrationManager:
                         )
                     else:
                         title = "Inferrred calibration does not exist"
-                        message = (
-                            "Attempted to use the inferred calibration values to apply to the experimental points but the calibration hasn't been inferret yet. Applying the guess calibration instead.",
+                        msg = (
+                            "Attempted to use the inferred calibration values to apply to the experimental points but the calibration hasn't been inferred yet. Applying the guess calibration instead.",
                         )
-                        add_error(
-                            title,
-                            message,
-                        )
-                        print(message)
+                        add_error(title, msg)
+                        print(msg)
 
         return sim_dict
 
