@@ -111,18 +111,16 @@ class SimulationCalibrationManager:
                         )
                     with client.DeepReactive("simulation_calibration"):
                         for key in state.simulation_calibration.keys():
-                            # create a row for the parameter label
+                            # create a row for the calibration formula
                             with vuetify.VRow():
                                 html.Small(
-                                    f"<b> {state.simulation_calibration[key]['name']}</b> = α × (<b>{state.simulation_calibration[key]['depends_on']}</b> - β)",
+                                    f"<b>{state.simulation_calibration[key]['name']}</b> = α × (<b>{state.simulation_calibration[key]['depends_on']}</b> - β)",
                                 )
+                            # create a row for alpha values
                             with vuetify.VRow(
                                 style="display: flex; align-items: center; margin: 20px; justify-content: space-between;"
                             ):
-                                html.Small("α = ")
-                                with vuetify.VCard(
-                                    subtitle="guess", density="comfortable"
-                                ):
+                                with vuetify.VCard(subtitle="α guess"):
                                     with vuetify.VCardText():
                                         with vuetify.VRow(style="align-items: center"):
                                             vuetify.VTextField(
@@ -136,7 +134,10 @@ class SimulationCalibrationManager:
                                                 style="width: 100px;",
                                                 type="number",
                                             )
-                                            html.Small("±")
+                                            html.Small(
+                                                "±",
+                                                style="margin-left: 5px; margin-right: 5px;",
+                                            )
                                             vuetify.VTextField(
                                                 v_model_number=(
                                                     f"simulation_calibration['{key}']['alpha_uncertainty']",
@@ -147,7 +148,7 @@ class SimulationCalibrationManager:
                                                 style="width: 100px;",
                                                 type="number",
                                             )
-                                with vuetify.VCard(subtitle="inferred"):
+                                with vuetify.VCard(subtitle="α inferred"):
                                     with vuetify.VCardText():
                                         with vuetify.VRow():
                                             vuetify.VTextField(
@@ -161,14 +162,11 @@ class SimulationCalibrationManager:
                                                 type="number",
                                                 disabled=True,
                                             )
-
+                            # create a row for beta values
                             with vuetify.VRow(
                                 style="display: flex; align-items: center; margin: 20px; justify-content: space-between;"
                             ):
-                                html.Small("β = ")
-                                with vuetify.VCard(
-                                    subtitle="guess", density="comfortable"
-                                ):
+                                with vuetify.VCard(subtitle="β guess"):
                                     with vuetify.VCardText():
                                         with vuetify.VRow(style="align-items: center"):
                                             vuetify.VTextField(
@@ -182,7 +180,10 @@ class SimulationCalibrationManager:
                                                 style="width: 100px;",
                                                 type="number",
                                             )
-                                            html.Small("±")
+                                            html.Small(
+                                                "±",
+                                                style="margin-left: 5px; margin-right: 5px;",
+                                            )
                                             vuetify.VTextField(
                                                 v_model_number=(
                                                     f"simulation_calibration['{key}']['beta_uncertainty']",
@@ -193,7 +194,7 @@ class SimulationCalibrationManager:
                                                 style="width: 100px;",
                                                 type="number",
                                             )
-                                with vuetify.VCard(subtitle="inferred"):
+                                with vuetify.VCard(subtitle="β inferred"):
                                     with vuetify.VCardText():
                                         with vuetify.VRow():
                                             vuetify.VTextField(
