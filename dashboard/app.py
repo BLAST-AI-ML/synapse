@@ -353,7 +353,9 @@ def gui_setup():
         # set up router view
         with layout.content:
             error_panel()
-            with vuetify.VContainer(style="height: 100vh; overflow-y: auto"):
+            with vuetify.VContainer(
+                fluid=True, style="height: 100vh; overflow-y: auto"
+            ):
                 router.RouterView()
         # add router components to the drawer
         with layout.drawer:
