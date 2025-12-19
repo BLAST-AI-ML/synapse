@@ -63,20 +63,6 @@ start_time = time.time()
 if model_type not in ["NN", "ensemble_NN", "GP"]:
     raise ValueError(f"Invalid model type: {model_type}")
 
-###############################################
-# Open credential file for database
-###############################################
-with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
-    db_profile = f.read()
-
-# Connect to the MongoDB database with read-only access
-db = pymongo.MongoClient(
-    host="mongodb05.nersc.gov",
-    username="bella_sf_admin",
-    password=re.findall("SF_DB_ADMIN_PASSWORD='(.+)'", db_profile)[0],
-    authSource="bella_sf",
-)["bella_sf"]
-
 # Extract configurations of experiments & models
 yaml_dict = None
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
@@ -93,6 +79,26 @@ for config_dir in config_dir_locations:
         break
 if yaml_dict is None:
     raise RuntimeError("File config.yaml not found.")
+
+# Connect to the MongoDB database with read-write access
+db_host = yaml_dict["database"]["host"]
+db_name = yaml_dict["database"]["name"]
+db_auth = yaml_dict["database"]["auth"]
+db_username = yaml_dict["database"]["username_rw"]
+db_password_env = yaml_dict["database"]["password_rw_env"]
+# Look for the password in the profile file
+with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
+    db_profile = f.read()
+match = re.search(f"{db_password_env}='([^']*)'", db_profile)
+if not match:
+    raise RuntimeError(f"Environment variable {db_password_env} must be set")
+db_password = match.group(1)
+db = pymongo.MongoClient(
+    host=db_host,
+    authSource=db_auth,
+    username=db_username,
+    password=db_password,
+)[db_name]
 
 input_variables = yaml_dict["inputs"]
 input_names = [v["name"] for v in input_variables.values()]
