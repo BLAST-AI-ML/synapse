@@ -117,7 +117,7 @@ else:
 for _, value in simulation_calibration.items():
     sim_name = value["name"]
     exp_name = value["depends_on"]
-    df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
+    df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
 
 # Concatenate experimental and simulation data for training and validation
 variables = input_names + output_names + ["experiment_flag"]
