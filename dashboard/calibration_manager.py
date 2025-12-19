@@ -79,9 +79,7 @@ class SimulationCalibrationManager:
                         )
                     else:
                         title = "Inferrred calibration does not exist"
-                        msg = (
-                            "Attempted to use the inferred calibration values to apply to the experimental points but the calibration hasn't been inferred yet. Applying the guess calibration instead.",
-                        )
+                        msg = "Attempted to use the inferred calibration values to apply to the experimental points but the calibration hasn't been inferred yet. Applying the guess calibration instead."
                         add_error(title, msg)
                         print(msg)
 
