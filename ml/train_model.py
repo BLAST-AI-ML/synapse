@@ -104,29 +104,6 @@ def connect_to_db(config_dict):
         password=db_password,
     )[db_name]
 
-def normalize(df, input_names, input_transform, output_names, output_transform):
-    # Apply normalization to the training data set
-    norm_df = df.copy()
-    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
-    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
-
-    norm_exp_inputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 1][input_names].values,
-        dtype=torch.float,
-    )
-    norm_exp_outputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 1][output_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_inputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 0][input_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_outputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 0][output_names].values,
-        dtype=torch.float,
-    )
-    return norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
 def normalize(df, input_names, input_transform, output_names, output_transform):
     # Apply normalization to the training data set
