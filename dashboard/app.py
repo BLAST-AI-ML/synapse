@@ -49,6 +49,7 @@ def update(
     reset_plots=True,
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
+    reset_gui_route_chat=True,
     reset_gui_layout=True,
     **kwargs,
 ):
@@ -87,6 +88,9 @@ def update(
     # reset GUI NERSC route
     if reset_gui_route_nersc:
         nersc_route()
+    # reset GUI chat route
+    if reset_gui_route_chat:
+        chat_route()
     # reset GUI layout
     if reset_gui_layout:
         gui_setup()
@@ -114,6 +118,7 @@ def update_on_change_experiment(**kwargs):
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
+            reset_gui_route_chat=False,
             reset_gui_layout=False,
         )
 
@@ -131,6 +136,7 @@ def update_on_change_model(**kwargs):
             reset_plots=True,
             reset_gui_route_home=True,
             reset_gui_route_nersc=False,
+            reset_gui_route_chat=False,
             reset_gui_layout=False,
         )
 
@@ -157,6 +163,7 @@ def update_on_change_others(**kwargs):
             reset_plots=True,
             reset_gui_route_home=False,
             reset_gui_route_nersc=False,
+            reset_gui_route_chat=False,
             reset_gui_layout=False,
         )
 
@@ -334,6 +341,17 @@ def nersc_route():
                         load_sfapi_card()
 
 
+# Chat route
+def chat_route():
+    print("Setting GUI Chat route...")
+    with RouterViewLayout(server, "/chat"):
+        with vuetify.VContainer(fluid=True, style="height: 80vh; width: 100%;"):
+            html.Iframe(
+                src="https://example.com/",
+                style="width: 100%; height: 100%; border: none;",
+            )
+
+
 # GUI layout
 def gui_setup():
     print("Setting GUI layout...")
@@ -373,6 +391,12 @@ def gui_setup():
                     to="/nersc",
                     prepend_icon="mdi-lan-connect",
                     title="NERSC",
+                )
+                # Chat route
+                vuetify.VListItem(
+                    to="/chat",
+                    prepend_icon="mdi-chat",
+                    title="AI Chat",
                 )
         # interactive dialog for simulation plots
         with vuetify.VDialog(
