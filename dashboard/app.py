@@ -396,7 +396,7 @@ def gui_setup():
                 vuetify.VListItem(
                     to="/chat",
                     prepend_icon="mdi-chat",
-                    title="Chat",
+                    title="AI Chat",
                 )
         # interactive dialog for simulation plots
         with vuetify.VDialog(
