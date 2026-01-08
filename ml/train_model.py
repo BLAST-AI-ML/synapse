@@ -129,6 +129,35 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     )
     return norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
+def split_data(df_exp, df_sim, variables, model_type):
+    if model_type == "GP":
+        if len(df_exp) > 0 :
+            return (pd.concat((df_exp[variables], df_sim[variables])), None)
+        else
+            return df_sim[variables]
+    else:
+        # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
+        sim_train_df, sim_val_df = train_test_split(
+            df_sim, test_size=0.2, random_state=None, shuffle=True
+        )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
+        if len(df_exp) > 0:
+            exp_train_df, exp_val_df = train_test_split(
+                df_exp, test_size=0.2, random_state=None, shuffle=True
+            )  # 20% of the data will go in validation test, no fixing the
+            return ( pd.concat((exp_train_df[variables], sim_train_df[variables])),
+                     pd.concat((exp_val_df[variables], sim_val_df[variables])) )
+        else:
+            return (sim_train_df[variables], sim_val_df[variables])
+
+def build_transforms (n_inputs, X_data, n_outputs, y_data)
+    input_transform = AffineInputTransform(
+        len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
+    )
+    # For output normalization, we need to handle potential NaN values
+    y_mean = torch.nanmean(y_train, dim=0)
+    y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
+    output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    return input_transform, output_transform
 
 experiment, model_type = parse_arguments()
 config_dict = load_config(experiment)
@@ -139,8 +168,8 @@ input_names = [v["name"] for v in input_variables.values()]
 output_variables = config_dict["outputs"]
 output_names = [v["name"] for v in output_variables.values()]
 n_outputs = len(output_names)
+
 # Extract data from the database as pandas dataframe
-collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
 df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 # Apply calibration to the simulation results
@@ -155,39 +184,12 @@ for value in simulation_calibration.values():
 
 # Concatenate experimental and simulation data for training and validation
 variables = input_names + output_names + ["experiment_flag"]
-if model_type != "GP":
-    # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-    sim_train_df, sim_val_df = train_test_split(
-        df_sim, test_size=0.2, random_state=None, shuffle=True
-    )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-    if len(df_exp) > 0:
-        exp_train_df, exp_val_df = train_test_split(
-            df_exp, test_size=0.2, random_state=None, shuffle=True
-        )  # 20% of the data will go in validation test, no fixing the
-        df_train = pd.concat((exp_train_df[variables], sim_train_df[variables]))
-        df_val = pd.concat((exp_val_df[variables], sim_val_df[variables]))
-    else:
-        df_train = sim_train_df[variables]
-        df_val = sim_val_df[variables]
-else:
-    # No split: all the data is training data
-    if len(df_exp) > 0:
-        df_train = pd.concat((df_exp[variables], df_sim[variables]))
-    else:
-        df_train = df_sim[variables]
+df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
 
-X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
-y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-# Normalize with Affine Input Transformer
-# Define the input and output normalizations
-input_transform = AffineInputTransform(
-    len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
-)
-# For output normalization, we need to handle potential NaN values
-y_mean = torch.nanmean(y_train, dim=0)
-y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+# build transforms
+input_transform, output_transform = build_transforms(len(input_names), X_train, len(output_names), y_train)
 
+# normalize training data
 (
     norm_expt_inputs_train,
     norm_expt_outputs_train,
