@@ -345,7 +345,7 @@ def nersc_route():
 def chat_route():
     print("Setting GUI Chat route...")
     with RouterViewLayout(server, "/chat"):
-        with vuetify.VContainer(fluid=True, style="height: 100vh; width: 100%;"):
+        with vuetify.VContainer(fluid=True, style="height: 80vh; width: 100%;"):
             html.Iframe(
                 src="https://example.com/",
                 style="width: 100%; height: 100%; border: none;",
