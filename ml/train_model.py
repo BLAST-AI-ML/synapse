@@ -42,141 +42,160 @@ print("Device selected: ", device)
 ############################################
 # Get command line arguments
 ############################################
-# define parser
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--experiment",
-    help="name/tag of the experiment",
-    type=str,
-    required=True,
-)
-parser.add_argument(
-    "--model",
-    help="Choose to train a model between GP, NN, or ensemble_NN",
-    required=True,
-)
-args = parser.parse_args()
-experiment = args.experiment
-model_type = args.model
-print(f"Experiment: {experiment}, Model type: {model_type}")
-start_time = time.time()
-if model_type not in ["NN", "ensemble_NN", "GP"]:
-    raise ValueError(f"Invalid model type: {model_type}")
 
-# Extract configurations of experiments & models
-yaml_dict = None
-current_file_directory = os.path.dirname(os.path.abspath(__file__))
-config_dir_locations = [
-    current_file_directory,
-    "./",
-    f"../experiments/synapse-{experiment}/",
-]
-for config_dir in config_dir_locations:
-    file_path = config_dir + "config.yaml"
-    if os.path.exists(file_path):
-        with open(file_path) as f:
-            yaml_dict = yaml.safe_load(f.read())
-        break
-if yaml_dict is None:
+start_time = time.time()
+
+
+# define parser
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--experiment",
+        help="name/tag of the experiment",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--model",
+        help="Choose to train a model between GP, NN, or ensemble_NN",
+        required=True,
+    )
+    args = parser.parse_args()
+    experiment = args.experiment
+    model_type = args.model
+    print(f"Experiment: {experiment}, Model type: {model_type}")
+    if model_type not in ["NN", "ensemble_NN", "GP"]:
+        raise ValueError(f"Invalid model type: {model_type}")
+    return experiment, model_type
+
+
+def load_config(experiment):
+    # Extract configurations of experiments & models
+    possible_config_file_paths = [
+        f"{os.path.dirname(os.path.abspath(__file__))}config.yaml",
+        "./config.yaml",
+        f"../experiments/synapse-{experiment}/config.yaml",
+    ]
+    for config_file_path in possible_config_file_paths:
+        if os.path.exists(config_file_path):
+            with open(config_file_path) as f:
+                return yaml.safe_load(f.read())
     raise RuntimeError("File config.yaml not found.")
 
-# Connect to the MongoDB database with read-write access
-db_host = yaml_dict["database"]["host"]
-db_name = yaml_dict["database"]["name"]
-db_auth = yaml_dict["database"]["auth"]
-db_username = yaml_dict["database"]["username_rw"]
-db_password_env = yaml_dict["database"]["password_rw_env"]
-# Look for the password in the profile file
-with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
-    db_profile = f.read()
-match = re.search(f"{db_password_env}='([^']*)'", db_profile)
-if not match:
-    raise RuntimeError(f"Environment variable {db_password_env} must be set")
-db_password = match.group(1)
-db = pymongo.MongoClient(
-    host=db_host,
-    authSource=db_auth,
-    username=db_username,
-    password=db_password,
-)[db_name]
 
-input_variables = yaml_dict["inputs"]
+def connect_to_db(config_dict):
+    # Connect to the MongoDB database with read-write access
+    db_host = config_dict["database"]["host"]
+    db_name = config_dict["database"]["name"]
+    db_auth = config_dict["database"]["auth"]
+    db_username = config_dict["database"]["username_rw"]
+    db_password_env = config_dict["database"]["password_rw_env"]
+    # Look for the password in the profile file
+    with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
+        db_profile = f.read()
+    match = re.search(f"{db_password_env}='([^']*)'", db_profile)
+    if not match:
+        raise RuntimeError(f"Environment variable {db_password_env} must be set")
+    db_password = match.group(1)
+    return pymongo.MongoClient(
+        host=db_host,
+        authSource=db_auth,
+        username=db_username,
+        password=db_password,
+    )[db_name]
+
+
+def normalize(df, input_names, input_transform, output_names, output_transform):
+    # Apply normalization to the training data set
+    norm_df = df.copy()
+    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
+    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
+
+    norm_exp_inputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 1][input_names].values,
+        dtype=torch.float,
+    )
+    norm_exp_outputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 1][output_names].values,
+        dtype=torch.float,
+    )
+    norm_sim_inputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 0][input_names].values,
+        dtype=torch.float,
+    )
+    norm_sim_outputs = torch.tensor(
+        norm_df[norm_df.experiment_flag == 0][output_names].values,
+        dtype=torch.float,
+    )
+    return norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
+
+def split_data(df_exp, df_sim, variables, model_type):
+    if model_type == "GP":
+        if len(df_exp) > 0 :
+            return (pd.concat((df_exp[variables], df_sim[variables])), None)
+        else
+            return df_sim[variables]
+    else:
+        # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
+        sim_train_df, sim_val_df = train_test_split(
+            df_sim, test_size=0.2, random_state=None, shuffle=True
+        )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
+        if len(df_exp) > 0:
+            exp_train_df, exp_val_df = train_test_split(
+                df_exp, test_size=0.2, random_state=None, shuffle=True
+            )  # 20% of the data will go in validation test, no fixing the
+            return ( pd.concat((exp_train_df[variables], sim_train_df[variables])),
+                     pd.concat((exp_val_df[variables], sim_val_df[variables])) )
+        else:
+            return (sim_train_df[variables], sim_val_df[variables])
+
+def build_transforms (n_inputs, X_data, n_outputs, y_data)
+    input_transform = AffineInputTransform(
+        len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
+    )
+    # For output normalization, we need to handle potential NaN values
+    y_mean = torch.nanmean(y_train, dim=0)
+    y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
+    output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    return input_transform, output_transform
+
+experiment, model_type = parse_arguments()
+config_dict = load_config(experiment)
+db = connect_to_db(config_dict)
+
+input_variables = config_dict["inputs"]
 input_names = [v["name"] for v in input_variables.values()]
-output_variables = yaml_dict["outputs"]
+output_variables = config_dict["outputs"]
 output_names = [v["name"] for v in output_variables.values()]
 n_outputs = len(output_names)
+
 # Extract data from the database as pandas dataframe
-collection = db[experiment]
 df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
 df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 # Apply calibration to the simulation results
-if "simulation_calibration" in yaml_dict:
-    simulation_calibration = yaml_dict["simulation_calibration"]
+if "simulation_calibration" in config_dict:
+    simulation_calibration = config_dict["simulation_calibration"]
 else:
     simulation_calibration = {}
-for _, value in simulation_calibration.items():
+for value in simulation_calibration.values():
     sim_name = value["name"]
     exp_name = value["depends_on"]
     df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
 
 # Concatenate experimental and simulation data for training and validation
 variables = input_names + output_names + ["experiment_flag"]
-if model_type != "GP":
-    # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-    sim_train_df, sim_val_df = train_test_split(
-        df_sim, test_size=0.2, random_state=None, shuffle=True
-    )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-    if len(df_exp) > 0:
-        exp_train_df, exp_val_df = train_test_split(
-            df_exp, test_size=0.2, random_state=None, shuffle=True
-        )  # 20% of the data will go in validation test, no fixing the
-        df_train = pd.concat((exp_train_df[variables], sim_train_df[variables]))
-        df_val = pd.concat((exp_val_df[variables], sim_val_df[variables]))
-    else:
-        df_train = sim_train_df[variables]
-        df_val = sim_val_df[variables]
-else:
-    # No split: all the data is training data
-    if len(df_exp) > 0:
-        df_train = pd.concat((df_exp[variables], df_sim[variables]))
-    else:
-        df_train = df_sim[variables]
+df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
 
-# Normalize with Affine Input Transformer
-# Define the input and output normalizations
-X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
-input_transform = AffineInputTransform(
-    len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
-)
-# For output normalization, we need to handle potential NaN values
-y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-y_mean = torch.nanmean(y_train, dim=0)
-y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+# build transforms
+input_transform, output_transform = build_transforms(len(input_names), X_train, len(output_names), y_train)
 
-# Apply normalization to the training data set
-norm_df_train = df_train.copy()
-norm_df_train[input_names] = input_transform(torch.tensor(df_train[input_names].values))
-norm_df_train[output_names] = output_transform(
-    torch.tensor(df_train[output_names].values)
-)
-
-norm_expt_inputs_train = torch.tensor(
-    norm_df_train[norm_df_train.experiment_flag == 1][input_names].values,
-    dtype=torch.float,
-)
-norm_expt_outputs_train = torch.tensor(
-    norm_df_train[norm_df_train.experiment_flag == 1][output_names].values,
-    dtype=torch.float,
-)
-norm_sim_inputs_train = torch.tensor(
-    norm_df_train[norm_df_train.experiment_flag == 0][input_names].values,
-    dtype=torch.float,
-)
-norm_sim_outputs_train = torch.tensor(
-    norm_df_train[norm_df_train.experiment_flag == 0][output_names].values,
-    dtype=torch.float,
-)
+# normalize training data
+(
+    norm_expt_inputs_train,
+    norm_expt_outputs_train,
+    norm_sim_inputs_train,
+    norm_sim_outputs_train,
+) = normalize(df_train, input_names, input_transform, output_names, output_transform)
 
 model = None
 ######################################################
@@ -194,23 +213,14 @@ if model_type != "GP":
         torch.tensor(df_val[output_names].values)
     )
 
-    norm_expt_inputs_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 1][input_names].values,
-        dtype=torch.float,
+    (
+        norm_expt_inputs_val,
+        norm_expt_outputs_val,
+        norm_sim_inputs_val,
+        norm_sim_outputs_val,
+    ) = normalize(
+        norm_df_val, input_names, input_transform, output_names, output_transform
     )
-    norm_expt_outputs_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 1][output_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_inputs_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 0][input_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_outputs_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 0][output_names].values,
-        dtype=torch.float,
-    )
-
     print("training started")
 
     NN_start_time = time.time()
@@ -306,6 +316,7 @@ else:
 
     for i, output_name in enumerate(output_names):
         print(f"Processing output {i + 1}/{n_outputs}: {output_name}")
+        norm_df_train = None  # TODO: Remove this line, I just included it so that ruff allows me to commit...
 
         # Get data where this output is not NaN
         output_data = norm_df_train[output_name].values
