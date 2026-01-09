@@ -39,6 +39,8 @@ class ParametersManager:
             state.parameters_show_all[key] = False
             self.parameters_step[key] = (pmax - pmin) / 100
         state.parameters_init = copy.deepcopy(state.parameters)
+        # define default dislpayed inputs
+        state.displayed_inputs = "Experiment"
 
     @property
     def model(self):
@@ -155,6 +157,20 @@ class ParametersManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
+                    with vuetify.VRow():
+                        vuetify.VSelect(
+                            v_model=("displayed_output",),
+                            items=(state.output_variables,),
+                            dense=True,
+                            label="Displayed output",
+                        )
+                    with vuetify.VRow():
+                        vuetify.VSelect(
+                            v_model=("displayed_inputs",),
+                            items=(["Experiment", "Simulation"],),
+                            dense=True,
+                            label="Displayed inputs",
+                        )
                     with client.DeepReactive("parameters"):
                         for count, key in enumerate(state.parameters.keys()):
                             # create a row for the parameter label

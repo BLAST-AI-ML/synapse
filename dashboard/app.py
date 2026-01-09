@@ -285,10 +285,6 @@ def home_route():
                         vuetify.VTab("ML", value="ml_tab")
                     with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
                         with vuetify.VWindowItem(value="parameters_tab"):
-                            # output control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    out_manager.panel()
                             # parameters control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
