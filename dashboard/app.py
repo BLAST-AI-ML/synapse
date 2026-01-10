@@ -105,11 +105,11 @@ def update(
         ctrl.figure_update(fig)
 
 
-@state.change("experiment")
+@state.change("experiment", "displayed_inputs")
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Experiment changed...")
+        print("Reacting on state change...")
         update(
             reset_model=True,
             reset_output=True,
@@ -127,7 +127,7 @@ def update_on_change_experiment(**kwargs):
 def update_on_change_model(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Model type changed...")
+        print("Reacting on state change...")
         update(
             reset_model=True,
             reset_output=False,
@@ -154,7 +154,7 @@ def update_on_change_model(**kwargs):
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity changed...")
+        print("Reacting on state change...")
         update(
             reset_model=False,
             reset_output=False,

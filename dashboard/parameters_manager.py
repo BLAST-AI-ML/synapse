@@ -39,8 +39,6 @@ class ParametersManager:
             state.parameters_show_all[key] = False
             self.parameters_step[key] = (pmax - pmin) / 100
         state.parameters_init = copy.deepcopy(state.parameters)
-        # define other state variables
-        state.displayed_inputs = "Experiment"
 
     @property
     def model(self):
