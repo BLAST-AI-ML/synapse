@@ -155,6 +155,21 @@ class ParametersManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VSelect(
+                                v_model=("displayed_inputs",),
+                                items=(["Experiment", "Simulation"],),
+                                dense=True,
+                                label="Displayed inputs",
+                            )
+                        with vuetify.VCol():
+                            vuetify.VSelect(
+                                v_model=("displayed_output",),
+                                items=(state.output_variables,),
+                                dense=True,
+                                label="Displayed output",
+                            )
                     with client.DeepReactive("parameters"):
                         for count, key in enumerate(state.parameters.keys()):
                             # create a row for the parameter label
@@ -227,24 +242,25 @@ class ParametersManager:
                                         change="flushState('parameters_show_all')",
                                         label="Show all",
                                     )
-                        with vuetify.VRow():
-                            with vuetify.VCol():
-                                vuetify.VBtn(
-                                    "Reset",
-                                    click=self.reset,
-                                    style="text-transform: none",
-                                )
-                        with vuetify.VRow():
-                            with vuetify.VCol():
-                                vuetify.VBtn(
-                                    "Simulate",
-                                    click=self.simulation_trigger,
-                                    disabled=(
-                                        "simulation_running || perlmutter_status != 'active' || !simulatable",
-                                    ),
-                                    style="text-transform: none;",
-                                )
-                            with vuetify.VCol():
+                        with vuetify.VRow(align="center"):
+                            with vuetify.VCol(cols=6):
+                                with vuetify.VRow():
+                                    with vuetify.VCol():
+                                        vuetify.VBtn(
+                                            "Reset",
+                                            click=self.reset,
+                                            style="text-transform: none",
+                                        )
+                                    with vuetify.VCol():
+                                        vuetify.VBtn(
+                                            "Simulate",
+                                            click=self.simulation_trigger,
+                                            disabled=(
+                                                "simulation_running || perlmutter_status != 'active' || !simulatable",
+                                            ),
+                                            style="text-transform: none;",
+                                        )
+                            with vuetify.VCol(cols=6):
                                 vuetify.VTextField(
                                     v_model_number=("simulation_running_status",),
                                     label="Simulation status",
