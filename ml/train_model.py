@@ -409,6 +409,7 @@ mlflow.set_tracking_uri(
 #    "http://127.0.0.1:8082"  # or whatever port you use above
 # )
 # tested only with neural-net so far
+lume_module = TorchModule(model=model)
 _ = lume_module.register_to_mlflow(
     artifact_path="nn_model",
     registered_model_name="model_" + experiment,
