@@ -408,7 +408,7 @@ mlflow.set_tracking_uri("file:./mlruns") # temporary fix so MLFlow saves the mod
 #)
 # tested only with neural-net so far
 _ = lume_module.register_to_mlflow(
-    artifact_path="nn_model"
+    artifact_path="nn_model",
     registered_model_name="model_"+experiment,
     tags={"type": "example"},
     version_tags={"state": "base"},
