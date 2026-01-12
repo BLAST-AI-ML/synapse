@@ -401,20 +401,21 @@ else:
     model = gpmodel
 
 # to save file using MLFlow
-mlflow.set_tracking_uri("file:./mlruns") # temporary fix so MLFlow saves the model in this directory
+mlflow.set_tracking_uri(
+    "file:./mlruns"
+)  # temporary fix so MLFlow saves the model in this directory
 # Ideally, MLFlow would be hosted, and we can do the following
-#os.environ["MLFLOW_TRACKING_URI"] = (
+# os.environ["MLFLOW_TRACKING_URI"] = (
 #    "http://127.0.0.1:8082"  # or whatever port you use above
-#)
+# )
 # tested only with neural-net so far
 _ = lume_module.register_to_mlflow(
     artifact_path="nn_model",
-    registered_model_name="model_"+experiment,
+    registered_model_name="model_" + experiment,
     tags={"type": "example"},
     version_tags={"state": "base"},
     save_jit=True,
 )
-
 
 
 with tempfile.TemporaryDirectory() as temp_dir:
