@@ -28,7 +28,7 @@ class ParametersManager:
         state.simulatable = (
             self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
-        for _, parameter_dict in input_variables.items():
+        for parameter_dict in input_variables.values():
             key = parameter_dict["name"]
             pmin = float(parameter_dict["value_range"][0])
             pmax = float(parameter_dict["value_range"][1])
@@ -37,9 +37,7 @@ class ParametersManager:
             state.parameters_min["exp"][key] = pmin
             state.parameters_max["exp"][key] = pmax
             state.parameters_show_all["exp"][key] = False
-            self.parameters_step["exp"][key] = (
-                state.parameters_max["exp"][key] - state.parameters_min["exp"][key]
-            ) / 100
+            self.parameters_step["exp"][key] = (pmax - pmin) / 100
         # store simulation parameters converted from experimental ones
         sim_cal = SimulationCalibrationManager(simulation_calibration)
         state.parameters["sim"] = sim_cal.convert_exp_to_sim(state.parameters["exp"])
@@ -49,13 +47,14 @@ class ParametersManager:
         state.parameters_max["sim"] = sim_cal.convert_exp_to_sim(
             state.parameters_max["exp"]
         )
-        state.parameters_show_all["sim"] = copy.deepcopy(
-            state.parameters_show_all["exp"]
-        )
-        for key in state.parameters["sim"].keys():
-            self.parameters_step["sim"][key] = (
-                state.parameters_max["sim"][key] - state.parameters_min["sim"][key]
-            ) / 100
+        state.parameters_show_all["sim"] = {
+            key: False for key in state.parameters["sim"].keys()
+        }
+        self.parameters_step["sim"] = {
+            key: (state.parameters_max["sim"][key] - state.parameters_min["sim"][key])
+            / 100
+            for key in state.parameters["sim"].keys()
+        }
         # save initial parameters for reset
         state.parameters_init = copy.deepcopy(state.parameters)
 
@@ -232,7 +231,6 @@ class ParametersManager:
                                             style="margin-top: 0px; padding-top: 0px; width: 100px;",
                                             type="number",
                                         )
-                            print(self.parameters_step)
                             step = self.parameters_step[param_family][key]
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VCol():
