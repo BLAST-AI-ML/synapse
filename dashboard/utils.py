@@ -139,10 +139,11 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     # convert simulation data to experimental data
     cal_manager.convert_sim_to_exp(sim_data)
     # local aliases
-    parameters = state.parameters
-    parameters_min = state.parameters_min
-    parameters_max = state.parameters_max
-    parameters_show_all = state.parameters_show_all
+    param_family = "exp"  # FIXME if state.displayed_inputs == "Experiment" else "sim"
+    parameters = state.parameters[param_family]
+    parameters_min = state.parameters_min[param_family]
+    parameters_max = state.parameters_max[param_family]
+    parameters_show_all = state.parameters_show_all[param_family]
     try:
         objective_name = state.displayed_output
     except Exception as e:
@@ -214,7 +215,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 return section
 
             # Determine which data is shown when hovering over the plot
-            hover_parameters = list(state.parameters.keys())
+            hover_parameters = list(state.parameters[param_family].keys())
             hover_output_variables = state.output_variables
             hover_customdata = ["_id"] + hover_parameters + hover_output_variables
 

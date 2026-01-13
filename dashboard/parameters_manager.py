@@ -15,16 +15,16 @@ from state_manager import state, EXPERIMENTS_PATH
 
 
 class ParametersManager:
-    def __init__(self, model, input_variables):
+    def __init__(self, model, input_variables, simulation_calibration):
         print("Initializing parameters manager...")
         # save model
         self.__model = model
         # define state variables
-        state.parameters = dict()
-        state.parameters_min = dict()
-        state.parameters_max = dict()
-        state.parameters_show_all = dict()
-        self.parameters_step = dict()
+        state.parameters = {"exp": {}, "sim": {}}
+        state.parameters_min = {"exp": {}, "sim": {}}
+        state.parameters_max = {"exp": {}, "sim": {}}
+        state.parameters_show_all = {"exp": {}, "sim": {}}
+        self.parameters_step = {"exp": {}, "sim": {}}
         state.simulatable = (
             self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
@@ -33,11 +33,30 @@ class ParametersManager:
             pmin = float(parameter_dict["value_range"][0])
             pmax = float(parameter_dict["value_range"][1])
             pval = float(parameter_dict["default"])
-            state.parameters[key] = pval
-            state.parameters_min[key] = pmin
-            state.parameters_max[key] = pmax
-            state.parameters_show_all[key] = False
-            self.parameters_step[key] = (pmax - pmin) / 100
+            state.parameters["exp"][key] = pval
+            state.parameters_min["exp"][key] = pmin
+            state.parameters_max["exp"][key] = pmax
+            state.parameters_show_all["exp"][key] = False
+            self.parameters_step["exp"][key] = (
+                state.parameters_max["exp"][key] - state.parameters_min["exp"][key]
+            ) / 100
+        # store simulation parameters converted from experimental ones
+        sim_cal = SimulationCalibrationManager(simulation_calibration)
+        state.parameters["sim"] = sim_cal.convert_exp_to_sim(state.parameters["exp"])
+        state.parameters_min["sim"] = sim_cal.convert_exp_to_sim(
+            state.parameters_min["exp"]
+        )
+        state.parameters_max["sim"] = sim_cal.convert_exp_to_sim(
+            state.parameters_max["exp"]
+        )
+        state.parameters_show_all["sim"] = copy.deepcopy(
+            state.parameters_show_all["exp"]
+        )
+        for key in state.parameters["sim"].keys():
+            self.parameters_step["sim"][key] = (
+                state.parameters_max["sim"][key] - state.parameters_min["sim"][key]
+            ) / 100
+        # save initial parameters for reset
         state.parameters_init = copy.deepcopy(state.parameters)
 
     @property
@@ -77,7 +96,7 @@ class ParametersManager:
                     )
                     _, _, simulation_calibration = load_variables(state.experiment)
                     sim_cal = SimulationCalibrationManager(simulation_calibration)
-                    sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
+                    sim_dict = sim_cal.convert_exp_to_sim(state.parameters["exp"])
                     with open(temp_file_path, "w") as temp_file:
                         yaml.dump(sim_dict, temp_file)
                         temp_file.flush()
@@ -171,7 +190,12 @@ class ParametersManager:
                                 label="Displayed output",
                             )
                     with client.DeepReactive("parameters"):
-                        for count, key in enumerate(state.parameters.keys()):
+                        param_family = (
+                            "exp" if state.displayed_inputs == "Experiment" else "sim"
+                        )
+                        for count, key in enumerate(
+                            state.parameters[param_family].keys()
+                        ):
                             # create a row for the parameter label
                             with vuetify.VRow():
                                 vuetify.VListSubheader(
@@ -184,19 +208,23 @@ class ParametersManager:
                                 )
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VSlider(
-                                    v_model_number=(f"parameters['{key}']",),
+                                    v_model_number=(
+                                        f"parameters['{param_family}']['{key}']",
+                                    ),
                                     change="flushState('parameters')",
                                     hide_details=True,
-                                    min=(f"parameters_min['{key}']",),
-                                    max=(f"parameters_max['{key}']",),
+                                    min=(f"parameters_min['{param_family}']['{key}']",),
+                                    max=(f"parameters_max['{param_family}']['{key}']",),
                                     step=(
-                                        f"(parameters_max['{key}'] - parameters_min['{key}']) / 100",
+                                        f"(parameters_max['{param_family}']['{key}'] - parameters_min['{param_family}']['{key}']) / 100",
                                     ),
                                     style="align-items: center;",
                                 ):
                                     with vuetify.Template(v_slot_append=True):
                                         vuetify.VTextField(
-                                            v_model_number=(f"parameters['{key}']",),
+                                            v_model_number=(
+                                                f"parameters['{param_family}']['{key}']",
+                                            ),
                                             density="compact",
                                             hide_details=True,
                                             readonly=True,
@@ -204,15 +232,20 @@ class ParametersManager:
                                             style="margin-top: 0px; padding-top: 0px; width: 100px;",
                                             type="number",
                                         )
-                            step = self.parameters_step[key]
+                            print(self.parameters_step)
+                            step = self.parameters_step[param_family][key]
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"parameters_min['{key}']",),
+                                        v_model_number=(
+                                            f"parameters_min['{param_family}']['{key}']",
+                                        ),
                                         change="flushState('parameters_min')",
                                         density="compact",
                                         hide_details=True,
-                                        disabled=(f"parameters_show_all['{key}']",),
+                                        disabled=(
+                                            f"parameters_show_all['{param_family}']['{key}']",
+                                        ),
                                         step=step,
                                         __properties=["step"],
                                         style="width: 100px;",
@@ -221,11 +254,15 @@ class ParametersManager:
                                     )
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"parameters_max['{key}']",),
+                                        v_model_number=(
+                                            f"parameters_max['{param_family}']['{key}']",
+                                        ),
                                         change="flushState('parameters_max')",
                                         density="compact",
                                         hide_details=True,
-                                        disabled=(f"parameters_show_all['{key}']",),
+                                        disabled=(
+                                            f"parameters_show_all['{param_family}']['{key}']",
+                                        ),
                                         step=step,
                                         __properties=["step"],
                                         style="width: 100px;",
@@ -235,7 +272,7 @@ class ParametersManager:
                                 with vuetify.VCol(style="min-width: 100px;"):
                                     vuetify.VCheckbox(
                                         v_model=(
-                                            f"parameters_show_all['{key}']",
+                                            f"parameters_show_all['{param_family}']['{key}']",
                                             False,
                                         ),
                                         density="compact",

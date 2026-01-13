@@ -52,16 +52,17 @@ class SimulationCalibrationManager:
         for _, value in state.simulation_calibration.items():
             sim_name = value["name"]
             exp_name = value["depends_on"]
-            # strip characters after '[' parenthesis to remove units, strip
-            # leading/trailing white spaces, replace white spaces and '-' with '_',
-            # and convert to lower case
-            sim_name = (
-                sim_name.split("[")[0]
-                .strip()
-                .replace(" ", "_")
-                .replace("-", "_")
-                .lower()
-            )
+            # FIXME
+            ## strip characters after '[' parenthesis to remove units, strip
+            ## leading/trailing white spaces, replace white spaces and '-' with '_',
+            ## and convert to lower case
+            # sim_name = (
+            #    sim_name.split("[")[0]
+            #    .strip()
+            #    .replace(" ", "_")
+            #    .replace("-", "_")
+            #    .lower()
+            # )
             # fill the dictionary
             if exp_name in exp_dict:
                 sim_dict[sim_name] = convert(
