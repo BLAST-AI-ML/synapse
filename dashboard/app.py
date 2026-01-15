@@ -241,7 +241,8 @@ def find_simulation(event, db):
         print(msg)
 
 
-def open_simulation_dialog(event, db):
+def open_simulation_dialog(event):
+    db = load_database(state.experiment)
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
@@ -324,7 +325,7 @@ def home_route():
                                 config={"responsive": True},
                                 click=(
                                     open_simulation_dialog,
-                                    "[utils.safe($event), db]",
+                                    "[utils.safe($event)]",
                                 ),
                             )
                             ctrl.figure_update = figure.update
