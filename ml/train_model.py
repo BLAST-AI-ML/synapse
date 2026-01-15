@@ -133,7 +133,7 @@ def split_data(df_exp, df_sim, variables, model_type):
     if model_type == "GP":
         if len(df_exp) > 0 :
             return (pd.concat((df_exp[variables], df_sim[variables])), None)
-        else
+        else:
             return df_sim[variables]
     else:
         # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
@@ -149,7 +149,7 @@ def split_data(df_exp, df_sim, variables, model_type):
         else:
             return (sim_train_df[variables], sim_val_df[variables])
 
-def build_transforms (n_inputs, X_data, n_outputs, y_data)
+def build_transforms (n_inputs, X_data, n_outputs, y_data):
     input_transform = AffineInputTransform(
         len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
@@ -180,13 +180,15 @@ else:
 for value in simulation_calibration.values():
     sim_name = value["name"]
     exp_name = value["depends_on"]
-    df_sim[exp_name] = df_sim[sim_name] / value["alpha"] + value["beta"]
+    df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
 
 # Concatenate experimental and simulation data for training and validation
 variables = input_names + output_names + ["experiment_flag"]
 df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
 
 # build transforms
+X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
+y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
 input_transform, output_transform = build_transforms(len(input_names), X_train, len(output_names), y_train)
 
 # normalize training data
