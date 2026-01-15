@@ -164,16 +164,20 @@ def build_transforms(n_inputs, X_data, n_outputs, y_data):
     return input_transform, output_transform
 
 
-def train_nn_ensemble(model_type, n_inputs, n_outputs,
-               sim_X_train,
-               sim_y_train,
-               exp_X_train,
-               exp_y_train,
-               sim_X_val,
-               sim_y_val,
-               exp_X_val,
-               exp_y_val, device):
-
+def train_nn_ensemble(
+    model_type,
+    n_inputs,
+    n_outputs,
+    sim_X_train,
+    sim_y_train,
+    exp_X_train,
+    exp_y_train,
+    sim_X_val,
+    sim_y_val,
+    exp_X_val,
+    exp_y_val,
+    device,
+):
     if model_type == "NN":
         num_models = 1
     elif model_type == "ensemble_NN":
@@ -184,9 +188,16 @@ def train_nn_ensemble(model_type, n_inputs, n_outputs,
         model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
         model.to(device)  # moving to GPU
         NNmodel_start_time = time.time()
-        model.train_model( sim_X_train, sim_y_train, exp_X_train, exp_y_train,
-                           sim_X_val, sim_y_val, exp_X_val, exp_y_val,
-                           num_epochs=20000,
+        model.train_model(
+            sim_X_train,
+            sim_y_train,
+            exp_X_train,
+            exp_y_train,
+            sim_X_val,
+            sim_y_val,
+            exp_X_val,
+            exp_y_val,
+            num_epochs=20000,
         )
         NNmodel_end_time = time.time()
         print(f"Model_{i + 1} trained in ", NNmodel_end_time - NNmodel_start_time)
@@ -195,10 +206,16 @@ def train_nn_ensemble(model_type, n_inputs, n_outputs,
     return ensemble
 
 
-def build_torch_model_from_nn(ensemble, model_type, input_variables, output_variables,
-                              input_transform, output_transform, output_names):
-
-    torch_models=[]
+def build_torch_model_from_nn(
+    ensemble,
+    model_type,
+    input_variables,
+    output_variables,
+    input_transform,
+    output_transform,
+    output_names,
+):
+    torch_models = []
 
     for model_nn in ensemble:
         calibration_transform = AffineInputTransform(
@@ -215,28 +232,34 @@ def build_torch_model_from_nn(ensemble, model_type, input_variables, output_vari
             TorchModel(
                 model=model_nn,
                 input_variables=[
-                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
+                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+                ],
                 output_variables=[
-                    ScalarVariable(**output_variables[k]) for k in output_variables.keys()],
+                    ScalarVariable(**output_variables[k])
+                    for k in output_variables.keys()
+                ],
                 input_transformers=[input_transform],
-                output_transformers=[calibration_transform, output_transform,
-                    ],  # saving calibration before normalization
+                output_transformers=[
+                    calibration_transform,
+                    output_transform,
+                ],  # saving calibration before normalization
             )
         )
     # Save single NN
     if model_type == "NN":
-        return(torch_models[0])
+        return torch_models[0]
 
     # Save Ensemble
-    return  NNEnsemble(
+    return NNEnsemble(
         models=torch_models,
         input_variables=[
-            ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
+            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+        ],
         output_variables=[
-            DistributionVariable(**output_variables[k])
-            for k in output_variables.keys()
+            DistributionVariable(**output_variables[k]) for k in output_variables.keys()
         ],
     )
+
 
 experiment, model_type = parse_arguments()
 config_dict = load_config(experiment)
@@ -305,19 +328,31 @@ if model_type != "GP":
     )
     print("training started")
     NN_start_time = time.time()
-    ensemble = train_nn_ensemble(model_type, len(input_names), len(output_names),
-               norm_sim_inputs_train.to(device),
-               norm_sim_outputs_train.to(device),
-               norm_expt_inputs_train.to(device),
-               norm_expt_outputs_train.to(device),
-               norm_sim_inputs_val.to(device),
-               norm_sim_outputs_val.to(device),
-               norm_expt_inputs_val.to(device),
-               norm_expt_outputs_val.to(device), device )
+    ensemble = train_nn_ensemble(
+        model_type,
+        len(input_names),
+        len(output_names),
+        norm_sim_inputs_train.to(device),
+        norm_sim_outputs_train.to(device),
+        norm_expt_inputs_train.to(device),
+        norm_expt_outputs_train.to(device),
+        norm_sim_inputs_val.to(device),
+        norm_sim_outputs_val.to(device),
+        norm_expt_inputs_val.to(device),
+        norm_expt_outputs_val.to(device),
+        device,
+    )
     print("training ended")
 
-    model = build_torch_model_from_nn(ensemble, model_type, input_variables, output_variables,
-                                      input_transform, output_transform, output_names)
+    model = build_torch_model_from_nn(
+        ensemble,
+        model_type,
+        input_variables,
+        output_variables,
+        input_transform,
+        output_transform,
+        output_names,
+    )
     end_time = time.time()
 
     elapsed_time = end_time - start_time
