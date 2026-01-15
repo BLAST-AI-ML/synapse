@@ -164,6 +164,80 @@ def build_transforms(n_inputs, X_data, n_outputs, y_data):
     return input_transform, output_transform
 
 
+def train_nn_ensemble(model_type, n_inputs, n_outputs,
+               sim_X_train,
+               sim_y_train,
+               exp_X_train,
+               exp_y_train,
+               sim_X_val,
+               sim_y_val,
+               exp_X_val,
+               exp_y_val, device):
+
+    if model_type == "NN":
+        num_models = 1
+    elif model_type == "ensemble_NN":
+        num_models = 10
+
+    ensemble = []
+    for i in range(num_models):
+        model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
+        model.to(device)  # moving to GPU
+        NNmodel_start_time = time.time()
+        model.train_model( sim_X_train, sim_y_train, exp_X_train, exp_y_train,
+                           sim_X_val, sim_y_val, exp_X_val, exp_y_val,
+                           num_epochs=20000,
+        )
+        NNmodel_end_time = time.time()
+        print(f"Model_{i + 1} trained in ", NNmodel_end_time - NNmodel_start_time)
+        ensemble.append(model)
+
+    return ensemble
+
+
+def build_torch_model_from_nn(ensemble, model_type, input_variables, output_variables,
+                              input_transform, output_transform, output_names):
+
+    torch_models=[]
+
+    for model_nn in ensemble:
+        calibration_transform = AffineInputTransform(
+            len(output_names),
+            coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
+            offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
+        )
+
+        # Fix mismatch in name between the config file and the expected lume-model format
+        for k in input_variables:
+            input_variables[k]["default_value"] = input_variables[k]["default"]
+
+        torch_models.append(
+            TorchModel(
+                model=model_nn,
+                input_variables=[
+                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
+                output_variables=[
+                    ScalarVariable(**output_variables[k]) for k in output_variables.keys()],
+                input_transformers=[input_transform],
+                output_transformers=[calibration_transform, output_transform,
+                    ],  # saving calibration before normalization
+            )
+        )
+    # Save single NN
+    if model_type == "NN":
+        return(torch_models[0])
+
+    # Save Ensemble
+    return  NNEnsemble(
+        models=torch_models,
+        input_variables=[
+            ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
+        output_variables=[
+            DistributionVariable(**output_variables[k])
+            for k in output_variables.keys()
+        ],
+    )
+
 experiment, model_type = parse_arguments()
 config_dict = load_config(experiment)
 db = connect_to_db(config_dict)
@@ -198,7 +272,6 @@ input_transform, output_transform = build_transforms(
     len(input_names), X_train, len(output_names), y_train
 )
 
-# normalize training data
 (
     norm_expt_inputs_train,
     norm_expt_outputs_train,
@@ -231,80 +304,21 @@ if model_type != "GP":
         norm_df_val, input_names, input_transform, output_names, output_transform
     )
     print("training started")
-
     NN_start_time = time.time()
-    if model_type == "NN":
-        num_models = 1
-    elif model_type == "ensemble_NN":
-        num_models = 10
+    ensemble = train_nn_ensemble(model_type, len(input_names), len(output_names),
+               norm_sim_inputs_train.to(device),
+               norm_sim_outputs_train.to(device),
+               norm_expt_inputs_train.to(device),
+               norm_expt_outputs_train.to(device),
+               norm_sim_inputs_val.to(device),
+               norm_sim_outputs_val.to(device),
+               norm_expt_inputs_val.to(device),
+               norm_expt_outputs_val.to(device), device )
+    print("training ended")
 
-    ensemble = []
-    for i in range(num_models):
-        model = CombinedNN(len(input_names), n_outputs, learning_rate=0.0001)
-        model.to(device)  # moving to GPU
-        NNmodel_start_time = time.time()
-        model.train_model(
-            norm_sim_inputs_train.to(device),
-            norm_sim_outputs_train.to(device),
-            norm_expt_inputs_train.to(device),
-            norm_expt_outputs_train.to(device),
-            norm_sim_inputs_val.to(device),
-            norm_sim_outputs_val.to(device),
-            norm_expt_inputs_val.to(device),
-            norm_expt_outputs_val.to(device),
-            num_epochs=20000,
-        )
-        NNmodel_end_time = time.time()
-        print(f"Model_{i + 1} trained in ", NNmodel_end_time - NNmodel_start_time)
-        ensemble.append(model)
-
-    torch_models = []
-    for model_nn in ensemble:
-        calibration_transform = AffineInputTransform(
-            n_outputs,
-            coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
-            offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
-        )
-
-        # Fix mismatch in name between the config file and the expected lume-model format
-        for k in input_variables:
-            input_variables[k]["default_value"] = input_variables[k]["default"]
-
-        torch_model = TorchModel(
-            model=model_nn,
-            input_variables=[
-                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-            ],
-            output_variables=[
-                ScalarVariable(**output_variables[k]) for k in output_variables.keys()
-            ],
-            input_transformers=[input_transform],
-            output_transformers=[
-                calibration_transform,
-                output_transform,
-            ],  # saving calibration before normalization
-        )
-        if num_models == 1:
-            # Save single NN and break
-            model = torch_model
-            end_time = time.time()
-            break
-        torch_models.append(torch_model)
-
-    # Save Ensemble
-    if num_models > 1:
-        ensemble = NNEnsemble(
-            models=torch_models,
-            input_variables=[
-                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-            ],
-            output_variables=[
-                DistributionVariable(**output_variables[k])
-                for k in output_variables.keys()
-            ],
-        )
-        model = ensemble
-        end_time = time.time()
+    model = build_torch_model_from_nn(ensemble, model_type, input_variables, output_variables,
+                                      input_transform, output_transform, output_names)
+    end_time = time.time()
 
     elapsed_time = end_time - start_time
     data_time = NN_start_time - start_time
