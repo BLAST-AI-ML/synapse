@@ -227,24 +227,25 @@ class ParametersManager:
                                         change="flushState('parameters_show_all')",
                                         label="Show all",
                                     )
-                        with vuetify.VRow():
-                            with vuetify.VCol():
-                                vuetify.VBtn(
-                                    "Reset",
-                                    click=self.reset,
-                                    style="text-transform: none",
-                                )
-                        with vuetify.VRow():
-                            with vuetify.VCol():
-                                vuetify.VBtn(
-                                    "Simulate",
-                                    click=self.simulation_trigger,
-                                    disabled=(
-                                        "simulation_running || perlmutter_status != 'active' || !simulatable",
-                                    ),
-                                    style="text-transform: none;",
-                                )
-                            with vuetify.VCol():
+                        with vuetify.VRow(align="center"):
+                            with vuetify.VCol(cols=6):
+                                with vuetify.VRow():
+                                    with vuetify.VCol():
+                                        vuetify.VBtn(
+                                            "Reset",
+                                            click=self.reset,
+                                            style="text-transform: none",
+                                        )
+                                    with vuetify.VCol():
+                                        vuetify.VBtn(
+                                            "Simulate",
+                                            click=self.simulation_trigger,
+                                            disabled=(
+                                                "simulation_running || perlmutter_status != 'active' || !simulatable",
+                                            ),
+                                            style="text-transform: none;",
+                                        )
+                            with vuetify.VCol(cols=6):
                                 vuetify.VTextField(
                                     v_model_number=("simulation_running_status",),
                                     label="Simulation status",
