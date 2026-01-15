@@ -17,7 +17,7 @@ import pymongo
 import os
 import re
 import yaml
-from lume_model.models import TorchModel
+from lume_model.models import TorchModel, TorchModule
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from lume_model.variables import ScalarVariable
@@ -26,6 +26,7 @@ from sklearn.model_selection import train_test_split
 import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
+import mlflow
 
 sys.path.append(".")
 from Neural_Net_Classes import CombinedNN as CombinedNN
@@ -398,6 +399,24 @@ else:
     )
 
     model = gpmodel
+
+# to save file using MLFlow
+mlflow.set_tracking_uri(
+    "file:./mlruns"
+)  # temporary fix so MLFlow saves the model in this directory
+# Ideally, MLFlow would be hosted, and we can do the following
+# os.environ["MLFLOW_TRACKING_URI"] = (
+#    "http://127.0.0.1:8082"  # or whatever port you use above
+# )
+# tested only with neural-net so far
+lume_module = TorchModule(model=model)
+_ = lume_module.register_to_mlflow(
+    artifact_path="nn_model",
+    registered_model_name="model_" + experiment,
+    tags={"type": "example"},
+    version_tags={"state": "base"},
+    save_jit=True,
+)
 
 
 with tempfile.TemporaryDirectory() as temp_dir:
