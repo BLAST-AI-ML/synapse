@@ -129,9 +129,10 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     )
     return norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
+
 def split_data(df_exp, df_sim, variables, model_type):
     if model_type == "GP":
-        if len(df_exp) > 0 :
+        if len(df_exp) > 0:
             return (pd.concat((df_exp[variables], df_sim[variables])), None)
         else:
             return df_sim[variables]
@@ -144,12 +145,15 @@ def split_data(df_exp, df_sim, variables, model_type):
             exp_train_df, exp_val_df = train_test_split(
                 df_exp, test_size=0.2, random_state=None, shuffle=True
             )  # 20% of the data will go in validation test, no fixing the
-            return ( pd.concat((exp_train_df[variables], sim_train_df[variables])),
-                     pd.concat((exp_val_df[variables], sim_val_df[variables])) )
+            return (
+                pd.concat((exp_train_df[variables], sim_train_df[variables])),
+                pd.concat((exp_val_df[variables], sim_val_df[variables])),
+            )
         else:
             return (sim_train_df[variables], sim_val_df[variables])
 
-def build_transforms (n_inputs, X_data, n_outputs, y_data):
+
+def build_transforms(n_inputs, X_data, n_outputs, y_data):
     input_transform = AffineInputTransform(
         len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
@@ -158,6 +162,7 @@ def build_transforms (n_inputs, X_data, n_outputs, y_data):
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
     output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
     return input_transform, output_transform
+
 
 experiment, model_type = parse_arguments()
 config_dict = load_config(experiment)
@@ -189,7 +194,9 @@ df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
 # build transforms
 X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
 y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-input_transform, output_transform = build_transforms(len(input_names), X_train, len(output_names), y_train)
+input_transform, output_transform = build_transforms(
+    len(input_names), X_train, len(output_names), y_train
+)
 
 # normalize training data
 (
