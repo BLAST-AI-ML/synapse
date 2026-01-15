@@ -49,7 +49,7 @@ class SimulationCalibrationManager:
             return alpha * (value - beta)
 
         sim_dict = {}
-        for _, value in state.simulation_calibration.items():
+        for value in state.simulation_calibration.values():
             sim_name = value["name"]
             exp_name = value["depends_on"]
             # strip characters after '[' parenthesis to remove units, strip

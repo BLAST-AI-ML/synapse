@@ -28,7 +28,7 @@ class ParametersManager:
         state.simulatable = (
             self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
-        for _, parameter_dict in input_variables.items():
+        for parameter_dict in input_variables.values():
             key = parameter_dict["name"]
             pmin = float(parameter_dict["value_range"][0])
             pmax = float(parameter_dict["value_range"][1])
