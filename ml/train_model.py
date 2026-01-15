@@ -127,7 +127,7 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
         norm_df[norm_df.experiment_flag == 0][output_names].values,
         dtype=torch.float,
     )
-    return norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
+    return norm_df, norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
 
 def split_data(df_exp, df_sim, variables, model_type):
@@ -296,6 +296,7 @@ input_transform, output_transform = build_transforms(
 )
 
 (
+    norm_df_train,
     norm_expt_inputs_train,
     norm_expt_outputs_train,
     norm_sim_inputs_train,
@@ -311,20 +312,14 @@ if model_type != "GP":
     ##############################
     # Early Stopping and validation
     ##############################
-    # Apply normalization to the validation data set
-    norm_df_val = df_val.copy()
-    norm_df_val[input_names] = input_transform(torch.tensor(df_val[input_names].values))
-    norm_df_val[output_names] = output_transform(
-        torch.tensor(df_val[output_names].values)
-    )
-
     (
+        norm_df_val,
         norm_expt_inputs_val,
         norm_expt_outputs_val,
         norm_sim_inputs_val,
         norm_sim_outputs_val,
     ) = normalize(
-        norm_df_val, input_names, input_transform, output_names, output_transform
+        df_val, input_names, input_transform, output_names, output_transform
     )
     print("training started")
     NN_start_time = time.time()
@@ -374,7 +369,6 @@ else:
 
     for i, output_name in enumerate(output_names):
         print(f"Processing output {i + 1}/{n_outputs}: {output_name}")
-        norm_df_train = None  # TODO: Remove this line, I just included it so that ruff allows me to commit...
 
         # Get data where this output is not NaN
         output_data = norm_df_train[output_name].values
