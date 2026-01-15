@@ -318,9 +318,7 @@ if model_type != "GP":
         norm_expt_outputs_val,
         norm_sim_inputs_val,
         norm_sim_outputs_val,
-    ) = normalize(
-        df_val, input_names, input_transform, output_names, output_transform
-    )
+    ) = normalize(df_val, input_names, input_transform, output_names, output_transform)
     print("training started")
     NN_start_time = time.time()
     ensemble = train_nn_ensemble(
