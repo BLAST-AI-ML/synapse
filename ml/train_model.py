@@ -260,6 +260,159 @@ def build_torch_model_from_nn(
         ],
     )
 
+def train_gp(
+    norm_df_train, input_names, output_names,
+    input_transform, output_transform, device):
+
+    gp_models = []
+
+    for i, output_name in enumerate(output_names):
+        print(f"Processing output {i + 1}/{n_outputs}: {output_name}")
+
+        # Get data where this output is not NaN
+        output_data = norm_df_train[output_name].values
+        valid_mask = torch.logical_not(torch.isnan(torch.tensor(output_data)))
+        n_valid = torch.sum(valid_mask).item()
+        print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
+
+        # Prepare input and output data for this output
+        X_valid = torch.tensor(
+            norm_df_train[input_names].values[valid_mask], dtype=torch.float64
+        )
+        y_valid = torch.tensor(output_data[valid_mask], dtype=torch.float64).unsqueeze(
+            -1
+        )
+
+        # Create GP model based on whether we have experimental data
+        if (
+            False
+        ):  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
+            # MultiTaskGP for experimental vs simulation data
+            exp_flag_valid = torch.tensor(
+                norm_df_train[["experiment_flag"]].values[valid_mask],
+                dtype=torch.float64,
+            )
+            X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
+
+            gp_model = MultiTaskGP(
+                X_with_task,
+                y_valid,
+                task_feature=0,
+                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+                outcome_transform=None,
+            ).to(device)
+
+        else:
+            # SingleTaskGP for simulation data only
+            gp_model = SingleTaskGP(
+                X_valid,
+                y_valid,
+                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+                outcome_transform=None,
+            ).to(device)
+
+        gp_models.append(gp_model)
+
+    model = ModelListGP(*gp_models)
+    print(f"ModelListGP created with {len(gp_models)} separate GP models")
+    # Fit each separately
+    GP_start_time = time.time()
+    for i, model in enumerate(gp_models):
+        print(f"Training GP model {i + 1}/{len(gp_models)}...")
+        mll = ExactMarginalLogLikelihood(model.likelihood, model)
+        fit_gpytorch_mll(mll)
+    GP_end_time = time.time()
+    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
+
+    # Fix mismatch in name between the config file and the expected lume-model format
+    for k in input_variables:
+        input_variables[k]["default_value"] = input_variables[k]["default"]
+        del input_variables[k]["default"]
+
+    if False:  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
+        output_variables = [
+            DistributionVariable(
+                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
+            )
+            for name in output_names
+            for suffix in ["sim_task", "exp_task"]
+        ]
+    else:
+        output_variables = [
+            DistributionVariable(
+                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
+            )
+            for name in output_names
+            for suffix in ["sim_task"]
+        ]
+
+    return GPModel(
+            model=model.cpu(),
+            input_variables=[ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
+            output_variables=output_variables,
+            input_transform=[input_transform],
+            output_transform=[output_transform])
+
+
+def write_model(model, model_type, experiment, db):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        if model_type != "GP":
+            model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_jit=True)
+        else:
+            model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_models=True)
+        # Upload the model to the database
+        # - Load the files that were just created into a dictionary
+        with open(os.path.join(temp_dir, experiment + ".yml")) as f:
+            yaml_file_content = f.read()
+        document = {
+            "experiment": experiment,
+            "model_type": model_type,
+            "yaml_file_content": yaml_file_content,
+        }
+        # Extract list of files to upload
+        files_to_upload = []
+        if model_type == "ensemble_NN":
+            models_info = yaml.safe_load(yaml_file_content)
+            for model in models_info["models"]:
+                yaml_file_name = model.replace("_model.jit", ".yml")
+                files_to_upload.append(yaml_file_name)
+                with open(os.path.join(temp_dir, yaml_file_name)) as f:
+                    model_info = yaml.safe_load(f.read())
+                # Extract files to upload
+                files_to_upload += (
+                    [model_info["model"]]
+                    + model_info["input_transformers"]
+                    + model_info["output_transformers"]
+                )
+        else:
+            # Extract files to upload
+            model_info = yaml.safe_load(yaml_file_content)
+            files_to_upload += (
+                [model_info["model"]]
+                + model_info["input_transformers"]
+                + model_info["output_transformers"]
+            )
+        # Upload all the files that define the model(s)
+        for filename in files_to_upload:
+            with open(os.path.join(temp_dir, filename), "rb") as f:
+                document[filename] = f.read()
+        # - Check whether there is already a model in the database
+        query = {"experiment": experiment, "model_type": model_type}
+        count = db["models"].count_documents(query)
+        # - Upload/replace the model in the database
+        if count > 1:
+            print(
+                f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them."
+            )
+            db["models"].delete_many(query)
+        elif count == 1:
+            print(
+                f"Model already exists for experiment: {experiment} and model type: {model_type}! Removing it."
+            )
+            db["models"].delete_one(query)
+        print("Uploading new model to database")
+        db["models"].insert_one(document)
+        print("Model uploaded to database")
 
 experiment, model_type = parse_arguments()
 config_dict = load_config(experiment)
@@ -362,163 +515,7 @@ if model_type != "GP":
 else:
     # Create separate GP models for each output to handle NaN values
 
-    gp_models = []
-    print(f"Creating separate GP models for {n_outputs} outputs...")
+    model = train_gp(norm_df_train, input_names, output_names,
+                     input_transform, output_transform, device)
 
-    for i, output_name in enumerate(output_names):
-        print(f"Processing output {i + 1}/{n_outputs}: {output_name}")
-
-        # Get data where this output is not NaN
-        output_data = norm_df_train[output_name].values
-        valid_mask = torch.logical_not(torch.isnan(torch.tensor(output_data)))
-        n_valid = torch.sum(valid_mask).item()
-        print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
-
-        # Prepare input and output data for this output
-        X_valid = torch.tensor(
-            norm_df_train[input_names].values[valid_mask], dtype=torch.float64
-        )
-        y_valid = torch.tensor(output_data[valid_mask], dtype=torch.float64).unsqueeze(
-            -1
-        )
-
-        # Create GP model based on whether we have experimental data
-        if (
-            False
-        ):  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
-            # MultiTaskGP for experimental vs simulation data
-            exp_flag_valid = torch.tensor(
-                norm_df_train[["experiment_flag"]].values[valid_mask],
-                dtype=torch.float64,
-            )
-            X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
-
-            gp_model = MultiTaskGP(
-                X_with_task,
-                y_valid,
-                task_feature=0,
-                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-                outcome_transform=None,
-            ).to(device)
-
-        else:
-            # SingleTaskGP for simulation data only
-            gp_model = SingleTaskGP(
-                X_valid,
-                y_valid,
-                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-                outcome_transform=None,
-            ).to(device)
-
-        gp_models.append(gp_model)
-
-    # Combine the models in a ModelListGP
-    gp_model = ModelListGP(*gp_models)
-    print(f"ModelListGP created with {len(gp_models)} separate GP models")
-    # Fit each separately
-    GP_start_time = time.time()
-    for i, model in enumerate(gp_models):
-        print(f"Training GP model {i + 1}/{len(gp_models)}...")
-        mll = ExactMarginalLogLikelihood(model.likelihood, model)
-        fit_gpytorch_mll(mll)
-    GP_end_time = time.time()
-    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
-
-    # Fix mismatch in name between the config file and the expected lume-model format
-    for k in input_variables:
-        input_variables[k]["default_value"] = input_variables[k]["default"]
-        del input_variables[k]["default"]
-
-    input_variables = [
-        ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-    ]
-
-    if False:  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
-        output_variables = [
-            DistributionVariable(
-                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
-            )
-            for name in output_names
-            for suffix in ["sim_task", "exp_task"]
-        ]
-    else:
-        output_variables = [
-            DistributionVariable(
-                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
-            )
-            for name in output_names
-            for suffix in ["sim_task"]
-        ]
-    # Save GP model
-    gpmodel = GPModel(
-        model=gp_model.cpu(),
-        input_variables=input_variables,
-        output_variables=output_variables,
-        input_transformers=[input_transform],
-        output_transformers=[output_transform],
-    )
-
-    model = gpmodel
-
-
-with tempfile.TemporaryDirectory() as temp_dir:
-    if model_type != "GP":
-        model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_jit=True)
-    else:
-        model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_models=True)
-    # Upload the model to the database
-    # - Load the files that were just created into a dictionary
-    with open(os.path.join(temp_dir, experiment + ".yml")) as f:
-        yaml_file_content = f.read()
-    document = {
-        "experiment": experiment,
-        "model_type": model_type,
-        "yaml_file_content": yaml_file_content,
-    }
-
-    # Extract list of files to upload
-    files_to_upload = []
-    if model_type == "ensemble_NN":
-        models_info = yaml.safe_load(yaml_file_content)
-        for model in models_info["models"]:
-            yaml_file_name = model.replace("_model.jit", ".yml")
-            files_to_upload.append(yaml_file_name)
-            with open(os.path.join(temp_dir, yaml_file_name)) as f:
-                model_info = yaml.safe_load(f.read())
-            # Extract files to upload
-            files_to_upload += (
-                [model_info["model"]]
-                + model_info["input_transformers"]
-                + model_info["output_transformers"]
-            )
-    else:
-        # Extract files to upload
-        model_info = yaml.safe_load(yaml_file_content)
-        files_to_upload += (
-            [model_info["model"]]
-            + model_info["input_transformers"]
-            + model_info["output_transformers"]
-        )
-
-    # Upload all the files that define the model(s)
-    for filename in files_to_upload:
-        with open(os.path.join(temp_dir, filename), "rb") as f:
-            document[filename] = f.read()
-
-    # - Check whether there is already a model in the database
-    query = {"experiment": experiment, "model_type": model_type}
-    count = db["models"].count_documents(query)
-    # - Upload/replace the model in the database
-    if count > 1:
-        print(
-            f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them."
-        )
-        db["models"].delete_many(query)
-    elif count == 1:
-        print(
-            f"Model already exists for experiment: {experiment} and model type: {model_type}! Removing it."
-        )
-        db["models"].delete_one(query)
-    print("Uploading new model to database")
-    db["models"].insert_one(document)
-    print("Model uploaded to database")
+write_model(model, model_type, experiment, db)
