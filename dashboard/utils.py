@@ -212,10 +212,14 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 if not cols:
                     return []
                 section = [f"<br><b>{title}</b>"]
-                section += [
-                    f"{col}=%{{customdata[{hover_data.index(col)}]:.4g}}"
-                    for col in cols
-                ]
+                for col in cols:
+                    # Check if column is "date"
+                    if col == "date":
+                        # For string/date columns, use no format specifier (displays as-is)
+                        section.append(f"{col}=%{{customdata[{hover_data.index(col)}]}}")
+                    else:
+                        # Use numeric formatting for numeric columns
+                        section.append(f"{col}=%{{customdata[{hover_data.index(col)}]:.4g}}")
                 return section
 
             # Determine which data is shown when hovering over the plot
@@ -263,6 +267,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
 
             # Attach customdata:
+            print('df_copy_filtered["date"].values:', df_copy_filtered['date'].values)
             exp_fig.update_traces(customdata=df_copy_filtered[hover_customdata].values)
             hovertemplate = "<br>".join(hover_template_lines) + "<extra></extra>"
             # Apply hovertemplate
