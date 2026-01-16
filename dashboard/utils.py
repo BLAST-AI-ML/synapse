@@ -81,6 +81,11 @@ def load_data(db):
         exp_data["_id"] = exp_data["_id"].astype(str)
     if "_id" in sim_data.columns:
         sim_data["_id"] = sim_data["_id"].astype(str)
+    # Convert 'date' field from datetime object to string
+    if "date" in exp_data.columns:
+        exp_data["date"] = exp_data["date"].astype(str)
+    if "date" in sim_data.columns:
+        sim_data["date"] = sim_data["date"].astype(str)
     return (exp_data, sim_data)
 
 
