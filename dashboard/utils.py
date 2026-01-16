@@ -81,6 +81,11 @@ def load_data(db):
         exp_data["_id"] = exp_data["_id"].astype(str)
     if "_id" in sim_data.columns:
         sim_data["_id"] = sim_data["_id"].astype(str)
+    # Convert 'date' field from datetime object to string
+    if "date" in exp_data.columns:
+        exp_data["date"] = exp_data["date"].astype(str)
+    if "date" in sim_data.columns:
+        sim_data["date"] = sim_data["date"].astype(str)
     return (exp_data, sim_data)
 
 
@@ -207,10 +212,18 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 if not cols:
                     return []
                 section = [f"<br><b>{title}</b>"]
-                section += [
-                    f"{col}=%{{customdata[{hover_data.index(col)}]:.4g}}"
-                    for col in cols
-                ]
+                for col in cols:
+                    # Check if column is "date"
+                    if col == "date":
+                        # For string/date columns, use no format specifier (displays as-is)
+                        section.append(
+                            f"{col}=%{{customdata[{hover_data.index(col)}]}}"
+                        )
+                    else:
+                        # Use numeric formatting for numeric columns
+                        section.append(
+                            f"{col}=%{{customdata[{hover_data.index(col)}]:.4g}}"
+                        )
                 return section
 
             # Determine which data is shown when hovering over the plot
