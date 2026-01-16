@@ -267,7 +267,6 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
 
             # Attach customdata:
-            print('df_copy_filtered["date"].values:', df_copy_filtered['date'].values)
             exp_fig.update_traces(customdata=df_copy_filtered[hover_customdata].values)
             hovertemplate = "<br>".join(hover_template_lines) + "<extra></extra>"
             # Apply hovertemplate
