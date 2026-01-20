@@ -76,16 +76,12 @@ def load_data(db):
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
-    # Make sure that the _id is stored as a string (important for interactivity in plotly)
-    if "_id" in exp_data.columns:
-        exp_data["_id"] = exp_data["_id"].astype(str)
-    if "_id" in sim_data.columns:
-        sim_data["_id"] = sim_data["_id"].astype(str)
-    # Convert 'date' field from datetime object to string
-    if "date" in exp_data.columns:
-        exp_data["date"] = exp_data["date"].astype(str)
-    if "date" in sim_data.columns:
-        sim_data["date"] = sim_data["date"].astype(str)
+    # Store '_id', 'date' as string
+    for key in ["_id", "date"]:
+        if key in exp_data.columns:
+            exp_data[key] = exp_data[key].astype(str)
+        if key in sim_data.columns:
+            sim_data[key] = sim_data[key].astype(str)
     return (exp_data, sim_data)
 
 
@@ -214,7 +210,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 section = [f"<br><b>{title}</b>"]
                 for col in cols:
                     # For string/date columns, use no format specifier (displays as-is)
-                    format = "" if col == "date" else ".4g"
+                    format = "" if col == "date" else ":.4g"
                     section.append(
                         f"{col}=%{{customdata[{hover_data.index(col)}]{format}}}"
                     )
