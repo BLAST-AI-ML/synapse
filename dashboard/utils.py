@@ -213,17 +213,11 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                     return []
                 section = [f"<br><b>{title}</b>"]
                 for col in cols:
-                    # Check if column is "date"
-                    if col == "date":
-                        # For string/date columns, use no format specifier (displays as-is)
-                        section.append(
-                            f"{col}=%{{customdata[{hover_data.index(col)}]}}"
-                        )
-                    else:
-                        # Use numeric formatting for numeric columns
-                        section.append(
-                            f"{col}=%{{customdata[{hover_data.index(col)}]:.4g}}"
-                        )
+                    # For string/date columns, use no format specifier (displays as-is)
+                    format = "" if col == "date" else ".4g"
+                    section.append(
+                        f"{col}=%{{customdata[{hover_data.index(col)}]{format}}}"
+                    )
                 return section
 
             # Determine which data is shown when hovering over the plot
