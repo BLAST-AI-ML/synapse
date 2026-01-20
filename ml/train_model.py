@@ -129,6 +129,7 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     )
     return norm_df, norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
 
+
 def split_data(df_exp, df_sim, variables, model_type):
     if model_type == "GP":
         if len(df_exp) > 0:
@@ -151,6 +152,7 @@ def split_data(df_exp, df_sim, variables, model_type):
         else:
             return (sim_train_df[variables], sim_val_df[variables])
 
+
 def build_transforms(n_inputs, X_data, n_outputs, y_data):
     input_transform = AffineInputTransform(
         len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
@@ -160,6 +162,7 @@ def build_transforms(n_inputs, X_data, n_outputs, y_data):
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
     output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
     return input_transform, output_transform
+
 
 def train_nn_ensemble(
     model_type,
@@ -257,10 +260,10 @@ def build_torch_model_from_nn(
         ],
     )
 
-def train_gp(
-    norm_df_train, input_names, output_names,
-    input_transform, output_transform, device):
 
+def train_gp(
+    norm_df_train, input_names, output_names, input_transform, output_transform, device
+):
     gp_models = []
 
     for i, output_name in enumerate(output_names):
@@ -345,11 +348,14 @@ def train_gp(
         ]
 
     return GPModel(
-            model=model.cpu(),
-            input_variables=[ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
-            output_variables=output_variables,
-            input_transform=[input_transform],
-            output_transform=[output_transform])
+        model=model.cpu(),
+        input_variables=[
+            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+        ],
+        output_variables=output_variables,
+        input_transform=[input_transform],
+        output_transform=[output_transform],
+    )
 
 
 def write_model(model, model_type, experiment, db):
@@ -357,7 +363,9 @@ def write_model(model, model_type, experiment, db):
         if model_type != "GP":
             model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_jit=True)
         else:
-            model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_models=True)
+            model.dump(
+                file=os.path.join(temp_dir, experiment + ".yml"), save_models=True
+            )
         # Upload the model to the database
         # - Load the files that were just created into a dictionary
         with open(os.path.join(temp_dir, experiment + ".yml")) as f:
@@ -411,6 +419,7 @@ def write_model(model, model_type, experiment, db):
         print("Uploading new model to database")
         db["models"].insert_one(document)
         print("Model uploaded to database")
+
 
 experiment, model_type = parse_arguments()
 config_dict = load_config(experiment)
@@ -513,7 +522,13 @@ if model_type != "GP":
 else:
     # Create separate GP models for each output to handle NaN values
 
-    model = train_gp(norm_df_train, input_names, output_names,
-                     input_transform, output_transform, device)
+    model = train_gp(
+        norm_df_train,
+        input_names,
+        output_names,
+        input_transform,
+        output_transform,
+        device,
+    )
 
 write_model(model, model_type, experiment, db)
