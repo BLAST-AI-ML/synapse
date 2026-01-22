@@ -348,7 +348,7 @@ def chat_route():
     with RouterViewLayout(server, "/chat"):
         with vuetify.VContainer(fluid=True, style="height: 80vh; width: 100%;"):
             html.Iframe(
-                src="https://example.com/",
+                src="https://synapse-chat.lbl.gov/",
                 style="width: 100%; height: 100%; border: none;",
             )
 
