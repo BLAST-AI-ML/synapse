@@ -249,7 +249,8 @@ def find_simulation(event, db):
         print(msg)
 
 
-def open_simulation_dialog(event, db):
+def open_simulation_dialog(event):
+    db = load_database(state.experiment)
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
@@ -333,7 +334,7 @@ def home_route():
                                 config={"responsive": True},
                                 click=(
                                     open_simulation_dialog,
-                                    "[utils.safe($event), db]",
+                                    "[utils.safe($event)]",
                                 ),
                             )
                             ctrl.figure_update = figure.update
@@ -357,7 +358,7 @@ def chat_route():
     with RouterViewLayout(server, "/chat"):
         with vuetify.VContainer(fluid=True, style="height: 80vh; width: 100%;"):
             html.Iframe(
-                src="https://example.com/",
+                src="https://synapse-chat.lbl.gov/",
                 style="width: 100%; height: 100%; border: none;",
             )
 
