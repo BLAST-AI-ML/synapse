@@ -360,21 +360,21 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         )
         # ----------------------------------------------------------------------
         # figures style
-        if parameters_show_all[key]:
-            fig.update_xaxes(
-                exponentformat="e",
-                title_text=key,
-                row=this_row,
-                col=this_col,
-            )
-        else:
-            fig.update_xaxes(
-                range=(parameters_min[key], parameters_max[key]),
-                exponentformat="e",
-                title_text=key,
-                row=this_row,
-                col=this_col,
-            )
+        custom_range = (
+            [None, None]
+            if parameters_show_all[key]
+            else [
+                parameters_min[key],
+                parameters_max[key],
+            ]
+        )
+        fig.update_xaxes(
+            range=custom_range,
+            exponentformat="e",
+            title_text=key,
+            row=this_row,
+            col=this_col,
+        )
 
     # A bit of padding on either end of the y range so we can see all the data.
     padding = 0.05 * (global_ymax - global_ymin)
