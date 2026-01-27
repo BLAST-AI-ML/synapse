@@ -15,7 +15,7 @@ class OptimizationManager:
     def model_wrapper(self, parameters_array):
         print("Wrapping model...")
         # convert array of parameters to dictionary
-        parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
+        parameters_dict = dict(zip(state.parameters["exp"].keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
         mean, lower, upper = self.__model.evaluate(
             parameters_dict, state.optimization_target
@@ -28,12 +28,12 @@ class OptimizationManager:
         # info print statement skipped to avoid redundancy
         if self.__model is not None:
             # get array of current parameters from state
-            parameters_values = np.array(list(state.parameters.values()))
+            parameters_values = np.array(list(state.parameters["exp"].values()))
             # define parameters bounds for optimization
             parameters_bounds = []
-            for key in state.parameters.keys():
+            for key in state.parameters["exp"].keys():
                 parameters_bounds.append(
-                    (state.parameters_min[key], state.parameters_max[key])
+                    (state.parameters_min["exp"][key], state.parameters_max["exp"][key])
                 )
             # optimize model (maximize output value)
             res = minimize(
@@ -44,7 +44,7 @@ class OptimizationManager:
             )
             print(f"Optimization result:\n{res}")
             # update parameters in state with optimal values
-            state.parameters = dict(zip(state.parameters.keys(), res.x))
+            state.parameters["exp"] = dict(zip(state.parameters["exp"].keys(), res.x))
             # push again at flush time
             state.dirty("parameters")
             # Force flush now (TODO fix state change listeners, remove workaround)

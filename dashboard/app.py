@@ -75,7 +75,9 @@ def update(
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
-        par_manager = ParametersManager(mod_manager, input_variables)
+        par_manager = ParametersManager(
+            mod_manager, input_variables, simulation_calibration
+        )
     elif reset_model:
         # if resetting only model, model attribute must be updated
         par_manager.model = mod_manager
@@ -105,11 +107,11 @@ def update(
         ctrl.figure_update(fig)
 
 
-@state.change("experiment")
+@state.change("experiment", "displayed_inputs")
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Experiment changed...")
+        print("Reacting on state change...")
         update(
             reset_model=True,
             reset_output=True,
@@ -127,7 +129,7 @@ def update_on_change_experiment(**kwargs):
 def update_on_change_model(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Model type changed...")
+        print("Reacting on state change...")
         update(
             reset_model=True,
             reset_output=False,
@@ -154,7 +156,7 @@ def update_on_change_model(**kwargs):
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity changed...")
+        print("Reacting on state change...")
         update(
             reset_model=False,
             reset_output=False,
@@ -177,7 +179,7 @@ def find_simulation(event, db):
         if len(documents) == 1:
             this_point_parameters = {
                 parameter: documents[0][parameter]
-                for parameter in state.parameters.keys()
+                for parameter in state.parameters["exp"].keys()
                 if parameter in documents[0]
             }
             print(f"Clicked on data point ({this_point_parameters})")
@@ -286,10 +288,6 @@ def home_route():
                         vuetify.VTab("ML", value="ml_tab")
                     with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
                         with vuetify.VWindowItem(value="parameters_tab"):
-                            # output control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    out_manager.panel()
                             # parameters control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
@@ -316,8 +314,11 @@ def home_route():
             with vuetify.VCol(cols=8):
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
+                        param_family = (
+                            "exp" if state.displayed_inputs == "Experiment" else "sim"
+                        )
                         with vuetify.VContainer(
-                            style=f"height: {400 * len(state.parameters)}px;"
+                            style=f"height: {400 * len(state.parameters[param_family])}px;"
                         ):
                             figure = plotly.Figure(
                                 display_mode_bar="true",
