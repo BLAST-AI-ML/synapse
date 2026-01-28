@@ -42,7 +42,7 @@ class SimulationCalibrationManager:
     def convert_exp_to_sim(self, exp_dict):
         """
         Apply calibration to the experimental points, to be passed as
-        parameters for simulations on NERSC.
+        inputs for simulations on NERSC.
         """
 
         def convert(value, alpha, beta):

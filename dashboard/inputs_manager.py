@@ -14,31 +14,31 @@ from sfapi_manager import monitor_sfapi_job
 from state_manager import state, EXPERIMENTS_PATH
 
 
-class ParametersManager:
-    def __init__(self, model, input_variables):
-        print("Initializing parameters manager...")
+class InputsManager:
+    def __init__(self, model, inputs):
+        print("Initializing inputs manager...")
         # save model
         self.__model = model
         # define state variables
-        state.parameters = dict()
-        state.parameters_min = dict()
-        state.parameters_max = dict()
-        state.parameters_show_all = dict()
-        self.parameters_step = dict()
+        state.inputs = dict()
+        state.inputs_min = dict()
+        state.inputs_max = dict()
+        state.inputs_show_all = dict()
+        self.inputs_step = dict()
         state.simulatable = (
             self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
-        for parameter_dict in input_variables.values():
-            key = parameter_dict["name"]
-            pmin = float(parameter_dict["value_range"][0])
-            pmax = float(parameter_dict["value_range"][1])
-            pval = float(parameter_dict["default"])
-            state.parameters[key] = pval
-            state.parameters_min[key] = pmin
-            state.parameters_max[key] = pmax
-            state.parameters_show_all[key] = False
-            self.parameters_step[key] = (pmax - pmin) / 100
-        state.parameters_init = copy.deepcopy(state.parameters)
+        for input_dict in inputs.values():
+            key = input_dict["name"]
+            pmin = float(input_dict["value_range"][0])
+            pmax = float(input_dict["value_range"][1])
+            pval = float(input_dict["default"])
+            state.inputs[key] = pval
+            state.inputs_min[key] = pmin
+            state.inputs_max[key] = pmax
+            state.inputs_show_all[key] = False
+            self.inputs_step[key] = (pmax - pmin) / 100
+        state.inputs_init = copy.deepcopy(state.inputs)
 
     @property
     def model(self):
@@ -53,11 +53,11 @@ class ParametersManager:
         return EXPERIMENTS_PATH / f"synapse-{state.experiment}/simulation_scripts/"
 
     def reset(self):
-        print("Resetting parameters to default values...")
-        # reset parameters to initial values
-        state.parameters = copy.deepcopy(state.parameters_init)
+        print("Resetting inputs to default values...")
+        # reset inputs to initial values
+        state.inputs = copy.deepcopy(state.inputs_init)
         # push again at flush time
-        state.dirty("parameters")
+        state.dirty("inputs")
 
     async def simulation_kernel(self):
         try:
@@ -71,13 +71,13 @@ class ParametersManager:
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 # set the base path where auxiliary files are copied from
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    # store the current simulation parameters in a YAML temporary file
+                    # store the current simulation inputs in a YAML temporary file
                     temp_file_path = (
                         Path(temp_dir) / "single_simulation_parameters.yaml"
                     )
                     _, _, simulation_calibration = load_variables(state.experiment)
                     sim_cal = SimulationCalibrationManager(simulation_calibration)
-                    sim_dict = sim_cal.convert_exp_to_sim(state.parameters)
+                    sim_dict = sim_cal.convert_exp_to_sim(state.inputs)
                     with open(temp_file_path, "w") as temp_file:
                         yaml.dump(sim_dict, temp_file)
                         temp_file.flush()
@@ -148,16 +148,16 @@ class ParametersManager:
             print(msg)
 
     def panel(self):
-        print("Setting parameters card...")
-        with vuetify.VExpansionPanels(v_model=("expand_panel_control_parameters", 0)):
+        print("Setting inputs card...")
+        with vuetify.VExpansionPanels(v_model=("expand_panel_control_inputs", 0)):
             with vuetify.VExpansionPanel(
-                title="Control: Parameters",
+                title="Control: Inputs",
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
-                    with client.DeepReactive("parameters"):
-                        for count, key in enumerate(state.parameters.keys()):
-                            # create a row for the parameter label
+                    with client.DeepReactive("inputs"):
+                        for count, key in enumerate(state.inputs.keys()):
+                            # create a row for the input label
                             with vuetify.VRow():
                                 vuetify.VListSubheader(
                                     key,
@@ -169,19 +169,19 @@ class ParametersManager:
                                 )
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VSlider(
-                                    v_model_number=(f"parameters['{key}']",),
-                                    change="flushState('parameters')",
+                                    v_model_number=(f"inputs['{key}']",),
+                                    change="flushState('inputs')",
                                     hide_details=True,
-                                    min=(f"parameters_min['{key}']",),
-                                    max=(f"parameters_max['{key}']",),
+                                    min=(f"inputs_min['{key}']",),
+                                    max=(f"inputs_max['{key}']",),
                                     step=(
-                                        f"(parameters_max['{key}'] - parameters_min['{key}']) / 100",
+                                        f"(inputs_max['{key}'] - inputs_min['{key}']) / 100",
                                     ),
                                     style="align-items: center;",
                                 ):
                                     with vuetify.Template(v_slot_append=True):
                                         vuetify.VTextField(
-                                            v_model_number=(f"parameters['{key}']",),
+                                            v_model_number=(f"inputs['{key}']",),
                                             density="compact",
                                             hide_details=True,
                                             readonly=True,
@@ -189,15 +189,15 @@ class ParametersManager:
                                             style="margin-top: 0px; padding-top: 0px; width: 100px;",
                                             type="number",
                                         )
-                            step = self.parameters_step[key]
+                            step = self.inputs_step[key]
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"parameters_min['{key}']",),
-                                        change="flushState('parameters_min')",
+                                        v_model_number=(f"inputs_min['{key}']",),
+                                        change="flushState('inputs_min')",
                                         density="compact",
                                         hide_details=True,
-                                        disabled=(f"parameters_show_all['{key}']",),
+                                        disabled=(f"inputs_show_all['{key}']",),
                                         step=step,
                                         __properties=["step"],
                                         style="width: 100px;",
@@ -206,11 +206,11 @@ class ParametersManager:
                                     )
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"parameters_max['{key}']",),
-                                        change="flushState('parameters_max')",
+                                        v_model_number=(f"inputs_max['{key}']",),
+                                        change="flushState('inputs_max')",
                                         density="compact",
                                         hide_details=True,
-                                        disabled=(f"parameters_show_all['{key}']",),
+                                        disabled=(f"inputs_show_all['{key}']",),
                                         step=step,
                                         __properties=["step"],
                                         style="width: 100px;",
@@ -220,11 +220,11 @@ class ParametersManager:
                                 with vuetify.VCol(style="min-width: 100px;"):
                                     vuetify.VCheckbox(
                                         v_model=(
-                                            f"parameters_show_all['{key}']",
+                                            f"inputs_show_all['{key}']",
                                             False,
                                         ),
                                         density="compact",
-                                        change="flushState('parameters_show_all')",
+                                        change="flushState('inputs_show_all')",
                                         label="Show all",
                                     )
                         with vuetify.VRow(align="center"):

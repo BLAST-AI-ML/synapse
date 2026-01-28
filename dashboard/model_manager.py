@@ -11,7 +11,7 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import verify_input_variables, timer, load_config_dict
+from utils import verify_inputs, timer, load_config_dict
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -99,7 +99,7 @@ class ModelManager:
                 add_error(title, msg)
                 print(msg)
                 return
-            elif not verify_input_variables(model_file, state.experiment):
+            elif not verify_inputs(model_file, state.experiment):
                 title = "Model file input variable mismatch"
                 msg = f"Model file {model_file} has different input variables than the configuration file for {state.experiment}"
                 add_error(title, msg)
@@ -143,11 +143,11 @@ class ModelManager:
         return self.__is_neural_network_ensemble
 
     @timer
-    def evaluate(self, parameters, output):
+    def evaluate(self, inputs, output):
         print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
-            output_dict = self.__model.evaluate(parameters)
+            output_dict = self.__model.evaluate(inputs)
             if self.__is_neural_network:
                 # compute mean and mean error
                 mean = output_dict[output]
