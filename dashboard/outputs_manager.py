@@ -3,12 +3,12 @@ from trame.widgets import vuetify3 as vuetify
 from state_manager import state
 
 
-class OutputManager:
-    def __init__(self, output_variables):
+class OutputsManager:
+    def __init__(self, outputs):
         print("Initializing output manager...")
         # define state variables
-        state.output_variables = [v["name"] for v in output_variables.values()]
-        state.displayed_output = state.output_variables[0]
+        state.outputs = [v["name"] for v in outputs.values()]
+        state.displayed_output = state.outputs[0]
 
     def panel(self):
         print("Setting output card...")
@@ -21,6 +21,6 @@ class OutputManager:
                     with vuetify.VRow():
                         vuetify.VSelect(
                             v_model=("displayed_output",),
-                            items=(state.output_variables,),
+                            items=(state.outputs,),
                             dense=True,
                         )
