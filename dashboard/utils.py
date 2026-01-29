@@ -366,24 +366,21 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         )
         # ----------------------------------------------------------------------
         # figures style
-        if state.parameters_show_all[param_family][key]:
-            fig.update_xaxes(
-                exponentformat="e",
-                title_text=key,
-                row=this_row,
-                col=this_col,
-            )
-        else:
-            fig.update_xaxes(
-                range=(
-                    state.parameters_min[param_family][key],
-                    state.parameters_max[param_family][key],
-                ),
-                exponentformat="e",
-                title_text=key,
-                row=this_row,
-                col=this_col,
-            )
+        custom_range = (
+            [None, None]
+            if state.parameters_show_all[param_family][key]
+            else [
+                state.parameters_min[param_family][key],
+                state.parameters_max[param_family][key],
+            ]
+        )
+        fig.update_xaxes(
+            range=custom_range,
+            exponentformat="e",
+            title_text=key,
+            row=this_row,
+            col=this_col,
+        )
 
     # A bit of padding on either end of the y range so we can see all the data.
     padding = 0.05 * (global_ymax - global_ymin)
