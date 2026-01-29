@@ -12,41 +12,39 @@ class OptimizationManager:
         self.__model = model
         state.optimization_target = state.displayed_output
 
-    def model_wrapper(self, parameters_array):
+    def model_wrapper(self, inputs_array):  # FIXME
         print("Wrapping model...")
-        # convert array of parameters to dictionary
-        parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
+        # convert array of inputs to dictionary
+        inputs_dict = dict(zip(state.inputs.keys(), inputs_array))
         # change sign to the result in order to maximize when optimizing
         mean, lower, upper = self.__model.evaluate(
-            parameters_dict, state.optimization_target
+            inputs_dict, state.optimization_target
         )
         res = -mean if state.optimization_type == "Maximize" else mean
         return res
 
-    def optimize(self):
-        print("Optimizing parameters...")
+    def optimize(self):  # FIXME
+        print("Optimizing inputs...")
         # info print statement skipped to avoid redundancy
         if self.__model is not None:
-            # get array of current parameters from state
-            parameters_values = np.array(list(state.parameters.values()))
-            # define parameters bounds for optimization
-            parameters_bounds = []
-            for key in state.parameters.keys():
-                parameters_bounds.append(
-                    (state.parameters_min[key], state.parameters_max[key])
-                )
+            # get array of current inputs from state
+            inputs_values = np.array(list(state.inputs.values()))
+            # define inputs bounds for optimization
+            inputs_bounds = []
+            for key in state.inputs.keys():
+                inputs_bounds.append((state.inputs_min[key], state.inputs_max[key]))
             # optimize model (maximize output value)
             res = minimize(
                 fun=self.model_wrapper,
-                x0=parameters_values,
-                bounds=parameters_bounds,
+                x0=inputs_values,
+                bounds=inputs_bounds,
                 method="Powell",
             )
             print(f"Optimization result:\n{res}")
-            # update parameters in state with optimal values
-            state.parameters = dict(zip(state.parameters.keys(), res.x))
+            # update inputs in state with optimal values
+            state.inputs = dict(zip(state.inputs.keys(), res.x))
             # push again at flush time
-            state.dirty("parameters")
+            state.dirty("inputs")
             # Force flush now (TODO fix state change listeners, remove workaround)
             state.flush()
             # update optimization status
@@ -54,16 +52,16 @@ class OptimizationManager:
                 state.optimization_status = "Completed"
             else:
                 state.optimization_status = "Failed"
-                title = "Unable to optimize parameters"
-                msg = f"Error occurred when optimizing parameters: {res.message}"
+                title = "Unable to optimize inputs"
+                msg = f"Error occurred when optimizing inputs: {res.message}"
                 add_error(title, msg)
 
     def optimize_trigger(self):
         try:
             self.optimize()
         except Exception as e:
-            title = "Unable to optimize parameters"
-            msg = f"Error occurred when optimizing parameters: {e}"
+            title = "Unable to optimize inputs"
+            msg = f"Error occurred when optimizing inputs: {e}"
             add_error(title, msg)
             print(msg)
 
@@ -85,7 +83,7 @@ class OptimizationManager:
                             vuetify.VSelect(
                                 v_model=("optimization_target",),
                                 label="Optimization target",
-                                items=(state.output_variables,),
+                                items=(state.outputs,),
                                 dense=True,
                             )
                         with vuetify.VCol():

@@ -7,9 +7,9 @@ from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
 from model_manager import ModelManager
-from outputs_manager import OutputManager
+from outputs_manager import OutputsManager
 from optimization_manager import OptimizationManager
-from parameters_manager import ParametersManager
+from inputs_manager import InputsManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import initialize_sfapi, load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
@@ -27,9 +27,9 @@ from utils import (
 # Globals
 # -----------------------------------------------------------------------------
 
-out_manager = None
+inputs_manager = None
+outputs_manager = None
 mod_manager = None
-par_manager = None
 opt_manager = None
 cal_manager = None
 
@@ -43,8 +43,8 @@ experiments = load_experiments()
 
 def update(
     reset_model=True,
-    reset_output=True,
-    reset_parameters=True,
+    reset_inputs=True,
+    reset_outputs=True,
     reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
@@ -55,30 +55,28 @@ def update(
 ):
     print("Updating...")
     global mod_manager
-    global out_manager
-    global par_manager
+    global inputs_manager
+    global outputs_manager
     global opt_manager
     global cal_manager
     # load input and output variables
-    input_variables, output_variables, simulation_calibration = load_variables(
-        state.experiment
-    )
+    inputs, outputs, simulation_calibration = load_variables(state.experiment)
     # load data
     db = load_database(state.experiment)
     exp_data, sim_data = load_data(db)
-    # reset output
-    if reset_output:
-        out_manager = OutputManager(output_variables)
+    # reset outputs
+    if reset_outputs:
+        outputs_manager = OutputsManager(outputs)
     # reset model
     if reset_model:
         mod_manager = ModelManager(db)
         opt_manager = OptimizationManager(mod_manager)
-    # reset parameters
-    if reset_parameters:
-        par_manager = ParametersManager(mod_manager, input_variables)
+    # reset inputs
+    if reset_inputs:
+        inputs_manager = InputsManager(mod_manager, inputs)
     elif reset_model:
         # if resetting only model, model attribute must be updated
-        par_manager.model = mod_manager
+        inputs_manager.model = mod_manager
     # reset calibration
     if reset_calibration:
         cal_manager = SimulationCalibrationManager(simulation_calibration)
@@ -112,8 +110,8 @@ def update_on_change_experiment(**kwargs):
         print("Experiment changed...")
         update(
             reset_model=True,
-            reset_output=True,
-            reset_parameters=True,
+            reset_inputs=True,
+            reset_outputs=True,
             reset_calibration=True,
             reset_plots=True,
             reset_gui_route_home=True,
@@ -130,8 +128,8 @@ def update_on_change_model(**kwargs):
         print("Model type changed...")
         update(
             reset_model=True,
-            reset_output=False,
-            reset_parameters=False,
+            reset_inputs=False,
+            reset_outputs=False,
             reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=True,
@@ -143,22 +141,19 @@ def update_on_change_model(**kwargs):
 
 @state.change(
     "displayed_output",
-    "parameters",
+    "inputs_new",
     "opacity",
-    "parameters_min",
-    "parameters_max",
-    "parameters_show_all",
     "simulation_calibration",
     "use_inferred_calibration",
 )
 def update_on_change_others(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity changed...")
+        print("Inputs, opacity changed...")
         update(
             reset_model=False,
-            reset_output=False,
-            reset_parameters=False,
+            reset_inputs=False,
+            reset_outputs=False,
             reset_calibration=False,
             reset_plots=True,
             reset_gui_route_home=False,
@@ -175,12 +170,12 @@ def find_simulation(event, db):
         # find the document with matching ID from the experiment collection
         documents = list(db[state.experiment].find({"_id": ObjectId(this_point_id)}))
         if len(documents) == 1:
-            this_point_parameters = {
-                parameter: documents[0][parameter]
-                for parameter in state.parameters.keys()
-                if parameter in documents[0]
+            this_point_inputs = {
+                input: documents[0][input]
+                for input in state.inputs_new.keys()
+                if input in documents[0]
             }
-            print(f"Clicked on data point ({this_point_parameters})")
+            print(f"Clicked on data point ({this_point_inputs})")
         else:
             title = "Unable to find database document"
             msg = f"Error occurred when searching for database document that matches ID {this_point_id}"
@@ -277,23 +272,23 @@ def home_route():
             with vuetify.VCol(cols=4):
                 with vuetify.VCard():
                     with vuetify.VTabs(
-                        v_model=("active_tab", "parameters_tab"),
+                        v_model=("active_tab", "inputs_tab"),
                         color="primary",
                         mandatory=True,
                     ):
-                        vuetify.VTab("Parameters", value="parameters_tab")
+                        vuetify.VTab("Inputs", value="inputs_tab")
                         vuetify.VTab("Optimization", value="optimization_tab")
                         vuetify.VTab("ML", value="ml_tab")
                     with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
-                        with vuetify.VWindowItem(value="parameters_tab"):
-                            # output control panel
+                        with vuetify.VWindowItem(value="inputs_tab"):
+                            # outputs control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
-                                    out_manager.panel()
-                            # parameters control panel
+                                    outputs_manager.panel()
+                            # inputs control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
-                                    par_manager.panel()
+                                    inputs_manager.panel()
                             # plots control panel
                             with vuetify.VRow():
                                 with vuetify.VCol():
@@ -317,7 +312,7 @@ def home_route():
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
                         with vuetify.VContainer(
-                            style=f"height: {400 * len(state.parameters)}px;"
+                            style=f"height: {400 * len(state.inputs_new)}px;"
                         ):
                             figure = plotly.Figure(
                                 display_mode_bar="true",

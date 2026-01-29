@@ -58,16 +58,16 @@ def load_variables(experiment):
     print("Reading input/output variables from configuration file...")
     # load configuration dictionary
     config_dict = load_config_dict(experiment)
-    # dictionary of input variables (parameters)
-    input_variables = config_dict["inputs"]
-    # dictionary of output variables (objectives)
-    output_variables = config_dict["outputs"]
+    # dictionary of inputs
+    inputs = config_dict["inputs"]
+    # dictionary of outputs
+    outputs = config_dict["outputs"]
     # dictionary of calibration variables
     if "simulation_calibration" in config_dict:
         simulation_calibration = config_dict["simulation_calibration"]
     else:
         simulation_calibration = {}
-    return (input_variables, output_variables, simulation_calibration)
+    return (inputs, outputs, simulation_calibration)
 
 
 @timer
@@ -85,7 +85,7 @@ def load_data(db):
     return (exp_data, sim_data)
 
 
-def verify_input_variables(model_file, experiment):
+def verify_inputs(model_file, experiment):
     print("Checking model consistency...")
     # read configuration file
     input_vars, _, _ = load_variables(experiment)
@@ -102,7 +102,7 @@ def verify_input_variables(model_file, experiment):
     # check if configuration list and model list match
     match = config_vars == model_vars
     if not match:
-        print("Input variables in configuration file and model file do not match")
+        print("Inputs in configuration file and model file do not match")
     return match
 
 
@@ -140,10 +140,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     # convert simulation data to experimental data
     cal_manager.convert_sim_to_exp(sim_data)
     # local aliases
-    parameters = state.parameters
-    parameters_min = state.parameters_min
-    parameters_max = state.parameters_max
-    parameters_show_all = state.parameters_show_all
+    inputs = state.inputs_new
     try:
         objective_name = state.displayed_output
     except Exception as e:
@@ -156,10 +153,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
-    fig = make_subplots(rows=len(parameters), cols=1)
+    fig = make_subplots(rows=len(inputs), cols=1)
     global_ymin = float("inf")
     global_ymax = float("-inf")
-    for i, key in enumerate(parameters.keys()):
+    for i, key in enumerate(inputs.keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i + 1
         this_col = 1
@@ -169,21 +166,21 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # compute Euclidean distance
         for df_count, df in enumerate([exp_data, sim_data]):
             df_copy = df.copy()
-            # some data sets do not include all parameters
+            # some data sets do not include all inputs
             # (e.g., simulation data set does not include GVD)
-            if key not in df_copy.columns:
+            if inputs[key]["name"] not in df_copy.columns:
                 continue
             df_copy["distance"] = 0.0
             # loop over all inputs except the current one
             for subkey in [
                 subkey
-                for subkey in parameters.keys()
-                if (subkey != key and subkey in df_copy.columns)
+                for subkey in inputs.keys()
+                if (subkey != key and inputs[subkey]["name"] in df_copy.columns)
             ]:
-                pname_loc = subkey
-                pval_loc = parameters[subkey]
-                pmin_loc = parameters_min[subkey]
-                pmax_loc = parameters_max[subkey]
+                pname_loc = inputs[subkey]["name"]
+                pval_loc = inputs[subkey]["value"]
+                pmin_loc = inputs[subkey]["value_range"][0]
+                pmax_loc = inputs[subkey]["value_range"][1]
                 df_copy["distance"] += (
                     (df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc)
                 ) ** 2
@@ -217,15 +214,17 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 return section
 
             # Determine which data is shown when hovering over the plot
-            hover_parameters = list(state.parameters.keys())
-            hover_output_variables = state.output_variables
-            hover_customdata = ["_id"] + hover_parameters + hover_output_variables
+            hover_inputs = [
+                state.inputs_new[key]["name"] for key in state.inputs_new.keys()
+            ]
+            hover_outputs = state.outputs
+            hover_customdata = ["_id"] + hover_inputs + hover_outputs
 
             hover_template_lines = hover_section(
-                "Input variables", hover_parameters, hover_customdata
+                "Input variables", hover_inputs, hover_customdata
             )
             hover_template_lines += hover_section(
-                "Output variables", hover_output_variables, hover_customdata
+                "Output variables", hover_outputs, hover_customdata
             )
             if df_leg[df_count] == "Experiment":
                 hover_experiment = [
@@ -250,7 +249,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             exp_fig = go.Figure(
                 data=[
                     go.Scatter(
-                        x=df_copy_filtered[key],
+                        x=df_copy_filtered[inputs[key]["name"]],
                         y=df_copy_filtered[objective_name],
                         mode="markers",
                         marker=dict(
@@ -291,13 +290,17 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         if model_manager.avail():
             input_dict_loc = dict()
             steps = 1000
-            input_dict_loc[key] = torch.linspace(
-                start=parameters_min[key],
-                end=parameters_max[key],
+            model_key = inputs[key]["name"]
+            input_dict_loc[model_key] = torch.linspace(
+                start=inputs[key]["value_range"][0],
+                end=inputs[key]["value_range"][1],
                 steps=steps,
             )
-            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
-                input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
+            for subkey in [subkey for subkey in inputs.keys() if subkey != key]:
+                model_subkey = inputs[subkey]["name"]
+                input_dict_loc[model_subkey] = inputs[subkey]["value"] * torch.ones(
+                    steps
+                )
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
@@ -310,7 +313,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
             # upper bound
             upper_bound = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[model_key],
                 y=upper,
                 line=dict(color="orange", width=0.3),
                 showlegend=False,
@@ -323,7 +326,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
             # lower bound
             lower_bound = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[model_key],
                 y=lower,
                 fill="tonexty",  # fill area between this trace and the next one
                 fillcolor="rgba(255,165,0,0.25)",  # orange with alpha
@@ -338,7 +341,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
             # scatter plot
             mod_trace = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[model_key],
                 y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
@@ -353,7 +356,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # ----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
-            x=parameters[key],
+            x=inputs[key]["value"],
             line_dash="dash",
             row=this_row,
             col=this_col,
@@ -362,10 +365,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # figures style
         custom_range = (
             [None, None]
-            if parameters_show_all[key]
+            if inputs[key]["show_all"]
             else [
-                parameters_min[key],
-                parameters_max[key],
+                inputs[key]["value_range"][0],
+                inputs[key]["value_range"][1],
             ]
         )
         fig.update_xaxes(
@@ -378,7 +381,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
     # A bit of padding on either end of the y range so we can see all the data.
     padding = 0.05 * (global_ymax - global_ymin)
-    for i, key in enumerate(parameters.keys()):
+    for i, key in enumerate(inputs.keys()):
         this_row = i + 1
         this_col = 1
         fig.update_yaxes(
