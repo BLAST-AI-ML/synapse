@@ -140,10 +140,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     # convert simulation data to experimental data
     cal_manager.convert_sim_to_exp(sim_data)
     # local aliases
-    inputs = state.inputs
-    inputs_min = state.inputs_min
-    inputs_max = state.inputs_max
-    inputs_show_all = state.inputs_show_all
+    inputs = state.inputs_new
     try:
         objective_name = state.displayed_output
     except Exception as e:
@@ -171,19 +168,19 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             df_copy = df.copy()
             # some data sets do not include all inputs
             # (e.g., simulation data set does not include GVD)
-            if key not in df_copy.columns:
+            if inputs[key]["name"] not in df_copy.columns:
                 continue
             df_copy["distance"] = 0.0
             # loop over all inputs except the current one
             for subkey in [
                 subkey
                 for subkey in inputs.keys()
-                if (subkey != key and subkey in df_copy.columns)
+                if (subkey != key and inputs[subkey]["name"] in df_copy.columns)
             ]:
-                pname_loc = subkey
-                pval_loc = inputs[subkey]
-                pmin_loc = inputs_min[subkey]
-                pmax_loc = inputs_max[subkey]
+                pname_loc = inputs[subkey]["name"]
+                pval_loc = inputs[subkey]["value"]
+                pmin_loc = inputs[subkey]["value_range"][0]
+                pmax_loc = inputs[subkey]["value_range"][1]
                 df_copy["distance"] += (
                     (df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc)
                 ) ** 2
@@ -217,7 +214,9 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 return section
 
             # Determine which data is shown when hovering over the plot
-            hover_inputs = list(state.inputs.keys())
+            hover_inputs = [
+                state.inputs_new[key]["name"] for key in state.inputs_new.keys()
+            ]
             hover_outputs = state.outputs
             hover_customdata = ["_id"] + hover_inputs + hover_outputs
 
@@ -250,7 +249,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             exp_fig = go.Figure(
                 data=[
                     go.Scatter(
-                        x=df_copy_filtered[key],
+                        x=df_copy_filtered[inputs[key]["name"]],
                         y=df_copy_filtered[objective_name],
                         mode="markers",
                         marker=dict(
@@ -291,13 +290,17 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         if model_manager.avail():
             input_dict_loc = dict()
             steps = 1000
-            input_dict_loc[key] = torch.linspace(
-                start=inputs_min[key],
-                end=inputs_max[key],
+            model_key = inputs[key]["name"]
+            input_dict_loc[model_key] = torch.linspace(
+                start=inputs[key]["value_range"][0],
+                end=inputs[key]["value_range"][1],
                 steps=steps,
             )
             for subkey in [subkey for subkey in inputs.keys() if subkey != key]:
-                input_dict_loc[subkey] = inputs[subkey] * torch.ones(steps)
+                model_subkey = inputs[subkey]["name"]
+                input_dict_loc[model_subkey] = inputs[subkey]["value"] * torch.ones(
+                    steps
+                )
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
@@ -310,7 +313,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
             # upper bound
             upper_bound = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[model_key],
                 y=upper,
                 line=dict(color="orange", width=0.3),
                 showlegend=False,
@@ -323,7 +326,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
             # lower bound
             lower_bound = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[model_key],
                 y=lower,
                 fill="tonexty",  # fill area between this trace and the next one
                 fillcolor="rgba(255,165,0,0.25)",  # orange with alpha
@@ -338,7 +341,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
             # scatter plot
             mod_trace = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[model_key],
                 y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
@@ -353,14 +356,14 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # ----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
-            x=inputs[key],
+            x=inputs[key]["value"],
             line_dash="dash",
             row=this_row,
             col=this_col,
         )
         # ----------------------------------------------------------------------
         # figures style
-        if inputs_show_all[key]:
+        if inputs[key]["show_all"]:
             fig.update_xaxes(
                 exponentformat="e",
                 title_text=key,
@@ -369,7 +372,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
         else:
             fig.update_xaxes(
-                range=(inputs_min[key], inputs_max[key]),
+                range=(inputs[key]["value_range"][0], inputs[key]["value_range"][1]),
                 exponentformat="e",
                 title_text=key,
                 row=this_row,

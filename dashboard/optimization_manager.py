@@ -12,7 +12,7 @@ class OptimizationManager:
         self.__model = model
         state.optimization_target = state.displayed_output
 
-    def model_wrapper(self, inputs_array):
+    def model_wrapper(self, inputs_array):  # FIXME
         print("Wrapping model...")
         # convert array of inputs to dictionary
         inputs_dict = dict(zip(state.inputs.keys(), inputs_array))
@@ -23,7 +23,7 @@ class OptimizationManager:
         res = -mean if state.optimization_type == "Maximize" else mean
         return res
 
-    def optimize(self):
+    def optimize(self):  # FIXME
         print("Optimizing inputs...")
         # info print statement skipped to avoid redundancy
         if self.__model is not None:

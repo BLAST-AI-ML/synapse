@@ -141,11 +141,8 @@ def update_on_change_model(**kwargs):
 
 @state.change(
     "displayed_output",
-    "inputs",
+    "inputs_new",
     "opacity",
-    "inputs_min",
-    "inputs_max",
-    "inputs_show_all",
     "simulation_calibration",
     "use_inferred_calibration",
 )
@@ -175,7 +172,7 @@ def find_simulation(event, db):
         if len(documents) == 1:
             this_point_inputs = {
                 input: documents[0][input]
-                for input in state.inputs.keys()
+                for input in state.inputs_new.keys()
                 if input in documents[0]
             }
             print(f"Clicked on data point ({this_point_inputs})")
@@ -315,7 +312,7 @@ def home_route():
                 with vuetify.VCard():
                     with vuetify.VCardTitle("Plots"):
                         with vuetify.VContainer(
-                            style=f"height: {400 * len(state.inputs)}px;"
+                            style=f"height: {400 * len(state.inputs_new)}px;"
                         ):
                             figure = plotly.Figure(
                                 display_mode_bar="true",

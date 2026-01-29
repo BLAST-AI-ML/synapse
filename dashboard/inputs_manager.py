@@ -20,25 +20,17 @@ class InputsManager:
         # save model
         self.__model = model
         # define state variables
-        state.inputs = dict()
-        state.inputs_min = dict()
-        state.inputs_max = dict()
-        state.inputs_show_all = dict()
-        self.inputs_step = dict()
         state.simulatable = (
             self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
-        for input_dict in inputs.values():
-            key = input_dict["name"]
-            pmin = float(input_dict["value_range"][0])
-            pmax = float(input_dict["value_range"][1])
-            pval = float(input_dict["default"])
-            state.inputs[key] = pval
-            state.inputs_min[key] = pmin
-            state.inputs_max[key] = pmax
-            state.inputs_show_all[key] = False
-            self.inputs_step[key] = (pmax - pmin) / 100
-        state.inputs_init = copy.deepcopy(state.inputs)
+        state.inputs_new = copy.deepcopy(inputs)
+        for input_dict in state.inputs_new.values():
+            input_dict["value"] = float(input_dict["default"])
+            input_dict["step"] = (
+                input_dict["value_range"][1] - input_dict["value_range"][0] / 100
+            )
+            input_dict["show_all"] = False
+        state.inputs_init = copy.deepcopy(state.inputs_new)
 
     @property
     def model(self):
@@ -55,9 +47,9 @@ class InputsManager:
     def reset(self):
         print("Resetting inputs to default values...")
         # reset inputs to initial values
-        state.inputs = copy.deepcopy(state.inputs_init)
+        state.inputs_new = copy.deepcopy(state.inputs_init)
         # push again at flush time
-        state.dirty("inputs")
+        state.dirty("inputs_new")
 
     async def simulation_kernel(self):
         try:
@@ -77,7 +69,7 @@ class InputsManager:
                     )
                     _, _, simulation_calibration = load_variables(state.experiment)
                     sim_cal = SimulationCalibrationManager(simulation_calibration)
-                    sim_dict = sim_cal.convert_exp_to_sim(state.inputs)
+                    sim_dict = sim_cal.convert_exp_to_sim(state.inputs_new)
                     with open(temp_file_path, "w") as temp_file:
                         yaml.dump(sim_dict, temp_file)
                         temp_file.flush()
@@ -155,12 +147,13 @@ class InputsManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
-                    with client.DeepReactive("inputs"):
-                        for count, key in enumerate(state.inputs.keys()):
+                    with client.DeepReactive("inputs_new"):
+                        for count, key in enumerate(state.inputs_new.keys()):
+                            print(key)
                             # create a row for the input label
                             with vuetify.VRow():
                                 vuetify.VListSubheader(
-                                    key,
+                                    state.inputs_new[key]["name"],
                                     style=(
                                         "margin-top: 16px;"
                                         if count == 0
@@ -169,19 +162,21 @@ class InputsManager:
                                 )
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VSlider(
-                                    v_model_number=(f"inputs['{key}']",),
-                                    change="flushState('inputs')",
+                                    v_model_number=(f"inputs_new['{key}']['value']",),
+                                    change="flushState('inputs_new')",
                                     hide_details=True,
-                                    min=(f"inputs_min['{key}']",),
-                                    max=(f"inputs_max['{key}']",),
+                                    min=(f"inputs_new['{key}']['value_range'][0]",),
+                                    max=(f"inputs_new['{key}']['value_range'][1]",),
                                     step=(
-                                        f"(inputs_max['{key}'] - inputs_min['{key}']) / 100",
+                                        f"(inputs_new['{key}']['value_range'][1] - inputs_new['{key}']['value_range'][0]) / 100",
                                     ),
                                     style="align-items: center;",
                                 ):
                                     with vuetify.Template(v_slot_append=True):
                                         vuetify.VTextField(
-                                            v_model_number=(f"inputs['{key}']",),
+                                            v_model_number=(
+                                                f"inputs_new['{key}']['value']",
+                                            ),
                                             density="compact",
                                             hide_details=True,
                                             readonly=True,
@@ -189,15 +184,17 @@ class InputsManager:
                                             style="margin-top: 0px; padding-top: 0px; width: 100px;",
                                             type="number",
                                         )
-                            step = self.inputs_step[key]
+                            step = state.inputs_new[key]["step"]
                             with vuetify.VRow(no_gutters=True):
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"inputs_min['{key}']",),
-                                        change="flushState('inputs_min')",
+                                        v_model_number=(
+                                            f"inputs_new['{key}']['value_range'][0]",
+                                        ),
+                                        change="flushState('inputs_new')",
                                         density="compact",
                                         hide_details=True,
-                                        disabled=(f"inputs_show_all['{key}']",),
+                                        disabled=(f"inputs_new['{key}']['show_all']",),
                                         step=step,
                                         __properties=["step"],
                                         style="width: 100px;",
@@ -206,11 +203,13 @@ class InputsManager:
                                     )
                                 with vuetify.VCol():
                                     vuetify.VTextField(
-                                        v_model_number=(f"inputs_max['{key}']",),
-                                        change="flushState('inputs_max')",
+                                        v_model_number=(
+                                            f"inputs_new['{key}']['value_range'][1]",
+                                        ),
+                                        change="flushState('inputs_new')",
                                         density="compact",
                                         hide_details=True,
-                                        disabled=(f"inputs_show_all['{key}']",),
+                                        disabled=(f"inputs_new['{key}']['show_all']",),
                                         step=step,
                                         __properties=["step"],
                                         style="width: 100px;",
@@ -220,11 +219,11 @@ class InputsManager:
                                 with vuetify.VCol(style="min-width: 100px;"):
                                     vuetify.VCheckbox(
                                         v_model=(
-                                            f"inputs_show_all['{key}']",
+                                            f"inputs_new['{key}']['show_all']",
                                             False,
                                         ),
                                         density="compact",
-                                        change="flushState('inputs_show_all')",
+                                        change="flushState('inputs_new')",
                                         label="Show all",
                                     )
                         with vuetify.VRow(align="center"):
