@@ -361,6 +361,7 @@ def gui_setup():
         # add toolbar components
         with layout.toolbar:
             vuetify.VSpacer()
+            # experiment selector
             vuetify.VSelect(
                 v_model=("experiment",),
                 label="Experiments",
@@ -368,7 +369,24 @@ def gui_setup():
                 dense=True,
                 hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 250px",
+                style="max-width: 250px; margin-right: 14px;",
+            )
+            # date range selector for experiment filtering
+            vuetify.VTextField(
+                v_model=("experiment_start_date",),
+                label="Start",
+                type="date",
+                dense=True,
+                hide_details=True,
+                style="max-width: 180px; margin-right: 14px;",
+            )
+            vuetify.VTextField(
+                v_model=("experiment_end_date",),
+                label="End",
+                type="date",
+                dense=True,
+                hide_details=True,
+                style="max-width: 180px; margin-right: 14px;",
             )
         # set up router view
         with layout.content:

@@ -23,6 +23,8 @@ def initialize_state():
     ][0]
     print(f"Setting default experiment to {default_experiment}...")
     state.experiment = default_experiment
+    state.experiment_start_date = None
+    state.experiment_end_date = None
     # ML model
     state.model_type = "Neural Network (single)"
     state.model_training = False
