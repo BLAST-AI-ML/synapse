@@ -157,35 +157,35 @@ def train_nn_ensemble(
     exp_X_train = torch.tensor(
         norm_df_train[norm_df_train.experiment_flag == 1][input_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     exp_y_train = torch.tensor(
         norm_df_train[norm_df_train.experiment_flag == 1][output_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     sim_X_train = torch.tensor(
         norm_df_train[norm_df_train.experiment_flag == 0][input_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     sim_y_train = torch.tensor(
         norm_df_train[norm_df_train.experiment_flag == 0][output_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     exp_X_val = torch.tensor(
         norm_df_val[norm_df_val.experiment_flag == 1][input_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     exp_y_val = torch.tensor(
         norm_df_val[norm_df_val.experiment_flag == 1][output_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     sim_X_val = torch.tensor(
         norm_df_val[norm_df_val.experiment_flag == 0][input_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
     sim_y_val = torch.tensor(
         norm_df_val[norm_df_val.experiment_flag == 0][output_names].values,
         dtype=torch.float,
-    )
+    ).to(device)
 
     if model_type == "NN":
         num_models = 1
