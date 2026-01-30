@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-# ruff: noqa: E402
-## This notebook includes simulation and experimental data
-## in a database using PyMongo
+## This script trains machine learning models (GP, NN, or ensemble_NN)
+## using simulation and experimental data from MongoDB and saves trained models back to the database
 import time
 
 import_start_time = time.time()
@@ -39,15 +38,10 @@ print(f"Imports took {elapsed_time:.1f} seconds.")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Device selected: ", device)
 
-############################################
-# Get command line arguments
-############################################
-
 start_time = time.time()
 
-
-# define parser
 def parse_arguments():
+    # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--experiment",
