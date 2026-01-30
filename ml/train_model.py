@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ruff: noqa: E402
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
 ## using simulation and experimental data from MongoDB and saves trained models back to the database
 import time
@@ -416,13 +417,14 @@ def write_model(model, model_type, experiment, db):
         db["models"].insert_one(document)
         print("Model uploaded to database")
 
-
+# Main execution block
 if __name__ == "__main__":
 
+    # Parse command line arguments and load config
     experiment, model_type = parse_arguments()
     config_dict = load_config(experiment)
-    db = connect_to_db(config_dict)
 
+    # Extract input and output variables from the config file
     input_variables = config_dict["inputs"]
     input_names = [v["name"] for v in input_variables.values()]
     output_variables = config_dict["outputs"]
@@ -430,6 +432,7 @@ if __name__ == "__main__":
     n_outputs = len(output_names)
 
     # Extract data from the database as pandas dataframe
+    db = connect_to_db(config_dict)
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
     # Apply calibration to the simulation results
@@ -446,13 +449,12 @@ if __name__ == "__main__":
     variables = input_names + output_names + ["experiment_flag"]
     df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
 
-    # build transforms
+    # Apply normalization to the training data
     X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
     y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
     input_transform, output_transform = build_transforms(
         len(input_names), X_train, len(output_names), y_train
     )
-
     (
         norm_df_train,
         norm_expt_inputs_train,
