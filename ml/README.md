@@ -60,13 +60,13 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 
 ## Running through the GUI or through SLURM
 
-.. warning::
-
-   Pushing a new Docker container will affect training jobs launched from your locally-deployed GUI,
-   but also from the production GUI (the one deployed on NERSC Spin), since in both cases, the training
-   will run in a Docker container at NERSC, which will be pulled from the NERSC registry (https://registry.nersc.gov).
-
-   Yet, currently, this is the only way to test the end-to-end integration of the GUI with the training workflow.
+> **Warning:**
+>
+> Pushing a new Docker container will affect training jobs launched from your locally-deployed GUI,
+> but also from the production GUI (the one deployed on NERSC Spin), since in both cases, the training
+> will run in a Docker container at NERSC, which will be pulled from the NERSC registry (https://registry.nersc.gov).
+>
+> Yet, currently, this is the only way to test the end-to-end integration of the GUI with the training workflow.
 
 1. Move to the root directory of the repository.
 
@@ -117,15 +117,15 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
 
-.. note::
-
-   For our interactive GUI, we run ML training jobs via the NERSC superfacility using the collaboration account `sf558`.
-   Since this is a non-interactive, non-user account, we also use a custom user to pull the image from https://registry.nersc.gov to perlmutter.
-   The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
-   ```bash
-   export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
-   export REGISTRY_PASSWORD="..."  # request this from Remi/Axel
-   ```
+> **Note:**
+>
+> For our interactive GUI, we run ML training jobs via the NERSC superfacility using the collaboration account `sf558`.
+> Since this is a non-interactive, non-user account, we also use a custom user to pull the image from https://registry.nersc.gov to perlmutter.
+> The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
+> ```bash
+> export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
+> export REGISTRY_PASSWORD="..."  # request this from Remi/Axel
+> ```
 
 ## References
 
