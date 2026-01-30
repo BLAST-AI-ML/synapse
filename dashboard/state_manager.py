@@ -52,5 +52,7 @@ def initialize_state():
     # Errors management
     state.errors = []
     state.error_counter = 0
-    # Calibration toggles
+    # Calibration option
     state.use_inferred_calibration = False
+    # Displayed inputs
+    state.displayed_inputs = "Experiment"
