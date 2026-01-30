@@ -4,7 +4,6 @@ from pathlib import Path
 import tempfile
 import os
 import yaml
-import re
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
