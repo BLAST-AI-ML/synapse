@@ -66,7 +66,9 @@ def parse_arguments():
     config_file_path = args.config_file_path
     model_type = args.model
     test_mode = args.test
-    print(f"Config file path: {config_file_path}, Model type: {model_type}, Test mode: {test_mode}")
+    print(
+        f"Config file path: {config_file_path}, Model type: {model_type}, Test mode: {test_mode}"
+    )
     if model_type not in ["NN", "ensemble_NN", "GP"]:
         raise ValueError(f"Invalid model type: {model_type}")
     return config_file_path, model_type, test_mode
