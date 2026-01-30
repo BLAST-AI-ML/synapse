@@ -14,10 +14,6 @@
 
 model=${1}       # e.g., "NN", "GP", etc.
 
-if [[ -z "${model}" ]]; then
-    echo "Must pass the model type as a command line argument"
-fi
-
 # login to the registry, update if needed
 # Note: If you encounter issues, note that we compare image
 #       Ids, but should compare image Digests.
