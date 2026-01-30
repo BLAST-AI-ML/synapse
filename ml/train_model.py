@@ -56,13 +56,20 @@ def parse_arguments():
         help="Choose to train a model between GP, NN, or ensemble_NN",
         required=True,
     )
+    parser.add_argument(
+        "--test",
+        help="Skip writing trained model to database (test mode)",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
     experiment = args.experiment
     model_type = args.model
-    print(f"Experiment: {experiment}, Model type: {model_type}")
+    test_mode = args.test
+    print(f"Experiment: {experiment}, Model type: {model_type}, Test mode: {test_mode}")
     if model_type not in ["NN", "ensemble_NN", "GP"]:
         raise ValueError(f"Invalid model type: {model_type}")
-    return experiment, model_type
+    return experiment, model_type, test_mode
 
 
 def load_config(experiment):
@@ -422,7 +429,7 @@ def write_model(model, model_type, experiment, db):
 # Main execution block
 if __name__ == "__main__":
     # Parse command line arguments and load config
-    experiment, model_type = parse_arguments()
+    experiment, model_type, test_mode = parse_arguments()
     config_dict = load_config(experiment)
     # Extract input and output variables from the config file
     input_variables = config_dict["inputs"]
@@ -529,4 +536,7 @@ if __name__ == "__main__":
             device,
         )
 
-    write_model(model, model_type, experiment, db)
+    if not test_mode:
+        write_model(model, model_type, experiment, db)
+    else:
+        print("Test mode enabled: Skipping writing trained model to database")
