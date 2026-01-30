@@ -260,7 +260,6 @@ def build_torch_model_from_nn(
 def train_gp(
     norm_df_train, input_names, output_names, input_transform, output_transform, device
 ):
-
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
@@ -417,9 +416,9 @@ def write_model(model, model_type, experiment, db):
         db["models"].insert_one(document)
         print("Model uploaded to database")
 
+
 # Main execution block
 if __name__ == "__main__":
-
     # Parse command line arguments and load config
     experiment, model_type = parse_arguments()
     config_dict = load_config(experiment)
@@ -461,7 +460,9 @@ if __name__ == "__main__":
         norm_expt_outputs_train,
         norm_sim_inputs_train,
         norm_sim_outputs_train,
-    ) = normalize(df_train, input_names, input_transform, output_names, output_transform)
+    ) = normalize(
+        df_train, input_names, input_transform, output_names, output_transform
+    )
 
     model = None
     ######################################################
@@ -474,7 +475,9 @@ if __name__ == "__main__":
             norm_expt_outputs_val,
             norm_sim_inputs_val,
             norm_sim_outputs_val,
-        ) = normalize(df_val, input_names, input_transform, output_names, output_transform)
+        ) = normalize(
+            df_val, input_names, input_transform, output_names, output_transform
+        )
         print("training started")
         NN_start_time = time.time()
         ensemble = train_nn_ensemble(
@@ -510,7 +513,6 @@ if __name__ == "__main__":
         print(f"Total time taken: {elapsed_time:.2f} seconds")
         print(f"Data prep time taken: {data_time:.2f} seconds")
         print(f"NN time taken: {NN_time:.2f} seconds")
-
 
     ###############################################################
     # Gaussian Process Creation and training
