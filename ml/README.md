@@ -124,7 +124,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 > The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
 > ```bash
 > export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
-> export REGISTRY_PASSWORD="..."  # request this from Remi/Axel
+> export REGISTRY_PASSWORD="..."
 > ```
 
 ## References
