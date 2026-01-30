@@ -15,4 +15,4 @@ dependencies:
   - pytorch-gpu
   - pymongo
   - pyyaml
-  - lume-model>=2.0.0
+  - lume-model>=2.0.1
