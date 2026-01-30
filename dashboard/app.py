@@ -105,7 +105,11 @@ def update(
         ctrl.figure_update(fig)
 
 
-@state.change("experiment")
+@state.change(
+    "experiment",
+    "experiment_start_date",
+    "experiment_end_date",
+)
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
