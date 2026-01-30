@@ -20,7 +20,7 @@ Here are a few how-to guides on how to develop and use the dashboard.
 
 3. Create the lock file starting from the existing minimal environment file:
     ```console
-    conda-lock --file gui-base.yml --lockfile gui-lock.yml
+    conda-lock --file environment.yml --lockfile environment-lock.yml
     ```
 
 ### How to set up the conda environment
@@ -35,16 +35,16 @@ Here are a few how-to guides on how to develop and use the dashboard.
     conda install -c conda-forge conda-lock
     ```
 
-3. Create the `gui` conda environment from the lock file:
+3. Create the `synapse-gui` conda environment from the lock file:
     ```console
-    conda-lock install --name gui gui-lock.yml
+    conda-lock install --name synapse-gui environment-lock.yml
     ```
 
 ### How to run the GUI
 
-1. Activate the `gui` conda environment:
+1. Activate the `synapse-gui` conda environment:
     ```console
-    conda activate gui
+    conda activate synapse-gui
     ```
 
 2. Set the database settings (read+write):
@@ -81,16 +81,16 @@ Here are a few how-to guides on how to develop and use the dashboard.
 
 2. Build the Docker image based on `Dockerfile`:
     ```console
-    docker build --platform linux/amd64 -t gui -f dashboard.Dockerfile .
+    docker build --platform linux/amd64 -t synapse-gui -f dashboard.Dockerfile .
     ```
 
 3. Run the Docker container from the `dashboard/` folder:
     ```console
-    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' gui
+    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' synapse-gui
     ```
     For debugging, you can also enter the container without starting the app:
     ```console
-    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it gui bash
+    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it synapse-gui bash
     ```
     Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
@@ -101,9 +101,9 @@ Here are a few how-to guides on how to develop and use the dashboard.
     # Password: your NERSC password without 2FA
     ```
     ```console
-    docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:latest
-    docker tag gui:latest registry.nersc.gov/m558/superfacility/gui:$(date "+%y.%m")
-    docker push -a registry.nersc.gov/m558/superfacility/gui
+    docker tag synapse-gui:latest registry.nersc.gov/m558/superfacility/synapse-gui:latest
+    docker tag synapse-gui:latest registry.nersc.gov/m558/superfacility/synapse-gui:$(date "+%y.%m")
+    docker push -a registry.nersc.gov/m558/superfacility/synapse-gui
     ```
     This has been also automated through the Python script [publish_container.py](https://github.com/BLAST-AI-ML/synapse/blob/main/publish_container.py), which can be executed via
     ```console

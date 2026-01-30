@@ -8,9 +8,9 @@ WORKDIR /app/dashboard
 ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install any needed packages specified in the environment file
-COPY dashboard/gui-lock.yml /app/dashboard/gui-lock.yml
+COPY dashboard/environment-lock.yml /app/dashboard/environment-lock.yml
 RUN conda install -c conda-forge conda-lock \
-    && conda-lock install --name gui gui-lock.yml \
+    && conda-lock install --name synapse-gui environment-lock.yml \
     && conda clean --all -y
 
 # Configure an exectuable entrypoint script

@@ -2,7 +2,7 @@
 
 # Activate the conda environment
 source /opt/conda/etc/profile.d/conda.sh
-conda activate gui
+conda activate synapse-gui
 
 # Execute the provided command
 exec "$@"
