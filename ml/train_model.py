@@ -259,11 +259,12 @@ def build_torch_model_from_nn(
 def train_gp(
     norm_df_train, input_names, output_names, input_transform, output_transform, device
 ):
+
+    # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
     for i, output_name in enumerate(output_names):
-        print(f"Processing output {i + 1}/{n_outputs}: {output_name}")
-        norm_df_train = None  # TODO: Remove this line, I just included it so that ruff allows me to commit...
+        print(f"Processing output {i + 1}/{len(output_names)}: {output_name}")
 
         # Get data where this output is not NaN
         output_data = norm_df_train[output_name].values
@@ -416,114 +417,110 @@ def write_model(model, model_type, experiment, db):
         print("Model uploaded to database")
 
 
-experiment, model_type = parse_arguments()
-config_dict = load_config(experiment)
-db = connect_to_db(config_dict)
+if __name__ == "__main__":
 
-input_variables = config_dict["inputs"]
-input_names = [v["name"] for v in input_variables.values()]
-output_variables = config_dict["outputs"]
-output_names = [v["name"] for v in output_variables.values()]
-n_outputs = len(output_names)
+    experiment, model_type = parse_arguments()
+    config_dict = load_config(experiment)
+    db = connect_to_db(config_dict)
 
-# Extract data from the database as pandas dataframe
-df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
-df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
-# Apply calibration to the simulation results
-if "simulation_calibration" in config_dict:
-    simulation_calibration = config_dict["simulation_calibration"]
-else:
-    simulation_calibration = {}
-for value in simulation_calibration.values():
-    sim_name = value["name"]
-    exp_name = value["depends_on"]
-    df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
+    input_variables = config_dict["inputs"]
+    input_names = [v["name"] for v in input_variables.values()]
+    output_variables = config_dict["outputs"]
+    output_names = [v["name"] for v in output_variables.values()]
+    n_outputs = len(output_names)
 
-# Concatenate experimental and simulation data for training and validation
-variables = input_names + output_names + ["experiment_flag"]
-df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
+    # Extract data from the database as pandas dataframe
+    df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
+    df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
+    # Apply calibration to the simulation results
+    if "simulation_calibration" in config_dict:
+        simulation_calibration = config_dict["simulation_calibration"]
+    else:
+        simulation_calibration = {}
+    for value in simulation_calibration.values():
+        sim_name = value["name"]
+        exp_name = value["depends_on"]
+        df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
 
-# build transforms
-X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
-y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-input_transform, output_transform = build_transforms(
-    len(input_names), X_train, len(output_names), y_train
-)
+    # Concatenate experimental and simulation data for training and validation
+    variables = input_names + output_names + ["experiment_flag"]
+    df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
 
-(
-    norm_df_train,
-    norm_expt_inputs_train,
-    norm_expt_outputs_train,
-    norm_sim_inputs_train,
-    norm_sim_outputs_train,
-) = normalize(df_train, input_names, input_transform, output_names, output_transform)
+    # build transforms
+    X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
+    y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
+    input_transform, output_transform = build_transforms(
+        len(input_names), X_train, len(output_names), y_train
+    )
 
-model = None
-######################################################
-# Neural Net and Ensemble Creation and training
-######################################################
-if model_type != "GP":
-    # Saving the Lume Model - TO do for combined NN
-    ##############################
-    # Early Stopping and validation
-    ##############################
     (
-        norm_df_val,
-        norm_expt_inputs_val,
-        norm_expt_outputs_val,
-        norm_sim_inputs_val,
-        norm_sim_outputs_val,
-    ) = normalize(df_val, input_names, input_transform, output_names, output_transform)
-    print("training started")
-    NN_start_time = time.time()
-    ensemble = train_nn_ensemble(
-        model_type,
-        len(input_names),
-        len(output_names),
-        norm_sim_inputs_train.to(device),
-        norm_sim_outputs_train.to(device),
-        norm_expt_inputs_train.to(device),
-        norm_expt_outputs_train.to(device),
-        norm_sim_inputs_val.to(device),
-        norm_sim_outputs_val.to(device),
-        norm_expt_inputs_val.to(device),
-        norm_expt_outputs_val.to(device),
-        device,
-    )
-    print("training ended")
-
-    model = build_torch_model_from_nn(
-        ensemble,
-        model_type,
-        input_variables,
-        output_variables,
-        input_transform,
-        output_transform,
-        output_names,
-    )
-    end_time = time.time()
-
-    elapsed_time = end_time - start_time
-    data_time = NN_start_time - start_time
-    NN_time = end_time - NN_start_time
-    print(f"Total time taken: {elapsed_time:.2f} seconds")
-    print(f"Data prep time taken: {data_time:.2f} seconds")
-    print(f"NN time taken: {NN_time:.2f} seconds")
-
-
-###############################################################
-# Gaussian Process Creation and training
-###############################################################
-else:
-    # Create separate GP models for each output to handle NaN values
-
-    model = train_gp(
         norm_df_train,
-        input_names,
-        output_names,
-        input_transform,
-        output_transform,
-        device,
-    )
+        norm_expt_inputs_train,
+        norm_expt_outputs_train,
+        norm_sim_inputs_train,
+        norm_sim_outputs_train,
+    ) = normalize(df_train, input_names, input_transform, output_names, output_transform)
 
-write_model(model, model_type, experiment, db)
+    model = None
+    ######################################################
+    # Neural Net and Ensemble Creation and training
+    ######################################################
+    if model_type != "GP":
+        (
+            norm_df_val,
+            norm_expt_inputs_val,
+            norm_expt_outputs_val,
+            norm_sim_inputs_val,
+            norm_sim_outputs_val,
+        ) = normalize(df_val, input_names, input_transform, output_names, output_transform)
+        print("training started")
+        NN_start_time = time.time()
+        ensemble = train_nn_ensemble(
+            model_type,
+            len(input_names),
+            len(output_names),
+            norm_sim_inputs_train.to(device),
+            norm_sim_outputs_train.to(device),
+            norm_expt_inputs_train.to(device),
+            norm_expt_outputs_train.to(device),
+            norm_sim_inputs_val.to(device),
+            norm_sim_outputs_val.to(device),
+            norm_expt_inputs_val.to(device),
+            norm_expt_outputs_val.to(device),
+            device,
+        )
+        print("training ended")
+
+        model = build_torch_model_from_nn(
+            ensemble,
+            model_type,
+            input_variables,
+            output_variables,
+            input_transform,
+            output_transform,
+            output_names,
+        )
+        end_time = time.time()
+
+        elapsed_time = end_time - start_time
+        data_time = NN_start_time - start_time
+        NN_time = end_time - NN_start_time
+        print(f"Total time taken: {elapsed_time:.2f} seconds")
+        print(f"Data prep time taken: {data_time:.2f} seconds")
+        print(f"NN time taken: {NN_time:.2f} seconds")
+
+
+    ###############################################################
+    # Gaussian Process Creation and training
+    ###############################################################
+    else:
+        model = train_gp(
+            norm_df_train,
+            input_names,
+            output_names,
+            input_transform,
+            output_transform,
+            device,
+        )
+
+    write_model(model, model_type, experiment, db)
