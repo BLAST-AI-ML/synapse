@@ -221,6 +221,13 @@ class ModelManager:
                 if training_script is None:
                     raise RuntimeError("Could not find training_pm.sbatch")
 
+                # replace the --model argument in the python command with the current model type from the state
+                training_script = re.sub(
+                    pattern=r"--model \$\{model\}",
+                    repl=rf"--model {model_type_tag_dict[state.model_type]}",
+                    string=training_script,
+                )
+
                 # submit the training job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(training_script)
                 state.model_training_status = "Submitted"
