@@ -12,11 +12,10 @@
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
-experiment=${1}  # e.g., "experiment_name"
-model=${2}       # e.g., "NN", "GP", etc.
+model=${1}       # e.g., "NN", "GP", etc.
 
-if [[ -z "${experiment}" ]]; then
-    echo "Must pass the experiment name/tag as a command line argument"
+if [[ -z "${model}" ]]; then
+    echo "Must pass the model type as a command line argument"
 fi
 
 # login to the registry, update if needed
@@ -59,4 +58,4 @@ srun podman-hpc run --gpu \
     -v $HOME/db.profile:/root/db.profile \
     -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
-    python -u /app/ml/train_model.py --experiment ${experiment} --model ${model}
+    python -u /app/ml/train_model.py --config_file_path /app/ml/config.yaml --model ${model}

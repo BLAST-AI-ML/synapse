@@ -221,11 +221,10 @@ class ModelManager:
                 if training_script is None:
                     raise RuntimeError("Could not find training_pm.sbatch")
 
-                # replace the --experiment command line argument in the batch script
-                # with the current experiment in the state
+                # replace the --model argument in the python command with the current model type from the state
                 training_script = re.sub(
-                    pattern=r"--experiment (.*)",
-                    repl=rf"--experiment {state.experiment} --model {model_type_tag_dict[state.model_type]}",
+                    pattern=r"--model \$\{model\}",
+                    repl=rf"--model {model_type_tag_dict[state.model_type]}",
                     string=training_script,
                 )
                 # submit the training job through the Superfacility API
