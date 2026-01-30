@@ -1,4 +1,4 @@
-name: ml-training
+name: synapse-ml
 
 channels:
   - conda-forge

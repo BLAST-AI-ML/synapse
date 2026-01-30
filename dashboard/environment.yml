@@ -1,9 +1,11 @@
 # See README instructions to create a lock file from this source file.
-name: gui
+name: synapse-gui
+
 channels:
   - conda-forge
   - pytorch
   - nodefaults
+
 dependencies:
   - botorch==0.11.0
   - cpuonly
