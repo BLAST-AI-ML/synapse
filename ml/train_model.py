@@ -253,7 +253,8 @@ def build_torch_model_from_nn(
                 ScalarVariable(**input_variables[k]) for k in input_variables.keys()
             ],
             output_variables=[
-                DistributionVariable(**output_variables[k]) for k in output_variables.keys()
+                DistributionVariable(**output_variables[k])
+                for k in output_variables.keys()
             ],
         )
 
