@@ -241,20 +241,21 @@ def build_torch_model_from_nn(
                 ],  # saving calibration before normalization
             )
         )
-    # Save single NN
-    if model_type == "NN":
-        return torch_models[0]
 
-    # Save Ensemble
-    return NNEnsemble(
-        models=torch_models,
-        input_variables=[
-            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-        ],
-        output_variables=[
-            DistributionVariable(**output_variables[k]) for k in output_variables.keys()
-        ],
-    )
+    if model_type == "NN":
+        # Return single NN
+        return torch_models[0]
+    else:
+        # Return ensemble of NNs
+        return NNEnsemble(
+            models=torch_models,
+            input_variables=[
+                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+            ],
+            output_variables=[
+                DistributionVariable(**output_variables[k]) for k in output_variables.keys()
+            ],
+        )
 
 
 def train_gp(
