@@ -106,24 +106,7 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     norm_df = df.copy()
     norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
     norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
-
-    norm_exp_inputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 1][input_names].values,
-        dtype=torch.float,
-    )
-    norm_exp_outputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 1][output_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_inputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 0][input_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_outputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 0][output_names].values,
-        dtype=torch.float,
-    )
-    return norm_df, norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
+    return norm_df
 
 
 def split_data(df_exp, df_sim, variables, model_type):
@@ -162,18 +145,48 @@ def build_transforms(n_inputs, X_train, n_outputs, y_train):
 
 def train_nn_ensemble(
     model_type,
-    n_inputs,
-    n_outputs,
-    sim_X_train,
-    sim_y_train,
-    exp_X_train,
-    exp_y_train,
-    sim_X_val,
-    sim_y_val,
-    exp_X_val,
-    exp_y_val,
+    norm_df_train,
+    norm_df_val,
+    input_names,
+    output_names,
     device,
 ):
+    n_inputs = len(input_names)
+    n_outputs = len(output_names)
+
+    exp_X_train = torch.tensor(
+        norm_df_train[norm_df_train.experiment_flag == 1][input_names].values,
+        dtype=torch.float,
+    )
+    exp_y_train = torch.tensor(
+        norm_df_train[norm_df_train.experiment_flag == 1][output_names].values,
+        dtype=torch.float,
+    )
+    sim_X_train = torch.tensor(
+        norm_df_train[norm_df_train.experiment_flag == 0][input_names].values,
+        dtype=torch.float,
+    )
+    sim_y_train = torch.tensor(
+        norm_df_train[norm_df_train.experiment_flag == 0][output_names].values,
+        dtype=torch.float,
+    )
+    exp_X_val = torch.tensor(
+        norm_df_val[norm_df_val.experiment_flag == 1][input_names].values,
+        dtype=torch.float,
+    )
+    exp_y_val = torch.tensor(
+        norm_df_val[norm_df_val.experiment_flag == 1][output_names].values,
+        dtype=torch.float,
+    )
+    sim_X_val = torch.tensor(
+        norm_df_val[norm_df_val.experiment_flag == 0][input_names].values,
+        dtype=torch.float,
+    )
+    sim_y_val = torch.tensor(
+        norm_df_val[norm_df_val.experiment_flag == 0][output_names].values,
+        dtype=torch.float,
+    )
+
     if model_type == "NN":
         num_models = 1
     elif model_type == "ensemble_NN":
@@ -456,13 +469,7 @@ if __name__ == "__main__":
     input_transform, output_transform = build_transforms(
         len(input_names), X_train, len(output_names), y_train
     )
-    (
-        norm_df_train,
-        norm_expt_inputs_train,
-        norm_expt_outputs_train,
-        norm_sim_inputs_train,
-        norm_sim_outputs_train,
-    ) = normalize(
+    norm_df_train = normalize(
         df_train, input_names, input_transform, output_names, output_transform
     )
 
@@ -471,29 +478,17 @@ if __name__ == "__main__":
     # Neural Net and Ensemble Creation and training
     ######################################################
     if model_type != "GP":
-        (
-            norm_df_val,
-            norm_expt_inputs_val,
-            norm_expt_outputs_val,
-            norm_sim_inputs_val,
-            norm_sim_outputs_val,
-        ) = normalize(
+        norm_df_val = normalize(
             df_val, input_names, input_transform, output_names, output_transform
         )
         print("training started")
         NN_start_time = time.time()
         ensemble = train_nn_ensemble(
             model_type,
-            len(input_names),
-            len(output_names),
-            norm_sim_inputs_train.to(device),
-            norm_sim_outputs_train.to(device),
-            norm_expt_inputs_train.to(device),
-            norm_expt_outputs_train.to(device),
-            norm_sim_inputs_val.to(device),
-            norm_sim_outputs_val.to(device),
-            norm_expt_inputs_val.to(device),
-            norm_expt_outputs_val.to(device),
+            norm_df_train,
+            norm_df_val,
+            input_names,
+            output_names,
             device,
         )
         print("training ended")
