@@ -165,30 +165,40 @@ def train_nn_ensemble(
         )
 
         # Extract tensors for training and validation
-        exp_X_train = torch.tensor(
-            exp_train_df[input_names].values, dtype=torch.float
-        ).to(device) if len(exp_train_df) > 0 else torch.empty((0, n_inputs), dtype=torch.float).to(device)
-        exp_y_train = torch.tensor(
-            exp_train_df[output_names].values, dtype=torch.float
-        ).to(device) if len(exp_train_df) > 0 else torch.empty((0, n_outputs), dtype=torch.float).to(device)
+        exp_X_train = (
+            torch.tensor(exp_train_df[input_names].values, dtype=torch.float).to(device)
+            if len(exp_train_df) > 0
+            else torch.empty((0, n_inputs), dtype=torch.float).to(device)
+        )
+        exp_y_train = (
+            torch.tensor(exp_train_df[output_names].values, dtype=torch.float).to(
+                device
+            )
+            if len(exp_train_df) > 0
+            else torch.empty((0, n_outputs), dtype=torch.float).to(device)
+        )
         sim_X_train = torch.tensor(
             sim_train_df[input_names].values, dtype=torch.float
         ).to(device)
         sim_y_train = torch.tensor(
             sim_train_df[output_names].values, dtype=torch.float
         ).to(device)
-        exp_X_val = torch.tensor(
-            exp_val_df[input_names].values, dtype=torch.float
-        ).to(device) if len(exp_val_df) > 0 else torch.empty((0, n_inputs), dtype=torch.float).to(device)
-        exp_y_val = torch.tensor(
-            exp_val_df[output_names].values, dtype=torch.float
-        ).to(device) if len(exp_val_df) > 0 else torch.empty((0, n_outputs), dtype=torch.float).to(device)
-        sim_X_val = torch.tensor(
-            sim_val_df[input_names].values, dtype=torch.float
-        ).to(device)
-        sim_y_val = torch.tensor(
-            sim_val_df[output_names].values, dtype=torch.float
-        ).to(device)
+        exp_X_val = (
+            torch.tensor(exp_val_df[input_names].values, dtype=torch.float).to(device)
+            if len(exp_val_df) > 0
+            else torch.empty((0, n_inputs), dtype=torch.float).to(device)
+        )
+        exp_y_val = (
+            torch.tensor(exp_val_df[output_names].values, dtype=torch.float).to(device)
+            if len(exp_val_df) > 0
+            else torch.empty((0, n_outputs), dtype=torch.float).to(device)
+        )
+        sim_X_val = torch.tensor(sim_val_df[input_names].values, dtype=torch.float).to(
+            device
+        )
+        sim_y_val = torch.tensor(sim_val_df[output_names].values, dtype=torch.float).to(
+            device
+        )
 
         model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
         model.to(device)  # moving to GPU
