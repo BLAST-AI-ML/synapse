@@ -40,6 +40,7 @@ print("Device selected: ", device)
 
 start_time = time.time()
 
+
 def parse_arguments():
     # Parse command line arguments
     parser = argparse.ArgumentParser()
@@ -147,9 +148,9 @@ def split_data(df_exp, df_sim, variables, model_type):
             return (sim_train_df[variables], sim_val_df[variables])
 
 
-def build_transforms(n_inputs, X_data, n_outputs, y_data):
+def build_transforms(n_inputs, X_train, n_outputs, y_train):
     input_transform = AffineInputTransform(
-        len(input_names), coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
+        n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
