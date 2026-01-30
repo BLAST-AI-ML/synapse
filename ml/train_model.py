@@ -423,7 +423,6 @@ if __name__ == "__main__":
     # Parse command line arguments and load config
     experiment, model_type = parse_arguments()
     config_dict = load_config(experiment)
-
     # Extract input and output variables from the config file
     input_variables = config_dict["inputs"]
     input_names = [v["name"] for v in input_variables.values()]
@@ -431,11 +430,12 @@ if __name__ == "__main__":
     output_names = [v["name"] for v in output_variables.values()]
     n_outputs = len(output_names)
 
-    # Extract data from the database as pandas dataframe
+    # Extract experimental and simulation data from the database as pandas dataframe
     db = connect_to_db(config_dict)
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
-    # Apply calibration to the simulation results
+
+    # Apply simulation calibration to the simulation data
     if "simulation_calibration" in config_dict:
         simulation_calibration = config_dict["simulation_calibration"]
     else:
