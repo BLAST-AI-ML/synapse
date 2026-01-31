@@ -46,7 +46,7 @@ def parse_arguments():
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--condig_file",
+        "--config_file",
         help="path to the configuration file",
         type=str,
         required=True,
@@ -63,22 +63,22 @@ def parse_arguments():
         default=False,
     )
     args = parser.parse_args()
-    condig_file = args.condig_file
+    config_file = args.config_file
     model_type = args.model
     test_mode = args.test
     print(
-        f"Config file path: {condig_file}, Model type: {model_type}, Test mode: {test_mode}"
+        f"Config file path: {config_file}, Model type: {model_type}, Test mode: {test_mode}"
     )
     if model_type not in ["NN", "ensemble_NN", "GP"]:
         raise ValueError(f"Invalid model type: {model_type}")
-    return condig_file, model_type, test_mode
+    return config_file, model_type, test_mode
 
 
-def load_config(condig_file):
+def load_config(config_file):
     # Load configuration from the specified file path
-    if not os.path.exists(condig_file):
-        raise RuntimeError(f"Configuration file not found: {condig_file}")
-    with open(condig_file) as f:
+    if not os.path.exists(config_file):
+        raise RuntimeError(f"Configuration file not found: {config_file}")
+    with open(config_file) as f:
         return yaml.safe_load(f.read())
 
 

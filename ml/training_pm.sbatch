@@ -54,4 +54,4 @@ srun podman-hpc run --gpu \
     -v $HOME/db.profile:/root/db.profile \
     -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
-    python -u /app/ml/train_model.py --condig_file /app/ml/config.yaml --model ${model}
+    python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}

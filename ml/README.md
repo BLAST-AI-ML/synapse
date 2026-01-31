@@ -35,7 +35,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 
 4. Run the training script in test mode:
    ```console
-   python train_model.py --test --model <NN/GP> --condig_file <your_test_yaml_file>
+   python train_model.py --test --model <NN/GP> --config_file <your_test_yaml_file>
    ```
 
 ### At NERSC
@@ -55,7 +55,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 
 3. Run the training script in test mode:
    ```console
-   python train_model.py --test --model <NN/GP> --condig_file <your_test_yaml_file>
+   python train_model.py --test --model <NN/GP> --config_file <your_test_yaml_file>
    ```
 
 ## Training through the GUI or through SLURM
@@ -112,7 +112,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
    ```console
    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
 
-   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --test --condig_file /app/ml/config.yaml --model NN
+   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
