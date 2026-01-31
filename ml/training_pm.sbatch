@@ -12,7 +12,7 @@
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
-model=${1}       # e.g., "NN", "GP", etc.
+model=${1}  # e.g., "NN", "GP", etc.
 
 # login to the registry, update if needed
 # Note: If you encounter issues, note that we compare image
