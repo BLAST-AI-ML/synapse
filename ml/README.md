@@ -1,34 +1,72 @@
-## ML Training how-to guide for users and developers
+# ML Training
 
+The ML training (implemented in ``train_model.py``) can be run in two ways:
 
-### Prerequisites
-- Ensure you have [Conda](https://conda-forge.org/download/) installed.
-- Ensure you have Docker installed (for deployment)
+- In your local Python environment, for testing/debugging: ``python train_model.py ...``
 
+- Through the GUI, by clicking the ``Train`` button, or through SLURM by running ``sbatch training_pm.sbatch``.
+In both cases, the training runs in a Docker container at NERSC. This Docker container
+is pulled from the NERSC registry (https://registry.nersc.gov) and does not reflect any local changes
+you may have made to ``train_model.py``, unless you re-build and re-deploy the container.
 
-### How to set up the conda environment
+Both methods are described in more detail below.
 
-#### Local development
+## Training in a local Python environment (testing/debugging)
 
-For local development, create and activate the conda environment:
-```bash
-conda env create -f environment.yml
-conda activate ml-training
-```
-#### At NERSC
+### On your local computer
 
-At NERSC, use the following instead to install the environment
-```bash
-module load python
-conda env create --prefix /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training -f environment.yml
-```
-and subsequently use this to activate the environment
-```bash
-module load python
-conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
-```
+For local development, ensure you have [Conda](https://conda-forge.org/download/) installed. Then:
 
-### How to build and run the Docker container
+1. Create the conda environment (this only needs to be done once):
+   ```bash
+   conda env create -f environment.yml
+   ```
+
+2. Open a separate terminal and keep it open:
+   ```bash
+   ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
+   ```
+
+3. Activate the conda environment and setup database read-write access:
+   ```bash
+   conda activate ml-training
+   export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   ```
+
+4. Run the training script in test mode:
+   ```console
+   python train_model.py --test --model <NN/GP> --config_file <your_test_yaml_file>
+   ```
+
+### At NERSC
+
+1. Create the conda environment (this only needs to be done once):
+   ```bash
+   module load python
+   conda env create --prefix /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training -f environment.yml
+   ```
+
+2. Activate the environment and setup database read-write access:
+   ```bash
+   module load python
+   conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
+   export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   ```
+
+3. Run the training script in test mode:
+   ```console
+   python train_model.py --test --model <NN/GP> --config_file <your_test_yaml_file>
+   ```
+
+## Training through the GUI or through SLURM
+
+> **Warning:**
+>
+> Pushing a new Docker container affects training jobs launched from your locally-deployed GUI,
+> but also from the production GUI (deployed on NERSC Spin), since in both cases, the training
+> runs in a Docker container at NERSC, which is pulled from the NERSC registry (https://registry.nersc.gov).
+>
+> Yet, currently, this is the only way to test the end-to-end integration of the GUI with the training workflow.
 
 1. Move to the root directory of the repository.
 
@@ -74,17 +112,20 @@ conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
    ```console
    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
 
-   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --experiment <experiment_name> --model NN
+   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
-Note: for our interactive dashboard, we run ML training jobs via the NERSC superfacility using the collaboration account `sf558`.
-Since this is a non-interactive, non-user account, we also use a custom user to pull the image from https://registry.nersc.gov to perlmutter.
-The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
-```bash
-export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
-export REGISTRY_PASSWORD="..."  # request this from Remi/Axel
-```
+
+> **Note:**
+>
+> When we run ML training jobs through the GUI, we use NERSC's Superfacility API with the collaboration account `sf558`.
+> Since this is a non-interactive, non-user account, we also use a custom user to pull the image from https://registry.nersc.gov to Perlmutter.
+> The registry login credentials need to be prepared (once) in the `$HOME` of `sf558` (`/global/homes/s/sf558/`) in a file named `registry.profile` with the following content:
+> ```bash
+> export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
+> export REGISTRY_PASSWORD="..."
+> ```
 
 ## References
 

@@ -46,8 +46,8 @@ def parse_arguments():
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--experiment",
-        help="name/tag of the experiment",
+        "--config_file",
+        help="path to the configuration file",
         type=str,
         required=True,
     )
@@ -63,27 +63,23 @@ def parse_arguments():
         default=False,
     )
     args = parser.parse_args()
-    experiment = args.experiment
+    config_file = args.config_file
     model_type = args.model
     test_mode = args.test
-    print(f"Experiment: {experiment}, Model type: {model_type}, Test mode: {test_mode}")
+    print(
+        f"Config file path: {config_file}, Model type: {model_type}, Test mode: {test_mode}"
+    )
     if model_type not in ["NN", "ensemble_NN", "GP"]:
         raise ValueError(f"Invalid model type: {model_type}")
-    return experiment, model_type, test_mode
+    return config_file, model_type, test_mode
 
 
-def load_config(experiment):
-    # Extract configurations of experiments & models
-    possible_config_file_paths = [
-        f"{os.path.dirname(os.path.abspath(__file__))}config.yaml",
-        "./config.yaml",
-        f"../experiments/synapse-{experiment}/config.yaml",
-    ]
-    for config_file_path in possible_config_file_paths:
-        if os.path.exists(config_file_path):
-            with open(config_file_path) as f:
-                return yaml.safe_load(f.read())
-    raise RuntimeError("File config.yaml not found.")
+def load_config(config_file):
+    # Load configuration from the specified file path
+    if not os.path.exists(config_file):
+        raise RuntimeError(f"Configuration file not found: {config_file}")
+    with open(config_file) as f:
+        return yaml.safe_load(f.read())
 
 
 def connect_to_db(config_dict):
@@ -431,6 +427,9 @@ if __name__ == "__main__":
     # Parse command line arguments and load config
     experiment, model_type, test_mode = parse_arguments()
     config_dict = load_config(experiment)
+    # Extract experiment name from config file
+    experiment = config_dict["experiment"]
+    print(f"Experiment: {experiment}")
     # Extract input and output variables from the config file
     input_variables = config_dict["inputs"]
     input_names = [v["name"] for v in input_variables.values()]
