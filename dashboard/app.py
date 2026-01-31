@@ -105,7 +105,10 @@ def update(
         ctrl.figure_update(fig)
 
 
-@state.change("experiment")
+@state.change(
+    "experiment",
+    "experiment_date_range",
+)
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
@@ -361,6 +364,7 @@ def gui_setup():
         # add toolbar components
         with layout.toolbar:
             vuetify.VSpacer()
+            # experiment selector
             vuetify.VSelect(
                 v_model=("experiment",),
                 label="Experiments",
@@ -368,7 +372,16 @@ def gui_setup():
                 dense=True,
                 hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 250px",
+                style="max-width: 250px; margin-right: 14px;",
+            )
+            # date range selector for experiment filtering
+            vuetify.VDateInput(
+                v_model=("experiment_date_range",),
+                label="Date range",
+                multiple="range",
+                dense=True,
+                hide_details=True,
+                style="max-width: 250px; margin-right: 14px;",
             )
         # set up router view
         with layout.content:

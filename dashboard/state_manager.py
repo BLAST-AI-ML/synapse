@@ -1,5 +1,6 @@
 from pathlib import Path
 from trame.app import get_server
+from trame.widgets import vuetify3 as vuetify
 
 
 EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
@@ -8,6 +9,7 @@ EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
 server = get_server(client_type="vue3")
 state = server.state
 ctrl = server.controller
+vuetify.enable_lab()  # Enable Labs components
 
 
 def initialize_state():
@@ -23,6 +25,7 @@ def initialize_state():
     ][0]
     print(f"Setting default experiment to {default_experiment}...")
     state.experiment = default_experiment
+    state.experiment_date_range = []
     # ML model
     state.model_type = "Neural Network (single)"
     state.model_training = False
