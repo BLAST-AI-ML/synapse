@@ -107,8 +107,7 @@ def update(
 
 @state.change(
     "experiment",
-    "experiment_start_date",
-    "experiment_end_date",
+    "experiment_date_range",
 )
 def update_on_change_experiment(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
@@ -376,21 +375,13 @@ def gui_setup():
                 style="max-width: 250px; margin-right: 14px;",
             )
             # date range selector for experiment filtering
-            vuetify.VTextField(
-                v_model=("experiment_start_date",),
-                label="Start",
-                type="date",
+            vuetify.VDateInput(
+                v_model=("experiment_date_range",),
+                label="Date range",
+                multiple="range",
                 dense=True,
                 hide_details=True,
-                style="max-width: 180px; margin-right: 14px;",
-            )
-            vuetify.VTextField(
-                v_model=("experiment_end_date",),
-                label="End",
-                type="date",
-                dense=True,
-                hide_details=True,
-                style="max-width: 180px; margin-right: 14px;",
+                style="max-width: 250px; margin-right: 14px;",
             )
         # set up router view
         with layout.content:

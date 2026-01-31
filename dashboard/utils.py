@@ -75,23 +75,17 @@ def load_data(db):
     print("Loading data from database...")
     # build date filter if start/end dates are set
     date_filter = {}
-    if (
-        state.experiment_start_date is not None
-        and state.experiment_end_date is not None
-    ):
-        # convert to datetime objects
-        filter_start_date = pd.to_datetime(state.experiment_start_date)
-        filter_end_date = pd.to_datetime(state.experiment_end_date).replace(
-            hour=23, minute=59, second=59
-        )
+    if state.experiment_date_range:
         # build date filter
         date_filter = {
             "date": {
-                "$gte": filter_start_date,
-                "$lte": filter_end_date,
+                "$gte": pd.to_datetime(state.experiment_date_range[0].to_datetime()),
+                "$lte": pd.to_datetime(state.experiment_date_range[1].to_datetime()),
             }
         }
-        print(f"Filtering data between {filter_start_date} and {filter_end_date}...")
+        print(
+            f"Filtering data between {state.experiment_date_range[0].to_datetime().date()} and {state.experiment_date_range[-1].to_datetime().date()}..."
+        )
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(
         db[state.experiment].find({**{"experiment_flag": 1}, **date_filter})
