@@ -76,24 +76,17 @@ def load_data(db):
     # build date filter if date range is set
     date_filter = {}
     if state.experiment_date_range:
-        # convert to naive datetime to match database format
-        start_date = (
-            pd.to_datetime(state.experiment_date_range[0].to_datetime())
-            .to_pydatetime()
-            .replace(hour=0, minute=0, second=0)
-        )
+        start_date = pd.to_datetime(state.experiment_date_range[0].to_datetime())
+        start_date = start_date.to_pydatetime().replace(hour=0, minute=0, second=0)
+        # VDateInput returns exclusive end date for date ranges, so we need to subtract 1 day
         end_date = pd.to_datetime(state.experiment_date_range[-1].to_datetime())
-        # VDateInput returns exclusive end date for date ranges, but single-date selection has len=1
-        if len(state.experiment_date_range) == 1:
-            # single date selection: use the end date as-is
-            end_date = end_date.replace(hour=23, minute=59, second=59)
-        else:
-            # date range selection: subtract 1 day from exclusive end date
-            end_date = (
-                (end_date - pd.Timedelta(days=1))
-                .to_pydatetime()
-                .replace(hour=23, minute=59, second=59)
-            )
+        end_date_correction = (
+            pd.Timedelta(days=0)
+            if len(state.experiment_date_range) == 1
+            else pd.Timedelta(days=1)
+        )
+        end_date = end_date - end_date_correction
+        end_date = end_date.to_pydatetime().replace(hour=23, minute=59, second=59)
         # remove timezone info to match naive datetime in database
         start_date = (
             start_date.replace(tzinfo=None) if start_date.tzinfo else start_date
@@ -105,7 +98,6 @@ def load_data(db):
                 "$lte": end_date,
             }
         }
-        print(date_filter)
         print(f"Filtering data between {start_date.date()} and {end_date.date()}...")
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(
