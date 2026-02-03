@@ -1,4 +1,4 @@
-name: ml-training
+name: synapse-ml
 
 channels:
   - conda-forge
@@ -9,10 +9,10 @@ dependencies:
   - botorch
   - cuda-version=12.4  # for Perlmutter (NERSC)
   - gpytorch
+  - lume-model>=2.0.1
   - pandas
   - pip
+  - pymongo
   - python
   - pytorch-gpu
-  - pymongo
   - pyyaml
-  - lume-model>=2.0.0

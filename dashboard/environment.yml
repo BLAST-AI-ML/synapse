@@ -1,17 +1,19 @@
-# See README instructions to create a lock file from this source file.
-name: gui
+name: synapse-gui
+
 channels:
   - conda-forge
   - pytorch
   - nodefaults
+
 dependencies:
-  - botorch==0.11.0
+  - botorch
   - cpuonly
   - lume-model>=2.0.1
   - mlflow
   - pandas
   - pip
-  - plotly<6
+  - plotly
+  - pre-commit
   - pymongo
   - python<3.13
   - pytorch
@@ -22,5 +24,4 @@ dependencies:
   - trame-router
   - trame-vuetify
   - pip:
-    - pre-commit
     - sfapi_client

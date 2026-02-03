@@ -29,7 +29,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 
 3. Activate the conda environment and setup database read-write access:
    ```bash
-   conda activate ml-training
+   conda activate synapse-ml
    export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    ```
 
@@ -43,13 +43,13 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 1. Create the conda environment (this only needs to be done once):
    ```bash
    module load python
-   conda env create --prefix /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training -f environment.yml
+   conda env create --prefix /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/synapse-ml -f environment.yml
    ```
 
 2. Activate the environment and setup database read-write access:
    ```bash
    module load python
-   conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/ml-training
+   conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/synapse-ml
    export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    ```
 
@@ -72,7 +72,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
 
 2. Build the Docker image based on `Dockerfile`:
    ```console
-   docker build --platform linux/amd64 -t ml-training -f ml.Dockerfile .
+   docker build --platform linux/amd64 -t synapse-ml -f ml.Dockerfile .
    ```
 
 3. Optional: From time to time, as you develop the container, you might want to prune old, unused images to get back GBytes of storage on your development machine:
@@ -88,9 +88,9 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
    ```
 
    ```console
-   docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:latest
-   docker tag ml-training:latest registry.nersc.gov/m558/superfacility/ml-training:$(date "+%y.%m")
-   docker push -a registry.nersc.gov/m558/superfacility/ml-training
+   docker tag synapse-ml:latest registry.nersc.gov/m558/superfacility/synapse-ml:latest
+   docker tag synapse-ml:latest registry.nersc.gov/m558/superfacility/synapse-ml:$(date "+%y.%m")
+   docker push -a registry.nersc.gov/m558/superfacility/synapse-ml
    ```
     This has been also automated through the Python script [publish_container.py](https://github.com/BLAST-AI-ML/synapse/blob/main/publish_container.py), which can be executed via
     ```console
@@ -104,7 +104,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
    podman-hpc login --username $USER registry.nersc.gov
    # Password: your NERSC password without 2FA
 
-   podman-hpc pull registry.nersc.gov/m558/superfacility/ml-training:latest
+   podman-hpc pull registry.nersc.gov/m558/superfacility/synapse-ml:latest
    ```
 
    Ensure the file `$HOME/db.profile` contains a line `export SF_DB_ADMIN_PASSWORD=...` with the write password to the database.
@@ -112,7 +112,7 @@ For local development, ensure you have [Conda](https://conda-forge.org/download/
    ```console
    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
 
-   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/ml-training:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
+   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
