@@ -47,7 +47,7 @@ Here are a few how-to guides on how to develop and use the dashboard.
     conda activate gui
     ```
 
-2. Set the database settings (read+write):
+2. Set the database settings (read only):
     ```console
     export SF_DB_HOST='127.0.0.1'
     export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
