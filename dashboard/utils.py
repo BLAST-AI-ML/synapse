@@ -101,7 +101,7 @@ def load_data(db):
         print(f"Filtering data between {start_date.date()} and {end_date.date()}...")
     # load experiment and simulation data points in dataframes
     exp_data = pd.DataFrame(
-        db[state.experiment].find({**{"experiment_flag": 1}, **date_filter})
+        db[state.experiment].find({"experiment_flag": 1, **date_filter})
     )
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
     # Store '_id', 'date' as string
