@@ -11,7 +11,7 @@ from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
-from utils import verify_input_variables, timer, load_config_dict
+from utils import verify_input_variables, timer, load_config_dict, create_date_filter
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -190,9 +190,13 @@ class ModelManager:
                 client_id=state.sfapi_client_id, secret=state.sfapi_key
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
-                # Upload the config.yaml to nersc
+                # upload the configuration file to NERSC
                 config_dict = load_config_dict(state.experiment)
                 config_dict["simulation_calibration"] = state.simulation_calibration
+                # add date range filter to the configuration dictionary
+                date_filter = create_date_filter(state.experiment_date_range)
+                config_dict["date_filter"] = date_filter
+                # define the target path on NERSC
                 target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
                 [target_path] = await perlmutter.ls(target_path, directory=True)
                 with tempfile.TemporaryDirectory() as temp_dir:

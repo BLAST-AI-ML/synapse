@@ -70,11 +70,47 @@ def load_variables(experiment):
     return (input_variables, output_variables, simulation_calibration)
 
 
+def create_date_filter(experiment_date_range):
+    # build date filter if date range is set
+    date_filter = {}
+    if experiment_date_range:
+        start_date = pd.to_datetime(experiment_date_range[0].to_datetime())
+        start_date = start_date.to_pydatetime().replace(hour=0, minute=0, second=0)
+        # VDateInput returns exclusive end date for date ranges:
+        # - subtract 1 day for multi-date ranges with different start/end dates
+        # - do not subtract anything (use end date as is) for single-date ranges
+        end_date = pd.to_datetime(experiment_date_range[-1].to_datetime())
+        end_date_correction = (
+            pd.Timedelta(days=0)
+            if len(experiment_date_range) == 1
+            else pd.Timedelta(days=1)
+        )
+        end_date = end_date - end_date_correction
+        end_date = end_date.to_pydatetime().replace(hour=23, minute=59, second=59)
+        # remove timezone info to match naive datetime in database
+        start_date = (
+            start_date.replace(tzinfo=None) if start_date.tzinfo else start_date
+        )
+        end_date = end_date.replace(tzinfo=None) if end_date.tzinfo else end_date
+        date_filter = {
+            "date": {
+                "$gte": start_date,
+                "$lte": end_date,
+            }
+        }
+        print(f"Filtering data between {start_date.date()} and {end_date.date()}...")
+    return date_filter
+
+
 @timer
 def load_data(db):
     print("Loading data from database...")
+    # create date filter if date range is set
+    date_filter = create_date_filter(state.experiment_date_range)
     # load experiment and simulation data points in dataframes
-    exp_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 1}))
+    exp_data = pd.DataFrame(
+        db[state.experiment].find({"experiment_flag": 1, **date_filter})
+    )
     sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
     # Store '_id', 'date' as string
     for key in ["_id", "date"]:
