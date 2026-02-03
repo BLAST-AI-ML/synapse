@@ -1,4 +1,3 @@
-# See README instructions to create a lock file from this source file.
 name: synapse-gui
 
 channels:
@@ -14,6 +13,7 @@ dependencies:
   - pandas
   - pip
   - plotly
+  - pre-commit
   - pymongo
   - python<3.13
   - pytorch
@@ -24,5 +24,4 @@ dependencies:
   - trame-router
   - trame-vuetify
   - pip:
-    - pre-commit
     - sfapi_client
