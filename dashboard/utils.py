@@ -78,7 +78,9 @@ def load_data(db):
     if state.experiment_date_range:
         start_date = pd.to_datetime(state.experiment_date_range[0].to_datetime())
         start_date = start_date.to_pydatetime().replace(hour=0, minute=0, second=0)
-        # VDateInput returns exclusive end date for date ranges, so we need to subtract 1 day
+        # VDateInput returns exclusive end date for date ranges:
+        # - subtract 1 day for multi-date ranges with different start/end dates
+        # - do not subtract anything (use end date as is) for single-date ranges
         end_date = pd.to_datetime(state.experiment_date_range[-1].to_datetime())
         end_date_correction = (
             pd.Timedelta(days=0)
