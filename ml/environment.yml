@@ -4,15 +4,17 @@ channels:
   - conda-forge
   - nvidia
   - nodefaults
+  - pytorch
 
 dependencies:
   - botorch
-  - cuda-version=12.4  # for Perlmutter (NERSC)
   - gpytorch
   - lume-model>=2.0.1
+  - mlflow
   - pandas
   - pip
   - pymongo
   - python
-  - pytorch-gpu
+  - pytorch
+  - pytorch-cuda=12.4  # [linux]
   - pyyaml
