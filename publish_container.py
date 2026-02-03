@@ -33,8 +33,8 @@ def build_container(container: str, auto_yes: bool):
     }
     # how to name the container image
     imagename = {
-        "gui": "gui",
-        "ml": "ml-training",
+        "gui": "synapse-gui",
+        "ml": "synapse-ml",
     }
 
     # build the new image
