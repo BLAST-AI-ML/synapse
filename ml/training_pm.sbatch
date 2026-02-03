@@ -22,7 +22,7 @@ model=${1}  # e.g., "NN", "GP", etc.
 SECONDS=0                      # built-in bash timer: reset
 source $HOME/registry.profile  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
 REGISTRY_NAME="registry.nersc.gov"
-IMAGE_NAME="m558/superfacility/ml-training"
+IMAGE_NAME="m558/superfacility/synapse-ml"
 IMAGE_VERSION="latest"
 
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
