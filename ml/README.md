@@ -90,6 +90,15 @@ Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https:
 
 ## Running in Docker
 
+> [!NOTE]
+> When we run ML training jobs through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
+> Since this is a non-interactive, non-user account, we also use a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
+> The registry login credentials need to be prepared (only once) in the `$HOME` of user `sf558` (`/global/homes/s/sf558/`), in a file named `registry.profile` with the following content:
+> ```bash
+> export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
+> export REGISTRY_PASSWORD="..."
+> ```
+
 To run the Docker container manually on Perlmutter:
 
 1. Log in to Perlmutter and pull the container:
@@ -154,15 +163,6 @@ conda-lock --file environment.yml --lockfile environment-lock.yml
    ```bash
    docker system prune -a
    ```
-
-> [!NOTE]
-> When we run ML training jobs through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
-> Since this is a non-interactive, non-user account, we also use a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
-> The registry login credentials need to be prepared (only once) in the `$HOME` of user `sf558` (`/global/homes/s/sf558/`), in a file named `registry.profile` with the following content:
-> ```bash
-> export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
-> export REGISTRY_PASSWORD="..."
-> ```
 
 ## References
 
