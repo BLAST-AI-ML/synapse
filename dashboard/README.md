@@ -7,7 +7,7 @@
 	* [On your machine](#On-your-machine)
 * [Running in Docker](#Running-in-Docker)
 * [How to get the Superfacility API credentials](#How-to-get-the-Superfacility-API-credentials)
-* [For Developers](#For-Developers)
+* [For Maintainers](#For-Maintainers)
 	* [How to generate the conda environment lock file](#How-to-generate-the-conda-environment-lock-file)
 	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
 * [References](#References)
@@ -111,7 +111,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 7. Run `chmod 600 priv_key.pem` to change the permissions of your private key file to read/write only.
 
-## For Developers
+## For Maintainers
 
 ### How to generate the conda environment lock file
 

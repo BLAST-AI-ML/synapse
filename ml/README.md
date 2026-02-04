@@ -7,7 +7,7 @@
 	* [On your machine](#On-your-machine)
 	* [At NERSC](#At-NERSC)
 * [Running in Docker](#Running-in-Docker)
-* [For Developers](#For-Developers)
+* [For Maintainers](#For-Maintainers)
 	* [How to generate the conda environment lock file](#How-to-generate-the-conda-environment-lock-file)
 	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
 * [References](#References)
@@ -21,9 +21,10 @@ ML models can be trained in two distinct ways:
 
 1. In a local Python environment, for development, testing and debugging.
 
-2. Through the dashboard (by clicking the ``Train`` button) or through SLURM (by running ``sbatch training_pm.sbatch``).
-   In both cases, the training runs in a Docker container at NERSC.
-   This Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to [train_model.py](train_model.py), unless you re-build and re-deploy the container first.
+2. In a Docker container at NERSC, either manually or deployed through Spin.
+In production, users trigger these jobs by clicking the "Train" button in the dashboard and no manual container management is required.
+Note that the Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to [train_model.py](train_model.py), unless you re-build and re-deploy the container first.
+For development, testing and debugging,  you can either submit a training job via `sbatch training_pm.sbatch` or run the Docker container manually on Perlmutter.
 
 The following sections describe in more detail these two ways of training ML models.
 
@@ -90,6 +91,8 @@ Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https:
 
 ## Running in Docker
 
+The instructions below are for development, testing, and debugging purposes, allowing you to run the container manually on Perlmutter.
+
 > [!WARNING]
 > When we run ML training jobs through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
 > Since this is a non-interactive, non-user account, we also use a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
@@ -118,7 +121,7 @@ To run the Docker container manually on Perlmutter:
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
-## For Developers
+## For Maintainers
 
 ### How to generate the conda environment lock file
 
