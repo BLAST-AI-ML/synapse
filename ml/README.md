@@ -67,15 +67,15 @@ Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https:
 1. Create the conda environment defined in the lock file (only once):
    ```bash
    module load python
-   conda activate <your_base_env>
+   conda activate <your_base_env>  # your own user base environment
    conda install -c conda-forge conda-lock  # if conda-lock is not installed
-   conda-lock install --prefix /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/synapse-ml environment-lock.yml
+   conda-lock install --name synapse-ml environment-lock.yml
    ```
 
 2. Activate the conda environment:
    ```bash
    module load python
-   conda activate /global/cfs/cdirs/m558/$(whoami)/sw/perlmutter/synapse-ml
+   conda activate synapse-ml
    ```
 
 3. Set up database settings (read-write):
@@ -95,10 +95,8 @@ To run the Docker container manually on Perlmutter:
 1. Log in to Perlmutter and pull the container:
    ```bash
    ssh perlmutter-p1.nersc.gov
-
    podman-hpc login --username $USER registry.nersc.gov
    # Password: your NERSC password without 2FA
-
    podman-hpc pull registry.nersc.gov/m558/superfacility/synapse-ml:latest
    ```
 
@@ -107,7 +105,6 @@ To run the Docker container manually on Perlmutter:
 3. Allocate a GPU node and run the container:
    ```bash
    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
-
    podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
