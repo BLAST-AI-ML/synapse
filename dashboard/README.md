@@ -6,8 +6,8 @@
 * [Run the Dashboard at NERSC](#Run-the-Dashboard-at-NERSC)
 * [Get the Superfacility API Credentials](#Get-the-Superfacility-API-Credentials)
 * [For Maintainers](#For-Maintainers)
-	* [Generate the conda environment lock file](#Generate-the-conda-environment-lock-file)
-	* [Build and push the Docker container to NERSC](#Build-and-push-the-Docker-container-to-NERSC)
+    * [Generate the conda environment lock file](#Generate-the-conda-environment-lock-file)
+    * [Build and push the Docker container to NERSC](#Build-and-push-the-Docker-container-to-NERSC)
 * [References](#References)
 
 # Overview
