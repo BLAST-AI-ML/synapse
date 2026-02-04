@@ -7,7 +7,7 @@
 * [Get the Superfacility API Credentials](#Get-the-Superfacility-API-Credentials)
 * [For Maintainers](#For-Maintainers)
 	* [Generate the conda environment lock file](#Generate-the-conda-environment-lock-file)
-	* [Push the Docker container to NERSC](#Push-the-Docker-container-to-NERSC)
+	* [Build and push the Docker container to NERSC](#Build-and-push-the-Docker-container-to-NERSC)
 * [References](#References)
 
 # Overview
@@ -33,7 +33,7 @@ This section describes how to develop and use the dashboard locally.
 conda activate base
 ```
 
-2. Install `conda-lock`, if not installed yet:
+2. Install `conda-lock` if not installed yet:
 ```bash
 conda install -c conda-forge conda-lock  # if conda-lock is not installed
 ```
@@ -79,10 +79,7 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 2. Move to the [root directory](../) of the repository.
 
-3. Build the Docker image:
-   ```bash
-   docker build --platform linux/amd64 -t synapse-gui -f dashboard.Dockerfile
-   ```
+3. Build the Docker image as described [below](#build-the-docker-image).
 
 4. Run the Docker container:
    ```bash
@@ -96,7 +93,8 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 # Run the Dashboard at NERSC
 
-Coming soon.
+Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and play around!
+Remember that you need to upload valid Superfacility API credentials in order to launch simulations or train ML models directly from the dashboard.
 
 # Get the Superfacility API Credentials
 
@@ -134,7 +132,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
    conda activate base
    ```
 
-4. Install `conda-lock`, if not installed yet:
+4. Install `conda-lock` if not installed yet:
    ```bash
    conda install -c conda-forge conda-lock
    ```
@@ -144,16 +142,33 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
    conda-lock --file environment.yml --lockfile environment-lock.yml
    ```
 
-## Push the Docker container to NERSC
+## Build and push the Docker container to NERSC
 
 > [!WARNING]
 > Pushing a new Docker container affects the production dashboard deployed at NERSC through Spin.
+
+> [!NOTE]
+> This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
+> ```bash
+> python publish_container.py --gui
+> ```
 
 > [!TIP]
 > Prune old, unused images periodically in order to free up space on your machine:
 > ```bash
 > docker system prune -a
 > ```
+
+### Build the Docker image
+
+1. Move to the root directory of the repository.
+
+2. Build the Docker image:
+   ```bash
+   docker build --platform linux/amd64 -t synapse-gui -f dashboard.Dockerfile
+   ```
+
+### Push the Docker container
 
 1. Move to the root directory of the repository.
 
@@ -175,12 +190,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
    docker push -a registry.nersc.gov/m558/superfacility/synapse-gui   
    ```
 
-This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
-```bash
-python publish_container.py --gui
-```
-
-## References
+# References
 
 * [Using NERSC's `registry.nersc.gov`](https://docs.nersc.gov/development/containers/registry/)
 * [Superfacility API authentication](https://docs.nersc.gov/services/sfapi/authentication/#client)

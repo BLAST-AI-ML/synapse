@@ -6,7 +6,7 @@
 * [Train ML Models at NERSC](#Train-ML-Models-at-NERSC)
 	* [Manually without Docker](#Manually-without-Docker)
     * [Manually With Docker](#Manually-with-Docker)
-    * [Through the dashboard](#With-the-dashboard) 
+    * [Through the dashboard](#Through-the-dashboard) 
 * [For Maintainers](#For-Maintainers)
 	* [Generate the conda environment lock file](#Generate-the-conda-environment-lock-file)
     * [Build and push the Docker container to NERSC](#Build-and-push-the-Docker-container-to-NERSC)
@@ -35,7 +35,7 @@ This section describes how to train ML models locally.
    conda activate base
    ```
 
-2. Install `conda-lock`, if not installed yet:
+2. Install `conda-lock` if not installed yet:
    ```bash
    conda install -c conda-forge conda-lock
    ```
@@ -87,7 +87,7 @@ This section describes how to train ML models at NERSC.
    conda activate <your_base_env>
    ```
 
-2. Install `conda-lock`, if not installed yet:
+2. Install `conda-lock` if not installed yet:
    ```bash
    conda install -c conda-forge conda-lock
    ```
@@ -146,7 +146,7 @@ This section describes how to train ML models at NERSC.
 ## Through the dashboard
 
 > [!WARNING]
-> When we run ML training jobs through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
+> When we train ML models through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
 > Since this is a non-interactive, non-user account, we also use a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
 > The registry login credentials need to be prepared (only once) in the `$HOME` of user `sf558` (`/global/homes/s/sf558/`), in a file named `registry.profile` with the following content:
 > ```bash
@@ -154,7 +154,8 @@ This section describes how to train ML models at NERSC.
 > export REGISTRY_PASSWORD="..."
 > ```
 
-Coming soon.
+Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and click the `Train` button in the `ML` panel.
+Remember that you need to upload valid Superfacility API credentials in order to launch simulations or train ML models directly from the dashboard.
 
 # For Maintainers
 
@@ -195,7 +196,7 @@ Coming soon.
 > docker system prune -a
 > ```
 
-### Build the Docker container
+### Build the Docker image
 
 1. Move to the root directory of the repository.
 
