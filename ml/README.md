@@ -1,5 +1,18 @@
 # ML Training
 
+# Table of Contents
+* [Overview](#Overview)
+* [Prerequisites](#Prerequisites)
+* [Running Locally](#Running-Locally)
+	* [On a local computer](#On-a-local-computer)
+	* [At NERSC](#At-NERSC)
+* [Running in Docker](#Running-in-Docker)
+* [For Developers](#For-Developers)
+	* [How to generate the conda environment lock file](#How-to-generate-the-conda-environment-lock-file)
+	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
+* [References](#References)
+
+
 This guide contains important instructions on how to train ML models within Synapse.
 
 ## Overview

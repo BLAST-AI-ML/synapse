@@ -1,5 +1,18 @@
 # Dashboard
 
+# Table of Contents
+* [Overview](#Overview)
+* [Prerequisites](#Prerequisites)
+* [Running Locally](#Running-Locally)
+	* [On a local computer](#On-a-local-computer)
+* [Running in Docker](#Running-in-Docker)
+* [How to get the Superfacility API credentials](#How-to-get-the-Superfacility-API-credentials)
+* [For Developers](#For-Developers)
+	* [How to generate the conda environment lock file](#How-to-generate-the-conda-environment-lock-file)
+	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
+* [References](#References)
+
+
 This guide contains important instructions on how to develop and use the Synapse dashboard.
 
 ## Overview
