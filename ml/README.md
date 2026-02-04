@@ -90,7 +90,7 @@ Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https:
 
 ## Running in Docker
 
-> [!NOTE]
+> [!WARNING]
 > When we run ML training jobs through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
 > Since this is a non-interactive, non-user account, we also use a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
 > The registry login credentials need to be prepared (only once) in the `$HOME` of user `sf558` (`/global/homes/s/sf558/`), in a file named `registry.profile` with the following content:
