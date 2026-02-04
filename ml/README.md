@@ -1,97 +1,149 @@
-# ML Training
-
-## Table of Contents
+# Table of Contents
 * [Overview](#Overview)
-* [Prerequisites](#Prerequisites)
-* [Running Locally](#Running-Locally)
-	* [On your machine](#On-your-machine)
-	* [At NERSC](#At-NERSC)
-* [Running in Docker](#Running-in-Docker)
+* [Train ML Models Locally](#Train-ML-Models-Locally)
+    * [Without Docker](#Without-Docker)
+    * [With Docker](#With-Docker)
+* [Train ML Models at NERSC](#Train-ML-Models-at-NERSC)
+	* [Manually without Docker](#Manually-without-Docker)
+    * [Manually With Docker](#Manually-with-Docker)
+    * [Through the dashboard](#With-the-dashboard) 
 * [For Maintainers](#For-Maintainers)
-	* [How to generate the conda environment lock file](#How-to-generate-the-conda-environment-lock-file)
-	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
+	* [Generate the conda environment lock file](#Generate-the-conda-environment-lock-file)
+    * [Build and push the Docker container to NERSC](#Build-and-push-the-Docker-container-to-NERSC)
 * [References](#References)
 
-
-## Overview
+# Overview
 
 Synapse's ML training is implemented primarily in [train_model.py](train_model.py).
 
 ML models can be trained in two distinct ways:
 
-1. In a local Python environment, for development, testing and debugging.
+1. Locally on your computer.
 
-2. In a Docker container at NERSC, either manually or deployed through Spin.
-In production, users trigger these jobs by clicking the "Train" button in the dashboard and no manual container management is required.
-Note that the Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to [train_model.py](train_model.py), unless you re-build and re-deploy the container first.
-For development, testing and debugging,  you can either submit a training job via `sbatch training_pm.sbatch` or run the Docker container manually on Perlmutter.
+2. At NERSC, either manually or through the dashboard.
 
-The following sections describe in more detail these two ways of training ML models.
+# Train ML Models Locally
 
-## Prerequisites
+This section describes how to train ML models locally.
 
-Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https://docs.docker.com/).
+## Without Docker
 
-## Running Locally
+### Prepare the conda environment
 
-### On your machine
-
-1. Create the conda environment defined in the lock file (only once):
+1. Activate the conda environment `base`:
    ```bash
    conda activate base
-   conda install -c conda-forge conda-lock  # if conda-lock is not installed
+   ```
+
+2. Install `conda-lock`, if not installed yet:
+   ```bash
+   conda install -c conda-forge conda-lock
+   ```
+
+3. Create the conda environment `synapse-ml`:
+   ```bash
    conda-lock install --name synapse-ml environment-lock.yml
    ```
 
-2. Open a separate terminal and keep it open while SSH forwarding the database connection:
+### Run the training
+
+1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
    ```bash
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
 
-3. Activate the conda environment:
-   ```bash
-   conda activate synapse-ml
-   ```
+2. Move to the [ml/](./) directory.
 
-4. Set up database settings (read-write):
+3. Set up the database settings (read-write):
    ```bash
    export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   ```
+
+4. Activate the conda environment `synapse-ml`:
+   ```bash
+   conda activate synapse-ml
    ```
 
 5. Run the ML training script in test mode:
    ```bash
-   python train_model.py --test --model <NN/GP> --config_file <your_config_file>
+   python train_model.py --test --model <your_model> --config_file <your_config_file>
    ```
 
-### At NERSC
+## With Docker
 
-1. Create the conda environment defined in the lock file (only once):
+Coming soon.
+
+# Train ML Models at NERSC
+
+This section describes how to train ML models at NERSC.
+
+## Manually without Docker
+
+### Prepare the conda environment
+
+1. Activate your own user base conda environment:
    ```bash
    module load python
-   conda activate <your_base_env>  # your own user base environment
-   conda install -c conda-forge conda-lock  # if conda-lock is not installed
+   conda activate <your_base_env>
+   ```
+
+2. Install `conda-lock`, if not installed yet:
+   ```bash
+   conda install -c conda-forge conda-lock
+   ```
+
+3. Create the conda environment `synapse-ml`:
+   ```bash
    conda-lock install --name synapse-ml environment-lock.yml
    ```
 
-2. Activate the conda environment:
+### Run the training
+
+1. Move to the [ml/](./) directory.
+
+2. Set up the database settings (read-write):
+   ```bash
+   export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   ```
+
+3. Activate the conda environment `synapse-ml`:
    ```bash
    module load python
    conda activate synapse-ml
    ```
 
-3. Set up database settings (read-write):
-   ```bash
-   export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
-   ```
-
 4. Run the ML training script in test mode:
    ```bash
-   python train_model.py --test --model <NN/GP> --config_file <your_config_file>
+   python train_model.py --test --model <your_model> --config_file <your_config_file>
    ```
 
-## Running in Docker
+## Manually with Docker
 
-The instructions below are for development, testing, and debugging purposes, allowing you to run the container manually on Perlmutter.
+> [!WARNING]
+> Note that the Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to [train_model.py](train_model.py), unless you re-build and re-deploy the container first.
+
+1. Log in to Perlmutter:
+   ```bash
+   ssh perlmutter-p1.nersc.gov
+   ```
+
+2. Ensure the file `$HOME/db.profile` contains the line `export SF_DB_ADMIN_PASSWORD='your_password_here'` with the read-write password to the database.
+
+3. Pull the Docker container:
+   ```bash
+   podman-hpc login --username $USER registry.nersc.gov
+   # Password: your NERSC password without 2FA
+   podman-hpc pull registry.nersc.gov/m558/superfacility/synapse-ml:latest
+   ```
+
+4. Allocate a GPU node and run the container:
+   ```bash
+   salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
+   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
+   ```
+   Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
+
+## Through the dashboard
 
 > [!WARNING]
 > When we run ML training jobs through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
@@ -102,72 +154,79 @@ The instructions below are for development, testing, and debugging purposes, all
 > export REGISTRY_PASSWORD="..."
 > ```
 
-To run the Docker container manually on Perlmutter:
+Coming soon.
 
-1. Log in to Perlmutter and pull the container:
-   ```bash
-   ssh perlmutter-p1.nersc.gov
-   podman-hpc login --username $USER registry.nersc.gov
-   # Password: your NERSC password without 2FA
-   podman-hpc pull registry.nersc.gov/m558/superfacility/synapse-ml:latest
+# For Maintainers
+
+## Generate the conda environment lock file
+
+1. Move to the directory [ml/](./).
+
+2. Activate the conda environment `base`:
+   ```
+   conda activate base
    ```
 
-2. Ensure the file `$HOME/db.profile` contains a line `export SF_DB_ADMIN_PASSWORD=...` with the read-write password to the database.
-
-3. Allocate a GPU node and run the container:
+3. Install `conda-lock` if not installed yet:
    ```bash
-   salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
-   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
+   conda install -c conda-forge conda-lock
    ```
-   Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
-## For Maintainers
+4. Generate the conda environment lock file:
+   ```bash
+   conda-lock --file environment.yml --lockfile environment-lock.yml
+   ```
 
-### How to generate the conda environment lock file
-
-A new conda environment lock file can be generated by running the following commands:
-
-```bash
-conda activate base
-conda install -c conda-forge conda-lock  # if conda-lock is not installed
-conda-lock --file environment.yml --lockfile environment-lock.yml
-```
-
-### How to build and publish the Docker container
+## Build and push the Docker container to NERSC
 
 > [!WARNING]
-> Pushing a new Docker container affects training jobs launched from your locally-deployed dashboard, but also from the production dashboard (deployed at NERSC through Spin), because in both cases the ML training runs in a Docker container at NERSC, which is pulled from the [NERSC registry](https://registry.nersc.gov).
+> Pushing a new Docker container affects both the ML training jobs launched from a dashboard deployed locally and the ML training jobs launched from the dashboard deployed at NERSC, because in both cases the ML training runs in a Docker container pulled from the [NERSC registry](https://registry.nersc.gov).
 > Currently, this is the only way to test the end-to-end integration of the dashboard with the ML training workflow.
+
+> [!NOTE]
+> This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
+> ```bash
+> python publish_container.py --ml
+> ```
+
+> [!TIP]
+> Prune old, unused images periodically in order to free up space on your machine:
+> ```bash
+> docker system prune -a
+> ```
+
+### Build the Docker container
 
 1. Move to the root directory of the repository.
 
-2. Build the Docker image based on `Dockerfile`:
+2. Build the Docker image:
    ```bash
-   docker build --platform linux/amd64 -t synapse-ml -f ml.Dockerfile .
+   docker build --platform linux/amd64 -t synapse-ml -f ml.Dockerfile
    ```
 
-3. Publish the container privately to [NERSC registry](https://registry.nersc.gov):
+### Push the Docker container
+
+1. Move to the root directory of the repository.
+
+2. Login to the [NERSC registry](https://registry.nersc.gov):
    ```bash
    docker login registry.nersc.gov
    # Username: your NERSC username
    # Password: your NERSC password without 2FA
    ```
+
+3. Tag the Docker image:
    ```bash
    docker tag synapse-ml:latest registry.nersc.gov/m558/superfacility/synapse-ml:latest
    docker tag synapse-ml:latest registry.nersc.gov/m558/superfacility/synapse-ml:$(date "+%y.%m")
+   ```
+
+4. Push the Docker container:
+   ```bash
    docker push -a registry.nersc.gov/m558/superfacility/synapse-ml
    ```
-   This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
-   ```bash
-   python publish_container.py --ml
-   ```
 
-4. (Optional) As you develop the container, you might want to prune old, unused images periodically in order to free space on your development machine:
-   ```bash
-   docker system prune -a
-   ```
-
-## References
+# References
 
 * [Using NERSC's `registry.nersc.gov`](https://docs.nersc.gov/development/containers/registry/)
 * [Podman at NERSC](https://docs.nersc.gov/development/containers/podman-hpc/overview/)
