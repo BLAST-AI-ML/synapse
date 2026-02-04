@@ -1,92 +1,104 @@
-# Dashboard
-
-## Table of Contents
+# Table of Contents
 * [Overview](#Overview)
-* [Prerequisites](#Prerequisites)
-* [Running Locally](#Running-Locally)
-	* [On your machine](#On-your-machine)
-* [Running in Docker](#Running-in-Docker)
-* [How to get the Superfacility API credentials](#How-to-get-the-Superfacility-API-credentials)
+* [Run the Dashboard Locally](#Run-the-Dashboard-Locally)
+	* [Without Docker](#Without-Docker)
+    * [With Docker](#With-Docker)
+* [Run the Dashboard at NERSC](#Run-the-Dashboard-at-NERSC)
+* [Get the Superfacility API Credentials](#Get-the-Superfacility-API-Credentials)
 * [For Maintainers](#For-Maintainers)
-	* [How to generate the conda environment lock file](#How-to-generate-the-conda-environment-lock-file)
-	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
+	* [Generate the conda environment lock file](#Generate-the-conda-environment-lock-file)
+	* [Push the Docker container to NERSC](#Push-the-Docker-container-to-NERSC)
 * [References](#References)
 
+# Overview
 
-## Overview
-
-The Synapse dashboard provides a web-based interface for visualizing and interacting with data from experiments, simulations, and ML models.
+The Synapse dashboard provides a web interface for working with data from experiments, simulations, and ML models.
 
 The dashboard can be run in two distinct ways:
 
-1. In a local Python environment, for development, testing and debugging.
+1. Locally on your computer.
 
-2. In a Docker container, either locally or deployed at NERSC through Spin.
+2. At NERSC through Spin.
 
-The following sections describe in more detail these two ways of running the dashboard.
+# Run the Dashboard Locally
 
-## Prerequisites
+This section describes how to develop and use the dashboard locally.
 
-Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https://docs.docker.com/).
+## Without Docker
 
-## Running Locally
+### Prepare the conda environment
 
-### On your machine
+1. Activate the conda environment `base`:
+```bash
+conda activate base
+```
 
-1. Create the conda environment defined in the lock file (only once):
-   ```bash
-   conda activate base
-   conda install -c conda-forge conda-lock  # if conda-lock is not installed
-   conda-lock install --name synapse-gui environment-lock.yml
-   ```
+2. Install `conda-lock`, if not installed yet:
+```bash
+conda install -c conda-forge conda-lock  # if conda-lock is not installed
+```
 
-2. Open a separate terminal and keep it open while SSH forwarding the database connection:
+3. Create the conda environment `synapse-gui`:
+```bash
+conda-lock install --name synapse-gui environment-lock.yml
+```
+
+### Run the Dashboard
+
+1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
    ```bash
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
 
-3. Activate the conda environment:
-   ```bash
-   conda activate synapse-gui
-   ```
+2. Move to the [dashboard/](./) directory.
 
-4. Set up database settings (read-only):
+3. Set up the database settings (read-only):
    ```bash
    export SF_DB_HOST='127.0.0.1'
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    ```
 
-5. Run the dashboard from the `dashboard/` folder via the web browser interface:
+4. Activate the conda environment `synapse-gui`:
+   ```bash
+   conda activate synapse-gui
+   ```
+
+5. Run the dashboard as a web application:
    ```bash
    python -u app.py --port 8080
    ```
-   You can also run the dashboard as a desktop application as follows:
-   ```bash
-   python -m pip install pywebview[qt]
-   export PYWEBVIEW_GUI=qt
-   python -u app.py --app
-   ```
 
-6. Terminate the application via `Ctrl` + `C`.
+## With Docker
 
-## Running in Docker
+### Run the Dashboard
 
-1. Open a separate terminal and keep it open while SSH forwarding the database connection:
+1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
    ```bash
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
 
-2. Run the Docker container:
+2. Move to the [root directory](../) of the repository.
+
+3. Build the Docker image:
+   ```bash
+   docker build --platform linux/amd64 -t synapse-gui -f dashboard.Dockerfile
+   ```
+
+4. Run the Docker container:
    ```bash
    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' synapse-gui
    ```
-   For debugging, you can also enter the container without starting the app:
+   For debugging, you can enter the container without starting the app:
    ```bash
    docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it synapse-gui bash
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
-## How to get the Superfacility API credentials
+# Run the Dashboard at NERSC
+
+Coming soon.
+
+# Get the Superfacility API Credentials
 
 Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#client](https://docs.nersc.gov/services/sfapi/authentication/#client):
 
@@ -111,50 +123,62 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 7. Run `chmod 600 priv_key.pem` to change the permissions of your private key file to read/write only.
 
-## For Maintainers
+# For Maintainers
 
-### How to generate the conda environment lock file
+## Generate the conda environment lock file
 
-A new conda environment lock file can be generated by running the following commands:
+1. Move to the directory [dashboard/](.).
 
-```bash
-conda activate base
-conda install -c conda-forge conda-lock  # if conda-lock is not installed
-conda-lock --file environment.yml --lockfile environment-lock.yml
-```
+2. Activate the conda environment `base`:
+   ```bash
+   conda activate base
+   ```
 
-### How to build and publish the Docker container
+4. Install `conda-lock`, if not installed yet:
+   ```bash
+   conda install -c conda-forge conda-lock
+   ```
+
+5. Generate the conda environment lock file:
+   ```bash
+   conda-lock --file environment.yml --lockfile environment-lock.yml
+   ```
+
+## Push the Docker container to NERSC
 
 > [!WARNING]
 > Pushing a new Docker container affects the production dashboard deployed at NERSC through Spin.
 
+> [!TIP]
+> Prune old, unused images periodically in order to free up space on your machine:
+> ```bash
+> docker system prune -a
+> ```
+
 1. Move to the root directory of the repository.
 
-2. Build the Docker image based on `Dockerfile`:
-   ```bash
-   docker build --platform linux/amd64 -t synapse-gui -f dashboard.Dockerfile .
-   ```
-
-3. Publish the container privately to [NERSC registry](https://registry.nersc.gov):
+2. Login to the [NERSC registry](https://registry.nersc.gov):
    ```bash
    docker login registry.nersc.gov
    # Username: your NERSC username
    # Password: your NERSC password without 2FA
    ```
+
+3. Tag the Docker image:
    ```bash
    docker tag synapse-gui:latest registry.nersc.gov/m558/superfacility/synapse-gui:latest
    docker tag synapse-gui:latest registry.nersc.gov/m558/superfacility/synapse-gui:$(date "+%y.%m")
-   docker push -a registry.nersc.gov/m558/superfacility/synapse-gui
-   ```
-   This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
-   ```bash
-   python publish_container.py --gui
    ```
 
-4. (Optional) As you develop the container, you might want to prune old, unused images periodically in order to free space on your development machine:
+4. Push the Docker container:
    ```bash
-   docker system prune -a
+   docker push -a registry.nersc.gov/m558/superfacility/synapse-gui   
    ```
+
+This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
+```bash
+python publish_container.py --gui
+```
 
 ## References
 
