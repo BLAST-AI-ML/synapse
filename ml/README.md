@@ -1,10 +1,10 @@
 # ML Training
 
-# Table of Contents
+## Table of Contents
 * [Overview](#Overview)
 * [Prerequisites](#Prerequisites)
 * [Running Locally](#Running-Locally)
-	* [On a local computer](#On-a-local-computer)
+	* [On your machine](#On-your-machine)
 	* [At NERSC](#At-NERSC)
 * [Running in Docker](#Running-in-Docker)
 * [For Developers](#For-Developers)
@@ -12,8 +12,6 @@
 	* [How to build and publish the Docker container](#How-to-build-and-publish-the-Docker-container)
 * [References](#References)
 
-
-This guide contains important instructions on how to train ML models within Synapse.
 
 ## Overview
 
@@ -35,7 +33,7 @@ Make sure you have installed [conda](https://docs.conda.io/) and [Docker](https:
 
 ## Running Locally
 
-### On a local computer
+### On your machine
 
 1. Create the conda environment defined in the lock file (only once):
    ```bash
