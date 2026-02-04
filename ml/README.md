@@ -17,7 +17,7 @@ ML models can be trained in two distinct ways:
 In both cases, the training runs in a Docker container at NERSC.
 This Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to [train_model.py](train_model.py), unless you re-build and re-deploy the container first.
 
-The following sections describe in more details these two ways of training ML models.
+The following sections describe in more detail these two ways of training ML models.
 
 ## How to run ML training in a local Python environment
 
