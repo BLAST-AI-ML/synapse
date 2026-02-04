@@ -1,7 +1,7 @@
 # Table of Contents
 * [Overview](#Overview)
 * [Run the Dashboard Locally](#Run-the-Dashboard-Locally)
-	* [Without Docker](#Without-Docker)
+    * [Without Docker](#Without-Docker)
     * [With Docker](#With-Docker)
 * [Run the Dashboard at NERSC](#Run-the-Dashboard-at-NERSC)
 * [Get the Superfacility API Credentials](#Get-the-Superfacility-API-Credentials)
