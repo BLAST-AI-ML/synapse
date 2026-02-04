@@ -134,12 +134,7 @@ conda-lock --file environment.yml --lockfile environment-lock.yml
    docker build --platform linux/amd64 -t synapse-ml -f ml.Dockerfile .
    ```
 
-3. (Optional) As you develop the container, you might want to prune old, unused images periodically in order to free space on your development machine:
-   ```bash
-   docker system prune -a
-   ```
-
-4. Publish the container privately to [NERSC registry](https://registry.nersc.gov):
+3. Publish the container privately to [NERSC registry](https://registry.nersc.gov):
    ```bash
    docker login registry.nersc.gov
    # Username: your NERSC username
