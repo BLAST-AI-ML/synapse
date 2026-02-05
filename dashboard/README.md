@@ -187,7 +187,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 4. Push the Docker container:
    ```bash
-   docker push -a registry.nersc.gov/m558/superfacility/synapse-gui   
+   docker push -a registry.nersc.gov/m558/superfacility/synapse-gui
    ```
 
 # References
