@@ -188,8 +188,8 @@ Remember that you need to upload valid Superfacility API credentials in order to
 > Pushing a new Docker container affects both the ML training jobs launched from a dashboard deployed locally and the ML training jobs launched from the dashboard deployed at NERSC, because in both cases the ML training runs in a Docker container pulled from the [NERSC registry](https://registry.nersc.gov).
 > Currently, this is the only way to test the end-to-end integration of the dashboard with the ML training workflow.
 
-> [!NOTE]
-> This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
+> [!TIP]
+> Run this workflow automatically with the Python script [publish_container.py](../publish_container.py):
 > ```bash
 > python publish_container.py --ml
 > ```

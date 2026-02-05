@@ -149,8 +149,8 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 > [!WARNING]
 > Pushing a new Docker container affects the production dashboard deployed at NERSC through Spin.
 
-> [!NOTE]
-> This has been also automated through the Python script [publish_container.py](../publish_container.py), which can be executed via
+> [!TIP]
+> Run this workflow automatically with the Python script [publish_container.py](../publish_container.py):
 > ```bash
 > python publish_container.py --gui
 > ```
