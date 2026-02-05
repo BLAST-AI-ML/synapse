@@ -28,17 +28,19 @@ This section describes how to develop and use the dashboard locally.
 
 ### Prepare the conda environment
 
-1. Activate the conda environment `base`:
+1. Move to the [dashboard/](./) directory.
+
+2. Activate the conda environment `base`:
 ```bash
 conda activate base
 ```
 
-2. Install `conda-lock` if not installed yet:
+3. Install `conda-lock` if not installed yet:
 ```bash
 conda install -c conda-forge conda-lock  # if conda-lock is not installed
 ```
 
-3. Create the conda environment `synapse-gui`:
+4. Create the conda environment `synapse-gui`:
 ```bash
 conda-lock install --name synapse-gui environment-lock.yml
 ```

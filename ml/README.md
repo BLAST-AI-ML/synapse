@@ -30,17 +30,19 @@ This section describes how to train ML models locally.
 
 ### Prepare the conda environment
 
-1. Activate the conda environment `base`:
+1. Move to the [ml/](./) directory.
+
+2. Activate the conda environment `base`:
    ```bash
    conda activate base
    ```
 
-2. Install `conda-lock` if not installed yet:
+3. Install `conda-lock` if not installed yet:
    ```bash
    conda install -c conda-forge conda-lock
    ```
 
-3. Create the conda environment `synapse-ml`:
+4. Create the conda environment `synapse-ml`:
    ```bash
    conda-lock install --name synapse-ml environment-lock.yml
    ```
@@ -81,18 +83,20 @@ This section describes how to train ML models at NERSC.
 
 ### Prepare the conda environment
 
-1. Activate your own user base conda environment:
+1. Move to the [ml/](./) directory.
+
+2. Activate your own user base conda environment:
    ```bash
    module load python
    conda activate <your_base_env>
    ```
 
-2. Install `conda-lock` if not installed yet:
+3. Install `conda-lock` if not installed yet:
    ```bash
    conda install -c conda-forge conda-lock
    ```
 
-3. Create the conda environment `synapse-ml`:
+4. Create the conda environment `synapse-ml`:
    ```bash
    conda-lock install --name synapse-ml environment-lock.yml
    ```
