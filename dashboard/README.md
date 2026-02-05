@@ -132,12 +132,12 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
    conda activate base
    ```
 
-4. Install `conda-lock` if not installed yet:
+3. Install `conda-lock` if not installed yet:
    ```bash
    conda install -c conda-forge conda-lock
    ```
 
-5. Generate the conda environment lock file:
+4. Generate the conda environment lock file:
    ```bash
    conda-lock --file environment.yml --lockfile environment-lock.yml
    ```
