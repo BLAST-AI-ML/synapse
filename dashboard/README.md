@@ -45,7 +45,7 @@ conda install -c conda-forge conda-lock
 conda-lock install --name synapse-gui environment-lock.yml
 ```
 
-### Run the Dashboard
+### Run the dashboard
 
 1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
    ```bash
@@ -72,7 +72,7 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 ## With Docker
 
-### Run the Dashboard
+### Run the dashboard
 
 1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
    ```bash
