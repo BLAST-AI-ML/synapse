@@ -37,7 +37,7 @@ conda activate base
 
 3. Install `conda-lock` if not installed yet:
 ```bash
-conda install -c conda-forge conda-lock  # if conda-lock is not installed
+conda install -c conda-forge conda-lock
 ```
 
 4. Create the conda environment `synapse-gui`:
