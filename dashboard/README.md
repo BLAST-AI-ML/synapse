@@ -79,7 +79,7 @@ conda-lock install --name synapse-gui environment-lock.yml
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
 
-2. Move to the [root directory](../) of the repository.
+2. Move to the root directory of the repository.
 
 3. Build the Docker image as described [below](#build-the-docker-image).
 
