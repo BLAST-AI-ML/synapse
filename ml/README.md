@@ -179,7 +179,7 @@ Remember that you need to upload valid Superfacility API credentials in order to
 
 4. Generate the conda environment lock file:
    ```bash
-   conda-lock --file environment.yml --lockfile environment-lock.yml
+   conda-lock --file environment.yml --virtual-package-spec virtual-packages.yml --lockfile environment-lock.yml
    ```
 
 ## Build and push the Docker container to NERSC

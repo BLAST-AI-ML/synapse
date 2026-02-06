@@ -2,9 +2,7 @@ name: synapse-ml
 
 channels:
   - conda-forge
-  - nvidia
   - nodefaults
-  - pytorch
 
 dependencies:
   - botorch
@@ -16,5 +14,6 @@ dependencies:
   - pymongo
   - python<3.13
   - pytorch
-  - pytorch-cuda=12.4  # [linux]
   - pyyaml
+  - cuda-version=12.4  # [linux]
+  - pytorch =*=cuda*  # [linux]
