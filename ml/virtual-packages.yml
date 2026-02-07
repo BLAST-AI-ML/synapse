@@ -1,0 +1,10 @@
+# Run on Perlmutter GPU node to get these values:
+#   nvidia-smi | grep "CUDA Version"
+#   ldd --version | head -1
+#   uname -r
+subdirs:
+  linux-64:
+    packages:
+      __cuda: "12.4"
+      __glibc: "2.31"
+      __linux: "5.14"

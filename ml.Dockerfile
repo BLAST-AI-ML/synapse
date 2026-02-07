@@ -10,10 +10,11 @@ ENV PIP_ROOT_USER_ACTION=ignore
 # Install any needed packages specified in the environment file
 # Match the CUDA 12.4.0 on Perlmutter (NERSC):
 #   https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#specifying-a-different-target-platform-for-an-environment
-COPY ml/environment.yml /app/ml/environment.yml
+COPY ml/environment-lock.yml /app/ml/environment-lock.yml
 ENV CONDA_OVERRIDE_CUDA=12.4.0
 RUN conda info
-RUN conda env create -y -f environment.yml \
+RUN conda install -c conda-forge conda-lock \
+    && conda-lock install --name synapse-ml environment-lock.yml \
     && conda clean --all -y
 
 # Configure an exectuable entrypoint script
