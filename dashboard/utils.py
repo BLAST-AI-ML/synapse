@@ -139,11 +139,8 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     print("Plotting...")
     # convert simulation data to experimental data
     cal_manager.convert_sim_to_exp(sim_data)
-    # local aliases
-    parameters = state.parameters
-    parameters_min = state.parameters_min
-    parameters_max = state.parameters_max
-    parameters_show_all = state.parameters_show_all
+    # displayed inputs type
+    param_family = "exp" if state.displayed_inputs == "Experiment" else "sim"
     try:
         objective_name = state.displayed_output
     except Exception as e:
@@ -156,10 +153,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
     df_cds = ["blue", "red"]
     df_leg = ["Experiment", "Simulation"]
     # plot
-    fig = make_subplots(rows=len(parameters), cols=1)
+    fig = make_subplots(rows=len(state.parameters[param_family]), cols=1)
     global_ymin = float("inf")
     global_ymax = float("-inf")
-    for i, key in enumerate(parameters.keys()):
+    for i, key in enumerate(state.parameters[param_family].keys()):
         # NOTE row count starts from 1, enumerate count starts from 0
         this_row = i + 1
         this_col = 1
@@ -177,13 +174,13 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # loop over all inputs except the current one
             for subkey in [
                 subkey
-                for subkey in parameters.keys()
+                for subkey in state.parameters[param_family].keys()
                 if (subkey != key and subkey in df_copy.columns)
             ]:
                 pname_loc = subkey
-                pval_loc = parameters[subkey]
-                pmin_loc = parameters_min[subkey]
-                pmax_loc = parameters_max[subkey]
+                pval_loc = state.parameters[param_family][subkey]
+                pmin_loc = state.parameters_min[param_family][subkey]
+                pmax_loc = state.parameters_max[param_family][subkey]
                 df_copy["distance"] += (
                     (df_copy[f"{pname_loc}"] - pval_loc) / (pmax_loc - pmin_loc)
                 ) ** 2
@@ -217,7 +214,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 return section
 
             # Determine which data is shown when hovering over the plot
-            hover_parameters = list(state.parameters.keys())
+            hover_parameters = list(state.parameters[param_family].keys())
             hover_output_variables = state.output_variables
             hover_customdata = ["_id"] + hover_parameters + hover_output_variables
 
@@ -289,15 +286,24 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # ----------------------------------------------------------------------
         # figure trace from model data
         if model_manager.avail():
+            exp_key = (
+                key
+                if param_family == "exp"
+                else list(state.parameters["exp"].keys())[i]
+            )
             input_dict_loc = dict()
             steps = 1000
-            input_dict_loc[key] = torch.linspace(
-                start=parameters_min[key],
-                end=parameters_max[key],
+            input_dict_loc[exp_key] = torch.linspace(
+                start=state.parameters_min["exp"][exp_key],
+                end=state.parameters_max["exp"][exp_key],
                 steps=steps,
             )
-            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
-                input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
+            for subkey in [
+                subkey for subkey in state.parameters["exp"].keys() if subkey != exp_key
+            ]:
+                input_dict_loc[subkey] = state.parameters["exp"][subkey] * torch.ones(
+                    steps
+                )
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
             # their values are set to zero to collapse the error range)
@@ -310,7 +316,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
             # upper bound
             upper_bound = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[exp_key],
                 y=upper,
                 line=dict(color="orange", width=0.3),
                 showlegend=False,
@@ -323,7 +329,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
             # lower bound
             lower_bound = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[exp_key],
                 y=lower,
                 fill="tonexty",  # fill area between this trace and the next one
                 fillcolor="rgba(255,165,0,0.25)",  # orange with alpha
@@ -338,7 +344,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             )
             # scatter plot
             mod_trace = go.Scatter(
-                x=input_dict_loc[key],
+                x=input_dict_loc[exp_key],
                 y=mean,
                 line=dict(color="orange"),
                 name="ML Model",
@@ -353,7 +359,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # ----------------------------------------------------------------------
         # add reference input line
         fig.add_vline(
-            x=parameters[key],
+            x=state.parameters[param_family][key],
             line_dash="dash",
             row=this_row,
             col=this_col,
@@ -362,10 +368,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # figures style
         custom_range = (
             [None, None]
-            if parameters_show_all[key]
+            if state.parameters_show_all[param_family][key]
             else [
-                parameters_min[key],
-                parameters_max[key],
+                state.parameters_min[param_family][key],
+                state.parameters_max[param_family][key],
             ]
         )
         fig.update_xaxes(
@@ -378,7 +384,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
 
     # A bit of padding on either end of the y range so we can see all the data.
     padding = 0.05 * (global_ymax - global_ymin)
-    for i, key in enumerate(parameters.keys()):
+    for i, key in enumerate(state.parameters[param_family].keys()):
         this_row = i + 1
         this_col = 1
         fig.update_yaxes(
