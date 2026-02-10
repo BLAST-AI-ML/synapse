@@ -39,7 +39,7 @@ def build_container(container: str, auto_yes: bool):
 
     # build the new image
     proceed = "y" if auto_yes else input(f"\nBuild new {container} image? [y/N] ")
-    command = f"docker build --platform linux/amd64 -t {imagename[container]} -f {folders[container]}.Dockerfile ."
+    command = f"docker build --platform linux/amd64 --provenance=false --output type=image,oci-mediatypes=true,push=true -t {imagename[container]} -f {folders[container]}.Dockerfile ."
     run(command, proceed, auto_yes)
 
     # upload to the NERSC registry
