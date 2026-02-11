@@ -108,43 +108,8 @@ def update(
 @state.change(
     "experiment",
     "experiment_date_range",
-)
-def update_on_change_experiment(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        print("Experiment changed...")
-        update(
-            reset_model=True,
-            reset_output=True,
-            reset_parameters=True,
-            reset_calibration=True,
-            reset_plots=True,
-            reset_gui_route_home=True,
-            reset_gui_route_nersc=False,
-            reset_gui_route_chat=False,
-            reset_gui_layout=False,
-        )
-
-
-@state.change("model_type", "model_training_time")
-def update_on_change_model(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        print("Model type changed...")
-        update(
-            reset_model=True,
-            reset_output=False,
-            reset_parameters=False,
-            reset_calibration=False,
-            reset_plots=True,
-            reset_gui_route_home=True,
-            reset_gui_route_nersc=False,
-            reset_gui_route_chat=False,
-            reset_gui_layout=False,
-        )
-
-
-@state.change(
+    "model_type",
+    "model_training_time",
     "displayed_output",
     "parameters",
     "opacity",
@@ -154,21 +119,70 @@ def update_on_change_model(**kwargs):
     "simulation_calibration",
     "use_inferred_calibration",
 )
-def update_on_change_others(**kwargs):
+def reset(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity changed...")
-        update(
-            reset_model=False,
-            reset_output=False,
-            reset_parameters=False,
-            reset_calibration=False,
-            reset_plots=True,
-            reset_gui_route_home=False,
-            reset_gui_route_nersc=False,
-            reset_gui_route_chat=False,
-            reset_gui_layout=False,
-        )
+        print(f"Reacting to state change in {state.modified_keys}...")
+        if any(
+            key in state.modified_keys
+            for key in [
+                "experiment",
+                "experiment_date_range",
+            ]
+        ):
+            update(
+                reset_model=True,
+                reset_output=True,
+                reset_parameters=True,
+                reset_calibration=True,
+                reset_plots=True,
+                reset_gui_route_home=True,
+                reset_gui_route_nersc=False,
+                reset_gui_route_chat=False,
+                reset_gui_layout=False,
+            )
+        elif any(
+            key in state.modified_keys
+            for key in [
+                "model_type",
+                "model_training_time",
+            ]
+        ):
+            update(
+                reset_model=True,
+                reset_output=False,
+                reset_parameters=False,
+                reset_calibration=False,
+                reset_plots=True,
+                reset_gui_route_home=True,
+                reset_gui_route_nersc=False,
+                reset_gui_route_chat=False,
+                reset_gui_layout=False,
+            )
+        elif any(
+            key in state.modified_keys
+            for key in [
+                "displayed_output",
+                "parameters",
+                "opacity",
+                "parameters_min",
+                "parameters_max",
+                "parameters_show_all",
+                "simulation_calibration",
+                "use_inferred_calibration",
+            ]
+        ):
+            update(
+                reset_model=False,
+                reset_output=False,
+                reset_parameters=False,
+                reset_calibration=False,
+                reset_plots=True,
+                reset_gui_route_home=False,
+                reset_gui_route_nersc=False,
+                reset_gui_route_chat=False,
+                reset_gui_layout=False,
+            )
 
 
 def find_simulation(event, db):
