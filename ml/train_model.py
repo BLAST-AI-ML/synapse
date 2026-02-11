@@ -439,7 +439,8 @@ if __name__ == "__main__":
 
     # Extract experimental and simulation data from the database as pandas dataframe
     db = connect_to_db(config_dict)
-    df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1}))
+    date_filter = config_dict.get("date_filter", {})
+    df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 
     # Apply simulation calibration to the simulation data
