@@ -107,6 +107,7 @@ def update(
 
 @state.change(
     "experiment",
+    "experiment_date_range",
     "model_type",
     "model_training_time",
     "displayed_output",
@@ -122,7 +123,13 @@ def reset(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
         print(f"Reacting to state change in {state.modified_keys}...")
-        if "experiment" in state.modified_keys:
+        if any(
+            key in state.modified_keys
+            for key in [
+                "experiment",
+                "experiment_date_range",
+            ]
+        ):
             update(
                 reset_model=True,
                 reset_output=True,
@@ -371,6 +378,7 @@ def gui_setup():
         # add toolbar components
         with layout.toolbar:
             vuetify.VSpacer()
+            # experiment selector
             vuetify.VSelect(
                 v_model=("experiment",),
                 label="Experiments",
@@ -378,7 +386,16 @@ def gui_setup():
                 dense=True,
                 hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 250px",
+                style="max-width: 250px; margin-right: 14px;",
+            )
+            # date range selector for experiment filtering
+            vuetify.VDateInput(
+                v_model=("experiment_date_range",),
+                label="Date range",
+                multiple="range",
+                dense=True,
+                hide_details=True,
+                style="max-width: 250px; margin-right: 14px;",
             )
         # set up router view
         with layout.content:
