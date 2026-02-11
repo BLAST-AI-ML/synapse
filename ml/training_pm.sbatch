@@ -40,7 +40,7 @@ MANIFEST_INDEX=$(curl -s \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
     jq -r '.manifests[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest' || echo "NOOCI")
-# Fallback for old Docker builders without OCI information
+# Fallback for old Docker builders without OCI index
 if [ "${MANIFEST_INDEX}" == "NOOCI" ]; then
     MANIFEST_INDEX=${IMAGE_VERSION}
 fi
