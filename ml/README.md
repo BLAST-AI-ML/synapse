@@ -202,11 +202,17 @@ Remember that you need to upload valid Superfacility API credentials in order to
 
 ### Build the Docker image
 
+> [!IMPORTANT]
+> Ensure you have docker version 29 or later [installed](https://docs.docker.com/engine/install/).
+> ```bash
+> docker --version
+> ```
+
 1. Move to the root directory of the repository.
 
 2. Build the Docker image:
    ```bash
-   docker build --platform linux/amd64 --provenance=false --output type=image,oci-mediatypes=true -t synapse-ml -f ml.Dockerfile .
+   docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t synapse-ml -f ml.Dockerfile .
    ```
 
 ### Push the Docker container
