@@ -206,7 +206,7 @@ Remember that you need to upload valid Superfacility API credentials in order to
 
 2. Build the Docker image:
    ```bash
-   docker build --platform linux/amd64 -t synapse-ml -f ml.Dockerfile .
+   docker build --platform linux/amd64 --provenance=false --output type=image,oci-mediatypes=true -t synapse-ml -f ml.Dockerfile .
    ```
 
 ### Push the Docker container
