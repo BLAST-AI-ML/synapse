@@ -412,19 +412,19 @@ def gui_setup():
                 vuetify.VListItem(
                     to="/",
                     prepend_icon="mdi-home",
-                    title="Home",
-                )
-                # NERSC route
-                vuetify.VListItem(
-                    to="/nersc",
-                    prepend_icon="mdi-lan-connect",
-                    title="NERSC",
+                    title="Digital Twin Prototype",
                 )
                 # Chat route
                 vuetify.VListItem(
                     to="/chat",
                     prepend_icon="mdi-chat",
-                    title="AI Chat",
+                    title="AI Assistant",
+                )
+                # NERSC route
+                vuetify.VListItem(
+                    to="/nersc",
+                    prepend_icon="mdi-lan-connect",
+                    title="NERSC API key",
                 )
         # interactive dialog for simulation plots
         with vuetify.VDialog(
