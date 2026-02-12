@@ -203,7 +203,7 @@ Remember that you need to upload valid Superfacility API credentials in order to
 ### Build the Docker image
 
 > [!IMPORTANT]
-> Ensure you have docker version 29 or later [installed](https://docs.docker.com/engine/install/).
+> Ensure you have Docker version 29 or later [installed](https://docs.docker.com/engine/install/):
 > ```bash
 > docker --version
 > ```
