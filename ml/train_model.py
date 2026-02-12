@@ -109,47 +109,15 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     norm_df = df.copy()
     norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
     norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
-
-    norm_exp_inputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 1][input_names].values,
-        dtype=torch.float,
-    )
-    norm_exp_outputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 1][output_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_inputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 0][input_names].values,
-        dtype=torch.float,
-    )
-    norm_sim_outputs = torch.tensor(
-        norm_df[norm_df.experiment_flag == 0][output_names].values,
-        dtype=torch.float,
-    )
-    return norm_df, norm_exp_inputs, norm_exp_outputs, norm_sim_inputs, norm_sim_outputs
+    return norm_df
 
 
 def split_data(df_exp, df_sim, variables, model_type):
-    if model_type == "GP":
-        if len(df_exp) > 0:
-            return (pd.concat((df_exp[variables], df_sim[variables])), None)
-        else:
-            return df_sim[variables]
+    # Concatenate experimental and simulation data into a single dataframe
+    if len(df_exp) > 0:
+        return pd.concat((df_exp[variables], df_sim[variables]))
     else:
-        # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-        sim_train_df, sim_val_df = train_test_split(
-            df_sim, test_size=0.2, random_state=None, shuffle=True
-        )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-        if len(df_exp) > 0:
-            exp_train_df, exp_val_df = train_test_split(
-                df_exp, test_size=0.2, random_state=None, shuffle=True
-            )  # 20% of the data will go in validation test, no fixing the
-            return (
-                pd.concat((exp_train_df[variables], sim_train_df[variables])),
-                pd.concat((exp_val_df[variables], sim_val_df[variables])),
-            )
-        else:
-            return (sim_train_df[variables], sim_val_df[variables])
+        return df_sim[variables]
 
 
 def build_transforms(n_inputs, X_train, n_outputs, y_train):
@@ -165,18 +133,14 @@ def build_transforms(n_inputs, X_train, n_outputs, y_train):
 
 def train_nn_ensemble(
     model_type,
-    n_inputs,
-    n_outputs,
-    sim_X_train,
-    sim_y_train,
-    exp_X_train,
-    exp_y_train,
-    sim_X_val,
-    sim_y_val,
-    exp_X_val,
-    exp_y_val,
+    norm_df,
+    input_names,
+    output_names,
     device,
 ):
+    n_inputs = len(input_names)
+    n_outputs = len(output_names)
+
     if model_type == "NN":
         num_models = 1
     elif model_type == "ensemble_NN":
@@ -184,6 +148,61 @@ def train_nn_ensemble(
 
     ensemble = []
     for i in range(num_models):
+        # Split data into train and validation for this model
+        # First split by experiment_flag, then split each into train/val
+        df_exp = norm_df[norm_df.experiment_flag == 1]
+        df_sim = norm_df[norm_df.experiment_flag == 0]
+
+        # Split experimental data into train and validation
+        if len(df_exp) > 0:
+            exp_train_df, exp_val_df = train_test_split(
+                df_exp, test_size=0.2, random_state=None, shuffle=True
+            )
+        else:
+            exp_train_df = pd.DataFrame(columns=norm_df.columns)
+            exp_val_df = pd.DataFrame(columns=norm_df.columns)
+
+        # Split simulation data into train and validation
+        sim_train_df, sim_val_df = train_test_split(
+            df_sim, test_size=0.2, random_state=None, shuffle=True
+        )
+
+        # Extract tensors for training and validation
+        exp_X_train = (
+            torch.tensor(exp_train_df[input_names].values, dtype=torch.float).to(device)
+            if len(exp_train_df) > 0
+            else torch.empty((0, n_inputs), dtype=torch.float).to(device)
+        )
+        exp_y_train = (
+            torch.tensor(exp_train_df[output_names].values, dtype=torch.float).to(
+                device
+            )
+            if len(exp_train_df) > 0
+            else torch.empty((0, n_outputs), dtype=torch.float).to(device)
+        )
+        sim_X_train = torch.tensor(
+            sim_train_df[input_names].values, dtype=torch.float
+        ).to(device)
+        sim_y_train = torch.tensor(
+            sim_train_df[output_names].values, dtype=torch.float
+        ).to(device)
+        exp_X_val = (
+            torch.tensor(exp_val_df[input_names].values, dtype=torch.float).to(device)
+            if len(exp_val_df) > 0
+            else torch.empty((0, n_inputs), dtype=torch.float).to(device)
+        )
+        exp_y_val = (
+            torch.tensor(exp_val_df[output_names].values, dtype=torch.float).to(device)
+            if len(exp_val_df) > 0
+            else torch.empty((0, n_outputs), dtype=torch.float).to(device)
+        )
+        sim_X_val = torch.tensor(sim_val_df[input_names].values, dtype=torch.float).to(
+            device
+        )
+        sim_y_val = torch.tensor(sim_val_df[output_names].values, dtype=torch.float).to(
+            device
+        )
+
         model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
         model.to(device)  # moving to GPU
         NNmodel_start_time = time.time()
@@ -263,7 +282,7 @@ def build_torch_model_from_nn(
 
 
 def train_gp(
-    norm_df_train, input_names, output_names, input_transform, output_transform, device
+    norm_df, input_names, output_names, input_transform, output_transform, device
 ):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
@@ -272,14 +291,14 @@ def train_gp(
         print(f"Processing output {i + 1}/{len(output_names)}: {output_name}")
 
         # Get data where this output is not NaN
-        output_data = norm_df_train[output_name].values
+        output_data = norm_df[output_name].values
         valid_mask = torch.logical_not(torch.isnan(torch.tensor(output_data)))
         n_valid = torch.sum(valid_mask).item()
         print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
 
         # Prepare input and output data for this output
         X_valid = torch.tensor(
-            norm_df_train[input_names].values[valid_mask], dtype=torch.float64
+            norm_df[input_names].values[valid_mask], dtype=torch.float64
         )
         y_valid = torch.tensor(output_data[valid_mask], dtype=torch.float64).unsqueeze(
             -1
@@ -291,7 +310,7 @@ def train_gp(
         ):  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
             # MultiTaskGP for experimental vs simulation data
             exp_flag_valid = torch.tensor(
-                norm_df_train[["experiment_flag"]].values[valid_mask],
+                norm_df[["experiment_flag"]].values[valid_mask],
                 dtype=torch.float64,
             )
             X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
@@ -453,24 +472,18 @@ if __name__ == "__main__":
         exp_name = value["depends_on"]
         df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
 
-    # Concatenate experimental and simulation data for training and validation
+    # Concatenate experimental and simulation data
     variables = input_names + output_names + ["experiment_flag"]
-    df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
+    df = split_data(df_exp, df_sim, variables, model_type)
 
-    # Apply normalization to the training data
-    X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
-    y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
+    # Apply normalization to the data
+    X = torch.tensor(df[input_names].values, dtype=torch.float)
+    y = torch.tensor(df[output_names].values, dtype=torch.float)
     input_transform, output_transform = build_transforms(
-        len(input_names), X_train, len(output_names), y_train
+        len(input_names), X, len(output_names), y
     )
-    (
-        norm_df_train,
-        norm_expt_inputs_train,
-        norm_expt_outputs_train,
-        norm_sim_inputs_train,
-        norm_sim_outputs_train,
-    ) = normalize(
-        df_train, input_names, input_transform, output_names, output_transform
+    norm_df = normalize(
+        df, input_names, input_transform, output_names, output_transform
     )
 
     model = None
@@ -478,29 +491,13 @@ if __name__ == "__main__":
     # Neural Net and Ensemble Creation and training
     ######################################################
     if model_type != "GP":
-        (
-            norm_df_val,
-            norm_expt_inputs_val,
-            norm_expt_outputs_val,
-            norm_sim_inputs_val,
-            norm_sim_outputs_val,
-        ) = normalize(
-            df_val, input_names, input_transform, output_names, output_transform
-        )
         print("training started")
         NN_start_time = time.time()
         ensemble = train_nn_ensemble(
             model_type,
-            len(input_names),
-            len(output_names),
-            norm_sim_inputs_train.to(device),
-            norm_sim_outputs_train.to(device),
-            norm_expt_inputs_train.to(device),
-            norm_expt_outputs_train.to(device),
-            norm_sim_inputs_val.to(device),
-            norm_sim_outputs_val.to(device),
-            norm_expt_inputs_val.to(device),
-            norm_expt_outputs_val.to(device),
+            norm_df,
+            input_names,
+            output_names,
             device,
         )
         print("training ended")
@@ -528,7 +525,7 @@ if __name__ == "__main__":
     ###############################################################
     else:
         model = train_gp(
-            norm_df_train,
+            norm_df,
             input_names,
             output_names,
             input_transform,
