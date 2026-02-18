@@ -167,7 +167,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 2. Build the Docker image:
    ```bash
-   docker build --platform linux/amd64 --provenance=false --output type=image,oci-mediatypes=true -t synapse-gui -f dashboard.Dockerfile .
+   docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t synapse-gui -f dashboard.Dockerfile .
    ```
 
 ### Push the Docker container

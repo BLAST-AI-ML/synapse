@@ -26,14 +26,29 @@ IMAGE_NAME="m558/superfacility/synapse-ml"
 IMAGE_VERSION="latest"
 
 podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
-LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION})
-# OCI_FILE_TYPES defines the expected format
+# As the local image, we use the digest id.
+#   podman-hpc lists to entries with the same digest id,
+#   one local and one migrated (read-write and read-only).
+LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} | head -n 1)
+# OCI File Types defines the expected format
 # See https://specs.opencontainers.org/image-spec/manifest/#oci-image-manifest-specification
-OCI_FILE_TYPES="application/vnd.oci.image.manifest.v1+json"
-REMOTE_SHA=$(curl -s \
-    -H "Accept: ${OCI_FILE_TYPES}" \
+OCI_INDEX_TYPE="application/vnd.oci.image.index.v1+json"
+OCI_MANIFEST_TYPE="application/vnd.oci.image.manifest.v1+json"
+#   first we unwarp the provenance information to pick the right image manifest
+MANIFEST_INDEX=$(curl -s \
+    -H "Accept: ${OCI_INDEX_TYPE}" \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
+    jq -r '.manifests[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest' || echo "NOOCI")
+#   fallback for old Docker builders without OCI index
+if [ "${MANIFEST_INDEX}" == "NOOCI" ]; then
+    MANIFEST_INDEX=${IMAGE_VERSION}
+fi
+#   then we download the manifest of the image and parse out the config digest SHA
+REMOTE_SHA=$(curl -s \
+    -H "Accept: ${OCI_MANIFEST_TYPE}" \
+    -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
+    "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${MANIFEST_INDEX}" | \
     jq -r '.config.digest')
 
 if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
