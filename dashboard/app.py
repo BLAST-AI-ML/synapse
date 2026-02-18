@@ -408,10 +408,10 @@ def gui_setup():
         with layout.drawer:
             with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
                 vuetify.VListSubheader("")
-                # Home route
+                # Dashboard route
                 vuetify.VListItem(
                     to="/",
-                    prepend_icon="mdi-home",
+                    prepend_icon="mdi-monitor-dashboard",
                     title="Digital Twin Prototype",
                 )
                 # Chat route
