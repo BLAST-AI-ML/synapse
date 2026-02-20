@@ -366,26 +366,13 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
     mlflow.set_tracking_uri(tracking_uri)
     model_name = f"{experiment}_{model_type}"
 
-    if model_type == "NN":
-        lume_module = TorchModule(model=model)
-        _ = lume_module.register_to_mlflow(
-            artifact_path=f"{model_name}_run",
-            registered_model_name=model_name,
-            save_jit=True,
-        )
-        print(f"Model registered to MLflow as {model_name}")
-    else:
-        # ensemble_NN or GP: register via LUME base implementation (pyfunc + model dump)
-        tags = {"experiment": experiment, "model_type": model_type}
-        save_jit = model_type == "ensemble_NN"
-        _ = model.register_to_mlflow(
-            artifact_path="model",
-            registered_model_name=model_name,
-            tags=tags,
-            run_name=model_name,
-            save_jit=save_jit,
-        )
-        print(f"Model registered to MLflow as {model_name}")
+    lume_module = TorchModule(model=model)
+    _ = lume_module.register_to_mlflow(
+        artifact_path=f"{model_name}_run",
+        registered_model_name=(model_type == "ensemble_NN"),
+        save_jit=True,
+    )
+    print(f"Model registered to MLflow as {model_name}")
 
 
 # Main execution block
