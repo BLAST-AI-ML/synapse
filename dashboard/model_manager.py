@@ -8,8 +8,6 @@ import re
 import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-from lume_model.models.ensemble import NNEnsemble
-from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
 from utils import verify_input_variables, timer, load_config_dict, create_date_filter
 from error_manager import add_error
@@ -55,49 +53,24 @@ class ModelManager:
                 "Neural Network (ensemble)",
                 "Gaussian Process",
             ):
-                runs = mlflow.search_runs(
-                    filter_string=(
-                        f'tags.experiment = "{state.experiment}" '
-                        f'and tags.model_type = "{model_type_tag}"'
-                    ),
-                    order_by=["start_time DESC"],
-                    max_results=1,
-                )
-                if runs.empty:
-                    print(
-                        f"No MLflow run found for experiment {state.experiment} "
-                        f"and model type {model_type_tag}"
+                loaded = mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
+                unwrap = getattr(loaded, "unwrap_python_model", None)
+                lume_model = unwrap() if unwrap else getattr(loaded, "model", loaded)
+                if not verify_input_variables(lume_model, state.experiment):
+                    title = "Model input variable mismatch"
+                    msg = (
+                        f"Model has different input variables than "
+                        f"the configuration file for {state.experiment}"
                     )
+                    add_error(title, msg)
+                    print(msg)
                     return
-                run_id = runs.iloc[0]["run_id"]
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    artifact_dir = mlflow.artifacts.download_artifacts(
-                        run_id=run_id, artifact_path="model", dst_path=temp_dir
-                    )
-                    model_file = os.path.join(artifact_dir, f"{state.experiment}.yml")
-                    if not os.path.isfile(model_file):
-                        msg = (
-                            f"Model file {model_file} not found in MLflow "
-                            f"artifacts for run {run_id}"
-                        )
-                        add_error("Model file not found", msg)
-                        print(msg)
-                        return
-                    if not verify_input_variables(model_file, state.experiment):
-                        title = "Model file input variable mismatch"
-                        msg = (
-                            f"Model file has different input variables than "
-                            f"the configuration file for {state.experiment}"
-                        )
-                        add_error(title, msg)
-                        print(msg)
-                        return
-                    if state.model_type == "Neural Network (ensemble)":
-                        self.__is_neural_network_ensemble = True
-                        self.__model = NNEnsemble(model_file)
-                    else:
-                        self.__is_gaussian_process = True
-                        self.__model = GPModel.from_yaml(model_file)
+                if state.model_type == "Neural Network (ensemble)":
+                    self.__is_neural_network_ensemble = True
+                    self.__model = lume_model
+                else:
+                    self.__is_gaussian_process = True
+                    self.__model = lume_model
             else:
                 raise ValueError(f"Unsupported model type: {state.model_type}")
         except Exception as e:

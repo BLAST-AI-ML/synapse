@@ -6,7 +6,6 @@ import time
 
 import_start_time = time.time()
 
-import tempfile
 import argparse
 import torch
 from botorch.models.transforms.input import AffineInputTransform
@@ -376,23 +375,17 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
         )
         print(f"Model registered to MLflow as {model_name}")
     else:
-        # ensemble_NN or GP: log as artifacts and tag run for later retrieval
-        with tempfile.TemporaryDirectory() as temp_dir:
-            if model_type == "ensemble_NN":
-                model.dump(
-                    file=os.path.join(temp_dir, experiment + ".yml"),
-                    save_jit=True,
-                )
-            else:
-                model.dump(
-                    file=os.path.join(temp_dir, experiment + ".yml"),
-                    save_models=True,
-                )
-            with mlflow.start_run(
-                tags={"experiment": experiment, "model_type": model_type}
-            ):
-                mlflow.log_artifacts(temp_dir, artifact_path="model")
-            print(f"{model_type} model logged to MLflow for experiment {experiment}")
+        # ensemble_NN or GP: register via LUME base implementation (pyfunc + model dump)
+        tags = {"experiment": experiment, "model_type": model_type}
+        save_jit = model_type == "ensemble_NN"
+        _ = model.register_to_mlflow(
+            artifact_path="model",
+            registered_model_name=model_name,
+            tags=tags,
+            run_name=model_name,
+            save_jit=save_jit,
+        )
+        print(f"Model registered to MLflow as {model_name}")
 
 
 # Main execution block
