@@ -8,7 +8,6 @@ import re
 import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-from lume_model.models.torch_model import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from trame.widgets import vuetify3 as vuetify
@@ -39,9 +38,7 @@ class ModelManager:
         except Exception as e:
             print(f"Cannot load config for {state.experiment}: {e}")
             return
-        if "mlflow" not in config_dict or not config_dict["mlflow"].get(
-            "tracking_uri"
-        ):
+        if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
                 f"No mlflow.tracking_uri in config for {state.experiment}; cannot load model from MLflow."
             )
@@ -52,9 +49,7 @@ class ModelManager:
 
         try:
             if state.model_type == "Neural Network (single)":
-                self.__model = mlflow.pytorch.load_model(
-                    f"models:/{model_name}/latest"
-                )
+                self.__model = mlflow.pytorch.load_model(f"models:/{model_name}/latest")
                 self.__is_neural_network = True
             elif state.model_type in (
                 "Neural Network (ensemble)",
@@ -79,9 +74,7 @@ class ModelManager:
                     artifact_dir = mlflow.artifacts.download_artifacts(
                         run_id=run_id, artifact_path="model", dst_path=temp_dir
                     )
-                    model_file = os.path.join(
-                        artifact_dir, f"{state.experiment}.yml"
-                    )
+                    model_file = os.path.join(artifact_dir, f"{state.experiment}.yml")
                     if not os.path.isfile(model_file):
                         msg = (
                             f"Model file {model_file} not found in MLflow "

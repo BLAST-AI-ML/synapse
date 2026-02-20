@@ -395,9 +395,7 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
                 tags={"experiment": experiment, "model_type": model_type}
             ):
                 mlflow.log_artifacts(temp_dir, artifact_path="model")
-            print(
-                f"{model_type} model logged to MLflow for experiment {experiment}"
-            )
+            print(f"{model_type} model logged to MLflow for experiment {experiment}")
 
 
 # Main execution block
