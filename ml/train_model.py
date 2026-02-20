@@ -369,8 +369,8 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
     lume_module = TorchModule(model=model)
     _ = lume_module.register_to_mlflow(
         artifact_path=f"{model_name}_run",
-        registered_model_name=(model_type == "ensemble_NN"),
-        save_jit=True,
+        registered_model_name=model_name,
+        save_jit=(model_type == "ensemble_NN"),
     )
     print(f"Model registered to MLflow as {model_name}")
 
