@@ -360,25 +360,7 @@ def train_gp(
     )
 
 
-def _build_input_example(input_variables, input_names, n_examples=10):
-    """Build a tensor of shape (n_examples, n_inputs) for MLflow input example."""
-    rows = []
-    for _ in range(n_examples):
-        row = []
-        for name in input_names:
-            v = input_variables[name]
-            if "value_range" in v:
-                lo, hi = v["value_range"][0], v["value_range"][1]
-                row.append((lo + hi) / 2.0)
-            else:
-                row.append(v.get("default_value", v.get("default", 0.0)))
-        rows.append(row)
-    return torch.tensor(rows, dtype=torch.double)
-
-
-def register_model_to_mlflow(
-    model, model_type, experiment, config_dict, input_names, input_variables
-):
+def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
     mlflow_config = config_dict["mlflow"]
     tracking_uri = mlflow_config["tracking_uri"]
@@ -386,10 +368,9 @@ def register_model_to_mlflow(
     model_name = f"{experiment}_{model_type}"
 
     if model_type == "NN":
-        input_example = _build_input_example(input_variables, input_names)
         lume_module = TorchModule(model=model)
         _ = lume_module.register_to_mlflow(
-            input_example,
+            None,
             f"{model_name}_run",
             model_name,
             tags={"experiment": experiment, "model_type": model_type},
@@ -536,17 +517,7 @@ if __name__ == "__main__":
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
     elif "mlflow" in config_dict and config_dict["mlflow"].get("tracking_uri"):
-        input_names = [inp["name"] for inp in config_dict["inputs"]]
-        input_variables = {
-            inp["name"]: {
-                "default_value": inp.get("default_value", inp.get("default", 0.0)),
-                "value_range": inp.get("value_range", [0.0, 1.0]),
-            }
-            for inp in config_dict["inputs"]
-        }
-        register_model_to_mlflow(
-            model, model_type, experiment, config_dict, input_names, input_variables
-        )
+        register_model_to_mlflow(model, model_type, experiment, config_dict)
     else:
         print(
             "No mlflow.tracking_uri in config; model not registered. "
