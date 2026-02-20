@@ -5,6 +5,7 @@ import tempfile
 import os
 import yaml
 import re
+import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from lume_model.models.torch_model import TorchModel
@@ -24,7 +25,7 @@ model_type_tag_dict = {
 
 
 class ModelManager:
-    def __init__(self, db):
+    def __init__(self, db=None):
         print("Initializing model manager...")
         # Set initial default values
         self.__model = None
@@ -32,98 +33,85 @@ class ModelManager:
         self.__is_gaussian_process = False
         self.__is_neural_network_ensemble = False
 
-        # Download model information from the database
-        collection = db["models"]
         model_type_tag = model_type_tag_dict[state.model_type]
-        query = {"experiment": state.experiment, "model_type": model_type_tag}
-        count = collection.count_documents(query)
-
-        if count == 0:
+        try:
+            config_dict = load_config_dict(state.experiment)
+        except Exception as e:
+            print(f"Cannot load config for {state.experiment}: {e}")
+            return
+        if "mlflow" not in config_dict or not config_dict["mlflow"].get(
+            "tracking_uri"
+        ):
             print(
-                f"No model found for experiment: {state.experiment} and model type: {model_type_tag}"
+                f"No mlflow.tracking_uri in config for {state.experiment}; cannot load model from MLflow."
             )
             return
-        elif count > 1:
-            print(
-                f"Multiple models found ({count}) for experiment: {state.experiment} and model type: {model_type_tag}!"
-            )
-            return
 
-        # Load model information from the database
-        document = collection.find_one(query)
-        # Save model files in a temporary directory,
-        # so that it can then be loaded with lume_model
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Open content of the top-level YAML file
-            yaml_file_content = document["yaml_file_content"]
-            model_filename = f"{state.experiment}.yml"
-            with open(os.path.join(temp_dir, model_filename), "w") as f:
-                f.write(yaml_file_content)
+        mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
+        model_name = f"{state.experiment}_{model_type_tag}"
 
-            # Extract list of files to download
-            files_to_download = []
-            if state.model_type == "Neural Network (ensemble)":
-                models_info = yaml.safe_load(yaml_file_content)
-                # Download yaml file for each model within the ensemble
-                for model in models_info["models"]:
-                    yaml_file_name = model.replace("_model.jit", ".yml")
-                    with open(os.path.join(temp_dir, yaml_file_name), "wb") as f:
-                        f.write(document[yaml_file_name])
-                    model_info = yaml.safe_load(document[yaml_file_name])
-                    # Extract files to download
-                    files_to_download += (
-                        [model_info["model"]]
-                        + model_info["input_transformers"]
-                        + model_info["output_transformers"]
-                    )
-            else:
-                # Extract files to download
-                model_info = yaml.safe_load(yaml_file_content)
-                files_to_download = (
-                    [model_info["model"]]
-                    + model_info["input_transformers"]
-                    + model_info["output_transformers"]
+        try:
+            if state.model_type == "Neural Network (single)":
+                self.__model = mlflow.pytorch.load_model(
+                    f"models:/{model_name}/latest"
                 )
-
-            # Download all the files that define the model(s)
-            for filename in files_to_download:
-                with open(os.path.join(temp_dir, filename), "wb") as f:
-                    f.write(document[filename])
-
-            # Check consistency of the model file
-            print("Reading model file...")
-            model_file = os.path.join(temp_dir, f"{state.experiment}.yml")
-            if not os.path.isfile(model_file):
-                title = f"Model file {model_file} not found"
-                msg = f"Unable to find the model file for {state.experiment}"
-                add_error(title, msg)
-                print(msg)
-                return
-            elif not verify_input_variables(model_file, state.experiment):
-                title = "Model file input variable mismatch"
-                msg = f"Model file {model_file} has different input variables than the configuration file for {state.experiment}"
-                add_error(title, msg)
-                print(msg)
-                return
-
-            # Load model with lume_model
-            try:
-                if state.model_type == "Neural Network (single)":
-                    self.__is_neural_network = True
-                    self.__model = TorchModel(model_file)
-                elif state.model_type == "Neural Network (ensemble)":
-                    self.__is_neural_network_ensemble = True
-                    self.__model = NNEnsemble(model_file)
-                elif state.model_type == "Gaussian Process":
-                    self.__is_gaussian_process = True
-                    self.__model = GPModel.from_yaml(model_file)
-                else:
-                    raise ValueError(f"Unsupported model type: {state.model_type}")
-            except Exception as e:
-                title = f"Unable to load model {state.model_type}"
-                msg = f"Error occurred when loading model: {e}"
-                add_error(title, msg)
-                print(msg)
+                self.__is_neural_network = True
+            elif state.model_type in (
+                "Neural Network (ensemble)",
+                "Gaussian Process",
+            ):
+                runs = mlflow.search_runs(
+                    filter_string=(
+                        f'tags.experiment = "{state.experiment}" '
+                        f'and tags.model_type = "{model_type_tag}"'
+                    ),
+                    order_by=["start_time DESC"],
+                    max_results=1,
+                )
+                if runs.empty:
+                    print(
+                        f"No MLflow run found for experiment {state.experiment} "
+                        f"and model type {model_type_tag}"
+                    )
+                    return
+                run_id = runs.iloc[0]["run_id"]
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    artifact_dir = mlflow.artifacts.download_artifacts(
+                        run_id=run_id, artifact_path="model", dst_path=temp_dir
+                    )
+                    model_file = os.path.join(
+                        artifact_dir, f"{state.experiment}.yml"
+                    )
+                    if not os.path.isfile(model_file):
+                        msg = (
+                            f"Model file {model_file} not found in MLflow "
+                            f"artifacts for run {run_id}"
+                        )
+                        add_error("Model file not found", msg)
+                        print(msg)
+                        return
+                    if not verify_input_variables(model_file, state.experiment):
+                        title = "Model file input variable mismatch"
+                        msg = (
+                            f"Model file has different input variables than "
+                            f"the configuration file for {state.experiment}"
+                        )
+                        add_error(title, msg)
+                        print(msg)
+                        return
+                    if state.model_type == "Neural Network (ensemble)":
+                        self.__is_neural_network_ensemble = True
+                        self.__model = NNEnsemble(model_file)
+                    else:
+                        self.__is_gaussian_process = True
+                        self.__model = GPModel.from_yaml(model_file)
+            else:
+                raise ValueError(f"Unsupported model type: {state.model_type}")
+        except Exception as e:
+            title = f"Unable to load model {state.model_type}"
+            msg = f"Error occurred when loading model from MLflow: {e}"
+            add_error(title, msg)
+            print(msg)
 
     def avail(self):
         print("Checking model availability...")
