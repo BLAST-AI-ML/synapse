@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # ruff: noqa: E402
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
-## using simulation and experimental data from MongoDB and saves trained models back to the database
+## using simulation and experimental data from MongoDB and saves trained models to MLflow
 import time
 
 import_start_time = time.time()
@@ -17,7 +17,8 @@ import pymongo
 import os
 import re
 import yaml
-from lume_model.models import TorchModel
+import mlflow
+from lume_model.models import TorchModel, TorchModule
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from lume_model.variables import ScalarVariable
@@ -359,67 +360,63 @@ def train_gp(
     )
 
 
-def write_model(model, model_type, experiment, db):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        if model_type != "GP":
-            model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_jit=True)
-        else:
-            model.dump(
-                file=os.path.join(temp_dir, experiment + ".yml"), save_models=True
-            )
-        # Upload the model to the database
-        # - Load the files that were just created into a dictionary
-        with open(os.path.join(temp_dir, experiment + ".yml")) as f:
-            yaml_file_content = f.read()
-        document = {
-            "experiment": experiment,
-            "model_type": model_type,
-            "yaml_file_content": yaml_file_content,
-        }
-        # Extract list of files to upload
-        files_to_upload = []
-        if model_type == "ensemble_NN":
-            models_info = yaml.safe_load(yaml_file_content)
-            for model in models_info["models"]:
-                yaml_file_name = model.replace("_model.jit", ".yml")
-                files_to_upload.append(yaml_file_name)
-                with open(os.path.join(temp_dir, yaml_file_name)) as f:
-                    model_info = yaml.safe_load(f.read())
-                # Extract files to upload
-                files_to_upload += (
-                    [model_info["model"]]
-                    + model_info["input_transformers"]
-                    + model_info["output_transformers"]
+def _build_input_example(input_variables, input_names, n_examples=10):
+    """Build a tensor of shape (n_examples, n_inputs) for MLflow input example."""
+    rows = []
+    for _ in range(n_examples):
+        row = []
+        for name in input_names:
+            v = input_variables[name]
+            if "value_range" in v:
+                lo, hi = v["value_range"][0], v["value_range"][1]
+                row.append((lo + hi) / 2.0)
+            else:
+                row.append(v.get("default_value", v.get("default", 0.0)))
+        rows.append(row)
+    return torch.tensor(rows, dtype=torch.double)
+
+
+def register_model_to_mlflow(
+    model, model_type, experiment, config_dict, input_names, input_variables
+):
+    """Register the trained model to MLflow (tracking URI from config)."""
+    mlflow_config = config_dict["mlflow"]
+    tracking_uri = mlflow_config["tracking_uri"]
+    mlflow.set_tracking_uri(tracking_uri)
+    model_name = f"{experiment}_{model_type}"
+
+    if model_type == "NN":
+        input_example = _build_input_example(input_variables, input_names)
+        lume_module = TorchModule(model=model)
+        _ = lume_module.register_to_mlflow(
+            input_example,
+            f"{model_name}_run",
+            model_name,
+            tags={"experiment": experiment, "model_type": model_type},
+            version_tags={"experiment": experiment, "model_type": model_type},
+            save_jit=True,
+        )
+        print(f"Model registered to MLflow as {model_name}")
+    else:
+        # ensemble_NN or GP: log as artifacts and tag run for later retrieval
+        with tempfile.TemporaryDirectory() as temp_dir:
+            if model_type == "ensemble_NN":
+                model.dump(
+                    file=os.path.join(temp_dir, experiment + ".yml"),
+                    save_jit=True,
                 )
-        else:
-            # Extract files to upload
-            model_info = yaml.safe_load(yaml_file_content)
-            files_to_upload += (
-                [model_info["model"]]
-                + model_info["input_transformers"]
-                + model_info["output_transformers"]
-            )
-        # Upload all the files that define the model(s)
-        for filename in files_to_upload:
-            with open(os.path.join(temp_dir, filename), "rb") as f:
-                document[filename] = f.read()
-        # - Check whether there is already a model in the database
-        query = {"experiment": experiment, "model_type": model_type}
-        count = db["models"].count_documents(query)
-        # - Upload/replace the model in the database
-        if count > 1:
+            else:
+                model.dump(
+                    file=os.path.join(temp_dir, experiment + ".yml"),
+                    save_models=True,
+                )
+            with mlflow.start_run(
+                tags={"experiment": experiment, "model_type": model_type}
+            ):
+                mlflow.log_artifacts(temp_dir, artifact_path="model")
             print(
-                f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them."
+                f"{model_type} model logged to MLflow for experiment {experiment}"
             )
-            db["models"].delete_many(query)
-        elif count == 1:
-            print(
-                f"Model already exists for experiment: {experiment} and model type: {model_type}! Removing it."
-            )
-            db["models"].delete_one(query)
-        print("Uploading new model to database")
-        db["models"].insert_one(document)
-        print("Model uploaded to database")
 
 
 # Main execution block
@@ -536,7 +533,22 @@ if __name__ == "__main__":
             device,
         )
 
-    if not test_mode:
-        write_model(model, model_type, experiment, db)
+    if test_mode:
+        print("Test mode enabled: Skipping writing trained model to MLflow")
+    elif "mlflow" in config_dict and config_dict["mlflow"].get("tracking_uri"):
+        input_names = [inp["name"] for inp in config_dict["inputs"]]
+        input_variables = {
+            inp["name"]: {
+                "default_value": inp.get("default_value", inp.get("default", 0.0)),
+                "value_range": inp.get("value_range", [0.0, 1.0]),
+            }
+            for inp in config_dict["inputs"]
+        }
+        register_model_to_mlflow(
+            model, model_type, experiment, config_dict, input_names, input_variables
+        )
     else:
-        print("Test mode enabled: Skipping writing trained model to database")
+        print(
+            "No mlflow.tracking_uri in config; model not registered. "
+            "Add an mlflow section with tracking_uri to store models in MLflow."
+        )

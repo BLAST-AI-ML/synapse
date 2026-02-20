@@ -22,6 +22,13 @@ ML models can be trained in two distinct ways:
 
 2. At NERSC, either manually or through the dashboard.
 
+Trained models are stored in MLflow. Each experiment's `config.yaml` must include an `mlflow` section with the tracking server URI, for example:
+
+```yaml
+mlflow:
+  tracking_uri: "http://127.0.0.1:5000"  # local server; use your MLflow server URL
+```
+
 # Train ML Models Locally
 
 This section describes how to train ML models locally.

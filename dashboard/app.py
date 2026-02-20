@@ -71,7 +71,7 @@ def update(
         out_manager = OutputManager(output_variables)
     # reset model
     if reset_model:
-        mod_manager = ModelManager(db)
+        mod_manager = ModelManager()
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
