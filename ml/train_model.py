@@ -370,11 +370,8 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
     if model_type == "NN":
         lume_module = TorchModule(model=model)
         _ = lume_module.register_to_mlflow(
-            None,
-            f"{model_name}_run",
-            model_name,
-            tags={"experiment": experiment, "model_type": model_type},
-            version_tags={"experiment": experiment, "model_type": model_type},
+            artifact_path=f"{model_name}_run",
+            registered_model_name=model_name,
             save_jit=True,
         )
         print(f"Model registered to MLflow as {model_name}")
