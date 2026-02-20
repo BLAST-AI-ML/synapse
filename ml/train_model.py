@@ -84,12 +84,12 @@ def load_config(config_file):
 
 
 def connect_to_db(config_dict):
-    # Connect to the MongoDB database with read-write access
+    # Connect to the MongoDB database with read-only access
     db_host = config_dict["database"]["host"]
     db_name = config_dict["database"]["name"]
     db_auth = config_dict["database"]["auth"]
-    db_username = config_dict["database"]["username_rw"]
-    db_password_env = config_dict["database"]["password_rw_env"]
+    db_username = config_dict["database"]["username_ro"]
+    db_password_env = config_dict["database"]["password_ro_env"]
     # Look for the password in the profile file
     with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
         db_profile = f.read()
