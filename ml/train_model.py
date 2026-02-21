@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # ruff: noqa: E402
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
-## using simulation and experimental data from MongoDB and saves trained models back to the database
+## using simulation and experimental data from MongoDB and saves trained models to MLflow
 import time
 
 import_start_time = time.time()
 
-import tempfile
 import argparse
 import torch
 from botorch.models.transforms.input import AffineInputTransform
@@ -17,6 +16,7 @@ import pymongo
 import os
 import re
 import yaml
+import mlflow
 from lume_model.models import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
@@ -83,12 +83,12 @@ def load_config(config_file):
 
 
 def connect_to_db(config_dict):
-    # Connect to the MongoDB database with read-write access
+    # Connect to the MongoDB database with read-only access
     db_host = config_dict["database"]["host"]
     db_name = config_dict["database"]["name"]
     db_auth = config_dict["database"]["auth"]
-    db_username = config_dict["database"]["username_rw"]
-    db_password_env = config_dict["database"]["password_rw_env"]
+    db_username = config_dict["database"]["username_ro"]
+    db_password_env = config_dict["database"]["password_ro_env"]
     # Look for the password in the profile file
     with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
         db_profile = f.read()
@@ -359,67 +359,20 @@ def train_gp(
     )
 
 
-def write_model(model, model_type, experiment, db):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        if model_type != "GP":
-            model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_jit=True)
-        else:
-            model.dump(
-                file=os.path.join(temp_dir, experiment + ".yml"), save_models=True
-            )
-        # Upload the model to the database
-        # - Load the files that were just created into a dictionary
-        with open(os.path.join(temp_dir, experiment + ".yml")) as f:
-            yaml_file_content = f.read()
-        document = {
-            "experiment": experiment,
-            "model_type": model_type,
-            "yaml_file_content": yaml_file_content,
-        }
-        # Extract list of files to upload
-        files_to_upload = []
-        if model_type == "ensemble_NN":
-            models_info = yaml.safe_load(yaml_file_content)
-            for model in models_info["models"]:
-                yaml_file_name = model.replace("_model.jit", ".yml")
-                files_to_upload.append(yaml_file_name)
-                with open(os.path.join(temp_dir, yaml_file_name)) as f:
-                    model_info = yaml.safe_load(f.read())
-                # Extract files to upload
-                files_to_upload += (
-                    [model_info["model"]]
-                    + model_info["input_transformers"]
-                    + model_info["output_transformers"]
-                )
-        else:
-            # Extract files to upload
-            model_info = yaml.safe_load(yaml_file_content)
-            files_to_upload += (
-                [model_info["model"]]
-                + model_info["input_transformers"]
-                + model_info["output_transformers"]
-            )
-        # Upload all the files that define the model(s)
-        for filename in files_to_upload:
-            with open(os.path.join(temp_dir, filename), "rb") as f:
-                document[filename] = f.read()
-        # - Check whether there is already a model in the database
-        query = {"experiment": experiment, "model_type": model_type}
-        count = db["models"].count_documents(query)
-        # - Upload/replace the model in the database
-        if count > 1:
-            print(
-                f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them."
-            )
-            db["models"].delete_many(query)
-        elif count == 1:
-            print(
-                f"Model already exists for experiment: {experiment} and model type: {model_type}! Removing it."
-            )
-            db["models"].delete_one(query)
-        print("Uploading new model to database")
-        db["models"].insert_one(document)
-        print("Model uploaded to database")
+def register_model_to_mlflow(model, model_type, experiment, config_dict):
+    """Register the trained model to MLflow (tracking URI from config)."""
+    mlflow_config = config_dict["mlflow"]
+    tracking_uri = mlflow_config["tracking_uri"]
+    mlflow.set_tracking_uri(tracking_uri)
+    model_name = f"{experiment}_{model_type}"
+
+    model.register_to_mlflow(
+        artifact_path=f"{model_name}_run",
+        registered_model_name=model_name,
+        log_model_dump=False,
+        save_jit=(model_type != "GP"),
+    )
+    print(f"Model registered to MLflow as {model_name}")
 
 
 # Main execution block
@@ -536,7 +489,12 @@ if __name__ == "__main__":
             device,
         )
 
-    if not test_mode:
-        write_model(model, model_type, experiment, db)
+    if test_mode:
+        print("Test mode enabled: Skipping writing trained model to MLflow")
+    elif "mlflow" in config_dict and config_dict["mlflow"].get("tracking_uri"):
+        register_model_to_mlflow(model, model_type, experiment, config_dict)
     else:
-        print("Test mode enabled: Skipping writing trained model to database")
+        print(
+            "No mlflow.tracking_uri in config; model not registered. "
+            "Add an mlflow section with tracking_uri to store models in MLflow."
+        )
