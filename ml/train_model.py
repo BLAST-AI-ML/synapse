@@ -366,8 +366,7 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
     mlflow.set_tracking_uri(tracking_uri)
     model_name = f"{experiment}_{model_type}"
 
-    lume_module = TorchModule(model=model)
-    _ = lume_module.register_to_mlflow(
+    model.register_to_mlflow(
         artifact_path=f"{model_name}_run",
         registered_model_name=model_name,
         log_model_dump=False,
