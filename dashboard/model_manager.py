@@ -47,9 +47,11 @@ class ModelManager:
 
         try:
             # Download model from MLflow server
-            self.__model = mlflow.pyfunc.load_model(
-                f"models:/{model_name}/1"
-            ).unwrap_python_model().model
+            self.__model = (
+                mlflow.pyfunc.load_model(f"models:/{model_name}/1")
+                .unwrap_python_model()
+                .model
+            )
             if state.model_type.startswith("Neural Network"):
                 self.__is_neural_network = True
             elif state.model_type == "Gaussian Process":
