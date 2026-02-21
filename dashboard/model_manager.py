@@ -46,31 +46,12 @@ class ModelManager:
         model_name = f"{state.experiment}_{model_type_tag}"
 
         try:
-            if state.model_type == "Neural Network (single)":
-                self.__model = mlflow.pytorch.load_model(f"models:/{model_name}/latest")
+            # Download model from MLflow server
+            self.__model = mlflow.pytorch.load_model(f"models:/{model_name}/1").get_raw_model()
+            if state.model_type.startswith("Neural Network"):
                 self.__is_neural_network = True
-            elif state.model_type in (
-                "Neural Network (ensemble)",
-                "Gaussian Process",
-            ):
-                loaded = mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
-                unwrap = getattr(loaded, "unwrap_python_model", None)
-                lume_model = unwrap() if unwrap else getattr(loaded, "model", loaded)
-                if not verify_input_variables(lume_model, state.experiment):
-                    title = "Model input variable mismatch"
-                    msg = (
-                        f"Model has different input variables than "
-                        f"the configuration file for {state.experiment}"
-                    )
-                    add_error(title, msg)
-                    print(msg)
-                    return
-                if state.model_type == "Neural Network (ensemble)":
-                    self.__is_neural_network_ensemble = True
-                    self.__model = lume_model
-                else:
-                    self.__is_gaussian_process = True
-                    self.__model = lume_model
+            elif state.model_type == "Gaussian Process":
+                self.__is_gaussian_process = True
             else:
                 raise ValueError(f"Unsupported model type: {state.model_type}")
         except Exception as e:
