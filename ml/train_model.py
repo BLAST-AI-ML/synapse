@@ -17,7 +17,7 @@ import os
 import re
 import yaml
 import mlflow
-from lume_model.models import TorchModel, TorchModule
+from lume_model.models import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
 from lume_model.variables import ScalarVariable
