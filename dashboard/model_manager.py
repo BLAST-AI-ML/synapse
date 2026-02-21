@@ -9,7 +9,7 @@ import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
-from utils import verify_input_variables, timer, load_config_dict, create_date_filter
+from utils import timer, load_config_dict, create_date_filter
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -47,7 +47,9 @@ class ModelManager:
 
         try:
             # Download model from MLflow server
-            self.__model = mlflow.pytorch.load_model(f"models:/{model_name}/1").get_raw_model()
+            self.__model = mlflow.pytorch.load_model(
+                f"models:/{model_name}/1"
+            ).get_raw_model()
             if state.model_type.startswith("Neural Network"):
                 self.__is_neural_network = True
             elif state.model_type == "Gaussian Process":
