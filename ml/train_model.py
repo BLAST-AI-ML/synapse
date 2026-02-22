@@ -364,13 +364,14 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
     mlflow_config = config_dict["mlflow"]
     tracking_uri = mlflow_config["tracking_uri"]
     mlflow.set_tracking_uri(tracking_uri)
+    mlflow.set_experiment(experiment)
     model_name = f"{experiment}_{model_type}"
 
     model.register_to_mlflow(
         artifact_path=f"{model_name}_run",
         registered_model_name=model_name,
-        log_model_dump=False,
-        save_jit=(model_type != "GP"),
+        log_model_dump=(model_type == "NN"),
+        save_jit=(model_type == "NN"),
     )
     print(f"Model registered to MLflow as {model_name}")
 
