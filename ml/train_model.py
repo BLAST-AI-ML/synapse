@@ -134,7 +134,7 @@ def split_data(df_exp, df_sim, variables, model_type):
         if len(df_exp) > 0:
             return (pd.concat((df_exp[variables], df_sim[variables])), None)
         else:
-            return df_sim[variables]
+            return (df_sim[variables], None)
     else:
         # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
         sim_train_df, sim_val_df = train_test_split(
