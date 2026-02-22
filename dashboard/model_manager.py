@@ -48,7 +48,7 @@ class ModelManager:
         try:
             # Download model from MLflow server
             self.__model = (
-                mlflow.pyfunc.load_model(f"models:/{model_name}/1")
+                mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
                 .unwrap_python_model()
                 .model
             )
