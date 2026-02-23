@@ -117,7 +117,7 @@ def split_data(df_exp, df_sim, variables, model_type):
         if len(df_exp) > 0:
             return (pd.concat((df_exp[variables], df_sim[variables])), None)
         else:
-            return df_sim[variables]
+            return (df_sim[variables], None)
     else:
         # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
         sim_train_df, sim_val_df = train_test_split(
@@ -328,13 +328,13 @@ def train_gp(
 
         gp_models.append(gp_model)
 
-    model = ModelListGP(*gp_models)
+    combined_gp = ModelListGP(*gp_models)
     print(f"ModelListGP created with {len(gp_models)} separate GP models")
     # Fit each separately
     GP_start_time = time.time()
-    for i, model in enumerate(gp_models):
+    for i, sub_gp in enumerate(gp_models):
         print(f"Training GP model {i + 1}/{len(gp_models)}...")
-        mll = ExactMarginalLogLikelihood(model.likelihood, model)
+        mll = ExactMarginalLogLikelihood(sub_gp.likelihood, sub_gp)
         fit_gpytorch_mll(mll)
     GP_end_time = time.time()
     print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
@@ -362,13 +362,13 @@ def train_gp(
         ]
 
     return GPModel(
-        model=model.cpu(),
+        model=combined_gp.cpu(),
         input_variables=[
             ScalarVariable(**input_variables[k]) for k in input_variables.keys()
         ],
         output_variables=output_variables,
-        input_transform=[input_transform],
-        output_transform=[output_transform],
+        input_transformers=[input_transform],
+        output_transformers=[output_transform],
     )
 
 
