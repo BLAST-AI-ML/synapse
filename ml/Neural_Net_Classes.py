@@ -88,6 +88,7 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
+        # Use custom loss function instead of nn.MSELoss()
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.scheduler = ReduceLROnPlateau(
             self.optimizer,
@@ -99,6 +100,13 @@ class CombinedNN(nn.Module):
         self.early_stopper = EarlyStopping(patience=patience_earlystopping)
 
     def forward(self, x):
+        """
+        args:
+            x: single value or tensor to pass
+        returns:
+            output of NN
+        """
+
         x = self.relu(self.hidden1(x))
         x = self.relu(self.hidden2(x))
         x = self.relu(self.hidden3(x))
@@ -144,11 +152,18 @@ class CombinedNN(nn.Module):
                 break
 
     def predict(self, inputs):
+        """
+        args:
+            tensor inputs
+        returns:
+            numpy array with predictions
+        """
         inputs = inputs.to(torch.float32)
         self.eval()
         with torch.no_grad():
             output = self(inputs)
             predictions = output.detach().numpy()
+
         return predictions
 
 

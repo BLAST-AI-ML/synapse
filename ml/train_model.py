@@ -48,6 +48,7 @@ start_time = time.time()
 
 
 def parse_arguments():
+    # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config_file",
@@ -79,6 +80,7 @@ def parse_arguments():
 
 
 def load_config(config_file):
+    # Load configuration from the specified file path
     if not os.path.exists(config_file):
         raise RuntimeError(f"Configuration file not found: {config_file}")
     with open(config_file) as f:
@@ -86,11 +88,13 @@ def load_config(config_file):
 
 
 def connect_to_db(config_dict):
+    # Connect to the MongoDB database with read-write access
     db_host = config_dict["database"]["host"]
     db_name = config_dict["database"]["name"]
     db_auth = config_dict["database"]["auth"]
     db_username = config_dict["database"]["username_rw"]
     db_password_env = config_dict["database"]["password_rw_env"]
+    # Look for the password in the profile file
     with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
         db_profile = f.read()
     match = re.search(f"{db_password_env}='([^']*)'", db_profile)
@@ -106,6 +110,7 @@ def connect_to_db(config_dict):
 
 
 def normalize(df, input_names, input_transform, output_names, output_transform):
+    # Apply normalization to the training data set
     norm_df = df.copy()
     norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
     norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
@@ -120,9 +125,10 @@ def split_sim_data(df_sim, variables, model_type):
     if model_type == "GP":
         return (df_sim[variables], None)
     else:
+        # Split sim data into training and validation data with 80:20 ratio, selected randomly
         sim_train_df, sim_val_df = train_test_split(
             df_sim, test_size=0.2, random_state=None, shuffle=True
-        )
+        )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
         return (sim_train_df[variables], sim_val_df[variables])
 
 
@@ -169,7 +175,7 @@ def train_nn_ensemble(
     ensemble = []
     for i in range(num_models):
         model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
-        model.to(device)
+        model.to(device)  # moving to GPU
         NNmodel_start_time = time.time()
         model.train_model(
             X_train,
@@ -291,16 +297,19 @@ def train_gp(norm_df_train, input_names, output_names, device):
     """Phase 1: Train GP on simulation data only.
     Returns the combined ModelListGP and the list of individual GP models.
     """
+    # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
     for i, output_name in enumerate(output_names):
         print(f"Processing output {i + 1}/{len(output_names)}: {output_name}")
 
+        # Get data where this output is not NaN
         output_data = norm_df_train[output_name].values
         valid_mask = torch.logical_not(torch.isnan(torch.tensor(output_data)))
         n_valid = torch.sum(valid_mask).item()
         print(f"Output {output_name}: {n_valid}/{len(output_data)} valid data points")
 
+        # Prepare input and output data for this output
         X_valid = torch.tensor(
             norm_df_train[input_names].values[valid_mask], dtype=torch.float64
         )
@@ -308,6 +317,7 @@ def train_gp(norm_df_train, input_names, output_names, device):
             -1
         )
 
+        # SingleTaskGP for simulation data only
         gp_model = SingleTaskGP(
             X_valid,
             y_valid,
@@ -319,7 +329,7 @@ def train_gp(norm_df_train, input_names, output_names, device):
 
     combined_gp = ModelListGP(*gp_models)
     print(f"ModelListGP created with {len(gp_models)} separate GP models")
-
+    # Fit each separately
     GP_start_time = time.time()
     for i, sub_gp in enumerate(gp_models):
         print(f"Training GP model {i + 1}/{len(gp_models)}...")
@@ -370,6 +380,8 @@ def write_model(model, model_type, experiment, db):
             model.dump(
                 file=os.path.join(temp_dir, experiment + ".yml"), save_models=True
             )
+        # Upload the model to the database
+        # - Load the files that were just created into a dictionary
         with open(os.path.join(temp_dir, experiment + ".yml")) as f:
             yaml_file_content = f.read()
         document = {
@@ -377,6 +389,7 @@ def write_model(model, model_type, experiment, db):
             "model_type": model_type,
             "yaml_file_content": yaml_file_content,
         }
+        # Extract list of files to upload
         files_to_upload = []
         if model_type == "ensemble_NN":
             models_info = yaml.safe_load(yaml_file_content)
@@ -385,23 +398,28 @@ def write_model(model, model_type, experiment, db):
                 files_to_upload.append(yaml_file_name)
                 with open(os.path.join(temp_dir, yaml_file_name)) as f:
                     model_info = yaml.safe_load(f.read())
+                # Extract files to upload
                 files_to_upload += (
                     [model_info["model"]]
                     + model_info["input_transformers"]
                     + model_info["output_transformers"]
                 )
         else:
+            # Extract files to upload
             model_info = yaml.safe_load(yaml_file_content)
             files_to_upload += (
                 [model_info["model"]]
                 + model_info["input_transformers"]
                 + model_info["output_transformers"]
             )
+        # Upload all the files that define the model(s)
         for filename in files_to_upload:
             with open(os.path.join(temp_dir, filename), "rb") as f:
                 document[filename] = f.read()
+        # - Check whether there is already a model in the database
         query = {"experiment": experiment, "model_type": model_type}
         count = db["models"].count_documents(query)
+        # - Upload/replace the model in the database
         if count > 1:
             print(
                 f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them."
@@ -422,22 +440,23 @@ if __name__ == "__main__":
     # Parse command line arguments and load config
     experiment, model_type, test_mode = parse_arguments()
     config_dict = load_config(experiment)
+    # Extract experiment name from config file
     experiment = config_dict["experiment"]
     print(f"Experiment: {experiment}")
-
+    # Extract input and output variables from the config file
     input_variables = config_dict["inputs"]
     input_names = [v["name"] for v in input_variables.values()]
     output_variables = config_dict["outputs"]
     output_names = [v["name"] for v in output_variables.values()]
     n_outputs = len(output_names)
 
-    # Extract experimental and simulation data from the database
+    # Extract experimental and simulation data from the database as pandas dataframe
     db = connect_to_db(config_dict)
     date_filter = config_dict.get("date_filter", {})
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 
-    # Apply simulation calibration to map sim variables into exp variable space
+    # Apply simulation calibration to the simulation data
     if "simulation_calibration" in config_dict:
         simulation_calibration = config_dict["simulation_calibration"]
     else:
@@ -447,6 +466,7 @@ if __name__ == "__main__":
         exp_name = value["depends_on"]
         df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
 
+    # Apply normalization to the training data
     # Build normalization transforms from ALL data (sim + exp) for consistent ranges
     variables = input_names + output_names
     if len(df_exp) > 0:
