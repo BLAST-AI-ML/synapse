@@ -155,16 +155,20 @@ def train_nn_ensemble(
     n_outputs = len(output_names)
 
     X_train = torch.tensor(
-        norm_sim_train[input_names].values, dtype=torch.float,
+        norm_sim_train[input_names].values,
+        dtype=torch.float,
     ).to(device)
     y_train = torch.tensor(
-        norm_sim_train[output_names].values, dtype=torch.float,
+        norm_sim_train[output_names].values,
+        dtype=torch.float,
     ).to(device)
     X_val = torch.tensor(
-        norm_sim_val[input_names].values, dtype=torch.float,
+        norm_sim_val[input_names].values,
+        dtype=torch.float,
     ).to(device)
     y_val = torch.tensor(
-        norm_sim_val[output_names].values, dtype=torch.float,
+        norm_sim_val[output_names].values,
+        dtype=torch.float,
     ).to(device)
 
     if model_type == "NN":
@@ -209,10 +213,12 @@ def train_calibration_phase(
     """
     n_outputs = len(output_names)
     exp_X = torch.tensor(
-        norm_exp_df[input_names].values, dtype=torch.float,
+        norm_exp_df[input_names].values,
+        dtype=torch.float,
     ).to(device)
     exp_y = torch.tensor(
-        norm_exp_df[output_names].values, dtype=torch.float,
+        norm_exp_df[output_names].values,
+        dtype=torch.float,
     ).to(device)
 
     # Pre-compute base model predictions
@@ -266,9 +272,7 @@ def build_torch_model_from_nn(
         torch_models.append(
             TorchModel(
                 model=model_nn,
-                input_variables=[
-                    ScalarVariable(**iv[k]) for k in iv.keys()
-                ],
+                input_variables=[ScalarVariable(**iv[k]) for k in iv.keys()],
                 output_variables=[
                     ScalarVariable(**output_variables[k])
                     for k in output_variables.keys()
@@ -283,9 +287,7 @@ def build_torch_model_from_nn(
     else:
         return NNEnsemble(
             models=torch_models,
-            input_variables=[
-                ScalarVariable(**iv[k]) for k in iv.keys()
-            ],
+            input_variables=[ScalarVariable(**iv[k]) for k in iv.keys()],
             output_variables=[
                 DistributionVariable(**output_variables[k])
                 for k in output_variables.keys()
@@ -342,8 +344,13 @@ def train_gp(norm_df_train, input_names, output_names, device):
 
 
 def build_lume_gp_model(
-    combined_gp, gp_models, input_variables, input_transform,
-    output_transform, calibration_transform, output_names,
+    combined_gp,
+    gp_models,
+    input_variables,
+    input_transform,
+    output_transform,
+    calibration_transform,
+    output_names,
 ):
     """Build a lume-model GPModel from already-trained GP models."""
     iv = copy.deepcopy(input_variables)
@@ -363,9 +370,7 @@ def build_lume_gp_model(
 
     return GPModel(
         model=combined_gp.cpu(),
-        input_variables=[
-            ScalarVariable(**iv[k]) for k in iv.keys()
-        ],
+        input_variables=[ScalarVariable(**iv[k]) for k in iv.keys()],
         output_variables=output_variables_list,
         input_transformers=[input_transform],
         output_transformers=output_transformers,
@@ -560,7 +565,10 @@ if __name__ == "__main__":
     else:
         print("Phase 1: Training GP on simulation data")
         combined_gp, gp_models = train_gp(
-            norm_sim_train, input_names, output_names, device,
+            norm_sim_train,
+            input_names,
+            output_names,
+            device,
         )
         print("Phase 1: GP training complete")
 
@@ -581,8 +589,13 @@ if __name__ == "__main__":
             print("Phase 2: No experimental data available, skipping calibration")
 
         model = build_lume_gp_model(
-            combined_gp, gp_models, input_variables, input_transform,
-            output_transform, calibration_transform, output_names,
+            combined_gp,
+            gp_models,
+            input_variables,
+            input_transform,
+            output_transform,
+            calibration_transform,
+            output_names,
         )
 
     if not test_mode:

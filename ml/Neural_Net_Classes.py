@@ -147,7 +147,7 @@ class CombinedNN(nn.Module):
             self.early_stopper(val_loss.item())
             if self.early_stopper.early_stop:
                 print(
-                    f'Early stopping triggered at epoch {epoch} with val loss {val_loss.item():.6f}'
+                    f"Early stopping triggered at epoch {epoch} with val loss {val_loss.item():.6f}"
                 )
                 break
 
