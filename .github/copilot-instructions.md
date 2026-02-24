@@ -37,7 +37,7 @@ synapse/
 
 ## Linting and Formatting
 
-This project uses **Ruff** (v0.15.2) for linting and formatting, configured via `.pre-commit-config.yaml`. There is no `ruff.toml` or `pyproject.toml` — Ruff runs with default rules.
+This project uses **Ruff** for linting and formatting, configured via `.pre-commit-config.yaml`. There is no `ruff.toml` or `pyproject.toml` — Ruff runs with default rules.
 
 ```bash
 # Run the linter (with auto-fix)
@@ -104,12 +104,12 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 ## Common Pitfalls and Workarounds
 
 1. **No `pyproject.toml` or `ruff.toml`**: Ruff uses default rules. Do not create these files unless the project explicitly adopts them.
-2. **Conda, not pip**: Dependencies are managed via `conda` and `conda-lock`, not pip. Do not add `requirements.txt` or modify `pyproject.toml` for dependencies. Update `environment.yml` in the relevant component directory and regenerate the lock file.
+2. **Conda, not pip**: Dependencies are managed via `conda` and `conda-lock`, not `pip`. Do not add `requirements.txt` or modify `pyproject.toml` for dependencies. Update `environment.yml` in the relevant component directory and regenerate the lock file.
 3. **Separate environments**: The dashboard and ML components have independent Conda environments (`synapse-gui` and `synapse-ml`). Changes to dependencies must be made in the correct `environment.yml`.
 4. **Docker builds from root**: Dockerfiles reference paths relative to the repository root. Always run `docker build` from the repository root directory.
 5. **No test infrastructure**: Since there is no test framework, validate changes by running the linter (`ruff check .`) and verifying logic through code review.
 6. **Experiment configs are external**: The `experiments/` directory contains cloned private repositories. These are not checked into this repository (excluded via `.gitignore`).
-7. **NERSC-specific infrastructure**: Much of the deployment depends on NERSC services (Spin, Superfacility API, Perlmutter, MongoDB). Code changes affecting deployment or data access should be tested against NERSC services when possible.
+7. **NERSC-specific infrastructure**: Much of the deployment depends on NERSC services (Spin, Superfacility API, Perlmutter). Code changes affecting deployment or data access should be tested against NERSC services when possible.
 
 ## Making Changes
 
