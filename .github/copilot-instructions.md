@@ -93,7 +93,6 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 - Uses PyTorch, BoTorch, and GPyTorch for model training.
 - CUDA is auto-detected for GPU acceleration.
 - Models are serialized and stored in MongoDB.
-- MLflow is used for experiment tracking.
 
 ### Data Storage
 
