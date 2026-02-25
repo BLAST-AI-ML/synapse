@@ -34,6 +34,7 @@ def enable_amsc_x_api_key(config_dict):
 
     api_key = os.environ[config_dict["mlflow"]["api_key_env"]]
     _orig = rest_utils.http_request
+
     def patched(host_creds, endpoint, method, *args, **kwargs):
         if "headers" in kwargs and kwargs["headers"] is not None:
             h = dict(kwargs["headers"])
@@ -44,6 +45,7 @@ def enable_amsc_x_api_key(config_dict):
             h["X-Api-Key"] = api_key
             kwargs["extra_headers"] = h
         return _orig(host_creds, endpoint, method, *args, **kwargs)
+
     rest_utils.http_request = patched
 
 
@@ -71,7 +73,9 @@ class ModelManager:
         mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
         # When using the AmSC MLFlow:
         # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
-        if config_dict["mlflow"]["tracking_uri"].startswith("https://mlflow.american-science-cloud.org"):
+        if config_dict["mlflow"]["tracking_uri"].startswith(
+            "https://mlflow.american-science-cloud.org"
+        ):
             # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
             os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
             urllib3.disable_warnings(InsecureRequestWarning)
