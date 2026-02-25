@@ -63,9 +63,10 @@ This section describes how to train ML models locally.
 
 2. Move to the [ml/](./) directory.
 
-3. Set up the database settings (read-write):
+3. Set up the database settings (read-only) and, if using AmSC MLflow, the API key:
    ```bash
-   export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export AM_SC_API_KEY='your_amsc_api_key_here'     # Required when MLflow tracking_uri is AmSC (e.g. https://mlflow.american-science-cloud.org)
    ```
 
 4. Activate the conda environment `synapse-ml`:
@@ -112,9 +113,10 @@ This section describes how to train ML models at NERSC.
 
 1. Move to the [ml/](./) directory.
 
-2. Set up the database settings (read-write):
+2. Set up the database settings (read-only) and, if using AmSC MLflow, the API key:
    ```bash
-   export SF_DB_ADMIN_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export AM_SC_API_KEY='your_amsc_api_key_here'     # Required when MLflow tracking_uri is AmSC (e.g. https://mlflow.american-science-cloud.org)
    ```
 
 3. Activate the conda environment `synapse-ml`:
@@ -138,7 +140,7 @@ This section describes how to train ML models at NERSC.
    ssh perlmutter-p1.nersc.gov
    ```
 
-2. Ensure the file `$HOME/db.profile` contains the line `export SF_DB_ADMIN_PASSWORD='your_password_here'` with the read-write password to the database.
+2. Ensure the file `$HOME/db.profile` contains the read-only password to the database and, if using AmSC MLflow, the API key: `export SF_DB_READONLY_PASSWORD='your_password_here'` and `export AM_SC_API_KEY='your_amsc_api_key_here'`.
 
 3. Pull the Docker container:
    ```bash
