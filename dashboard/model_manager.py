@@ -5,6 +5,8 @@ import tempfile
 import os
 import yaml
 import re
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
 import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
@@ -19,6 +21,30 @@ model_type_tag_dict = {
     "Neural Network (single)": "NN",
     "Neural Network (ensemble)": "ensemble_NN",
 }
+
+
+def enable_amsc_x_api_key(config_dict):
+    """
+    MLFLOW AUTHENTICATION HELPER:
+    Standard MLflow does not automatically inject custom headers like 'X-Api-Key'.
+    We patch the http_request function to ensure every request to the server
+    includes our security token.
+    """
+    import mlflow.utils.rest_utils as rest_utils
+
+    api_key = os.environ[config_dict["mlflow"]["api_key_env"]]
+    _orig = rest_utils.http_request
+    def patched(host_creds, endpoint, method, *args, **kwargs):
+        if "headers" in kwargs and kwargs["headers"] is not None:
+            h = dict(kwargs["headers"])
+            h["X-Api-Key"] = api_key
+            kwargs["headers"] = h
+        else:
+            h = dict(kwargs.get("extra_headers") or {})
+            h["X-Api-Key"] = api_key
+            kwargs["extra_headers"] = h
+        return _orig(host_creds, endpoint, method, *args, **kwargs)
+    rest_utils.http_request = patched
 
 
 class ModelManager:
@@ -43,6 +69,14 @@ class ModelManager:
             return
 
         mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
+        # When using the AmSC MLFlow:
+        # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
+        if config_dict["mlflow"]["tracking_uri"].startswith("https://mlflow.american-science-cloud.org"):
+            # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
+            os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
+            urllib3.disable_warnings(InsecureRequestWarning)
+            # - inject the X-Api-Key into the requests.
+            enable_amsc_x_api_key(config_dict)
         model_name = f"{state.experiment}_{model_type_tag}"
 
         try:
