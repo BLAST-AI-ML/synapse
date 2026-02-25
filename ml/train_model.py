@@ -7,6 +7,9 @@ import time
 import_start_time = time.time()
 
 import argparse
+import os
+import urllib3
+from urllib3.exceptions import InsecureRequestWarning
 import torch
 from botorch.models.transforms.input import AffineInputTransform
 from botorch.models import MultiTaskGP, SingleTaskGP, ModelListGP
@@ -358,11 +361,33 @@ def train_gp(
         output_transformers=[output_transform],
     )
 
+# Inject X-Api-Key into all MLflow REST calls
+def enable_amsc_x_api_key(config_dict):
+    """
+    MLFLOW AUTHENTICATION HELPER:
+    Standard MLflow does not automatically inject custom headers like 'X-Api-Key'.
+    We patch the http_request function to ensure every request to the server
+    includes our security token.
+    """
+    import mlflow.utils.rest_utils as rest_utils
+
+    api_key = os.environ[config_dict["mlflow"]["api_key_env"]]
+    _orig = rest_utils.http_request
+    def patched(host_creds, endpoint, method, *args, **kwargs):
+        if "headers" in kwargs and kwargs["headers"] is not None:
+            h = dict(kwargs["headers"])
+            h["X-Api-Key"] = api_key
+            kwargs["headers"] = h
+        else:
+            h = dict(kwargs.get("extra_headers") or {})
+            h["X-Api-Key"] = api_key
+            kwargs["extra_headers"] = h
+        return _orig(host_creds, endpoint, method, *args, **kwargs)
+    rest_utils.http_request = patched
 
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
-    mlflow_config = config_dict["mlflow"]
-    tracking_uri = mlflow_config["tracking_uri"]
+    tracking_uri = config_dict["mlflow"]["tracking_uri"]
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(experiment)
     model_name = f"{experiment}_{model_type}"
@@ -396,6 +421,14 @@ if __name__ == "__main__":
     date_filter = config_dict.get("date_filter", {})
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
+
+    # When using the AmSC MLFlow:
+    if config_dict["mlflow"]["tracking_uri"].startswith("https://mlflow.american-science-cloud.org"):
+        # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
+        os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
+        urllib3.disable_warnings(InsecureRequestWarning)
+        # - inject the X-Api-Key into the requests.
+        enable_amsc_x_api_key(config_dict)
 
     # Apply simulation calibration to the simulation data
     if "simulation_calibration" in config_dict:
