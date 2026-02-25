@@ -50,7 +50,7 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self, db=None):
+    def __init__(self):
         print("Initializing model manager...")
         # Set initial default values
         self.__model = None
