@@ -73,7 +73,7 @@ class ModelManager:
         mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
         # When using the AmSC MLFlow:
         # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
-        if "mlflow.american-science-cloud.org" in config_dict["mlflow"]["tracking_uri"]:
+        if config_dict["mlflow"]["tracking_uri"] == "https://mlflow.american-science-cloud.org":
             # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
             os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
             urllib3.disable_warnings(InsecureRequestWarning)
