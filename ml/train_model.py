@@ -28,7 +28,7 @@ import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 sys.path.append(".")
-from Neural_Net_Classes import CombinedNN as CombinedNN
+from Neural_Net_Classes import CombinedNN
 
 # measure the time it took to import everything
 import_end_time = time.time()
@@ -370,8 +370,7 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
     model.register_to_mlflow(
         artifact_path=f"{model_name}_run",
         registered_model_name=model_name,
-        log_model_dump=(model_type == "NN"),
-        save_jit=(model_type == "NN"),
+        code_paths=["Neural_Net_Classes.py"],
     )
     print(f"Model registered to MLflow as {model_name}")
 
