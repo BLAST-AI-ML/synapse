@@ -16,7 +16,6 @@ from botorch.models import MultiTaskGP, SingleTaskGP, ModelListGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
-import os
 import re
 import yaml
 import mlflow
@@ -361,6 +360,7 @@ def train_gp(
         output_transformers=[output_transform],
     )
 
+
 # Inject X-Api-Key into all MLflow REST calls
 def enable_amsc_x_api_key(config_dict):
     """
@@ -373,6 +373,7 @@ def enable_amsc_x_api_key(config_dict):
 
     api_key = os.environ[config_dict["mlflow"]["api_key_env"]]
     _orig = rest_utils.http_request
+
     def patched(host_creds, endpoint, method, *args, **kwargs):
         if "headers" in kwargs and kwargs["headers"] is not None:
             h = dict(kwargs["headers"])
@@ -383,7 +384,9 @@ def enable_amsc_x_api_key(config_dict):
             h["X-Api-Key"] = api_key
             kwargs["extra_headers"] = h
         return _orig(host_creds, endpoint, method, *args, **kwargs)
+
     rest_utils.http_request = patched
+
 
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
@@ -423,7 +426,9 @@ if __name__ == "__main__":
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 
     # When using the AmSC MLFlow:
-    if config_dict["mlflow"]["tracking_uri"].startswith("https://mlflow.american-science-cloud.org"):
+    if config_dict["mlflow"]["tracking_uri"].startswith(
+        "https://mlflow.american-science-cloud.org"
+    ):
         # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
         os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
         urllib3.disable_warnings(InsecureRequestWarning)
