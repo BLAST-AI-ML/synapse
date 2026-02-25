@@ -371,6 +371,7 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
         artifact_path=f"{model_name}_run",
         registered_model_name=model_name,
         code_paths=["Neural_Net_Classes.py"],
+        log_model_dump=False
     )
     print(f"Model registered to MLflow as {model_name}")
 
