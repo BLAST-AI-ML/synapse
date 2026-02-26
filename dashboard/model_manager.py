@@ -88,8 +88,10 @@ class ModelManager:
                 .unwrap_python_model()
                 .model
             )
-            if state.model_type.startswith("Neural Network"):
+            if state.model_type == "Neural Network (single)":
                 self.__is_neural_network = True
+            elif state.model_type == "Neural Network (ensemble)":
+                self.__is_neural_network_ensemble = True
             elif state.model_type == "Gaussian Process":
                 self.__is_gaussian_process = True
             else:
