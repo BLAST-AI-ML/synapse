@@ -59,7 +59,7 @@ This section describes how to train ML models locally.
 3. Set up the database settings (read-only) and the AmSC MLflow API key:
    ```bash
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
-   export AM_SC_API_KEY='your_amsc_api_key_here'     # Required when MLflow tracking_uri is AmSC (e.g. https://mlflow.american-science-cloud.org)
+   export AM_SC_API_KEY='your_amsc_api_key_here'     # Required when MLflow tracking_uri is AmSC
    ```
 
 4. Activate the conda environment `synapse-ml`:
