@@ -6,3 +6,6 @@ experiments/*/
 
 # JetBrains IDE idea directories
 .idea/
+
+# Documentation
+docs/build/
