@@ -136,6 +136,7 @@ class CombinedNN(nn.Module):
         exp_inputs_val,
         exp_targets_val,
         num_epochs=1500,
+        train_on_exp=1,
     ):
         for epoch in range(num_epochs):
             self.optimizer.zero_grad()
@@ -146,7 +147,8 @@ class CombinedNN(nn.Module):
                 loss += nan_mse_loss(sim_targets, sim_outputs)
             if len(exp_inputs) > 0:
                 exp_outputs = self.calibrate(self(exp_inputs))
-                loss += nan_mse_loss(exp_targets, exp_outputs)
+                if train_on_exp == 1:
+                    loss += nan_mse_loss(exp_targets, exp_outputs)
             loss.backward()
 
             self.optimizer.step()

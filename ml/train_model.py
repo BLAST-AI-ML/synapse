@@ -200,6 +200,7 @@ def train_nn_ensemble(
         model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
         model.to(device)  # moving to GPU
         NNmodel_start_time = time.time()
+        train_on_experiments = 1
         model.train_model(
             sim_X_train,
             sim_y_train,
@@ -210,6 +211,7 @@ def train_nn_ensemble(
             exp_X_val,
             exp_y_val,
             num_epochs=20000,
+            train_on_expt
         )
         NNmodel_end_time = time.time()
         print(f"Model_{i + 1} trained in ", NNmodel_end_time - NNmodel_start_time)
