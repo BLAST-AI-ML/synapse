@@ -429,6 +429,8 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
             f"MLflow registration failed for model '{model_name}' "
             f"using tracking URI '{tracking_uri}' and experiment '{experiment}'."
         ) from e
+
+
 # Main execution block
 if __name__ == "__main__":
     # Parse command line arguments and load config
