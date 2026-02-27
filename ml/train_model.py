@@ -405,19 +405,30 @@ def enable_amsc_x_api_key(config_dict):
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
     tracking_uri = config_dict["mlflow"]["tracking_uri"]
-    mlflow.set_tracking_uri(tracking_uri)
-    mlflow.set_experiment(experiment)
     model_name = f"{experiment}_{model_type}"
 
-    model.register_to_mlflow(
-        artifact_path=f"{model_name}_run",
-        registered_model_name=model_name,
-        code_paths=["Neural_Net_Classes.py"],
-        log_model_dump=False,
-    )
-    print(f"Model registered to MLflow as {model_name}")
+    try:
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment(experiment)
 
-
+        model.register_to_mlflow(
+            artifact_path=f"{model_name}_run",
+            registered_model_name=model_name,
+            code_paths=["Neural_Net_Classes.py"],
+            log_model_dump=False,
+        )
+        print(f"Model registered to MLflow as {model_name}")
+    except Exception as e:
+        print(
+            f"Failed to register model '{model_name}' to MLflow.\n"
+            f"Tracking URI: {tracking_uri}\n"
+            f"Experiment: {experiment}\n"
+            f"Error: {e}"
+        )
+        raise RuntimeError(
+            f"MLflow registration failed for model '{model_name}' "
+            f"using tracking URI '{tracking_uri}' and experiment '{experiment}'."
+        ) from e
 # Main execution block
 if __name__ == "__main__":
     # Parse command line arguments and load config

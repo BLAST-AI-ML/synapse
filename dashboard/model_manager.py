@@ -34,7 +34,16 @@ def enable_amsc_x_api_key(config_dict):
     """
     import mlflow.utils.rest_utils as rest_utils
 
-    api_key = os.environ[config_dict["mlflow"]["api_key_env"]]
+    mlflow_cfg = config_dict.get("mlflow") or {}
+    api_key_env = mlflow_cfg.get("api_key_env")
+    if not api_key_env:
+        add_error("MLFlow configuration is missing 'mlflow.api_key_env'; cannot enable AmSC X-Api-Key authentication.")
+        return
+
+    api_key = os.environ.get(api_key_env)
+    if not api_key:
+        add_error(f"Environment variable '{api_key_env}' (configured in 'mlflow.api_key_env') is not set; cannot enable AmSC X-Api-Key authentication.")
+        return
     _orig = rest_utils.http_request
 
     def patched(host_creds, endpoint, method, *args, **kwargs):
