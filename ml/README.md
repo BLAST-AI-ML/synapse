@@ -22,13 +22,6 @@ ML models can be trained in two distinct ways:
 
 2. At NERSC, either manually or through the dashboard.
 
-Trained models are stored in MLflow. Each experiment's `config.yaml` must include an `mlflow` section with the tracking server URI, for example:
-
-```yaml
-mlflow:
-  tracking_uri: "http://127.0.0.1:5000"  # local server; use your MLflow server URL
-```
-
 # Train ML Models Locally
 
 This section describes how to train ML models locally.
@@ -63,7 +56,7 @@ This section describes how to train ML models locally.
 
 2. Move to the [ml/](./) directory.
 
-3. Set up the database settings (read-only) and, if using AmSC MLflow, the API key:
+3. Set up the database settings (read-only) and the AmSC MLflow API key:
    ```bash
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'     # Required when MLflow tracking_uri is AmSC (e.g. https://mlflow.american-science-cloud.org)
@@ -113,7 +106,7 @@ This section describes how to train ML models at NERSC.
 
 1. Move to the [ml/](./) directory.
 
-2. Set up the database settings (read-only) and, if using AmSC MLflow, the API key:
+2. Set up the database settings (read-only) and the AmSC MLflow API key:
    ```bash
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'     # Required when MLflow tracking_uri is AmSC (e.g. https://mlflow.american-science-cloud.org)
@@ -140,7 +133,7 @@ This section describes how to train ML models at NERSC.
    ssh perlmutter-p1.nersc.gov
    ```
 
-2. Ensure the file `$HOME/db.profile` contains the read-only password to the database and, if using AmSC MLflow, the API key: `export SF_DB_READONLY_PASSWORD='your_password_here'` and `export AM_SC_API_KEY='your_amsc_api_key_here'`.
+2. Ensure the file `$HOME/db.profile` contains the read-only password to the database and the AmSC MLflow API key: `export SF_DB_READONLY_PASSWORD='your_password_here'` and `export AM_SC_API_KEY='your_amsc_api_key_here'`.
 
 3. Pull the Docker container:
    ```bash

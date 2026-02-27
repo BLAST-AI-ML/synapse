@@ -54,7 +54,7 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 2. Move to the [dashboard/](./) directory.
 
-3. Set up the database settings (read-only) and, if using AmSC MLflow, the API key:
+3. Set up the database settings (read-only) and the AmSC MLflow API key:
    ```bash
    export SF_DB_HOST='127.0.0.1'
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
