@@ -25,8 +25,8 @@ model_type_tag_dict = {
 
 def enable_amsc_x_api_key(config_dict):
     """
-    MLFlow authentication helper for the AmSC MLFlow server.
-    Standard MLFlow does not automatically inject custom headers like 'X-Api-Key'.
+    MLflow authentication helper for the AmSC MLflow server.
+    Standard MLflow does not automatically inject custom headers like 'X-Api-Key'.
     This patches the http_request function to ensure every request to the server
     includes the AmSC API key.
 
@@ -73,7 +73,7 @@ class ModelManager:
             return
 
         mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
-        # When using the AmSC MLFlow:
+        # When using the AmSC MLflow:
         # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
         if (
             config_dict["mlflow"]["tracking_uri"]
