@@ -54,10 +54,11 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 2. Move to the [dashboard/](./) directory.
 
-3. Set up the database settings (read-only):
+3. Set up the database settings (read-only) and the AmSC MLflow API key:
    ```bash
    export SF_DB_HOST='127.0.0.1'
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC (e.g. https://mlflow.american-science-cloud.org)
    ```
 
 4. Activate the conda environment `synapse-gui`:
@@ -85,11 +86,11 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 4. Run the Docker container:
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' synapse-gui
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' synapse-gui
    ```
    For debugging, you can enter the container without starting the app:
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -it synapse-gui bash
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' -it synapse-gui bash
    ```
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
