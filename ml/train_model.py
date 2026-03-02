@@ -564,6 +564,6 @@ if __name__ == "__main__":
         register_model_to_mlflow(model, model_type, experiment, config_dict)
     else:
         print(
-            "No mlflow.tracking_uri in config; model not registered. "
+            f"No mlflow.tracking_uri in configuration file for {experiment}; model not registered. "
             "Add an mlflow section with tracking_uri to store models in MLflow."
         )
