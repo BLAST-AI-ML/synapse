@@ -15,7 +15,7 @@ def enable_amsc_x_api_key(config_dict):
         config_dict: Configuration dictionary containing mlflow settings
 
     Raises:
-        KeyError: If required mlflow configuration is missing or invalid
+        ValueError: If required mlflow configuration is missing or invalid
 
     See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
     """
@@ -23,20 +23,20 @@ def enable_amsc_x_api_key(config_dict):
 
     mlflow_cfg = config_dict.get("mlflow") if config_dict is not None else None
     if not isinstance(mlflow_cfg, dict):
-        raise KeyError(
+        raise ValueError(
             "Missing 'mlflow' configuration section required for AmSC MLFlow authentication."
         )
 
     api_key_env = mlflow_cfg.get("api_key_env")
     if not api_key_env:
-        raise KeyError(
+        raise ValueError(
             "Missing 'api_key_env' in 'mlflow' configuration. "
             "Please specify the name of the environment variable containing the AmSC API key."
         )
 
     api_key = os.getenv(api_key_env)
     if api_key is None:
-        raise KeyError(
+        raise ValueError(
             f"The environment variable '{api_key_env}' specified in 'mlflow.api_key_env' "
             "is not set. Please export it with the AmSC MLFlow API key."
         )

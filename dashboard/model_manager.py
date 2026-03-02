@@ -69,7 +69,7 @@ class ModelManager:
             # - inject the X-Api-Key into the requests.
             try:
                 enable_amsc_x_api_key(config_dict)
-            except KeyError as e:
+            except ValueError as e:
                 title = "AmSC MLflow authentication setup failed"
                 msg = f"Error occurred when setting up AmSC MLflow authentication: {e}"
                 add_error(title, msg)
