@@ -77,8 +77,12 @@ class ModelManager:
         try:
             config_dict = load_config_dict(state.experiment)
         except Exception as e:
-            print(f"Cannot load config for {state.experiment}: {e}")
+            title = f"Unable to load experiment configuration"
+            msg = f"Error occurred when loading configuration for {state.experiment}: {e}"
+            add_error(title, msg)
+            print(msg)
             return
+
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
                 f"No mlflow.tracking_uri in config for {state.experiment}; cannot load model from MLflow."
