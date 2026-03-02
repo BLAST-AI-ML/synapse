@@ -77,8 +77,10 @@ class ModelManager:
         try:
             config_dict = load_config_dict(state.experiment)
         except Exception as e:
-            title = f"Unable to load experiment configuration"
-            msg = f"Error occurred when loading configuration for {state.experiment}: {e}"
+            title = "Unable to load experiment configuration"
+            msg = (
+                f"Error occurred when loading configuration for {state.experiment}: {e}"
+            )
             add_error(title, msg)
             print(msg)
             return
