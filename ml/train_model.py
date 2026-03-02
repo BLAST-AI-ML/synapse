@@ -473,7 +473,8 @@ if __name__ == "__main__":
     # When using the AmSC MLflow:
     # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
     if (
-        config_dict["mlflow"]["tracking_uri"]
+        "mlflow" in config_dict
+        and config_dict["mlflow"].get("tracking_uri")
         == "https://mlflow.american-science-cloud.org"
     ):
         # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
