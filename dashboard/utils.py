@@ -121,27 +121,6 @@ def load_data(db):
     return (exp_data, sim_data)
 
 
-def verify_input_variables(model_file, experiment):
-    print("Checking model consistency...")
-    # read configuration file
-    input_vars, _, _ = load_variables(experiment)
-    config_vars = [input_var["name"] for input_var in input_vars.values()]
-    config_vars.sort()
-    # read model file
-    with open(model_file) as f:
-        model_str = f.read()
-    # load model dictionary
-    model_dict = yaml.safe_load(model_str)
-    # load model input variables list
-    model_vars = list(model_dict["input_variables"].keys())
-    model_vars.sort()
-    # check if configuration list and model list match
-    match = config_vars == model_vars
-    if not match:
-        print("Input variables in configuration file and model file do not match")
-    return match
-
-
 @timer
 def load_database(experiment):
     print("Loading database...")
