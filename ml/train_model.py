@@ -8,8 +8,6 @@ import_start_time = time.time()
 
 import argparse
 import os
-import urllib3
-from urllib3.exceptions import InsecureRequestWarning
 import torch
 from botorch.models.transforms.input import AffineInputTransform
 from botorch.models import MultiTaskGP, SingleTaskGP, ModelListGP
@@ -470,17 +468,13 @@ if __name__ == "__main__":
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 
-    # When using the AmSC MLflow:
+    # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
     # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
     if (
         "mlflow" in config_dict
         and config_dict["mlflow"].get("tracking_uri")
         == "https://mlflow.american-science-cloud.org"
     ):
-        # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
-        os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
-        urllib3.disable_warnings(InsecureRequestWarning)
-        # - inject the X-Api-Key into the requests.
         enable_amsc_x_api_key(config_dict)
 
     # Apply simulation calibration to the simulation data

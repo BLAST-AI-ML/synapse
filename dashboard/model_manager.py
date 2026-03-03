@@ -5,8 +5,6 @@ import tempfile
 import os
 import yaml
 import re
-import urllib3
-from urllib3.exceptions import InsecureRequestWarning
 import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
@@ -92,16 +90,12 @@ class ModelManager:
             return
 
         mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
-        # When using the AmSC MLflow:
+        # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
         # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
         if (
             config_dict["mlflow"]["tracking_uri"]
             == "https://mlflow.american-science-cloud.org"
         ):
-            # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
-            os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
-            urllib3.disable_warnings(InsecureRequestWarning)
-            # - inject the X-Api-Key into the requests.
             enable_amsc_x_api_key(config_dict)
         model_name = f"{state.experiment}_{model_type_tag}"
 
