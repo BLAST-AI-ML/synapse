@@ -68,6 +68,6 @@ echo "Container check/pull took ${SECONDS} seconds."
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
     -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
-    --env-file <(grep -v '^#' $HOME/db.profile | sed 's/^export //') \
+    --env-file $HOME/db-podman.profile \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
     python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}
