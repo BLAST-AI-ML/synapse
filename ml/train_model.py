@@ -86,23 +86,11 @@ def connect_to_db(config_dict):
     db_host = config_dict["database"]["host"]
     db_name = config_dict["database"]["name"]
     db_auth = config_dict["database"]["auth"]
-<<<<<<< HEAD
-    db_username = config_dict["database"]["username_rw"]
-    db_password_env = config_dict["database"]["password_rw_env"]
+    db_username = config_dict["database"]["username_ro"]
+    db_password_env = config_dict["database"]["password_ro_env"]
     db_password = os.getenv(db_password_env)
     if db_password is None:
         raise RuntimeError(f"Environment variable {db_password_env} must be set!")
-=======
-    db_username = config_dict["database"]["username_ro"]
-    db_password_env = config_dict["database"]["password_ro_env"]
-    # Look for the password in the profile file
-    with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
-        db_profile = f.read()
-    match = re.search(f"{db_password_env}='([^']*)'", db_profile)
-    if not match:
-        raise RuntimeError(f"Environment variable {db_password_env} must be set")
-    db_password = match.group(1)
->>>>>>> main
     return pymongo.MongoClient(
         host=db_host,
         authSource=db_auth,
