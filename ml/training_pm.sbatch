@@ -64,7 +64,6 @@ echo "Container check/pull took ${SECONDS} seconds."
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-# Convert db.profile format (export KEY=VALUE) to --env-file format (KEY=VALUE)
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
     -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
