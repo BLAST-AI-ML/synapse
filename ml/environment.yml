@@ -2,17 +2,18 @@ name: synapse-ml
 
 channels:
   - conda-forge
-  - nvidia
   - nodefaults
 
 dependencies:
   - botorch
-  - cuda-version=12.4  # for Perlmutter (NERSC)
   - gpytorch
   - lume-model>=2.0.1
+  - mlflow
   - pandas
   - pip
   - pymongo
-  - python
-  - pytorch-gpu
+  - python<3.13
+  - pytorch
   - pyyaml
+  - cuda-version=12.4  # [linux]
+  - pytorch =*=cuda*  # [linux]
