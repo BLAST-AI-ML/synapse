@@ -319,9 +319,7 @@ def train_gp(
         del input_variables[k]["default"]
 
     output_variables = [
-        DistributionVariable(
-            name=name, distribution_type="MultiVariateNormal"
-        )
+        DistributionVariable(name=name, distribution_type="MultiVariateNormal")
         for name in output_names
     ]
 
