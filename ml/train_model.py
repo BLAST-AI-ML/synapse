@@ -267,7 +267,6 @@ def build_lume_model(
         # model is an ensemble list of NNs
         torch_models = []
         for model_nn in model:
-
             torch_models.append(
                 TorchModel(
                     model=model_nn,
