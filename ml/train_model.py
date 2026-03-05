@@ -201,8 +201,9 @@ def train_calibration_phase(
 ):
     """Phase 2: Train calibration layers on experimental data.
 
-    Pre-computes model predictions on experimental inputs, then trains
-    per-output affine calibration parameters (weight, bias).
+    Passes the frozen model to train_calibration(), which re-evaluates it at
+    each iteration. This prepares for future addition of input calibration
+    parameters that also need to be evaluated inside the training loop.
 
     Returns an AffineInputTransform representing the learned calibration.
     """
@@ -216,22 +217,23 @@ def train_calibration_phase(
         dtype=torch.float,
     ).to(device)
 
-    # Pre-compute base model predictions
-    with torch.no_grad():
-        if model_type == "GP":
-            gp_preds = []
-            for i, sub_gp in enumerate(gp_models):
-                sub_gp.eval()
-                posterior = sub_gp.posterior(exp_X.double())
-                gp_preds.append(posterior.mean.squeeze(-1))
-            base_predictions = torch.stack(gp_preds, dim=-1).float().to(device)
-        else:
-            model.eval()
-            base_predictions = model(exp_X)
+    # Build a predict callable that abstracts the NN vs GP difference
+    if model_type == "GP":
+        for sub_gp in gp_models:
+            sub_gp.eval()
+        def predict_fn(x):
+            gp_preds = [
+                sub_gp.posterior(x.double()).mean.squeeze(-1)
+                for sub_gp in gp_models
+            ]
+            return torch.stack(gp_preds, dim=-1).float().to(device)
+    else:
+        model.eval()
+        predict_fn = model
 
     print(f"Phase 2: Training calibration on {len(exp_X)} experimental data points")
     cal_weight, cal_bias = train_calibration(
-        base_predictions, exp_y, n_outputs, num_epochs=5000, lr=0.001
+        predict_fn, exp_X, exp_y, n_outputs, num_epochs=5000, lr=0.001
     )
 
     calibration_transform = AffineInputTransform(

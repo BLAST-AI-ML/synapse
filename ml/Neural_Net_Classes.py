@@ -152,7 +152,8 @@ class CombinedNN(nn.Module):
 
 
 def train_calibration(
-    base_predictions,
+    model,
+    exp_inputs,
     exp_targets,
     n_outputs,
     num_epochs=5000,
@@ -160,10 +161,13 @@ def train_calibration(
 ):
     """
     Train per-output affine calibration parameters (weight * prediction + bias)
-    on experimental data. The base model predictions are pre-computed and detached.
+    on experimental data. The base model is evaluated at each iteration so that,
+    in the future, input calibration parameters (applied before the model) can
+    also be trained in the same loop.
 
     Args:
-        base_predictions: model predictions on exp inputs (detached tensor)
+        model: frozen callable that maps exp_inputs -> predictions
+        exp_inputs: experimental input tensor
         exp_targets: experimental target values (may contain NaN)
         n_outputs: number of output dimensions
         num_epochs: number of training epochs
@@ -172,8 +176,8 @@ def train_calibration(
     Returns:
         (cal_weight, cal_bias) as detached tensors
     """
-    cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=base_predictions.dtype))
-    cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=base_predictions.dtype))
+    cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
+    cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
 
     optimizer = optim.Adam([cal_weight, cal_bias], lr=lr)
     scheduler = ReduceLROnPlateau(
@@ -183,6 +187,8 @@ def train_calibration(
 
     for epoch in range(num_epochs):
         optimizer.zero_grad()
+        with torch.no_grad():
+            base_predictions = model(exp_inputs)
         calibrated = cal_weight * base_predictions + cal_bias
         loss = nan_mse_loss(exp_targets, calibrated)
         loss.backward()
