@@ -237,7 +237,7 @@ def build_torch_model_from_nn(
 
         torch_models.append(
             TorchModel(
-                model=model_nn,
+                model=model_nn.cpu(),
                 input_variables=[
                     ScalarVariable(**input_variables[k]) for k in input_variables.keys()
                 ],
