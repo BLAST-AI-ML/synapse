@@ -221,10 +221,10 @@ def train_calibration_phase(
     if model_type == "GP":
         for sub_gp in gp_models:
             sub_gp.eval()
+
         def predict_fn(x):
             gp_preds = [
-                sub_gp.posterior(x.double()).mean.squeeze(-1)
-                for sub_gp in gp_models
+                sub_gp.posterior(x.double()).mean.squeeze(-1) for sub_gp in gp_models
             ]
             return torch.stack(gp_preds, dim=-1).float().to(device)
     else:
