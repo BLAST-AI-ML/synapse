@@ -251,10 +251,11 @@ def build_lume_model(
         # model is an ensemble list of NNs
         torch_models = []
         for model_nn in model:
-
             calibration_transform = AffineInputTransform(
                 len(output_vars),
-                coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
+                coefficient=model_nn.sim_to_exp_calibration_weight.clone()
+                .detach()
+                .cpu(),
                 offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
             )
 
