@@ -184,7 +184,6 @@ def train_nn_ensemble(
 def train_calibration_phase(
     model,
     model_type,
-    gp_model,
     norm_exp_df,
     input_names,
     output_names,
@@ -193,8 +192,7 @@ def train_calibration_phase(
     """Phase 2: Train calibration layers on experimental data.
 
     Passes the frozen model to train_calibration(), which re-evaluates it at
-    each iteration. This prepares for future addition of input calibration
-    parameters that also need to be evaluated inside the training loop.
+    each iteration.
 
     Returns an AffineInputTransform representing the learned calibration.
     """
@@ -210,9 +208,8 @@ def train_calibration_phase(
 
     # Build a predict callable that abstracts the NN vs GP difference
     if model_type == "GP":
-
         def predict_fn(x):
-            return gp_model.posterior(x.double()).mean.float().to(device)
+            return model.posterior(x.double()).mean.float().to(device)
     else:
         predict_fn = model
 
@@ -322,13 +319,10 @@ def train_gp(norm_df_train, input_names, output_names, device):
     combined_gp = ModelListGP(*gp_models)
     print(f"ModelListGP created with {len(gp_models)} separate GP models")
     # Fit each separately
-    GP_start_time = time.time()
     for i, sub_gp in enumerate(gp_models):
         print(f"Training GP model {i + 1}/{len(gp_models)}...")
         mll = ExactMarginalLogLikelihood(sub_gp.likelihood, sub_gp)
         fit_gpytorch_mll(mll)
-    GP_end_time = time.time()
-    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
     return combined_gp
 
@@ -465,31 +459,26 @@ if __name__ == "__main__":
     sim_variables = input_names + output_names
     df_sim_train, df_sim_val = split_data(df_sim, sim_variables, model_type)
 
-    # Normalize simulation data
+    # Normalize data
     norm_sim_train = normalize(
         df_sim_train, input_names, input_normalization, output_names, output_normalization
     )
-
-    # Normalize experimental data for Phase 2 (if available)
     norm_exp = None
     if len(df_exp) > 0:
         norm_exp = normalize(
             df_exp, input_names, input_normalization, output_names, output_normalization
         )
-
-    model = None
-    calibration_transform = None
-
     if model_type != "GP":
         # Single NN and ensemble of NNs
-
         norm_sim_val = normalize(
             df_sim_val, input_names, input_normalization, output_names, output_normalization
         )
 
-        print("Phase 1: Training NN on simulation data")
-        NN_start_time = time.time()
-        ensemble = train_nn_ensemble(
+    # Phase 1: Train model on simulation data
+    print("Phase 1: Training model on simulation data")
+    train_start_time = time.time()
+    if model_type != "GP":
+        trained_model = train_nn_ensemble(
             model_type,
             norm_sim_train,
             norm_sim_val,
@@ -497,76 +486,51 @@ if __name__ == "__main__":
             output_names,
             device,
         )
-        print("Phase 1: NN training complete")
-
-        if norm_exp is not None and len(norm_exp) > 0:
-            print("Phase 2: Training calibration on experimental data")
-            input_calibration, output_calibration = train_calibration_phase(
-                ensemble[0] if model_type == "NN" else ensemble[0],
-                model_type,
-                None,
-                norm_exp,
-                input_names,
-                output_names,
-                device,
-            )
-            print("Phase 2: Calibration training complete")
-        else:
-            print("Phase 2: No experimental data available, skipping calibration")
-
-        model = build_lume_model(
-            ensemble,
-            model_type,
-            input_variables,
-            output_variables,
-            [input_normalization],
-            [calibration_transform, output_normalization],
-        )
-        end_time = time.time()
-
-        elapsed_time = end_time - start_time
-        data_time = NN_start_time - start_time
-        NN_time = end_time - NN_start_time
-        print(f"Total time taken: {elapsed_time:.2f} seconds")
-        print(f"Data prep time taken: {data_time:.2f} seconds")
-        print(f"NN time taken: {NN_time:.2f} seconds")
-
     else:
-        # GP
-
-        print("Phase 1: Training GP on simulation data")
-        combined_gp = train_gp(
+        trained_model = train_gp(
             norm_sim_train,
             input_names,
             output_names,
             device,
         )
-        print("Phase 1: GP training complete")
+    print("Phase 1: GP training complete")
 
-        # Phase 2: Train calibration
-        if norm_exp is not None and len(norm_exp) > 0:
-            print("Phase 2: Training calibration on experimental data")
-            input_calibration, output_calibration = train_calibration_phase(
-                None,
-                "GP",
-                combined_gp,
-                norm_exp,
-                input_names,
-                output_names,
-                device,
-            )
-            print("Phase 2: Calibration training complete")
-        else:
-            print("Phase 2: No experimental data available, skipping calibration")
-
-        model = build_lume_model(
-            combined_gp,
+    # Phase 2: Train calibration on experimental data
+    if norm_exp is not None and len(norm_exp) > 0:
+        print("Phase 2: Training calibration on experimental data")
+        input_calibration, output_calibration = train_calibration_phase(
+            trained_model,
             model_type,
-            input_variables,
-            output_variables,
-            [input_normalization, input_calibration],
-            [output_calibration], output_normalization],
+            norm_exp,
+            input_names,
+            output_names,
+            device,
         )
+        input_transformers = [input_normalization, input_calibration]
+        output_transformers = [output_calibration, output_normalization]
+        print("Phase 2: Calibration training complete")
+    else:
+        input_transformers = [input_normalization]
+        output_transformers = [output_normalization]
+        print("Phase 2: No experimental data available, skipping calibration")
+
+    # Build LUME model
+    model = build_lume_model(
+        trained_model,
+        model_type,
+        input_variables,
+        output_variables,
+        input_transformers,
+        output_transformers,
+    )
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    data_time = train_start_time - start_time
+    train_time = end_time - train_start_time
+    print(f"Data prep time taken: {data_time:.2f} seconds")
+    print(f"Train time taken: {train_time:.2f} seconds")
+    print(f"Total time taken: {elapsed_time:.2f} seconds")
 
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
