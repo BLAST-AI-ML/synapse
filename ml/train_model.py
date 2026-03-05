@@ -242,9 +242,8 @@ def build_torch_model_from_nn(
     torch_models = []
 
     # Fix mismatch in name between the config file and the expected lume-model format
-    iv = copy.deepcopy(input_variables)
-    for k in iv:
-        iv[k]["default_value"] = iv[k].pop("default", iv[k].get("default_value"))
+    for k in input_variables:
+        input_variables[k]["default_value"] = input_variables[k]["default"]
 
     for model_nn in ensemble:
         output_transformers = [output_transform]
@@ -254,7 +253,9 @@ def build_torch_model_from_nn(
         torch_models.append(
             TorchModel(
                 model=model_nn,
-                input_variables=[ScalarVariable(**iv[k]) for k in iv.keys()],
+                input_variables=[
+                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+                ],
                 output_variables=[
                     ScalarVariable(**output_variables[k])
                     for k in output_variables.keys()
