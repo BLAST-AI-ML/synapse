@@ -193,7 +193,7 @@ def train_nn_ensemble(
 def train_calibration_phase(
     model,
     model_type,
-    gp_models,
+    gp_model,
     norm_exp_df,
     input_names,
     output_names,
@@ -219,14 +219,9 @@ def train_calibration_phase(
 
     # Build a predict callable that abstracts the NN vs GP difference
     if model_type == "GP":
-        for sub_gp in gp_models:
-            sub_gp.eval()
+        gp_model.eval()
         def predict_fn(x):
-            gp_preds = [
-                sub_gp.posterior(x.double()).mean.squeeze(-1)
-                for sub_gp in gp_models
-            ]
-            return torch.stack(gp_preds, dim=-1).float().to(device)
+            return gp_model.posterior(x.double()).mean.float().to(device)
     else:
         model.eval()
         predict_fn = model
@@ -337,12 +332,11 @@ def train_gp(norm_df_train, input_names, output_names, device):
     GP_end_time = time.time()
     print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
-    return combined_gp, gp_models
+    return combined_gp
 
 
 def build_lume_gp_model(
     combined_gp,
-    gp_models,
     input_variables,
     input_transform,
     output_transform,
@@ -582,7 +576,7 @@ if __name__ == "__main__":
     ###############################################################
     else:
         print("Phase 1: Training GP on simulation data")
-        combined_gp, gp_models = train_gp(
+        combined_gp = train_gp(
             norm_sim_train,
             input_names,
             output_names,
@@ -596,7 +590,7 @@ if __name__ == "__main__":
             calibration_transform = train_calibration_phase(
                 None,
                 "GP",
-                gp_models,
+                combined_gp,
                 norm_exp,
                 input_names,
                 output_names,
@@ -608,7 +602,6 @@ if __name__ == "__main__":
 
         model = build_lume_gp_model(
             combined_gp,
-            gp_models,
             input_variables,
             input_transform,
             output_transform,
