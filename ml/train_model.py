@@ -338,9 +338,7 @@ def build_lume_gp_model(
         iv[k]["default_value"] = iv[k].pop("default", iv[k].get("default_value"))
 
     output_variables_list = [
-        DistributionVariable(
-            name=f"{name}", distribution_type="MultiVariateNormal"
-        )
+        DistributionVariable(name=f"{name}", distribution_type="MultiVariateNormal")
         for name in output_names
     ]
 
