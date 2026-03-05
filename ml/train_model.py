@@ -229,63 +229,68 @@ def train_calibration_phase(
     return calibration_transform
 
 
-def build_torch_model_from_nn(
-    ensemble,
+def build_lume_model(
+    model,
     model_type,
     input_variables,
     output_variables,
-    input_transform,
-    output_transform,
-    calibration_transform,
-    output_names,
+    input_transformers,
+    output_transformers,
 ):
-    torch_models = []
-
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
         input_variables[k]["default_value"] = input_variables[k]["default"]
+        del input_variables[k]["default"]
 
-    for model_nn in ensemble:
-        output_transformers = [output_transform]
-        if calibration_transform is not None:
-            output_transformers = [calibration_transform, output_transform]
-
-        torch_models.append(
-            TorchModel(
-                model=model_nn,
-                input_variables=[
-                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-                ],
-                output_variables=[
-                    ScalarVariable(**output_variables[k])
-                    for k in output_variables.keys()
-                ],
-                input_transformers=[input_transform],
-                output_transformers=output_transformers,
+    # Define lume-model input and output variables
+    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
+    output_vars = [
+        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
+    ]
+    if model_type in ["GP", "ensemble_NN"]:
+        distribution_output_vars = [
+            DistributionVariable(
+                **output_variables[k], distribution_type="MultiVariateNormal"
             )
-        )
+            for k in output_variables.keys()
+        ]
 
-    if model_type == "NN":
-        # Return single NN
-        return torch_models[0]
-    else:
-        # Return ensemble of NNs
-        return NNEnsemble(
-            models=torch_models,
-            input_variables=[
-                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-            ],
-            output_variables=[
-                DistributionVariable(**output_variables[k])
-                for k in output_variables.keys()
-            ],
+    if model_type == "GP":
+        return GPModel(
+            model=model.cpu(),
+            input_variables=input_vars,
+            output_variables=distribution_output_vars,
+            input_transformers=input_transformers,
+            output_transformers=output_transformers,
         )
+    else:
+        # model is an ensemble list of NNs
+        torch_models = []
+        for model_nn in model:
+
+            torch_models.append(
+                TorchModel(
+                    model=model_nn,
+                    input_variables=input_vars,
+                    output_variables=output_vars,
+                    input_transformers=input_transformers,
+                    output_transformers=output_transformers,
+                )
+            )
+
+        if model_type == "NN":
+            # Return single NN
+            return torch_models[0]
+        else:
+            # Return ensemble of NNs
+            return NNEnsemble(
+                models=torch_models,
+                input_variables=input_vars,
+                output_variables=distribution_output_vars,
+            )
 
 
 def train_gp(norm_df_train, input_names, output_names, device):
-    """Phase 1: Train GP on simulation data only.
-    Returns the combined ModelListGP and the list of individual GP models.
-    """
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
@@ -327,40 +332,6 @@ def train_gp(norm_df_train, input_names, output_names, device):
     print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
     return combined_gp
-
-
-def build_lume_gp_model(
-    combined_gp,
-    input_variables,
-    input_transform,
-    output_transform,
-    calibration_transform,
-    output_names,
-):
-    """Build a lume-model GPModel from already-trained GP models."""
-    # Fix mismatch in name between the config file and the expected lume-model format
-    for k in input_variables:
-        input_variables[k]["default_value"] = input_variables[k]["default"]
-        del input_variables[k]["default"]
-
-    output_variables_list = [
-        DistributionVariable(name=f"{name}", distribution_type="MultiVariateNormal")
-        for name in output_names
-    ]
-
-    output_transformers = [output_transform]
-    if calibration_transform is not None:
-        output_transformers = [calibration_transform, output_transform]
-
-    return GPModel(
-        model=combined_gp.cpu(),
-        input_variables=[
-            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-        ],
-        output_variables=output_variables_list,
-        input_transformers=[input_transform],
-        output_transformers=output_transformers,
-    )
 
 
 def enable_amsc_x_api_key(config_dict):
@@ -544,15 +515,13 @@ if __name__ == "__main__":
         else:
             print("Phase 2: No experimental data available, skipping calibration")
 
-        model = build_torch_model_from_nn(
+        model = build_lume_model(
             ensemble,
             model_type,
             input_variables,
             output_variables,
-            input_transform,
-            output_transform,
-            calibration_transform,
-            output_names,
+            [input_transform],
+            [calibration_transform, output_transform],
         )
         end_time = time.time()
 
@@ -591,13 +560,13 @@ if __name__ == "__main__":
         else:
             print("Phase 2: No experimental data available, skipping calibration")
 
-        model = build_lume_gp_model(
+        model = build_lume_model(
             combined_gp,
+            model_type,
             input_variables,
-            input_transform,
-            output_transform,
-            calibration_transform,
-            output_names,
+            output_variables,
+            [input_transform],
+            [calibration_transform, output_transform],
         )
 
     if test_mode:
