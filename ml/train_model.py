@@ -6,7 +6,6 @@ import time
 
 import_start_time = time.time()
 
-import copy
 import argparse
 import os
 import torch
@@ -267,11 +266,15 @@ def build_torch_model_from_nn(
         )
 
     if model_type == "NN":
+        # Return single NN
         return torch_models[0]
     else:
+        # Return ensemble of NNs
         return NNEnsemble(
             models=torch_models,
-            input_variables=[ScalarVariable(**iv[k]) for k in iv.keys()],
+            input_variables=[
+                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+            ],
             output_variables=[
                 DistributionVariable(**output_variables[k])
                 for k in output_variables.keys()
@@ -335,9 +338,10 @@ def build_lume_gp_model(
     output_names,
 ):
     """Build a lume-model GPModel from already-trained GP models."""
-    iv = copy.deepcopy(input_variables)
-    for k in iv:
-        iv[k]["default_value"] = iv[k].pop("default", iv[k].get("default_value"))
+    # Fix mismatch in name between the config file and the expected lume-model format
+    for k in input_variables:
+        input_variables[k]["default_value"] = input_variables[k]["default"]
+        del input_variables[k]["default"]
 
     output_variables_list = [
         DistributionVariable(name=f"{name}", distribution_type="MultiVariateNormal")
@@ -350,7 +354,7 @@ def build_lume_gp_model(
 
     return GPModel(
         model=combined_gp.cpu(),
-        input_variables=[ScalarVariable(**iv[k]) for k in iv.keys()],
+        input_variables=[ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
         output_variables=output_variables_list,
         input_transformers=[input_transform],
         output_transformers=output_transformers,
