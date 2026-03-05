@@ -502,7 +502,7 @@ if __name__ == "__main__":
 
         if norm_exp is not None and len(norm_exp) > 0:
             print("Phase 2: Training calibration on experimental data")
-            calibration_transform = train_calibration_phase(
+            input_calibration, output_calibration = train_calibration_phase(
                 ensemble[0] if model_type == "NN" else ensemble[0],
                 model_type,
                 None,
@@ -547,7 +547,7 @@ if __name__ == "__main__":
         # Phase 2: Train calibration
         if norm_exp is not None and len(norm_exp) > 0:
             print("Phase 2: Training calibration on experimental data")
-            calibration_transform = train_calibration_phase(
+            input_calibration, output_calibration = train_calibration_phase(
                 None,
                 "GP",
                 combined_gp,
@@ -565,8 +565,8 @@ if __name__ == "__main__":
             model_type,
             input_variables,
             output_variables,
-            [input_normalization],
-            [calibration_transform, output_normalization],
+            [input_normalization, input_calibration],
+            [output_calibration], output_normalization],
         )
 
     if test_mode:
