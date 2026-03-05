@@ -350,7 +350,7 @@ def build_lume_gp_model(
 
     output_variables_list = [
         DistributionVariable(
-            name=f"{name}_sim_task", distribution_type="MultiVariateNormal"
+            name=f"{name}", distribution_type="MultiVariateNormal"
         )
         for name in output_names
     ]
