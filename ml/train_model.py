@@ -354,7 +354,9 @@ def build_lume_gp_model(
 
     return GPModel(
         model=combined_gp.cpu(),
-        input_variables=[ScalarVariable(**input_variables[k]) for k in input_variables.keys()],
+        input_variables=[
+            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
+        ],
         output_variables=output_variables_list,
         input_transformers=[input_transform],
         output_transformers=output_transformers,
