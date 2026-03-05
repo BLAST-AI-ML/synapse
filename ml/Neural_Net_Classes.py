@@ -55,8 +55,7 @@ def nan_mse_loss(target, pred):
 
 class CombinedNN(nn.Module):
     """
-    5 layer neural network trained on simulation data.
-    Calibration is handled separately in a second training phase.
+    5 layer neural network
     """
 
     def __init__(
@@ -150,21 +149,6 @@ class CombinedNN(nn.Module):
                     f"Early stopping triggered at epoch {epoch} with val loss {val_loss.item():.6f}"
                 )
                 break
-
-    def predict(self, inputs):
-        """
-        args:
-            tensor inputs
-        returns:
-            numpy array with predictions
-        """
-        inputs = inputs.to(torch.float32)
-        self.eval()
-        with torch.no_grad():
-            output = self(inputs)
-            predictions = output.detach().numpy()
-
-        return predictions
 
 
 def train_calibration(
