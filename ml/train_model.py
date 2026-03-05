@@ -10,7 +10,7 @@ import argparse
 import os
 import torch
 from botorch.models.transforms.input import AffineInputTransform
-from botorch.models import MultiTaskGP, SingleTaskGP, ModelListGP
+from botorch.models import SingleTaskGP, ModelListGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
@@ -293,34 +293,13 @@ def train_gp(
             -1
         )
 
-        # Create GP model based on whether we have experimental data
-        if (
-            False
-        ):  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
-            # MultiTaskGP for experimental vs simulation data
-            exp_flag_valid = torch.tensor(
-                norm_df_train[["experiment_flag"]].values[valid_mask],
-                dtype=torch.float64,
-            )
-            X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
-
-            gp_model = MultiTaskGP(
-                X_with_task,
-                y_valid,
-                task_feature=0,
-                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-                outcome_transform=None,
-            ).to(device)
-
-        else:
-            # SingleTaskGP for simulation data only
-            gp_model = SingleTaskGP(
-                X_valid,
-                y_valid,
-                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-                outcome_transform=None,
-            ).to(device)
-
+        # Create GP model
+        gp_model = SingleTaskGP(
+            X_valid,
+            y_valid,
+            covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+            outcome_transform=None,
+        ).to(device)
         gp_models.append(gp_model)
 
     combined_gp = ModelListGP(*gp_models)
@@ -339,22 +318,12 @@ def train_gp(
         input_variables[k]["default_value"] = input_variables[k]["default"]
         del input_variables[k]["default"]
 
-    if False:  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
-        output_variables = [
-            DistributionVariable(
-                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
-            )
-            for name in output_names
-            for suffix in ["sim_task", "exp_task"]
-        ]
-    else:
-        output_variables = [
-            DistributionVariable(
-                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
-            )
-            for name in output_names
-            for suffix in ["sim_task"]
-        ]
+    output_variables = [
+        DistributionVariable(
+            name=name, distribution_type="MultiVariateNormal"
+        )
+        for name in output_names
+    ]
 
     return GPModel(
         model=combined_gp.cpu(),
