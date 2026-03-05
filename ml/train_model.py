@@ -220,18 +220,32 @@ def build_lume_model(
     output_variables,
     input_transform,
     output_transform,
-    output_names,
 ):
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
         input_variables[k]["default_value"] = input_variables[k]["default"]
         del input_variables[k]["default"]
 
+    # Define lume-model input and output variables
     input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
-    distribution_output_vars = [
-        DistributionVariable(name=name, distribution_type="MultiVariateNormal")
-        for name in output_names
+    output_vars = [
+        ScalarVariable(**output_variables[k])
+        for k in output_variables.keys()
     ]
+    if model_type in ["GP", "ensemble_NN"]:
+        distribution_output_vars = [
+            DistributionVariable(**output_variables[k],
+            distribution_type="MultiVariateNormal")
+            for k in output_variables.keys()
+        ]
+
+    # Define calibration transform
+    if model_type in ["NN", "ensemble_NN"]:
+        calibration_transform = AffineInputTransform(
+            len(output_vars),
+            coefficient=model.sim_to_exp_calibration_weight.clone().detach().cpu(),
+            offset=model.sim_to_exp_calibration_bias.clone().detach().cpu(),
+        )
 
     if model_type == "GP":
         return GPModel(
@@ -245,21 +259,11 @@ def build_lume_model(
         # model is an ensemble list of NNs
         torch_models = []
         for model_nn in model:
-            calibration_transform = AffineInputTransform(
-                len(output_names),
-                coefficient=model_nn.sim_to_exp_calibration_weight.clone()
-                .detach()
-                .cpu(),
-                offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
-            )
             torch_models.append(
                 TorchModel(
                     model=model_nn,
                     input_variables=input_vars,
-                    output_variables=[
-                        ScalarVariable(**output_variables[k])
-                        for k in output_variables.keys()
-                    ],
+                    output_variables=output_vars,
                     input_transformers=[input_transform],
                     output_transformers=[
                         calibration_transform,
@@ -281,7 +285,7 @@ def build_lume_model(
 
 
 def train_gp(
-    norm_df_train, input_names, output_names, input_transform, output_transform, device
+    norm_df_train, input_names, output_names, device
 ):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
@@ -501,8 +505,6 @@ if __name__ == "__main__":
             norm_df_train,
             input_names,
             output_names,
-            input_transform,
-            output_transform,
             device,
         )
         model = build_lume_model(
