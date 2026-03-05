@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 # ruff: noqa: E402
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
-## using simulation and experimental data from MongoDB and saves trained models back to MLflow
-##
-## Training is done in two phases:
-##   Phase 1: Train the model (NN or GP) on simulation data only (in normalized space)
-##   Phase 2: Train calibration layers on experimental data (in normalized space)
+## using simulation and experimental data from MongoDB and saves trained models to MLflow
 import time
 
 import_start_time = time.time()
@@ -112,25 +108,22 @@ def normalize(df, input_names, input_transform, output_names, output_transform):
     return norm_df
 
 
-def split_sim_data(df_sim, variables, model_type):
-    """Split simulation data for Phase 1 training.
-    For GP: use all sim data (no split needed).
-    For NN/ensemble_NN: 80/20 train/val split.
-    """
+def split_data(df, variables, model_type):
     if model_type == "GP":
-        return (df_sim[variables], None)
+        return (df[variables], None)
     else:
-        # Split sim data into training and validation data with 80:20 ratio, selected randomly
-        sim_train_df, sim_val_df = train_test_split(
-            df_sim, test_size=0.2, random_state=None, shuffle=True
+        # Split data into training and validation data with 80:20 ratio, selected randomly
+        train_df, val_df = train_test_split(
+            df, test_size=0.2, random_state=None, shuffle=True
         )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-        return (sim_train_df[variables], sim_val_df[variables])
+        return (train_df[variables], val_df[variables])
 
 
 def build_transforms(n_inputs, X_train, n_outputs, y_train):
     input_transform = AffineInputTransform(
         n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
+    # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
     output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
@@ -139,30 +132,29 @@ def build_transforms(n_inputs, X_train, n_outputs, y_train):
 
 def train_nn_ensemble(
     model_type,
-    norm_sim_train,
-    norm_sim_val,
+    norm_df_train,
+    norm_df_val,
     input_names,
     output_names,
     device,
 ):
-    """Phase 1: Train NN ensemble on simulation data only."""
     n_inputs = len(input_names)
     n_outputs = len(output_names)
 
     X_train = torch.tensor(
-        norm_sim_train[input_names].values,
+        norm_df_train[input_names].values,
         dtype=torch.float,
     ).to(device)
     y_train = torch.tensor(
-        norm_sim_train[output_names].values,
+        norm_df_train[output_names].values,
         dtype=torch.float,
     ).to(device)
     X_val = torch.tensor(
-        norm_sim_val[input_names].values,
+        norm_df_val[input_names].values,
         dtype=torch.float,
     ).to(device)
     y_val = torch.tensor(
-        norm_sim_val[output_names].values,
+        norm_df_val[output_names].values,
         dtype=torch.float,
     ).to(device)
 
@@ -495,7 +487,7 @@ if __name__ == "__main__":
 
     # Split simulation data for Phase 1
     sim_variables = input_names + output_names
-    df_sim_train, df_sim_val = split_sim_data(df_sim, sim_variables, model_type)
+    df_sim_train, df_sim_val = split_data(df_sim, sim_variables, model_type)
 
     # Normalize simulation data
     norm_sim_train = normalize(
