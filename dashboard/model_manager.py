@@ -6,6 +6,8 @@ import os
 import yaml
 import re
 import mlflow
+import torch
+from unittest.mock import patch
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
@@ -101,11 +103,19 @@ class ModelManager:
 
         try:
             # Download model from MLflow server
-            self.__model = (
-                mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
-                .unwrap_python_model()
-                .model
-            )
+            # Use CPU mapping for deserialization since model may have CUDA traces from GPU training
+            original_load = torch.load
+            with patch(
+                "torch.load",
+                side_effect=lambda *args, **kwargs: original_load(
+                    *args, **{**kwargs, "map_location": torch.device("cpu")}
+                ),
+            ):
+                self.__model = (
+                    mlflow.pyfunc.load_model(f"models:/{model_name}/latest")
+                    .unwrap_python_model()
+                    .model
+                )
             if state.model_type == "Neural Network (single)":
                 self.__is_neural_network = True
             elif state.model_type == "Neural Network (ensemble)":
