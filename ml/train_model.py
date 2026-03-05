@@ -125,7 +125,9 @@ def build_normalization(n_inputs, X_train, n_outputs, y_train):
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_normalization = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    output_normalization = AffineInputTransform(
+        n_outputs, coefficient=y_std, offset=y_mean
+    )
     return input_normalization, output_normalization
 
 
@@ -208,6 +210,7 @@ def train_calibration_phase(
 
     # Build a predict callable that abstracts the NN vs GP difference
     if model_type == "GP":
+
         def predict_fn(x):
             return model.posterior(x.double()).mean.float().to(device)
     else:
@@ -461,7 +464,11 @@ if __name__ == "__main__":
 
     # Normalize data
     norm_sim_train = normalize(
-        df_sim_train, input_names, input_normalization, output_names, output_normalization
+        df_sim_train,
+        input_names,
+        input_normalization,
+        output_names,
+        output_normalization,
     )
     norm_exp = None
     if len(df_exp) > 0:
@@ -471,7 +478,11 @@ if __name__ == "__main__":
     if model_type != "GP":
         # Single NN and ensemble of NNs
         norm_sim_val = normalize(
-            df_sim_val, input_names, input_normalization, output_names, output_normalization
+            df_sim_val,
+            input_names,
+            input_normalization,
+            output_names,
+            output_normalization,
         )
 
     # Phase 1: Train model on simulation data
