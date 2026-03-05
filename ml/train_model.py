@@ -219,12 +219,9 @@ def train_calibration_phase(
 
     # Build a predict callable that abstracts the NN vs GP difference
     if model_type == "GP":
-        gp_model.eval()
-
         def predict_fn(x):
             return gp_model.posterior(x.double()).mean.float().to(device)
     else:
-        model.eval()
         predict_fn = model
 
     print(f"Phase 2: Training calibration on {len(exp_X)} experimental data points")
