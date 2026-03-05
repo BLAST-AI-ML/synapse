@@ -239,14 +239,6 @@ def build_lume_model(
             for k in output_variables.keys()
         ]
 
-    # Define calibration transform
-    if model_type in ["NN", "ensemble_NN"]:
-        calibration_transform = AffineInputTransform(
-            len(output_vars),
-            coefficient=model.sim_to_exp_calibration_weight.clone().detach().cpu(),
-            offset=model.sim_to_exp_calibration_bias.clone().detach().cpu(),
-        )
-
     if model_type == "GP":
         return GPModel(
             model=model.cpu(),
@@ -259,6 +251,13 @@ def build_lume_model(
         # model is an ensemble list of NNs
         torch_models = []
         for model_nn in model:
+
+            calibration_transform = AffineInputTransform(
+                len(output_vars),
+                coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
+                offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
+            )
+
             torch_models.append(
                 TorchModel(
                     model=model_nn,
@@ -486,7 +485,6 @@ if __name__ == "__main__":
             output_variables,
             input_transform,
             output_transform,
-            output_names,
         )
         end_time = time.time()
 
@@ -514,7 +512,6 @@ if __name__ == "__main__":
             output_variables,
             input_transform,
             output_transform,
-            output_names,
         )
 
     if test_mode:
