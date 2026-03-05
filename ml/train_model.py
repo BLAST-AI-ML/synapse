@@ -240,6 +240,7 @@ def build_lume_model(
         ]
 
     # Create lume-model objects
+    # Create lume-model objects
     if model_type == "GP":
         return GPModel(
             model=model.cpu(),
