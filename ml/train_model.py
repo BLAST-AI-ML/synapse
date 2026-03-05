@@ -247,7 +247,9 @@ def build_lume_model(
         for model_nn in model:
             calibration_transform = AffineInputTransform(
                 len(output_names),
-                coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
+                coefficient=model_nn.sim_to_exp_calibration_weight.clone()
+                .detach()
+                .cpu(),
                 offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
             )
             torch_models.append(
