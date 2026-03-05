@@ -515,13 +515,13 @@ if __name__ == "__main__":
     model = None
     calibration_transform = None
 
-    ######################################################
-    # Phase 1: Train model on simulation data only
-    ######################################################
     if model_type != "GP":
+        # Single NN and ensemble of NNs
+
         norm_sim_val = normalize(
             df_sim_val, input_names, input_transform, output_names, output_transform
         )
+
         print("Phase 1: Training NN on simulation data")
         NN_start_time = time.time()
         ensemble = train_nn_ensemble(
@@ -534,9 +534,6 @@ if __name__ == "__main__":
         )
         print("Phase 1: NN training complete")
 
-        ######################################################
-        # Phase 2: Train calibration on experimental data
-        ######################################################
         if norm_exp is not None and len(norm_exp) > 0:
             print("Phase 2: Training calibration on experimental data")
             calibration_transform = train_calibration_phase(
@@ -571,10 +568,9 @@ if __name__ == "__main__":
         print(f"Data prep time taken: {data_time:.2f} seconds")
         print(f"NN time taken: {NN_time:.2f} seconds")
 
-    ###############################################################
-    # GP: Phase 1 (training) + Phase 2 (calibration)
-    ###############################################################
     else:
+        # GP
+
         print("Phase 1: Training GP on simulation data")
         combined_gp = train_gp(
             norm_sim_train,
