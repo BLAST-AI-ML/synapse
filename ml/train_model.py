@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # ruff: noqa: E402
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
-## using simulation and experimental data from MongoDB and saves trained models back to the database
+## using simulation and experimental data from MongoDB and saves trained models back to MLflow
 ##
 ## Training is done in two phases:
 ##   Phase 1: Train the model (NN or GP) on simulation data only (in normalized space)
@@ -11,17 +11,16 @@ import time
 import_start_time = time.time()
 
 import copy
-import tempfile
 import argparse
+import os
 import torch
 from botorch.models.transforms.input import AffineInputTransform
 from botorch.models import SingleTaskGP, ModelListGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
-import os
-import re
 import yaml
+import mlflow
 from lume_model.models import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
@@ -88,19 +87,15 @@ def load_config(config_file):
 
 
 def connect_to_db(config_dict):
-    # Connect to the MongoDB database with read-write access
+    # Connect to the MongoDB database with read-only access
     db_host = config_dict["database"]["host"]
     db_name = config_dict["database"]["name"]
     db_auth = config_dict["database"]["auth"]
-    db_username = config_dict["database"]["username_rw"]
-    db_password_env = config_dict["database"]["password_rw_env"]
-    # Look for the password in the profile file
-    with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
-        db_profile = f.read()
-    match = re.search(f"{db_password_env}='([^']*)'", db_profile)
-    if not match:
-        raise RuntimeError(f"Environment variable {db_password_env} must be set")
-    db_password = match.group(1)
+    db_username = config_dict["database"]["username_ro"]
+    db_password_env = config_dict["database"]["password_ro_env"]
+    db_password = os.getenv(db_password_env)
+    if db_password is None:
+        raise RuntimeError(f"Environment variable {db_password_env} must be set!")
     return pymongo.MongoClient(
         host=db_host,
         authSource=db_auth,
@@ -377,67 +372,79 @@ def build_lume_gp_model(
     )
 
 
-def write_model(model, model_type, experiment, db):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        if model_type != "GP":
-            model.dump(file=os.path.join(temp_dir, experiment + ".yml"), save_jit=True)
+def enable_amsc_x_api_key(config_dict):
+    """
+    MLflow authentication helper for the AmSC MLflow server.
+    Standard MLflow does not automatically inject custom headers like 'X-Api-Key'.
+    This patches the http_request function to ensure every request to the server
+    includes the AmSC API key.
+
+    See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
+    """
+    import mlflow.utils.rest_utils as rest_utils
+
+    mlflow_cfg = config_dict.get("mlflow") if config_dict is not None else None
+    if not isinstance(mlflow_cfg, dict):
+        raise KeyError(
+            "Missing 'mlflow' configuration section required for AmSC MLFlow authentication."
+        )
+
+    api_key_env = mlflow_cfg.get("api_key_env")
+    if not api_key_env:
+        raise KeyError(
+            "Missing 'api_key_env' in 'mlflow' configuration. "
+            "Please specify the name of the environment variable containing the AmSC API key."
+        )
+
+    api_key = os.getenv(api_key_env)
+    if api_key is None:
+        raise KeyError(
+            f"The environment variable '{api_key_env}' specified in 'mlflow.api_key_env' "
+            "is not set. Please export it with the AmSC MLFlow API key."
+        )
+    _orig = rest_utils.http_request
+
+    def patched(host_creds, endpoint, method, *args, **kwargs):
+        if "headers" in kwargs and kwargs["headers"] is not None:
+            h = dict(kwargs["headers"])
+            h["X-Api-Key"] = api_key
+            kwargs["headers"] = h
         else:
-            model.dump(
-                file=os.path.join(temp_dir, experiment + ".yml"), save_models=True
-            )
-        # Upload the model to the database
-        # - Load the files that were just created into a dictionary
-        with open(os.path.join(temp_dir, experiment + ".yml")) as f:
-            yaml_file_content = f.read()
-        document = {
-            "experiment": experiment,
-            "model_type": model_type,
-            "yaml_file_content": yaml_file_content,
-        }
-        # Extract list of files to upload
-        files_to_upload = []
-        if model_type == "ensemble_NN":
-            models_info = yaml.safe_load(yaml_file_content)
-            for model in models_info["models"]:
-                yaml_file_name = model.replace("_model.jit", ".yml")
-                files_to_upload.append(yaml_file_name)
-                with open(os.path.join(temp_dir, yaml_file_name)) as f:
-                    model_info = yaml.safe_load(f.read())
-                # Extract files to upload
-                files_to_upload += (
-                    [model_info["model"]]
-                    + model_info["input_transformers"]
-                    + model_info["output_transformers"]
-                )
-        else:
-            # Extract files to upload
-            model_info = yaml.safe_load(yaml_file_content)
-            files_to_upload += (
-                [model_info["model"]]
-                + model_info["input_transformers"]
-                + model_info["output_transformers"]
-            )
-        # Upload all the files that define the model(s)
-        for filename in files_to_upload:
-            with open(os.path.join(temp_dir, filename), "rb") as f:
-                document[filename] = f.read()
-        # - Check whether there is already a model in the database
-        query = {"experiment": experiment, "model_type": model_type}
-        count = db["models"].count_documents(query)
-        # - Upload/replace the model in the database
-        if count > 1:
-            print(
-                f"Multiple models found for experiment: {experiment} and model type: {model_type}! Removing them."
-            )
-            db["models"].delete_many(query)
-        elif count == 1:
-            print(
-                f"Model already exists for experiment: {experiment} and model type: {model_type}! Removing it."
-            )
-            db["models"].delete_one(query)
-        print("Uploading new model to database")
-        db["models"].insert_one(document)
-        print("Model uploaded to database")
+            h = dict(kwargs.get("extra_headers") or {})
+            h["X-Api-Key"] = api_key
+            kwargs["extra_headers"] = h
+        return _orig(host_creds, endpoint, method, *args, **kwargs)
+
+    rest_utils.http_request = patched
+
+
+def register_model_to_mlflow(model, model_type, experiment, config_dict):
+    """Register the trained model to MLflow (tracking URI from config)."""
+    tracking_uri = config_dict["mlflow"]["tracking_uri"]
+    model_name = f"{experiment}_{model_type}"
+
+    try:
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment(experiment)
+
+        model.register_to_mlflow(
+            artifact_path=f"{model_name}_run",
+            registered_model_name=model_name,
+            code_paths=["Neural_Net_Classes.py"],
+            log_model_dump=False,
+        )
+        print(f"Model registered to MLflow as {model_name}")
+    except Exception as e:
+        print(
+            f"Failed to register model '{model_name}' to MLflow.\n"
+            f"Tracking URI: {tracking_uri}\n"
+            f"Experiment: {experiment}\n"
+            f"Error: {e}"
+        )
+        raise RuntimeError(
+            f"MLflow registration failed for model '{model_name}' "
+            f"using tracking URI '{tracking_uri}' and experiment '{experiment}'."
+        ) from e
 
 
 # Main execution block
@@ -460,6 +467,15 @@ if __name__ == "__main__":
     date_filter = config_dict.get("date_filter", {})
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
+
+    # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
+    # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
+    if (
+        "mlflow" in config_dict
+        and config_dict["mlflow"].get("tracking_uri")
+        == "https://mlflow.american-science-cloud.org"
+    ):
+        enable_amsc_x_api_key(config_dict)
 
     # Apply simulation calibration to the simulation data
     if "simulation_calibration" in config_dict:
@@ -598,7 +614,12 @@ if __name__ == "__main__":
             output_names,
         )
 
-    if not test_mode:
-        write_model(model, model_type, experiment, db)
+    if test_mode:
+        print("Test mode enabled: Skipping writing trained model to MLflow")
+    elif "mlflow" in config_dict and config_dict["mlflow"].get("tracking_uri"):
+        register_model_to_mlflow(model, model_type, experiment, config_dict)
     else:
-        print("Test mode enabled: Skipping writing trained model to database")
+        print(
+            f"No mlflow.tracking_uri in configuration file for {experiment}; model not registered. "
+            "Add an mlflow section with tracking_uri to store models in MLflow."
+        )
