@@ -99,11 +99,11 @@ def connect_to_db(config_dict):
     )[db_name]
 
 
-def normalize(df, input_names, input_transform, output_names, output_transform):
+def normalize(df, input_names, input_normalization, output_names, output_normalization):
     # Apply normalization to the training data set
     norm_df = df.copy()
-    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
-    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
+    norm_df[input_names] = input_normalization(torch.tensor(df[input_names].values))
+    norm_df[output_names] = output_normalization(torch.tensor(df[output_names].values))
     return norm_df
 
 
@@ -118,15 +118,15 @@ def split_data(df, variables, model_type):
         return (train_df[variables], val_df[variables])
 
 
-def build_transforms(n_inputs, X_train, n_outputs, y_train):
-    input_transform = AffineInputTransform(
+def build_normalization(n_inputs, X_train, n_outputs, y_train):
+    input_normalization = AffineInputTransform(
         n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
-    return input_transform, output_transform
+    output_normalization = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    return input_normalization, output_normalization
 
 
 def train_nn_ensemble(
@@ -458,7 +458,7 @@ if __name__ == "__main__":
         df_all = df_sim[variables]
     X_all = torch.tensor(df_all[input_names].values, dtype=torch.float)
     y_all = torch.tensor(df_all[output_names].values, dtype=torch.float)
-    input_transform, output_transform = build_transforms(
+    input_normalization, output_normalization = build_normalization(
         len(input_names), X_all, len(output_names), y_all
     )
 
@@ -468,14 +468,14 @@ if __name__ == "__main__":
 
     # Normalize simulation data
     norm_sim_train = normalize(
-        df_sim_train, input_names, input_transform, output_names, output_transform
+        df_sim_train, input_names, input_normalization, output_names, output_normalization
     )
 
     # Normalize experimental data for Phase 2 (if available)
     norm_exp = None
     if len(df_exp) > 0:
         norm_exp = normalize(
-            df_exp, input_names, input_transform, output_names, output_transform
+            df_exp, input_names, input_normalization, output_names, output_normalization
         )
 
     model = None
@@ -485,7 +485,7 @@ if __name__ == "__main__":
         # Single NN and ensemble of NNs
 
         norm_sim_val = normalize(
-            df_sim_val, input_names, input_transform, output_names, output_transform
+            df_sim_val, input_names, input_normalization, output_names, output_normalization
         )
 
         print("Phase 1: Training NN on simulation data")
@@ -520,8 +520,8 @@ if __name__ == "__main__":
             model_type,
             input_variables,
             output_variables,
-            [input_transform],
-            [calibration_transform, output_transform],
+            [input_normalization],
+            [calibration_transform, output_normalization],
         )
         end_time = time.time()
 
@@ -565,8 +565,8 @@ if __name__ == "__main__":
             model_type,
             input_variables,
             output_variables,
-            [input_transform],
-            [calibration_transform, output_transform],
+            [input_normalization],
+            [calibration_transform, output_normalization],
         )
 
     if test_mode:
