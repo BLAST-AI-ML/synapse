@@ -319,7 +319,6 @@ def train_gp(norm_df_train, input_names, output_names, device):
             covar_module=ScaleKernel(MaternKernel(nu=1.5)),
             outcome_transform=None,
         ).to(device)
-
         gp_models.append(gp_model)
 
     combined_gp = ModelListGP(*gp_models)

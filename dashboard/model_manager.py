@@ -148,19 +148,10 @@ class ModelManager:
                 mean = output_dict[output]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
             elif self.__is_gaussian_process or self.__is_neural_network_ensemble:
-                if self.__is_gaussian_process:
-                    # TODO use "exp" only once experimental data is available for all experiments
-                    task_tag = "exp" if state.experiment == "bella-ip2" else "sim"
-                    output_key = [key for key in output_dict.keys() if task_tag in key][
-                        0
-                    ]
-                elif self.__is_neural_network_ensemble:
-                    output_key = list(output_dict.keys())[0]
-
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
-                mean = output_dict[output_key].mean.detach()
-                std_dev = output_dict[output_key].variance.sqrt().detach()
+                mean = output_dict[output].mean.detach()
+                std_dev = output_dict[output].variance.sqrt().detach()
                 mean_error = 2.0 * std_dev
             else:
                 raise ValueError(f"Unsupported model type: {state.model_type}")
