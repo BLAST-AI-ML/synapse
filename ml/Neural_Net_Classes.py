@@ -175,33 +175,3 @@ class CombinedNN(nn.Module):
                     f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}'
                 )
                 break
-
-    def predict_sim(self, inputs):
-        """
-        args:
-            tensor inputs
-        returns:
-            numpy array with predictions
-        """
-        inputs = inputs.to(torch.float32)
-        self.eval()
-        with torch.no_grad():
-            output = self(inputs)
-            predictions = output.detach().numpy()
-
-        return predictions
-
-    def predict_exp(self, inputs):
-        """
-        args:
-            tensor inputs
-        returns:
-            numpy array with predictions
-        """
-        inputs = inputs.to(torch.float32)
-        self.eval()
-        with torch.no_grad():
-            output = self.calibrate(self(inputs))
-            predictions = output.detach().numpy()
-
-        return predictions
