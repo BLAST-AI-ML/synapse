@@ -229,13 +229,13 @@ def build_lume_model(
     # Define lume-model input and output variables
     input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
     output_vars = [
-        ScalarVariable(**output_variables[k])
-        for k in output_variables.keys()
+        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
     ]
     if model_type in ["GP", "ensemble_NN"]:
         distribution_output_vars = [
-            DistributionVariable(**output_variables[k],
-            distribution_type="MultiVariateNormal")
+            DistributionVariable(
+                **output_variables[k], distribution_type="MultiVariateNormal"
+            )
             for k in output_variables.keys()
         ]
 
@@ -284,9 +284,7 @@ def build_lume_model(
             )
 
 
-def train_gp(
-    norm_df_train, input_names, output_names, device
-):
+def train_gp(norm_df_train, input_names, output_names, device):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
