@@ -182,7 +182,9 @@ def train_calibration(
     output_cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
     output_cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
 
-    optimizer = optim.Adam([input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias], lr=lr)
+    optimizer = optim.Adam(
+        [input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias], lr=lr
+    )
     scheduler = ReduceLROnPlateau(
         optimizer, "min", factor=0.5, patience=200, threshold=1e-4
     )
@@ -214,4 +216,9 @@ def train_calibration(
             )
             break
 
-    return input_cal_weight.detach(), input_cal_bias.detach(), output_cal_weight.detach(), output_cal_bias.detach()
+    return (
+        input_cal_weight.detach(),
+        input_cal_bias.detach(),
+        output_cal_weight.detach(),
+        output_cal_bias.detach(),
+    )
