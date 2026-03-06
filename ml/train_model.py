@@ -215,7 +215,9 @@ def train_calibration_phase(
         def predict_fn(x):
             return model.posterior(x.double()).mean.float().to(device)
     else:
-        predict_fn = model.forward
+
+        def predict_fn(x):
+            return torch.stack([m.forward(x) for m in model]).mean(dim=0)
 
     # Train calibration
     input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
