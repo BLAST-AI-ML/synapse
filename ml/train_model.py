@@ -211,11 +211,10 @@ def train_calibration_phase(
 
     # Build a predict callable that abstracts the NN vs GP difference
     if model_type == "GP":
-
         def predict_fn(x):
             return model.posterior(x.double()).mean.float().to(device)
     else:
-        predict_fn = model
+        predict_fn = model.forward
 
     # Train calibration
     input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = train_calibration(
@@ -510,7 +509,7 @@ if __name__ == "__main__":
             output_names,
             device,
         )
-    print("Phase 1: GP training complete")
+    print("Phase 1: training complete")
 
     # Phase 2: Train calibration on experimental data
     if norm_exp is not None and len(norm_exp) > 0:
