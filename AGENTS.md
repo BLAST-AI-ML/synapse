@@ -36,6 +36,9 @@ conda activate synapse-ml
 python ml/train_model.py --test --model NN --config_file config.yaml
 ```
 
+### Testing ML Models End-to-End
+Use the `/test-ml` skill (defined in `.claude/skills/test-ml/`) to train models, populate MLflow, and verify they load and evaluate correctly. It handles pre-flight checks (conda env, DB, MLflow server), parallel training, and validation.
+
 ### Docker
 ```bash
 # Build
