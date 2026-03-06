@@ -219,9 +219,7 @@ def train_calibration_phase(
 
     # Train calibration
     input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
-        train_calibration(
-            predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001
-        )
+        train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
     )
 
     # Build calibration transforms
