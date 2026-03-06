@@ -218,8 +218,10 @@ def train_calibration_phase(
         predict_fn = model
 
     # Train calibration
-    input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = train_calibration(
-        predict_fn, exp_X, exp_y, n_outputs, num_epochs=5000, lr=0.001
+    input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
+        train_calibration(
+            predict_fn, exp_X, exp_y, n_outputs, num_epochs=5000, lr=0.001
+        )
     )
 
     # Build calibration transforms
@@ -234,6 +236,7 @@ def train_calibration_phase(
         offset=output_cal_bias.cpu(),
     )
     return input_calibration_transform, output_calibration_transform
+
 
 def build_lume_model(
     model,
