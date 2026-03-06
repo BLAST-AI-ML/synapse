@@ -176,10 +176,13 @@ def train_calibration(
     Returns:
         (cal_weight, cal_bias) as detached tensors
     """
-    cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
-    cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
 
-    optimizer = optim.Adam([cal_weight, cal_bias], lr=lr)
+    input_cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
+    input_cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
+    output_cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
+    output_cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
+
+    optimizer = optim.Adam([input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias], lr=lr)
     scheduler = ReduceLROnPlateau(
         optimizer, "min", factor=0.5, patience=200, threshold=1e-4
     )
@@ -187,10 +190,12 @@ def train_calibration(
 
     for epoch in range(num_epochs):
         optimizer.zero_grad()
-        with torch.no_grad():
-            base_predictions = model(exp_inputs)
-        calibrated = cal_weight * base_predictions + cal_bias
-        loss = nan_mse_loss(exp_targets, calibrated)
+
+        calibrated_inputs = input_cal_weight * exp_inputs + input_cal_bias
+        base_predictions = model(calibrated_inputs)
+        calibrated_outputs = output_cal_weight * base_predictions + output_cal_bias
+
+        loss = nan_mse_loss(exp_targets, calibrated_outputs)
         loss.backward()
         optimizer.step()
 
@@ -209,7 +214,4 @@ def train_calibration(
             )
             break
 
-    print(f"Learned calibration weight: {cal_weight.data}")
-    print(f"Learned calibration bias: {cal_bias.data}")
-
-    return cal_weight.detach(), cal_bias.detach()
+    return input_cal_weight.detach(), input_cal_bias.detach(), output_cal_weight.detach(), output_cal_bias.detach()
