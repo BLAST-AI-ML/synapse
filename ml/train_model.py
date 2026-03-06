@@ -198,8 +198,6 @@ def train_calibration_phase(
 
     Returns an AffineInputTransform representing the learned calibration.
     """
-    n_inputs = len(input_names)
-    n_outputs = len(output_names)
     exp_X = torch.tensor(
         norm_exp_df[input_names].values,
         dtype=torch.float,
@@ -222,18 +220,18 @@ def train_calibration_phase(
     # Train calibration
     input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
         train_calibration(
-            predict_fn, exp_X, exp_y, n_outputs, num_epochs=5000, lr=0.001
+            predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001
         )
     )
 
     # Build calibration transforms
     input_calibration_transform = AffineInputTransform(
-        n_inputs,
+        len(input_names),
         coefficient=input_cal_weight.cpu(),
         offset=input_cal_bias.cpu(),
     )
     output_calibration_transform = AffineInputTransform(
-        n_outputs,
+        len(output_names),
         coefficient=output_cal_weight.cpu(),
         offset=output_cal_bias.cpu(),
     )

@@ -155,7 +155,6 @@ def train_calibration(
     model,
     exp_inputs,
     exp_targets,
-    n_outputs,
     num_epochs=5000,
     lr=0.001,
 ):
@@ -176,9 +175,11 @@ def train_calibration(
     Returns:
         (cal_weight, cal_bias) as detached tensors
     """
+    n_outputs = exp_targets.shape[1]
+    n_inputs = exp_inputs.shape[1]
 
-    input_cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
-    input_cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
+    input_cal_weight = nn.Parameter(torch.ones(n_inputs, dtype=exp_inputs.dtype))
+    input_cal_bias = nn.Parameter(torch.zeros(n_inputs, dtype=exp_inputs.dtype))
     output_cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype))
     output_cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype))
 
