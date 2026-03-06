@@ -116,11 +116,7 @@ def download_model(config_dict, model_type):
     print(f"Downloading model '{model_uri}' ...")
 
     # Same download command as in the dashboard (model_manager.py)
-    model = (
-        mlflow.pyfunc.load_model(model_uri)
-        .unwrap_python_model()
-        .model
-    )
+    model = mlflow.pyfunc.load_model(model_uri).unwrap_python_model().model
     print(f"Model downloaded successfully: {type(model).__name__}")
     return model
 
@@ -128,11 +124,9 @@ def download_model(config_dict, model_type):
 def build_default_inputs(config_dict):
     """Build an input dict using the default value for each input variable."""
     import torch
+
     input_variables = config_dict["inputs"]
-    return {
-        v["name"]: torch.tensor([v["default"]])
-        for v in input_variables.values()
-    }
+    return {v["name"]: torch.tensor([v["default"]]) for v in input_variables.values()}
 
 
 def check_evaluate(model, config_dict):
