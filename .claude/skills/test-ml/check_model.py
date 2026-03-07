@@ -11,9 +11,17 @@ import argparse
 import os
 import socket
 import sys
+from pathlib import Path
 from urllib.parse import urlparse
+import pandas as pd
+import torch
 import yaml
 import mlflow
+
+# Import DB connection helper from train_model.py
+_ML_DIR = Path(__file__).resolve().parents[3] / "ml"
+sys.path.insert(0, str(_ML_DIR))
+from train_model import connect_to_db
 
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
@@ -116,26 +124,46 @@ def download_model(config_dict, model_type):
     print(f"Downloading model '{model_uri}' ...")
 
     # Same download command as in the dashboard (model_manager.py)
-    model = mlflow.pyfunc.load_model(model_uri).unwrap_python_model().model
+    model = (
+        mlflow.pyfunc.load_model(model_uri)
+        .unwrap_python_model()
+        .model
+    )
     print(f"Model downloaded successfully: {type(model).__name__}")
     return model
 
 
-def build_default_inputs(config_dict):
-    """Build an input dict using the default value for each input variable."""
-    import torch
-
+def load_experimental_inputs(config_dict):
+    """Fetch all experimental points from the database and return as a batch input dict."""
+    experiment = config_dict["experiment"]
     input_variables = config_dict["inputs"]
-    return {v["name"]: torch.tensor([v["default"]]) for v in input_variables.values()}
+    input_names = [v["name"] for v in input_variables.values()]
+
+    db = connect_to_db(config_dict)
+    date_filter = config_dict.get("date_filter", {})
+    df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
+
+    if df_exp.empty:
+        raise RuntimeError("No experimental points found in the database.")
+
+    missing = [name for name in input_names if name not in df_exp.columns]
+    if missing:
+        raise RuntimeError(f"Missing input columns in experimental data: {missing}")
+
+    print(f"Fetched {len(df_exp)} experimental points from the database.")
+    return {
+        name: torch.tensor(df_exp[name].values, dtype=torch.float64)
+        for name in input_names
+    }
 
 
 def check_evaluate(model, config_dict):
-    """Call evaluate() with default input values from the config."""
-    default_inputs = build_default_inputs(config_dict)
-    print(f"Calling model.evaluate() with default parameters: {default_inputs}")
-    result = model.evaluate(default_inputs)
+    """Call evaluate() with experimental data fetched from the database."""
+    inputs = load_experimental_inputs(config_dict)
+    print(f"Calling model.evaluate() with {len(next(iter(inputs.values())))} experimental points...")
+    result = model.evaluate(inputs)
     print("evaluate() succeeded.")
-    print(f"Output: {result}")
+    print(f"Output keys: {list(result.keys())}")
     return result
 
 
