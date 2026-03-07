@@ -425,7 +425,6 @@ if __name__ == "__main__":
     input_names = [v["name"] for v in input_variables.values()]
     output_variables = config_dict["outputs"]
     output_names = [v["name"] for v in output_variables.values()]
-    n_outputs = len(output_names)
 
     # Extract experimental and simulation data from the database as pandas dataframe
     db = connect_to_db(config_dict)
@@ -442,53 +441,116 @@ if __name__ == "__main__":
     ):
         enable_amsc_x_api_key(config_dict)
 
-    # Apply simulation calibration to the simulation data
-    if "simulation_calibration" in config_dict:
-        simulation_calibration = config_dict["simulation_calibration"]
-    else:
-        simulation_calibration = {}
-    for value in simulation_calibration.values():
-        sim_name = value["name"]
-        exp_name = value["depends_on"]
-        df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
+    # Build simulation variable name mappings and alpha/beta vectors
+    simulation_calibration = config_dict.get("simulation_calibration", {})
+    n_inputs = len(input_names)
+    n_outputs = len(output_names)
 
-    # Apply normalization to the training data
-    # Build normalization transforms from ALL data (sim + exp) for consistent ranges
-    variables = input_names + output_names
+    # Build sim variable names and per-dimension alpha/beta for inputs
+    sim_input_names = []
+    alpha_input_list = []
+    beta_input_list = []
+    for key in input_variables:
+        if key in simulation_calibration:
+            sim_input_names.append(simulation_calibration[key]["name"])
+            alpha_input_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_input_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_input_names.append(input_variables[key]["name"])
+            alpha_input_list.append(1.0)
+            beta_input_list.append(0.0)
+
+    # Build sim variable names and per-dimension alpha/beta for outputs
+    sim_output_names = []
+    alpha_output_list = []
+    beta_output_list = []
+    for key in output_variables:
+        if key in simulation_calibration:
+            sim_output_names.append(simulation_calibration[key]["name"])
+            alpha_output_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_output_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_output_names.append(output_variables[key]["name"])
+            alpha_output_list.append(1.0)
+            beta_output_list.append(0.0)
+
+    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
+    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
+    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
+    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
+
+    # Build exp-to-sim and sim-to-exp AffineInputTransforms
+    # exp_to_sim: sim = alpha * (exp - beta), i.e. AffineInputTransform with
+    #   coefficient=1/alpha, offset=beta  =>  (exp - beta) / (1/alpha) = alpha*(exp-beta)
+    exp_to_sim_input = AffineInputTransform(
+        n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
+    )
+    exp_to_sim_output = AffineInputTransform(
+        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
+    )
+    # sim_to_exp: exp = sim / alpha + beta
+    # lume-model calls untransform() on output transformers:
+    #   untransform(X) = coefficient * X + offset = (1/alpha) * X + beta = X/alpha + beta
+    sim_to_exp_output = AffineInputTransform(
+        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
+    )
+
+    # Convert experimental data to simulation variable space
     if len(df_exp) > 0:
-        df_all = pd.concat((df_exp[variables], df_sim[variables]))
+        df_exp[sim_input_names] = (
+            exp_to_sim_input(
+                torch.tensor(df_exp[input_names].values, dtype=torch.float)
+            )
+            .detach()
+            .numpy()
+        )
+        df_exp[sim_output_names] = (
+            exp_to_sim_output(
+                torch.tensor(df_exp[output_names].values, dtype=torch.float)
+            )
+            .detach()
+            .numpy()
+        )
+
+    # Build normalization transforms in simulation variable space
+    sim_variables = sim_input_names + sim_output_names
+    if len(df_exp) > 0:
+        df_all = pd.concat((df_exp[sim_variables], df_sim[sim_variables]))
     else:
-        df_all = df_sim[variables]
-    X_all = torch.tensor(df_all[input_names].values, dtype=torch.float)
-    y_all = torch.tensor(df_all[output_names].values, dtype=torch.float)
+        df_all = df_sim[sim_variables]
+    X_all = torch.tensor(df_all[sim_input_names].values, dtype=torch.float)
+    y_all = torch.tensor(df_all[sim_output_names].values, dtype=torch.float)
     input_normalization, output_normalization = build_normalization(
-        len(input_names), X_all, len(output_names), y_all
+        n_inputs, X_all, n_outputs, y_all
     )
 
     # Split simulation data for Phase 1
-    sim_variables = input_names + output_names
     df_sim_train, df_sim_val = split_data(df_sim, sim_variables, model_type)
 
     # Normalize data
     norm_sim_train = normalize(
         df_sim_train,
-        input_names,
+        sim_input_names,
         input_normalization,
-        output_names,
+        sim_output_names,
         output_normalization,
     )
     norm_exp = None
     if len(df_exp) > 0:
         norm_exp = normalize(
-            df_exp, input_names, input_normalization, output_names, output_normalization
+            df_exp,
+            sim_input_names,
+            input_normalization,
+            sim_output_names,
+            output_normalization,
         )
     if model_type != "GP":
         # Single NN and ensemble of NNs
         norm_sim_val = normalize(
             df_sim_val,
-            input_names,
+            sim_input_names,
             input_normalization,
-            output_names,
+            sim_output_names,
             output_normalization,
         )
 
@@ -500,15 +562,15 @@ if __name__ == "__main__":
             model_type,
             norm_sim_train,
             norm_sim_val,
-            input_names,
-            output_names,
+            sim_input_names,
+            sim_output_names,
             device,
         )
     else:
         trained_model = train_gp(
             norm_sim_train,
-            input_names,
-            output_names,
+            sim_input_names,
+            sim_output_names,
             device,
         )
     print("Phase 1: training complete")
@@ -520,16 +582,20 @@ if __name__ == "__main__":
             trained_model,
             model_type,
             norm_exp,
-            input_names,
-            output_names,
+            sim_input_names,
+            sim_output_names,
             device,
         )
-        input_transformers = [input_normalization, input_calibration]
-        output_transformers = [output_calibration, output_normalization]
+        input_transformers = [exp_to_sim_input, input_normalization, input_calibration]
+        output_transformers = [
+            output_calibration,
+            output_normalization,
+            sim_to_exp_output,
+        ]
         print("Phase 2: Calibration training complete")
     else:
-        input_transformers = [input_normalization]
-        output_transformers = [output_normalization]
+        input_transformers = [exp_to_sim_input, input_normalization]
+        output_transformers = [output_normalization, sim_to_exp_output]
         print("Phase 2: No experimental data available, skipping calibration")
 
     # Build LUME model
