@@ -223,17 +223,17 @@ def train_calibration_phase(
     )
 
     # Build calibration transforms
-    input_calibration_transform = AffineInputTransform(
+    input_inferred_normalizedcalibration = AffineInputTransform(
         len(input_names),
         coefficient=input_cal_weight.cpu(),
         offset=input_cal_bias.cpu(),
     )
-    output_calibration_transform = AffineInputTransform(
+    output_inferred_normalizedcalibration = AffineInputTransform(
         len(output_names),
         coefficient=output_cal_weight.cpu(),
         offset=output_cal_bias.cpu(),
     )
-    return input_calibration_transform, output_calibration_transform
+    return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
 
 
 def build_lume_model(
@@ -482,30 +482,24 @@ if __name__ == "__main__":
     # Build exp-to-sim and sim-to-exp AffineInputTransforms
     # exp_to_sim: sim = alpha * (exp - beta), i.e. AffineInputTransform with
     #   coefficient=1/alpha, offset=beta  =>  (exp - beta) / (1/alpha) = alpha*(exp-beta)
-    exp_to_sim_input = AffineInputTransform(
+    input_guess_calibration = AffineInputTransform(
         n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
     )
-    exp_to_sim_output = AffineInputTransform(
-        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
-    )
-    # sim_to_exp: exp = sim / alpha + beta
-    # lume-model calls untransform() on output transformers:
-    #   untransform(X) = coefficient * X + offset = (1/alpha) * X + beta = X/alpha + beta
-    sim_to_exp_output = AffineInputTransform(
+    output_guess_calibration = AffineInputTransform(
         n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
     )
 
     # Convert experimental data to simulation variable space
     if len(df_exp) > 0:
         df_exp[sim_input_names] = (
-            exp_to_sim_input(
+            input_guess_calibration(
                 torch.tensor(df_exp[input_names].values, dtype=torch.float)
             )
             .detach()
             .numpy()
         )
         df_exp[sim_output_names] = (
-            exp_to_sim_output(
+            output_guess_calibration(
                 torch.tensor(df_exp[output_names].values, dtype=torch.float)
             )
             .detach()
@@ -578,7 +572,7 @@ if __name__ == "__main__":
     # Phase 2: Train calibration on experimental data
     if norm_exp is not None and len(norm_exp) > 0:
         print("Phase 2: Training calibration on experimental data")
-        input_calibration, output_calibration = train_calibration_phase(
+        input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = train_calibration_phase(
             trained_model,
             model_type,
             norm_exp,
@@ -586,16 +580,20 @@ if __name__ == "__main__":
             sim_output_names,
             device,
         )
-        input_transformers = [exp_to_sim_input, input_normalization, input_calibration]
+        input_transformers = [
+            input_guess_calibration,
+            input_normalization,
+            input_inferred_normalizedcalibration,
+        ]
         output_transformers = [
-            output_calibration,
+            output_inferred_normalizedcalibration,
             output_normalization,
-            sim_to_exp_output,
+            output_guess_calibration,
         ]
         print("Phase 2: Calibration training complete")
     else:
-        input_transformers = [exp_to_sim_input, input_normalization]
-        output_transformers = [output_normalization, sim_to_exp_output]
+        input_transformers = [input_guess_calibration, input_normalization]
+        output_transformers = [output_normalization, output_guess_calibration]
         print("Phase 2: No experimental data available, skipping calibration")
 
     # Build LUME model
