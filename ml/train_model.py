@@ -276,7 +276,7 @@ def build_lume_model(
         for model_nn in model:
             torch_models.append(
                 TorchModel(
-                    model=model_nn,
+                    model=model_nn.cpu(),
                     input_variables=input_vars,
                     output_variables=output_vars,
                     input_transformers=input_transformers,

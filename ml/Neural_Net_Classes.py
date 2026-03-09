@@ -87,16 +87,11 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
-        # Use custom loss function instead of nn.MSELoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-        self.scheduler = ReduceLROnPlateau(
-            self.optimizer,
-            "min",
-            factor=factor,
-            patience=patience_LRreduction,
-            threshold=threshold,
-        )
-        self.early_stopper = EarlyStopping(patience=patience_earlystopping)
+        self.learning_rate = learning_rate
+        self.patience_LRreduction = patience_LRreduction
+        self.patience_earlystopping = patience_earlystopping
+        self.factor = factor
+        self.threshold = threshold
 
     def forward(self, x):
         """
@@ -122,17 +117,27 @@ class CombinedNN(nn.Module):
         val_targets,
         num_epochs=1500,
     ):
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        scheduler = ReduceLROnPlateau(
+            optimizer,
+            "min",
+            factor=self.factor,
+            patience=self.patience_LRreduction,
+            threshold=self.threshold,
+        )
+        early_stopper = EarlyStopping(patience=self.patience_earlystopping)
+
         for epoch in range(num_epochs):
-            self.optimizer.zero_grad()
+            optimizer.zero_grad()
 
             outputs = self(train_inputs)
             loss = nan_mse_loss(train_targets, outputs)
             loss.backward()
 
-            self.optimizer.step()
+            optimizer.step()
 
             current_loss = loss.item()
-            self.scheduler.step(current_loss)
+            scheduler.step(current_loss)
 
             with torch.no_grad():
                 val_outputs = self(val_inputs)
@@ -143,8 +148,8 @@ class CombinedNN(nn.Module):
                     f"Epoch [{epoch + 1}/{num_epochs}], Loss:{loss.item():.6f}, Val Loss:{val_loss.item():.6f}"
                 )
 
-            self.early_stopper(val_loss.item())
-            if self.early_stopper.early_stop:
+            early_stopper(val_loss.item())
+            if early_stopper.early_stop:
                 print(
                     f"Early stopping triggered at epoch {epoch} with val loss {val_loss.item():.6f}"
                 )
