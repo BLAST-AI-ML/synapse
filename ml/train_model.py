@@ -99,11 +99,11 @@ def connect_to_db(config_dict):
     )[db_name]
 
 
-def normalize(df, input_names, input_transform, output_names, output_transform):
+def normalize(df, input_names, input_normalization, output_names, output_normalization):
     # Apply normalization to the training data set
     norm_df = df.copy()
-    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
-    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
+    norm_df[input_names] = input_normalization(torch.tensor(df[input_names].values))
+    norm_df[output_names] = output_normalization(torch.tensor(df[output_names].values))
     return norm_df
 
 
@@ -131,14 +131,14 @@ def split_data(df_exp, df_sim, variables, model_type):
 
 
 def build_transforms(n_inputs, X_train, n_outputs, y_train):
-    input_transform = AffineInputTransform(
+    input_normalization = AffineInputTransform(
         n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
-    return input_transform, output_transform
+    output_normalization = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    return input_normalization, output_normalization
 
 
 def train_nn_ensemble(
@@ -218,8 +218,8 @@ def build_torch_model_from_nn(
     model_type,
     input_variables,
     output_variables,
-    input_transform,
-    output_transform,
+    input_normalization,
+    output_normalization,
     output_names,
 ):
     torch_models = []
@@ -245,10 +245,10 @@ def build_torch_model_from_nn(
                     ScalarVariable(**output_variables[k])
                     for k in output_variables.keys()
                 ],
-                input_transformers=[input_transform],
-                output_transformers=[
+                input_normalizationers=[input_normalization],
+                output_normalizationers=[
                     calibration_transform,
-                    output_transform,
+                    output_normalization,
                 ],  # saving calibration before normalization
             )
         )
@@ -271,7 +271,7 @@ def build_torch_model_from_nn(
 
 
 def train_gp(
-    norm_df_train, input_names, output_names, input_transform, output_transform, device
+    norm_df_train, input_names, output_names, input_normalization, output_normalization, device
 ):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
@@ -329,8 +329,8 @@ def train_gp(
             ScalarVariable(**input_variables[k]) for k in input_variables.keys()
         ],
         output_variables=output_variables,
-        input_transformers=[input_transform],
-        output_transformers=[output_transform],
+        input_normalizationers=[input_normalization],
+        output_normalizationers=[output_normalization],
     )
 
 
@@ -456,11 +456,11 @@ if __name__ == "__main__":
     # Apply normalization to the training data
     X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
     y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-    input_transform, output_transform = build_transforms(
+    input_normalization, output_normalization = build_transforms(
         len(input_names), X_train, len(output_names), y_train
     )
     norm_df_train = normalize(
-        df_train, input_names, input_transform, output_names, output_transform
+        df_train, input_names, input_normalization, output_names, output_normalization
     )
 
     model = None
@@ -469,7 +469,7 @@ if __name__ == "__main__":
     ######################################################
     if model_type != "GP":
         norm_df_val = normalize(
-            df_val, input_names, input_transform, output_names, output_transform
+            df_val, input_names, input_normalization, output_names, output_normalization
         )
         print("training started")
         NN_start_time = time.time()
@@ -488,8 +488,8 @@ if __name__ == "__main__":
             model_type,
             input_variables,
             output_variables,
-            input_transform,
-            output_transform,
+            input_normalization,
+            output_normalization,
             output_names,
         )
         end_time = time.time()
@@ -509,8 +509,8 @@ if __name__ == "__main__":
             norm_df_train,
             input_names,
             output_names,
-            input_transform,
-            output_transform,
+            input_normalization,
+            output_normalization,
             device,
         )
 
