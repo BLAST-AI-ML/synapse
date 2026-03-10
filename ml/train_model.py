@@ -137,7 +137,9 @@ def build_transforms(n_inputs, X_train, n_outputs, y_train):
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_normalization = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    output_normalization = AffineInputTransform(
+        n_outputs, coefficient=y_std, offset=y_mean
+    )
     return input_normalization, output_normalization
 
 
@@ -271,7 +273,12 @@ def build_torch_model_from_nn(
 
 
 def train_gp(
-    norm_df_train, input_names, output_names, input_normalization, output_normalization, device
+    norm_df_train,
+    input_names,
+    output_names,
+    input_normalization,
+    output_normalization,
+    device,
 ):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
