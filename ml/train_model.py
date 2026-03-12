@@ -131,6 +131,46 @@ def build_normalization(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
+def build_input_inferred_calibration(
+    input_guess_calibration,
+    input_normalization,
+    input_inferred_normalizedcalibration,
+    n_inputs,
+):
+    """
+    Build input_inferred_calibration so that:
+      [input_inferred_calibration, input_normalization]
+    is equivalent to:
+      [input_guess_calibration, input_normalization, input_inferred_normalizedcalibration]
+
+    AffineInputTransform convention:
+      T(x) = (x - offset) / coefficient
+    """
+    c_guess = input_guess_calibration.coefficient
+    o_guess = input_guess_calibration.offset
+
+    c_norm = input_normalization.coefficient
+    o_norm = input_normalization.offset
+
+    c_normcalibration = input_inferred_normalizedcalibration.coefficient
+    o_normcalibration  = input_inferred_normalizedcalibration.offset
+
+    c_inferred = c_guess * c_normcalibration
+    o_inferred = o_guess + c_guess * o_norm + c_guess * c_norm * o_normcalibration - c_inferred * o_norm
+
+    input_inferred_calibration = AffineInputTransform(
+        n_inputs,
+        coefficient=c_inferred,
+        offset=o_inferred,
+    )
+
+    #alpha_prime = 1.0 / c_inferred
+    #beta_prime = o_inferred
+
+    return input_inferred_calibration
+
+
+
 def train_nn_ensemble(
     model_type,
     norm_df_train,
@@ -222,12 +262,13 @@ def train_calibration_phase(
         train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
     )
 
-    # Build calibration transforms
+    # Build clibration transforms in normalized units 
     input_inferred_normalizedcalibration = AffineInputTransform(
         len(input_names),
         coefficient=input_cal_weight.cpu(),
         offset=input_cal_bias.cpu(),
     )
+
     output_inferred_normalizedcalibration = AffineInputTransform(
         len(output_names),
         coefficient=output_cal_weight.cpu(),
@@ -582,11 +623,22 @@ if __name__ == "__main__":
                 device,
             )
         )
-        input_transformers = [
-            input_guess_calibration,
+
+        # Build calibration transfroms in physical units
+        input_inferred_calibration = (
+            build_input_inferred_calibration(
+                input_guess_calibration,
+                input_normalization,
+                input_inferred_normalizedcalibration,
+                n_inputs,
+            )
+        )
+
+        input_transformers = [ 
+            input_inferred_calibration,
             input_normalization,
-            input_inferred_normalizedcalibration,
         ]
+
         output_transformers = [
             output_inferred_normalizedcalibration,
             output_normalization,
