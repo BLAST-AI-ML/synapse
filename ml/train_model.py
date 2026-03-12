@@ -174,6 +174,37 @@ def build_input_inferred_calibration(
 
     return input_inferred_calibration
 
+def build_output_inferred_calibration(
+    output_inferred_normalizedcalibration,
+    output_normalization,
+    output_guess_calibration,
+    n_outputs,
+):
+    """
+    Build output_inferred_calibration so that:
+      [output_normalization, output_inferred_calibration]
+    matches:
+      [output_inferred_normalizedcalibration, output_normalization, output_guess_calibration]
+    assuming lume-model applies output transformers via untransform().
+    """
+    c_normcalibration = output_inferred_normalizedcalibration.coefficient
+    o_normcalibration = output_inferred_normalizedcalibration.offset
+
+    c_norm = output_normalization.coefficient
+    o_norm = output_normalization.offset
+
+    c_guess = output_guess_calibration.coefficient
+    o_guess = output_guess_calibration.offset
+
+    c_inf = c_guess * c_normcalibration
+    o_inf = c_guess * c_norm * o_normcalibration + c_guess * (1.0 - c_normcalibration) * o_norm + o_guess
+
+    output_inferred_calibration = AffineInputTransform(
+        n_outputs,
+        coefficient=c_inf,
+        offset=o_inf,
+    )
+    return output_inferred_calibration
 
 def train_nn_ensemble(
     model_type,
@@ -641,10 +672,18 @@ if __name__ == "__main__":
             input_normalization,
         ]
 
+        output_inferred_calibration = (
+            build_output_inferred_calibration(
+                output_inferred_normalizedcalibration,
+                output_normalization,
+                output_guess_calibration,
+                n_outputs,
+            )
+        )
+
         output_transformers = [
-            output_inferred_normalizedcalibration,
             output_normalization,
-            output_guess_calibration,
+            output_inferred_calibration,
         ]
         print("Phase 2: Calibration training complete")
     else:
