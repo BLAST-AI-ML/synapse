@@ -153,10 +153,15 @@ def build_input_inferred_calibration(
     o_norm = input_normalization.offset
 
     c_normcalibration = input_inferred_normalizedcalibration.coefficient
-    o_normcalibration  = input_inferred_normalizedcalibration.offset
+    o_normcalibration = input_inferred_normalizedcalibration.offset
 
     c_inferred = c_guess * c_normcalibration
-    o_inferred = o_guess + c_guess * o_norm + c_guess * c_norm * o_normcalibration - c_inferred * o_norm
+    o_inferred = (
+        o_guess
+        + c_guess * o_norm
+        + c_guess * c_norm * o_normcalibration
+        - c_inferred * o_norm
+    )
 
     input_inferred_calibration = AffineInputTransform(
         n_inputs,
@@ -164,11 +169,10 @@ def build_input_inferred_calibration(
         offset=o_inferred,
     )
 
-    #alpha_prime = 1.0 / c_inferred
-    #beta_prime = o_inferred
+    # alpha_prime = 1.0 / c_inferred
+    # beta_prime = o_inferred
 
     return input_inferred_calibration
-
 
 
 def train_nn_ensemble(
@@ -262,7 +266,7 @@ def train_calibration_phase(
         train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
     )
 
-    # Build clibration transforms in normalized units 
+    # Build clibration transforms in normalized units
     input_inferred_normalizedcalibration = AffineInputTransform(
         len(input_names),
         coefficient=input_cal_weight.cpu(),
@@ -625,16 +629,14 @@ if __name__ == "__main__":
         )
 
         # Build calibration transfroms in physical units
-        input_inferred_calibration = (
-            build_input_inferred_calibration(
-                input_guess_calibration,
-                input_normalization,
-                input_inferred_normalizedcalibration,
-                n_inputs,
-            )
+        input_inferred_calibration = build_input_inferred_calibration(
+            input_guess_calibration,
+            input_normalization,
+            input_inferred_normalizedcalibration,
+            n_inputs,
         )
 
-        input_transformers = [ 
+        input_transformers = [
             input_inferred_calibration,
             input_normalization,
         ]
