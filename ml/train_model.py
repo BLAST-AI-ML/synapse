@@ -174,6 +174,7 @@ def build_input_inferred_calibration(
 
     return input_inferred_calibration
 
+
 def build_output_inferred_calibration(
     output_inferred_normalizedcalibration,
     output_normalization,
@@ -197,7 +198,11 @@ def build_output_inferred_calibration(
     o_guess = output_guess_calibration.offset
 
     c_inf = c_guess * c_normcalibration
-    o_inf = c_guess * c_norm * o_normcalibration + c_guess * (1.0 - c_normcalibration) * o_norm + o_guess
+    o_inf = (
+        c_guess * c_norm * o_normcalibration
+        + c_guess * (1.0 - c_normcalibration) * o_norm
+        + o_guess
+    )
 
     output_inferred_calibration = AffineInputTransform(
         n_outputs,
@@ -205,6 +210,7 @@ def build_output_inferred_calibration(
         offset=o_inf,
     )
     return output_inferred_calibration
+
 
 def train_nn_ensemble(
     model_type,
@@ -672,13 +678,11 @@ if __name__ == "__main__":
             input_normalization,
         ]
 
-        output_inferred_calibration = (
-            build_output_inferred_calibration(
-                output_inferred_normalizedcalibration,
-                output_normalization,
-                output_guess_calibration,
-                n_outputs,
-            )
+        output_inferred_calibration = build_output_inferred_calibration(
+            output_inferred_normalizedcalibration,
+            output_normalization,
+            output_guess_calibration,
+            n_outputs,
         )
 
         output_transformers = [
