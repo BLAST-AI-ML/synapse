@@ -116,6 +116,11 @@ class ModelManager:
                 self.__is_gaussian_process = True
             else:
                 raise ValueError(f"Unsupported model type: {state.model_type}")
+            # Populate inferred calibration in physics units for GUI
+            self.populate_inferred_calibration(
+                config_dict["inputs"], config_dict["outputs"]
+            )
+
         except Exception as e:
             title = f"Unable to load model {state.model_type}"
             msg = f"Error occurred when loading model from MLflow: {e}"
@@ -170,6 +175,60 @@ class ModelManager:
         print("Getting output transformers...")
         if self.__model is not None:
             return self.__model.output_transformers
+
+    def get_input_transformers(self):
+        print("Getting input transformers...")
+        if self.__model is not None:
+            return self.__model.input_transformers
+
+    def populate_inferred_calibration(self, input_variables, output_variables):
+        """
+        Populate alpha_inferred/beta_inferred in state.simulation_calibration for
+        both input and output calibration entries.
+        """
+        # Clear stale inferred values
+        for value in state.simulation_calibration.values():
+            value.pop("alpha_inferred", None)
+            value.pop("beta_inferred", None)
+
+        # Input calibration
+        input_transformers = self.get_input_transformers()
+        if input_transformers or len(input_transformers) >= 1:
+            input_inferred_calibration = input_transformers[0]
+            alpha_inferred = (
+                (1.0 / input_inferred_calibration.coefficient).detach().cpu()
+            )
+            beta_inferred = input_inferred_calibration.offset.detach().cpu()
+
+            for i, key in enumerate(input_variables.keys()):
+                if key not in state.simulation_calibration:
+                    continue
+                state.simulation_calibration[key]["alpha_inferred"] = float(
+                    alpha_inferred[i]
+                )
+                state.simulation_calibration[key]["beta_inferred"] = float(
+                    beta_inferred[i]
+                )
+
+        # Output calibration
+        output_transformers = self.get_output_transformers()
+        if output_transformers:
+            output_inferred_calibration = output_transformers[-1]
+            alpha_output_inferred = (
+                (1.0 / output_inferred_calibration.coefficient).detach().cpu()
+            )
+            beta_output_inferred = output_inferred_calibration.offset.detach().cpu()
+
+            for i, key in enumerate(output_variables.keys()):
+                if key not in state.simulation_calibration:
+                    continue
+                state.simulation_calibration[key]["alpha_inferred"] = float(
+                    alpha_output_inferred[i]
+                )
+                state.simulation_calibration[key]["beta_inferred"] = float(
+                    beta_output_inferred[i]
+                )
+        state.dirty("simulation_calibration")
 
     async def training_kernel(self):
         try:

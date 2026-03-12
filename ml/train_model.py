@@ -27,7 +27,7 @@ import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 sys.path.append(".")
-from Neural_Net_Classes import CombinedNN
+from Neural_Net_Classes import CombinedNN, train_calibration
 
 # measure the time it took to import everything
 import_end_time = time.time()
@@ -99,46 +99,117 @@ def connect_to_db(config_dict):
     )[db_name]
 
 
-def normalize(df, input_names, input_transform, output_names, output_transform):
+def normalize(df, input_names, input_normalization, output_names, output_normalization):
     # Apply normalization to the training data set
     norm_df = df.copy()
-    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
-    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
+    norm_df[input_names] = input_normalization(torch.tensor(df[input_names].values))
+    norm_df[output_names] = output_normalization(torch.tensor(df[output_names].values))
     return norm_df
 
 
-def split_data(df_exp, df_sim, variables, model_type):
+def split_data(df, variables, model_type):
     if model_type == "GP":
-        if len(df_exp) > 0:
-            return (pd.concat((df_exp[variables], df_sim[variables])), None)
-        else:
-            return (df_sim[variables], None)
+        return (df[variables], None)
     else:
-        # Split exp and sim data into training and validation data with 80:20 ratio, selected randomly
-        sim_train_df, sim_val_df = train_test_split(
-            df_sim, test_size=0.2, random_state=None, shuffle=True
+        # Split data into training and validation data with 80:20 ratio, selected randomly
+        train_df, val_df = train_test_split(
+            df, test_size=0.2, random_state=None, shuffle=True
         )  # random_state will ensure the seed is different everytime, data will be shuffled randomly before splitting
-        if len(df_exp) > 0:
-            exp_train_df, exp_val_df = train_test_split(
-                df_exp, test_size=0.2, random_state=None, shuffle=True
-            )  # 20% of the data will go in validation test, no fixing the
-            return (
-                pd.concat((exp_train_df[variables], sim_train_df[variables])),
-                pd.concat((exp_val_df[variables], sim_val_df[variables])),
-            )
-        else:
-            return (sim_train_df[variables], sim_val_df[variables])
+        return (train_df[variables], val_df[variables])
 
 
-def build_transforms(n_inputs, X_train, n_outputs, y_train):
-    input_transform = AffineInputTransform(
+def build_normalization(n_inputs, X_train, n_outputs, y_train):
+    input_normalization = AffineInputTransform(
         n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
-    return input_transform, output_transform
+    output_normalization = AffineInputTransform(
+        n_outputs, coefficient=y_std, offset=y_mean
+    )
+    return input_normalization, output_normalization
+
+
+def build_input_inferred_calibration(
+    input_guess_calibration,
+    input_normalization,
+    input_inferred_normalizedcalibration,
+    n_inputs,
+):
+    """
+    Build input_inferred_calibration so that:
+      [input_inferred_calibration, input_normalization]
+    is equivalent to:
+      [input_guess_calibration, input_normalization, input_inferred_normalizedcalibration]
+
+    AffineInputTransform convention:
+      T(x) = (x - offset) / coefficient
+    """
+    c_guess = input_guess_calibration.coefficient
+    o_guess = input_guess_calibration.offset
+
+    c_norm = input_normalization.coefficient
+    o_norm = input_normalization.offset
+
+    c_normcalibration = input_inferred_normalizedcalibration.coefficient
+    o_normcalibration = input_inferred_normalizedcalibration.offset
+
+    c_inferred = c_guess * c_normcalibration
+    o_inferred = (
+        o_guess
+        + c_guess * o_norm
+        + c_guess * c_norm * o_normcalibration
+        - c_inferred * o_norm
+    )
+
+    input_inferred_calibration = AffineInputTransform(
+        n_inputs,
+        coefficient=c_inferred,
+        offset=o_inferred,
+    )
+
+    # alpha_prime = 1.0 / c_inferred
+    # beta_prime = o_inferred
+
+    return input_inferred_calibration
+
+
+def build_output_inferred_calibration(
+    output_inferred_normalizedcalibration,
+    output_normalization,
+    output_guess_calibration,
+    n_outputs,
+):
+    """
+    Build output_inferred_calibration so that:
+      [output_normalization, output_inferred_calibration]
+    matches:
+      [output_inferred_normalizedcalibration, output_normalization, output_guess_calibration]
+    assuming lume-model applies output transformers via untransform().
+    """
+    c_normcalibration = output_inferred_normalizedcalibration.coefficient
+    o_normcalibration = output_inferred_normalizedcalibration.offset
+
+    c_norm = output_normalization.coefficient
+    o_norm = output_normalization.offset
+
+    c_guess = output_guess_calibration.coefficient
+    o_guess = output_guess_calibration.offset
+
+    c_inf = c_guess * c_normcalibration
+    o_inf = (
+        c_guess * c_norm * o_normcalibration
+        + c_guess * (1.0 - c_normcalibration) * o_norm
+        + o_guess
+    )
+
+    output_inferred_calibration = AffineInputTransform(
+        n_outputs,
+        coefficient=c_inf,
+        offset=o_inf,
+    )
+    return output_inferred_calibration
 
 
 def train_nn_ensemble(
@@ -152,36 +223,20 @@ def train_nn_ensemble(
     n_inputs = len(input_names)
     n_outputs = len(output_names)
 
-    exp_X_train = torch.tensor(
-        norm_df_train[norm_df_train.experiment_flag == 1][input_names].values,
+    X_train = torch.tensor(
+        norm_df_train[input_names].values,
         dtype=torch.float,
     ).to(device)
-    exp_y_train = torch.tensor(
-        norm_df_train[norm_df_train.experiment_flag == 1][output_names].values,
+    y_train = torch.tensor(
+        norm_df_train[output_names].values,
         dtype=torch.float,
     ).to(device)
-    sim_X_train = torch.tensor(
-        norm_df_train[norm_df_train.experiment_flag == 0][input_names].values,
+    X_val = torch.tensor(
+        norm_df_val[input_names].values,
         dtype=torch.float,
     ).to(device)
-    sim_y_train = torch.tensor(
-        norm_df_train[norm_df_train.experiment_flag == 0][output_names].values,
-        dtype=torch.float,
-    ).to(device)
-    exp_X_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 1][input_names].values,
-        dtype=torch.float,
-    ).to(device)
-    exp_y_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 1][output_names].values,
-        dtype=torch.float,
-    ).to(device)
-    sim_X_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 0][input_names].values,
-        dtype=torch.float,
-    ).to(device)
-    sim_y_val = torch.tensor(
-        norm_df_val[norm_df_val.experiment_flag == 0][output_names].values,
+    y_val = torch.tensor(
+        norm_df_val[output_names].values,
         dtype=torch.float,
     ).to(device)
 
@@ -196,14 +251,10 @@ def train_nn_ensemble(
         model.to(device)  # moving to GPU
         NNmodel_start_time = time.time()
         model.train_model(
-            sim_X_train,
-            sim_y_train,
-            exp_X_train,
-            exp_y_train,
-            sim_X_val,
-            sim_y_val,
-            exp_X_val,
-            exp_y_val,
+            X_train,
+            y_train,
+            X_val,
+            y_val,
             num_epochs=20000,
         )
         NNmodel_end_time = time.time()
@@ -213,66 +264,121 @@ def train_nn_ensemble(
     return ensemble
 
 
-def build_torch_model_from_nn(
-    ensemble,
+def train_calibration_phase(
+    model,
+    model_type,
+    norm_exp_df,
+    input_names,
+    output_names,
+    device,
+):
+    """Phase 2: Train calibration layers on experimental data.
+
+    Passes the frozen model to train_calibration(), which re-evaluates it at
+    each iteration.
+
+    Returns an AffineInputTransform representing the learned calibration.
+    """
+    exp_X = torch.tensor(
+        norm_exp_df[input_names].values,
+        dtype=torch.float,
+    ).to(device)
+    exp_y = torch.tensor(
+        norm_exp_df[output_names].values,
+        dtype=torch.float,
+    ).to(device)
+
+    # Build a predict callable that abstracts the NN vs GP difference
+    if model_type == "GP":
+
+        def predict_fn(x):
+            return model.posterior(x.double()).mean.float().to(device)
+    else:
+
+        def predict_fn(x):
+            return torch.stack([m.forward(x) for m in model]).mean(dim=0)
+
+    # Train calibration
+    input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
+        train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
+    )
+
+    # Build clibration transforms in normalized units
+    input_inferred_normalizedcalibration = AffineInputTransform(
+        len(input_names),
+        coefficient=input_cal_weight.cpu(),
+        offset=input_cal_bias.cpu(),
+    )
+
+    output_inferred_normalizedcalibration = AffineInputTransform(
+        len(output_names),
+        coefficient=output_cal_weight.cpu(),
+        offset=output_cal_bias.cpu(),
+    )
+    return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
+
+
+def build_lume_model(
+    model,
     model_type,
     input_variables,
     output_variables,
-    input_transform,
-    output_transform,
-    output_names,
+    input_transformers,
+    output_transformers,
 ):
-    torch_models = []
+    # Fix mismatch in name between the config file and the expected lume-model format
+    for k in input_variables:
+        input_variables[k]["default_value"] = input_variables[k]["default"]
+        del input_variables[k]["default"]
 
-    for model_nn in ensemble:
-        calibration_transform = AffineInputTransform(
-            len(output_names),
-            coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
-            offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
-        )
-
-        # Fix mismatch in name between the config file and the expected lume-model format
-        for k in input_variables:
-            input_variables[k]["default_value"] = input_variables[k]["default"]
-
-        torch_models.append(
-            TorchModel(
-                model=model_nn.cpu(),
-                input_variables=[
-                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-                ],
-                output_variables=[
-                    ScalarVariable(**output_variables[k])
-                    for k in output_variables.keys()
-                ],
-                input_transformers=[input_transform],
-                output_transformers=[
-                    calibration_transform,
-                    output_transform,
-                ],  # saving calibration before normalization
+    # Define lume-model input and output variables
+    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
+    output_vars = [
+        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
+    ]
+    if model_type in ["GP", "ensemble_NN"]:
+        distribution_output_vars = [
+            DistributionVariable(
+                **output_variables[k], distribution_type="MultiVariateNormal"
             )
-        )
+            for k in output_variables.keys()
+        ]
 
-    if model_type == "NN":
-        # Return single NN
-        return torch_models[0]
+    if model_type == "GP":
+        return GPModel(
+            model=model.cpu(),
+            input_variables=input_vars,
+            output_variables=distribution_output_vars,
+            input_transformers=input_transformers,
+            output_transformers=output_transformers,
+        )
     else:
-        # Return ensemble of NNs
-        return NNEnsemble(
-            models=torch_models,
-            input_variables=[
-                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-            ],
-            output_variables=[
-                DistributionVariable(**output_variables[k])
-                for k in output_variables.keys()
-            ],
-        )
+        # model is an ensemble list of NNs
+        torch_models = []
+        for model_nn in model:
+            torch_models.append(
+                TorchModel(
+                    model=model_nn.cpu(),
+                    input_variables=input_vars,
+                    output_variables=output_vars,
+                    input_transformers=input_transformers,
+                    output_transformers=output_transformers,
+                )
+            )
+
+        if model_type == "NN":
+            # Return single NN
+            return torch_models[0]
+        else:
+            # Return ensemble of NNs
+            return NNEnsemble(
+                models=torch_models,
+                input_variables=input_vars,
+                output_variables=distribution_output_vars,
+            )
 
 
-def train_gp(
-    norm_df_train, input_names, output_names, input_transform, output_transform, device
-):
+def train_gp(norm_df_train, input_names, output_names, device):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
@@ -293,7 +399,7 @@ def train_gp(
             -1
         )
 
-        # Create GP model
+        # SingleTaskGP for simulation data only
         gp_model = SingleTaskGP(
             X_valid,
             y_valid,
@@ -305,33 +411,12 @@ def train_gp(
     combined_gp = ModelListGP(*gp_models)
     print(f"ModelListGP created with {len(gp_models)} separate GP models")
     # Fit each separately
-    GP_start_time = time.time()
     for i, sub_gp in enumerate(gp_models):
         print(f"Training GP model {i + 1}/{len(gp_models)}...")
         mll = ExactMarginalLogLikelihood(sub_gp.likelihood, sub_gp)
         fit_gpytorch_mll(mll)
-    GP_end_time = time.time()
-    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
-    # Fix mismatch in name between the config file and the expected lume-model format
-    for k in input_variables:
-        input_variables[k]["default_value"] = input_variables[k]["default"]
-        del input_variables[k]["default"]
-
-    output_variables = [
-        DistributionVariable(name=name, distribution_type="MultiVariateNormal")
-        for name in output_names
-    ]
-
-    return GPModel(
-        model=combined_gp.cpu(),
-        input_variables=[
-            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-        ],
-        output_variables=output_variables,
-        input_transformers=[input_transform],
-        output_transformers=[output_transform],
-    )
+    return combined_gp
 
 
 def enable_amsc_x_api_key(config_dict):
@@ -422,7 +507,6 @@ if __name__ == "__main__":
     input_names = [v["name"] for v in input_variables.values()]
     output_variables = config_dict["outputs"]
     output_names = [v["name"] for v in output_variables.values()]
-    n_outputs = len(output_names)
 
     # Extract experimental and simulation data from the database as pandas dataframe
     db = connect_to_db(config_dict)
@@ -439,80 +523,195 @@ if __name__ == "__main__":
     ):
         enable_amsc_x_api_key(config_dict)
 
-    # Apply simulation calibration to the simulation data
-    if "simulation_calibration" in config_dict:
-        simulation_calibration = config_dict["simulation_calibration"]
+    # Build simulation variable name mappings and alpha/beta vectors
+    simulation_calibration = config_dict.get("simulation_calibration", {})
+    n_inputs = len(input_names)
+    n_outputs = len(output_names)
+
+    # Build sim variable names and per-dimension alpha/beta for inputs
+    sim_input_names = []
+    alpha_input_list = []
+    beta_input_list = []
+    for key in input_variables:
+        if key in simulation_calibration:
+            sim_input_names.append(simulation_calibration[key]["name"])
+            alpha_input_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_input_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_input_names.append(input_variables[key]["name"])
+            alpha_input_list.append(1.0)
+            beta_input_list.append(0.0)
+
+    # Build sim variable names and per-dimension alpha/beta for outputs
+    sim_output_names = []
+    alpha_output_list = []
+    beta_output_list = []
+    for key in output_variables:
+        if key in simulation_calibration:
+            sim_output_names.append(simulation_calibration[key]["name"])
+            alpha_output_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_output_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_output_names.append(output_variables[key]["name"])
+            alpha_output_list.append(1.0)
+            beta_output_list.append(0.0)
+
+    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
+    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
+    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
+    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
+
+    # Build exp-to-sim and sim-to-exp AffineInputTransforms
+    # exp_to_sim: sim = alpha * (exp - beta), i.e. AffineInputTransform with
+    #   coefficient=1/alpha, offset=beta  =>  (exp - beta) / (1/alpha) = alpha*(exp-beta)
+    input_guess_calibration = AffineInputTransform(
+        n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
+    )
+    output_guess_calibration = AffineInputTransform(
+        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
+    )
+
+    # Convert experimental data to simulation variable space
+    if len(df_exp) > 0:
+        df_exp[sim_input_names] = (
+            input_guess_calibration(
+                torch.tensor(df_exp[input_names].values, dtype=torch.float)
+            )
+            .detach()
+            .numpy()
+        )
+        df_exp[sim_output_names] = (
+            output_guess_calibration(
+                torch.tensor(df_exp[output_names].values, dtype=torch.float)
+            )
+            .detach()
+            .numpy()
+        )
+
+    # Build normalization transforms in simulation variable space
+    sim_variables = sim_input_names + sim_output_names
+    if len(df_exp) > 0:
+        df_all = pd.concat((df_exp[sim_variables], df_sim[sim_variables]))
     else:
-        simulation_calibration = {}
-    for value in simulation_calibration.values():
-        sim_name = value["name"]
-        exp_name = value["depends_on"]
-        df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
-
-    # Concatenate experimental and simulation data for training and validation
-    variables = input_names + output_names + ["experiment_flag"]
-    df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
-
-    # Apply normalization to the training data
-    X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
-    y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-    input_transform, output_transform = build_transforms(
-        len(input_names), X_train, len(output_names), y_train
-    )
-    norm_df_train = normalize(
-        df_train, input_names, input_transform, output_names, output_transform
+        df_all = df_sim[sim_variables]
+    X_all = torch.tensor(df_all[sim_input_names].values, dtype=torch.float)
+    y_all = torch.tensor(df_all[sim_output_names].values, dtype=torch.float)
+    input_normalization, output_normalization = build_normalization(
+        n_inputs, X_all, n_outputs, y_all
     )
 
-    model = None
-    ######################################################
-    # Neural Net and Ensemble Creation and training
-    ######################################################
+    # Split simulation data for Phase 1
+    df_sim_train, df_sim_val = split_data(df_sim, sim_variables, model_type)
+
+    # Normalize data
+    norm_sim_train = normalize(
+        df_sim_train,
+        sim_input_names,
+        input_normalization,
+        sim_output_names,
+        output_normalization,
+    )
+    norm_exp = None
+    if len(df_exp) > 0:
+        norm_exp = normalize(
+            df_exp,
+            sim_input_names,
+            input_normalization,
+            sim_output_names,
+            output_normalization,
+        )
     if model_type != "GP":
-        norm_df_val = normalize(
-            df_val, input_names, input_transform, output_names, output_transform
+        # Single NN and ensemble of NNs
+        norm_sim_val = normalize(
+            df_sim_val,
+            sim_input_names,
+            input_normalization,
+            sim_output_names,
+            output_normalization,
         )
-        print("training started")
-        NN_start_time = time.time()
-        ensemble = train_nn_ensemble(
+
+    # Phase 1: Train model on simulation data
+    print("Phase 1: Training model on simulation data")
+    train_start_time = time.time()
+    if model_type != "GP":
+        trained_model = train_nn_ensemble(
             model_type,
-            norm_df_train,
-            norm_df_val,
-            input_names,
-            output_names,
+            norm_sim_train,
+            norm_sim_val,
+            sim_input_names,
+            sim_output_names,
             device,
         )
-        print("training ended")
-
-        model = build_torch_model_from_nn(
-            ensemble,
-            model_type,
-            input_variables,
-            output_variables,
-            input_transform,
-            output_transform,
-            output_names,
-        )
-        end_time = time.time()
-
-        elapsed_time = end_time - start_time
-        data_time = NN_start_time - start_time
-        NN_time = end_time - NN_start_time
-        print(f"Total time taken: {elapsed_time:.2f} seconds")
-        print(f"Data prep time taken: {data_time:.2f} seconds")
-        print(f"NN time taken: {NN_time:.2f} seconds")
-
-    ###############################################################
-    # Gaussian Process Creation and training
-    ###############################################################
     else:
-        model = train_gp(
-            norm_df_train,
-            input_names,
-            output_names,
-            input_transform,
-            output_transform,
+        trained_model = train_gp(
+            norm_sim_train,
+            sim_input_names,
+            sim_output_names,
             device,
         )
+    print("Phase 1: training complete")
+
+    # Phase 2: Train calibration on experimental data
+    if norm_exp is not None and len(norm_exp) > 0:
+        print("Phase 2: Training calibration on experimental data")
+        input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = (
+            train_calibration_phase(
+                trained_model,
+                model_type,
+                norm_exp,
+                sim_input_names,
+                sim_output_names,
+                device,
+            )
+        )
+
+        # Build calibration transfroms in physical units
+        input_inferred_calibration = build_input_inferred_calibration(
+            input_guess_calibration,
+            input_normalization,
+            input_inferred_normalizedcalibration,
+            n_inputs,
+        )
+
+        input_transformers = [
+            input_inferred_calibration,
+            input_normalization,
+        ]
+
+        output_inferred_calibration = build_output_inferred_calibration(
+            output_inferred_normalizedcalibration,
+            output_normalization,
+            output_guess_calibration,
+            n_outputs,
+        )
+
+        output_transformers = [
+            output_normalization,
+            output_inferred_calibration,
+        ]
+        print("Phase 2: Calibration training complete")
+    else:
+        input_transformers = [input_guess_calibration, input_normalization]
+        output_transformers = [output_normalization, output_guess_calibration]
+        print("Phase 2: No experimental data available, skipping calibration")
+
+    # Build LUME model
+    model = build_lume_model(
+        trained_model,
+        model_type,
+        input_variables,
+        output_variables,
+        input_transformers,
+        output_transformers,
+    )
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    data_time = train_start_time - start_time
+    train_time = end_time - train_start_time
+    print(f"Data prep time taken: {data_time:.2f} seconds")
+    print(f"Train time taken: {train_time:.2f} seconds")
+    print(f"Total time taken: {elapsed_time:.2f} seconds")
 
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
