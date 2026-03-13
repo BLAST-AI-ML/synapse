@@ -213,66 +213,79 @@ def train_nn_ensemble(
     return ensemble
 
 
-def build_torch_model_from_nn(
-    ensemble,
+def build_lume_model(
+    model,
     model_type,
     input_variables,
     output_variables,
     input_transform,
     output_transform,
-    output_names,
 ):
-    torch_models = []
+    # Fix mismatch in name between the config file and the expected lume-model format
+    for k in input_variables:
+        input_variables[k]["default_value"] = input_variables[k]["default"]
+        del input_variables[k]["default"]
 
-    for model_nn in ensemble:
-        calibration_transform = AffineInputTransform(
-            len(output_names),
-            coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
-            offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
-        )
-
-        # Fix mismatch in name between the config file and the expected lume-model format
-        for k in input_variables:
-            input_variables[k]["default_value"] = input_variables[k]["default"]
-
-        torch_models.append(
-            TorchModel(
-                model=model_nn.cpu(),
-                input_variables=[
-                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-                ],
-                output_variables=[
-                    ScalarVariable(**output_variables[k])
-                    for k in output_variables.keys()
-                ],
-                input_transformers=[input_transform],
-                output_transformers=[
-                    calibration_transform,
-                    output_transform,
-                ],  # saving calibration before normalization
+    # Define lume-model input and output variables
+    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
+    output_vars = [
+        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
+    ]
+    if model_type in ["GP", "ensemble_NN"]:
+        distribution_output_vars = [
+            DistributionVariable(
+                **output_variables[k], distribution_type="MultiVariateNormal"
             )
-        )
+            for k in output_variables.keys()
+        ]
 
-    if model_type == "NN":
-        # Return single NN
-        return torch_models[0]
+    # Create lume-model objects
+    if model_type == "GP":
+        return GPModel(
+            model=model.cpu(),
+            input_variables=input_vars,
+            output_variables=distribution_output_vars,
+            input_transformers=[input_transform],
+            output_transformers=[output_transform],
+        )
     else:
-        # Return ensemble of NNs
-        return NNEnsemble(
-            models=torch_models,
-            input_variables=[
-                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-            ],
-            output_variables=[
-                DistributionVariable(**output_variables[k])
-                for k in output_variables.keys()
-            ],
-        )
+        # model is an ensemble list of NNs
+        torch_models = []
+        for model_nn in model:
+            calibration_transform = AffineInputTransform(
+                len(output_vars),
+                coefficient=model_nn.sim_to_exp_calibration_weight.clone()
+                .detach()
+                .cpu(),
+                offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
+            )
+
+            torch_models.append(
+                TorchModel(
+                    model=model_nn.cpu(),
+                    input_variables=input_vars,
+                    output_variables=output_vars,
+                    input_transformers=[input_transform],
+                    output_transformers=[
+                        calibration_transform,
+                        output_transform,
+                    ],  # saving calibration before normalization
+                )
+            )
+
+        if model_type == "NN":
+            # Return single NN
+            return torch_models[0]
+        else:
+            # Return ensemble of NNs
+            return NNEnsemble(
+                models=torch_models,
+                input_variables=input_vars,
+                output_variables=distribution_output_vars,
+            )
 
 
-def train_gp(
-    norm_df_train, input_names, output_names, input_transform, output_transform, device
-):
+def train_gp(norm_df_train, input_names, output_names, device):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
@@ -305,33 +318,12 @@ def train_gp(
     combined_gp = ModelListGP(*gp_models)
     print(f"ModelListGP created with {len(gp_models)} separate GP models")
     # Fit each separately
-    GP_start_time = time.time()
     for i, sub_gp in enumerate(gp_models):
         print(f"Training GP model {i + 1}/{len(gp_models)}...")
         mll = ExactMarginalLogLikelihood(sub_gp.likelihood, sub_gp)
         fit_gpytorch_mll(mll)
-    GP_end_time = time.time()
-    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
-    # Fix mismatch in name between the config file and the expected lume-model format
-    for k in input_variables:
-        input_variables[k]["default_value"] = input_variables[k]["default"]
-        del input_variables[k]["default"]
-
-    output_variables = [
-        DistributionVariable(name=name, distribution_type="MultiVariateNormal")
-        for name in output_names
-    ]
-
-    return GPModel(
-        model=combined_gp.cpu(),
-        input_variables=[
-            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-        ],
-        output_variables=output_variables,
-        input_transformers=[input_transform],
-        output_transformers=[output_transform],
-    )
+    return combined_gp
 
 
 def enable_amsc_x_api_key(config_dict):
@@ -462,18 +454,18 @@ if __name__ == "__main__":
     norm_df_train = normalize(
         df_train, input_names, input_transform, output_names, output_transform
     )
-
-    model = None
-    ######################################################
-    # Neural Net and Ensemble Creation and training
-    ######################################################
     if model_type != "GP":
         norm_df_val = normalize(
             df_val, input_names, input_transform, output_names, output_transform
         )
-        print("training started")
-        NN_start_time = time.time()
-        ensemble = train_nn_ensemble(
+
+    print("training started")
+    train_start_time = time.time()
+    ######################################################
+    # Neural Net and Ensemble Creation and training
+    ######################################################
+    if model_type != "GP":
+        trained_model = train_nn_ensemble(
             model_type,
             norm_df_train,
             norm_df_val,
@@ -481,38 +473,36 @@ if __name__ == "__main__":
             output_names,
             device,
         )
-        print("training ended")
-
-        model = build_torch_model_from_nn(
-            ensemble,
-            model_type,
-            input_variables,
-            output_variables,
-            input_transform,
-            output_transform,
-            output_names,
-        )
-        end_time = time.time()
-
-        elapsed_time = end_time - start_time
-        data_time = NN_start_time - start_time
-        NN_time = end_time - NN_start_time
-        print(f"Total time taken: {elapsed_time:.2f} seconds")
-        print(f"Data prep time taken: {data_time:.2f} seconds")
-        print(f"NN time taken: {NN_time:.2f} seconds")
-
     ###############################################################
     # Gaussian Process Creation and training
     ###############################################################
     else:
-        model = train_gp(
+        trained_model = train_gp(
             norm_df_train,
             input_names,
             output_names,
-            input_transform,
-            output_transform,
             device,
         )
+
+    print("training ended")
+
+    end_time = time.time()
+
+    elapsed_time = end_time - start_time
+    data_time = train_start_time - start_time
+    train_time = end_time - train_start_time
+    print(f"Data prep time taken: {data_time:.2f} seconds")
+    print(f"Train time taken: {train_time:.2f} seconds")
+    print(f"Total time taken: {elapsed_time:.2f} seconds")
+
+    model = build_lume_model(
+        trained_model,
+        model_type,
+        input_variables,
+        output_variables,
+        input_transform,
+        output_transform,
+    )
 
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
