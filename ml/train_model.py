@@ -137,7 +137,9 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_normalization = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
+    output_normalization = AffineInputTransform(
+        n_outputs, coefficient=y_std, offset=y_mean
+    )
     return input_normalization, output_normalization
 
 
