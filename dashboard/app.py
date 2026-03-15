@@ -6,7 +6,7 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
-from model_manager import ModelManager
+from model_manager import ModelManager, model_type_tag_dict
 from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
@@ -16,6 +16,7 @@ from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
     data_depth_panel,
+    load_config_dict,
     load_experiments,
     load_database,
     load_data,
@@ -71,7 +72,11 @@ def update(
         out_manager = OutputManager(output_variables)
     # reset model
     if reset_model:
-        mod_manager = ModelManager()
+        config_dict = load_config_dict(state.experiment)
+        mod_manager = ModelManager(
+            config_dict=config_dict,
+            model_type_tag=model_type_tag_dict[state.model_type],
+        )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
