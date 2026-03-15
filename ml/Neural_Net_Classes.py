@@ -92,16 +92,11 @@ class CombinedNN(nn.Module):
         self.sim_to_exp_calibration_weight = nn.Parameter(torch.ones(output_size))
         self.sim_to_exp_calibration_bias = nn.Parameter(torch.zeros(output_size))
 
-        # Use custom loss function instead of nn.MSELoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-        self.scheduler = ReduceLROnPlateau(
-            self.optimizer,
-            "min",
-            factor=factor,
-            patience=patience_LRreduction,
-            threshold=threshold,
-        )
-        self.early_stopper = EarlyStopping(patience=patience_earlystopping)
+        self.learning_rate = learning_rate
+        self.patience_LRreduction = patience_LRreduction
+        self.patience_earlystopping = patience_earlystopping
+        self.factor = factor
+        self.threshold = threshold
 
     @torch.jit.export
     def calibrate(self, x):
@@ -137,8 +132,18 @@ class CombinedNN(nn.Module):
         exp_targets_val,
         num_epochs=1500,
     ):
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        scheduler = ReduceLROnPlateau(
+            optimizer,
+            "min",
+            factor=self.factor,
+            patience=self.patience_LRreduction,
+            threshold=self.threshold,
+        )
+        early_stopper = EarlyStopping(patience=self.patience_earlystopping)
+
         for epoch in range(num_epochs):
-            self.optimizer.zero_grad()
+            optimizer.zero_grad()
 
             loss = 0
             if len(sim_inputs) > 0:
@@ -149,10 +154,10 @@ class CombinedNN(nn.Module):
                 loss += nan_mse_loss(exp_targets, exp_outputs)
             loss.backward()
 
-            self.optimizer.step()
+            optimizer.step()
 
             current_loss = loss.item()
-            self.scheduler.step(current_loss)
+            scheduler.step(current_loss)
 
             # compute validation loss for early stopping
             with torch.no_grad():
@@ -169,8 +174,8 @@ class CombinedNN(nn.Module):
                     f"Epoch [{epoch + 1}/{num_epochs}], Loss:{loss.item():.6f}, Val Loss:{val_loss.item():.6f}"
                 )
 
-            self.early_stopper(val_loss.item())
-            if self.early_stopper.early_stop:
+            early_stopper(val_loss.item())
+            if early_stopper.early_stop:
                 print(
                     f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}'
                 )
