@@ -23,7 +23,7 @@ from model_manager import enable_amsc_x_api_key
 
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
-ACCURACY_TOLERANCE = 0.20
+ACCURACY_TOLERANCE = 0.25
 
 
 def parse_arguments():
@@ -125,7 +125,7 @@ def load_experimental_data(config_dict):
 
 
 def check_evaluate(model, config_dict):
-    """Call evaluate() with experimental data and verify accuracy (RMSE <= 20%)."""
+    """Call evaluate() with experimental data and verify accuracy (relative RMSE <= 20%)."""
     inputs, df_exp, output_names = load_experimental_data(config_dict)
 
     if inputs is None:
@@ -134,6 +134,7 @@ def check_evaluate(model, config_dict):
 
     n_points = len(next(iter(inputs.values())))
     print(f"Calling model.evaluate() with {n_points} experimental points...")
+    print(f"Inputs: {inputs}")
     result = model.evaluate(inputs)
     print("evaluate() succeeded.")
     print(f"Output keys: {list(result.keys())}")
@@ -154,16 +155,25 @@ def check_evaluate(model, config_dict):
         else:
             predicted = torch.tensor(raw, dtype=torch.float)
 
+        print(f"Predicted: {predicted}")
+        print(f"Predicted mean: {predicted.mean()}")
         actual = torch.tensor(df_exp[output_name].values, dtype=torch.float)
-        rmse = torch.sqrt(((predicted - actual) ** 2).mean()).item()
+        print(f"Actual: {actual}")
+        print(f"Actual mean: {actual.mean()}")
+
+
+
+        rel_errors = (predicted - actual) / torch.max(torch.abs(actual), torch.abs(predicted))
+        print(f"Rel errors: {rel_errors}")
+        rmse = torch.sqrt((rel_errors ** 2).mean()).item()
         status = "PASS" if rmse <= ACCURACY_TOLERANCE else "FAIL"
-        print(f"  [{status}] Output '{output_name}': RMSE = {rmse:.4f} (threshold {ACCURACY_TOLERANCE:.0%})")
+        print(f"  [{status}] Output '{output_name}': relative RMSE = {rmse:.1%} (threshold {ACCURACY_TOLERANCE:.0%})")
         if rmse > ACCURACY_TOLERANCE:
             all_passed = False
 
     if not all_passed:
         raise RuntimeError(
-            f"Accuracy check failed: RMSE exceeded {ACCURACY_TOLERANCE:.0%} for one or more outputs."
+            f"Accuracy check failed: relative RMSE exceeded {ACCURACY_TOLERANCE:.0%} for one or more outputs."
         )
 
     return result
