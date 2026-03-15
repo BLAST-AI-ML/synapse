@@ -143,6 +143,23 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
+def build_guess_calibration(n_inputs, alpha_inputs, beta_inputs, n_outputs, alpha_outputs, beta_outputs):
+    # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
+    # The forward transform maps experimental variables to simulation variables:
+    #   sim = alpha * (exp - beta), implemented as AffineInputTransform with
+    #   coefficient=1/alpha and offset=beta, so untransform(exp) = (exp - beta) / (1/alpha) = alpha*(exp-beta).
+    # lume-model calls untransform() on input transformers and transform() on output transformers,
+    # so output_guess_calibration (sim -> exp) uses the same coefficients and lume-model's
+    # untransform gives: exp = sim / alpha + beta.
+    input_guess_calibration = AffineInputTransform(
+        n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
+    )
+    output_guess_calibration = AffineInputTransform(
+        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
+    )
+    return input_guess_calibration, output_guess_calibration
+
+
 def train_nn_ensemble(
     model_type,
     norm_df_train,
@@ -222,6 +239,8 @@ def build_lume_model(
     output_variables,
     input_normalization,
     output_normalization,
+    input_guess_calibration,
+    output_guess_calibration,
 ):
     # Fix mismatch in name between the config file and the expected lume-model format
     for k in input_variables:
@@ -247,8 +266,8 @@ def build_lume_model(
             model=model.cpu(),
             input_variables=input_vars,
             output_variables=distribution_output_vars,
-            input_transformers=[input_normalization],
-            output_transformers=[output_normalization],
+            input_transformers=[input_guess_calibration, input_normalization],
+            output_transformers=[output_normalization, output_guess_calibration],
         )
     else:
         # model is an ensemble list of NNs
@@ -267,11 +286,12 @@ def build_lume_model(
                     model=model_nn.cpu(),
                     input_variables=input_vars,
                     output_variables=output_vars,
-                    input_transformers=[input_normalization],
+                    input_transformers=[input_guess_calibration, input_normalization],
                     output_transformers=[
                         calibration_transform,
                         output_normalization,
-                    ],  # saving calibration before normalization
+                        output_guess_calibration,
+                    ],
                 )
             )
 
@@ -416,6 +436,7 @@ if __name__ == "__main__":
     input_names = [v["name"] for v in input_variables.values()]
     output_variables = config_dict["outputs"]
     output_names = [v["name"] for v in output_variables.values()]
+    n_inputs = len(input_names)
     n_outputs = len(output_names)
 
     # Extract experimental and simulation data from the database as pandas dataframe
@@ -433,32 +454,86 @@ if __name__ == "__main__":
     ):
         enable_amsc_x_api_key(config_dict)
 
-    # Apply simulation calibration to the simulation data
-    if "simulation_calibration" in config_dict:
-        simulation_calibration = config_dict["simulation_calibration"]
-    else:
-        simulation_calibration = {}
-    for value in simulation_calibration.values():
-        sim_name = value["name"]
-        exp_name = value["depends_on"]
-        df_sim[exp_name] = df_sim[sim_name] / value["alpha_guess"] + value["beta_guess"]
+    # Build simulation variable name mappings and per-dimension alpha/beta vectors
+    simulation_calibration = config_dict.get("simulation_calibration", {})
+
+    sim_input_names = []
+    alpha_input_list = []
+    beta_input_list = []
+    for key in input_variables:
+        if key in simulation_calibration:
+            sim_input_names.append(simulation_calibration[key]["name"])
+            alpha_input_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_input_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_input_names.append(input_variables[key]["name"])
+            alpha_input_list.append(1.0)
+            beta_input_list.append(0.0)
+
+    sim_output_names = []
+    alpha_output_list = []
+    beta_output_list = []
+    for key in output_variables:
+        if key in simulation_calibration:
+            sim_output_names.append(simulation_calibration[key]["name"])
+            alpha_output_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_output_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_output_names.append(output_variables[key]["name"])
+            alpha_output_list.append(1.0)
+            beta_output_list.append(0.0)
+
+    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
+    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
+    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
+    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
+
+    # Build guess calibration transforms (exp <-> sim variable conversion)
+    input_guess_calibration, output_guess_calibration = build_guess_calibration(
+        n_inputs, alpha_inputs, beta_inputs, n_outputs, alpha_outputs, beta_outputs
+    )
+
+    # Convert experimental data to simulation variable space
+    if len(df_exp) > 0:
+        df_exp[sim_input_names] = (
+            input_guess_calibration(
+                torch.tensor(df_exp[input_names].values, dtype=torch.float)
+            )
+            .detach()
+            .numpy()
+        )
+        df_exp[sim_output_names] = (
+            output_guess_calibration(
+                torch.tensor(df_exp[output_names].values, dtype=torch.float)
+            )
+            .detach()
+            .numpy()
+        )
 
     # Concatenate experimental and simulation data for training and validation
-    variables = input_names + output_names + ["experiment_flag"]
-    df_train, df_val = split_data(df_exp, df_sim, variables, model_type)
+    sim_variables = sim_input_names + sim_output_names + ["experiment_flag"]
+    df_train, df_val = split_data(df_exp, df_sim, sim_variables, model_type)
 
-    # Apply normalization to the training data
-    X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
-    y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
+    # Apply normalization to the training data in simulation variable space
+    X_train = torch.tensor(df_train[sim_input_names].values, dtype=torch.float)
+    y_train = torch.tensor(df_train[sim_output_names].values, dtype=torch.float)
     input_normalization, output_normalization = build_normalizations(
-        len(input_names), X_train, len(output_names), y_train
+        n_inputs, X_train, n_outputs, y_train
     )
     norm_df_train = normalize(
-        df_train, input_names, input_normalization, output_names, output_normalization
+        df_train,
+        sim_input_names,
+        input_normalization,
+        sim_output_names,
+        output_normalization,
     )
     if model_type != "GP":
         norm_df_val = normalize(
-            df_val, input_names, input_normalization, output_names, output_normalization
+            df_val,
+            sim_input_names,
+            input_normalization,
+            sim_output_names,
+            output_normalization,
         )
 
     print("training started")
@@ -471,8 +546,8 @@ if __name__ == "__main__":
             model_type,
             norm_df_train,
             norm_df_val,
-            input_names,
-            output_names,
+            sim_input_names,
+            sim_output_names,
             device,
         )
     ###############################################################
@@ -481,8 +556,8 @@ if __name__ == "__main__":
     else:
         trained_model = train_gp(
             norm_df_train,
-            input_names,
-            output_names,
+            sim_input_names,
+            sim_output_names,
             device,
         )
 
@@ -504,6 +579,8 @@ if __name__ == "__main__":
         output_variables,
         input_normalization,
         output_normalization,
+        input_guess_calibration,
+        output_guess_calibration,
     )
 
     if test_mode:
