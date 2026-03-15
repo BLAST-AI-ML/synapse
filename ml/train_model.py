@@ -192,7 +192,12 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
     output_guess_calibration = AffineInputTransform(
         n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
     )
-    return input_guess_calibration, output_guess_calibration, sim_input_names, sim_output_names
+    return (
+        input_guess_calibration,
+        output_guess_calibration,
+        sim_input_names,
+        sim_output_names,
+    )
 
 
 def train_nn_ensemble(
@@ -488,9 +493,12 @@ if __name__ == "__main__":
         enable_amsc_x_api_key(config_dict)
 
     # Build guess calibration transforms (exp <-> sim variable conversion)
-    input_guess_calibration, output_guess_calibration, sim_input_names, sim_output_names = (
-        build_guess_calibration(config_dict, input_variables, output_variables)
-    )
+    (
+        input_guess_calibration,
+        output_guess_calibration,
+        sim_input_names,
+        sim_output_names,
+    ) = build_guess_calibration(config_dict, input_variables, output_variables)
 
     # Convert experimental data to simulation variable space
     if len(df_exp) > 0:
