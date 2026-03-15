@@ -505,16 +505,12 @@ if __name__ == "__main__":
         df_exp[sim_input_names] = (
             input_guess_calibration(
                 torch.tensor(df_exp[input_names].values, dtype=torch.float)
-            )
-            .detach()
-            .numpy()
+            ).numpy()
         )
         df_exp[sim_output_names] = (
             output_guess_calibration(
                 torch.tensor(df_exp[output_names].values, dtype=torch.float)
-            )
-            .detach()
-            .numpy()
+            ).numpy()
         )
 
     # Concatenate experimental and simulation data for training and validation
