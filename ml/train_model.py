@@ -502,16 +502,12 @@ if __name__ == "__main__":
 
     # Convert experimental data to simulation variable space
     if len(df_exp) > 0:
-        df_exp[sim_input_names] = (
-            input_guess_calibration(
-                torch.tensor(df_exp[input_names].values, dtype=torch.float)
-            ).numpy()
-        )
-        df_exp[sim_output_names] = (
-            output_guess_calibration(
-                torch.tensor(df_exp[output_names].values, dtype=torch.float)
-            ).numpy()
-        )
+        df_exp[sim_input_names] = input_guess_calibration(
+            torch.tensor(df_exp[input_names].values, dtype=torch.float)
+        ).numpy()
+        df_exp[sim_output_names] = output_guess_calibration(
+            torch.tensor(df_exp[output_names].values, dtype=torch.float)
+        ).numpy()
 
     # Concatenate experimental and simulation data for training and validation
     sim_variables = sim_input_names + sim_output_names + ["experiment_flag"]
