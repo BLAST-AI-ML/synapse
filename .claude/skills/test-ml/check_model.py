@@ -124,11 +124,7 @@ def download_model(config_dict, model_type):
     print(f"Downloading model '{model_uri}' ...")
 
     # Same download command as in the dashboard (model_manager.py)
-    model = (
-        mlflow.pyfunc.load_model(model_uri)
-        .unwrap_python_model()
-        .model
-    )
+    model = mlflow.pyfunc.load_model(model_uri).unwrap_python_model().model
     print(f"Model downloaded successfully: {type(model).__name__}")
     return model
 
@@ -160,7 +156,9 @@ def load_experimental_inputs(config_dict):
 def check_evaluate(model, config_dict):
     """Call evaluate() with experimental data fetched from the database."""
     inputs = load_experimental_inputs(config_dict)
-    print(f"Calling model.evaluate() with {len(next(iter(inputs.values())))} experimental points...")
+    print(
+        f"Calling model.evaluate() with {len(next(iter(inputs.values())))} experimental points..."
+    )
     result = model.evaluate(inputs)
     print("evaluate() succeeded.")
     print(f"Output keys: {list(result.keys())}")
