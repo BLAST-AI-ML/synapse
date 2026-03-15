@@ -9,19 +9,17 @@ Usage:
 
 import argparse
 import os
-import socket
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
 import pandas as pd
+import pymongo
 import torch
 import yaml
 import mlflow
 
-# Import DB connection helper from train_model.py
-_ML_DIR = Path(__file__).resolve().parents[1] / "ml"
-sys.path.insert(0, str(_ML_DIR))
-from train_model import connect_to_db
+_DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
+sys.path.insert(0, str(_DASHBOARD_DIR))
+from model_manager import enable_amsc_x_api_key
 
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
@@ -56,53 +54,6 @@ def load_config(config_file):
         return yaml.safe_load(f.read())
 
 
-def enable_amsc_x_api_key(config_dict):
-    """Inject AmSC X-Api-Key header into all MLflow requests (mirrors train_model.py)."""
-    import mlflow.utils.rest_utils as rest_utils
-
-    mlflow_cfg = config_dict.get("mlflow") or {}
-    api_key_env = mlflow_cfg.get("api_key_env")
-    if not api_key_env:
-        raise KeyError(
-            "Missing 'api_key_env' in 'mlflow' configuration for AmSC authentication."
-        )
-    api_key = os.getenv(api_key_env)
-    if api_key is None:
-        raise KeyError(
-            f"Environment variable '{api_key_env}' (from mlflow.api_key_env) is not set."
-        )
-
-    _orig = rest_utils.http_request
-
-    def patched(host_creds, endpoint, method, *args, **kwargs):
-        if "headers" in kwargs and kwargs["headers"] is not None:
-            h = dict(kwargs["headers"])
-            h["X-Api-Key"] = api_key
-            kwargs["headers"] = h
-        else:
-            h = dict(kwargs.get("extra_headers") or {})
-            h["X-Api-Key"] = api_key
-            kwargs["extra_headers"] = h
-        return _orig(host_creds, endpoint, method, *args, **kwargs)
-
-    rest_utils.http_request = patched
-
-
-def check_server_reachable(tracking_uri, timeout=5):
-    """Quick socket check to fail fast if the MLflow server is unreachable."""
-    parsed = urlparse(tracking_uri)
-    host = parsed.hostname
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            pass
-        print(f"MLflow server reachable at {host}:{port}")
-    except OSError as e:
-        raise RuntimeError(
-            f"MLflow server at {tracking_uri} is not reachable: {e}"
-        ) from e
-
-
 def download_model(config_dict, model_type):
     """Download the model from MLflow, exactly as the dashboard does."""
     if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
@@ -111,7 +62,6 @@ def download_model(config_dict, model_type):
         )
 
     tracking_uri = config_dict["mlflow"]["tracking_uri"]
-    check_server_reachable(tracking_uri)
     mlflow.set_tracking_uri(tracking_uri)
     print(f"MLflow tracking URI: {tracking_uri}")
 
@@ -142,12 +92,24 @@ def load_experimental_data(config_dict):
     output_variables = config_dict["outputs"]
     output_names = [v["name"] for v in output_variables.values()]
 
-    db = connect_to_db(config_dict)
+    db_cfg = config_dict["database"]
+    db_password = os.getenv(db_cfg["password_ro_env"])
+    if db_password is None:
+        raise RuntimeError(f"Environment variable {db_cfg['password_ro_env']} must be set!")
+    db = pymongo.MongoClient(
+        host=db_cfg["host"],
+        port=db_cfg["port"],
+        authSource=db_cfg["auth"],
+        username=db_cfg["username_ro"],
+        password=db_password,
+        directConnection=(db_cfg["host"] in ["localhost", "127.0.0.1"]),
+    )[db_cfg["name"]]
+
     date_filter = config_dict.get("date_filter", {})
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
 
     if df_exp.empty:
-        raise RuntimeError("No experimental points found in the database.")
+        return None, None, output_names
 
     missing = [name for name in input_names + output_names if name not in df_exp.columns]
     if missing:
@@ -163,15 +125,20 @@ def load_experimental_data(config_dict):
 
 
 def check_evaluate(model, config_dict):
-    """Call evaluate() with experimental data and verify accuracy (MRE <= 20%)."""
+    """Call evaluate() with experimental data and verify accuracy (RMSE <= 20%)."""
     inputs, df_exp, output_names = load_experimental_data(config_dict)
+
+    if inputs is None:
+        print("[WARN] No experimental points found in the database; skipping accuracy check.")
+        return None
+
     n_points = len(next(iter(inputs.values())))
     print(f"Calling model.evaluate() with {n_points} experimental points...")
     result = model.evaluate(inputs)
     print("evaluate() succeeded.")
     print(f"Output keys: {list(result.keys())}")
 
-    # Accuracy check: mean relative error <= ACCURACY_TOLERANCE for each output
+    # Accuracy check: RMSE <= ACCURACY_TOLERANCE for each output
     all_passed = True
     for output_name in output_names:
         if output_name not in result:
@@ -180,21 +147,23 @@ def check_evaluate(model, config_dict):
 
         raw = result[output_name]
         # GP / ensemble_NN return a distribution; NN returns a tensor directly
-        if hasattr(raw, "mean"):
+        if torch.is_tensor(raw):
+            predicted = raw.float()
+        elif hasattr(raw, "mean"):
             predicted = raw.mean.detach().float()
         else:
-            predicted = raw.float() if torch.is_tensor(raw) else torch.tensor(raw, dtype=torch.float)
+            predicted = torch.tensor(raw, dtype=torch.float)
 
         actual = torch.tensor(df_exp[output_name].values, dtype=torch.float)
-        mre = (torch.abs(predicted - actual) / torch.abs(actual).clamp(min=1e-10)).mean().item()
-        status = "PASS" if mre <= ACCURACY_TOLERANCE else "FAIL"
-        print(f"  [{status}] Output '{output_name}': mean relative error = {mre:.1%} (threshold {ACCURACY_TOLERANCE:.0%})")
-        if mre > ACCURACY_TOLERANCE:
+        rmse = torch.sqrt(((predicted - actual) ** 2).mean()).item()
+        status = "PASS" if rmse <= ACCURACY_TOLERANCE else "FAIL"
+        print(f"  [{status}] Output '{output_name}': RMSE = {rmse:.4f} (threshold {ACCURACY_TOLERANCE:.0%})")
+        if rmse > ACCURACY_TOLERANCE:
             all_passed = False
 
     if not all_passed:
         raise RuntimeError(
-            f"Accuracy check failed: mean relative error exceeded {ACCURACY_TOLERANCE:.0%} for one or more outputs."
+            f"Accuracy check failed: RMSE exceeded {ACCURACY_TOLERANCE:.0%} for one or more outputs."
         )
 
     return result

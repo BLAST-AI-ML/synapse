@@ -243,7 +243,7 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
 
         # Load and evaluate
         run_in_conda(
-            "synapse-ml",
+            "synapse-gui",
             f"python {_TESTS_DIR / 'check_model.py'} --config_file {tmp_path} --model {model_type}",
         )
     finally:
