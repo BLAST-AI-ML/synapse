@@ -143,7 +143,9 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
-def build_guess_calibration(n_inputs, alpha_inputs, beta_inputs, n_outputs, alpha_outputs, beta_outputs):
+def build_guess_calibration(
+    n_inputs, alpha_inputs, beta_inputs, n_outputs, alpha_outputs, beta_outputs
+):
     # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
     # The forward transform maps experimental variables to simulation variables:
     #   sim = alpha * (exp - beta), implemented as AffineInputTransform with
