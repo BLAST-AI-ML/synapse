@@ -143,7 +143,7 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
-def build_guess_calibration(n_inputs, alpha_inputs, beta_inputs, n_outputs, alpha_outputs, beta_outputs):
+def build_guess_calibration(config_dict, input_variables, output_variables):
     # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
     # The forward transform maps experimental variables to simulation variables:
     #   sim = alpha * (exp - beta), implemented as AffineInputTransform with
@@ -151,13 +151,48 @@ def build_guess_calibration(n_inputs, alpha_inputs, beta_inputs, n_outputs, alph
     # lume-model calls untransform() on input transformers and transform() on output transformers,
     # so output_guess_calibration (sim -> exp) uses the same coefficients and lume-model's
     # untransform gives: exp = sim / alpha + beta.
+    simulation_calibration = config_dict.get("simulation_calibration", {})
+
+    sim_input_names = []
+    alpha_input_list = []
+    beta_input_list = []
+    for key in input_variables:
+        if key in simulation_calibration:
+            sim_input_names.append(simulation_calibration[key]["name"])
+            alpha_input_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_input_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_input_names.append(input_variables[key]["name"])
+            alpha_input_list.append(1.0)
+            beta_input_list.append(0.0)
+
+    sim_output_names = []
+    alpha_output_list = []
+    beta_output_list = []
+    for key in output_variables:
+        if key in simulation_calibration:
+            sim_output_names.append(simulation_calibration[key]["name"])
+            alpha_output_list.append(simulation_calibration[key]["alpha_guess"])
+            beta_output_list.append(simulation_calibration[key]["beta_guess"])
+        else:
+            sim_output_names.append(output_variables[key]["name"])
+            alpha_output_list.append(1.0)
+            beta_output_list.append(0.0)
+
+    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
+    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
+    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
+    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
+
+    n_inputs = len(input_variables)
+    n_outputs = len(output_variables)
     input_guess_calibration = AffineInputTransform(
         n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
     )
     output_guess_calibration = AffineInputTransform(
         n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
     )
-    return input_guess_calibration, output_guess_calibration
+    return input_guess_calibration, output_guess_calibration, sim_input_names, sim_output_names
 
 
 def train_nn_ensemble(
@@ -436,8 +471,6 @@ if __name__ == "__main__":
     input_names = [v["name"] for v in input_variables.values()]
     output_variables = config_dict["outputs"]
     output_names = [v["name"] for v in output_variables.values()]
-    n_inputs = len(input_names)
-    n_outputs = len(output_names)
 
     # Extract experimental and simulation data from the database as pandas dataframe
     db = connect_to_db(config_dict)
@@ -454,43 +487,9 @@ if __name__ == "__main__":
     ):
         enable_amsc_x_api_key(config_dict)
 
-    # Build simulation variable name mappings and per-dimension alpha/beta vectors
-    simulation_calibration = config_dict.get("simulation_calibration", {})
-
-    sim_input_names = []
-    alpha_input_list = []
-    beta_input_list = []
-    for key in input_variables:
-        if key in simulation_calibration:
-            sim_input_names.append(simulation_calibration[key]["name"])
-            alpha_input_list.append(simulation_calibration[key]["alpha_guess"])
-            beta_input_list.append(simulation_calibration[key]["beta_guess"])
-        else:
-            sim_input_names.append(input_variables[key]["name"])
-            alpha_input_list.append(1.0)
-            beta_input_list.append(0.0)
-
-    sim_output_names = []
-    alpha_output_list = []
-    beta_output_list = []
-    for key in output_variables:
-        if key in simulation_calibration:
-            sim_output_names.append(simulation_calibration[key]["name"])
-            alpha_output_list.append(simulation_calibration[key]["alpha_guess"])
-            beta_output_list.append(simulation_calibration[key]["beta_guess"])
-        else:
-            sim_output_names.append(output_variables[key]["name"])
-            alpha_output_list.append(1.0)
-            beta_output_list.append(0.0)
-
-    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
-    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
-    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
-    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
-
     # Build guess calibration transforms (exp <-> sim variable conversion)
-    input_guess_calibration, output_guess_calibration = build_guess_calibration(
-        n_inputs, alpha_inputs, beta_inputs, n_outputs, alpha_outputs, beta_outputs
+    input_guess_calibration, output_guess_calibration, sim_input_names, sim_output_names = (
+        build_guess_calibration(config_dict, input_variables, output_variables)
     )
 
     # Convert experimental data to simulation variable space
@@ -518,7 +517,7 @@ if __name__ == "__main__":
     X_train = torch.tensor(df_train[sim_input_names].values, dtype=torch.float)
     y_train = torch.tensor(df_train[sim_output_names].values, dtype=torch.float)
     input_normalization, output_normalization = build_normalizations(
-        n_inputs, X_train, n_outputs, y_train
+        len(sim_input_names), X_train, len(sim_output_names), y_train
     )
     norm_df_train = normalize(
         df_train,
