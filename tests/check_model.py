@@ -60,18 +60,7 @@ def load_experimental_data(config_dict):
     db = load_database(config_dict)
     exp_data, _ = load_data(db, config_dict["experiment"])
 
-    if exp_data.empty:
-        return None, None, output_names
-
-    missing = [n for n in input_names + output_names if n not in exp_data.columns]
-    if missing:
-        raise RuntimeError(f"Missing columns in experimental data: {missing}")
-
-    print(f"Fetched {len(exp_data)} experimental points from the database.")
-    inputs = {
-        n: torch.tensor(exp_data[n].values, dtype=torch.float64) for n in input_names
-    }
-    return inputs, exp_data, output_names
+    return exp_data, input_names, output_names
 
 
 def check_evaluate(config_dict, model_type):
@@ -80,25 +69,13 @@ def check_evaluate(config_dict, model_type):
     if not mm.avail():
         raise RuntimeError(f"Model '{model_type}' could not be loaded from MLflow.")
 
-    inputs, df_exp, output_names = load_experimental_data(config_dict)
+    df_exp, input_names, output_names = load_experimental_data(config_dict)
 
-    if inputs is None:
-        print(
-            "[WARN] No experimental points found in the database; skipping accuracy check."
-        )
-        return
-
-    n_points = len(next(iter(inputs.values())))
-    print(f"Calling mm.evaluate() with {n_points} experimental points...")
-
+    # Convert input to the format expected by the model manager
+    inputs = {n: torch.tensor(df_exp[n].values) for n in input_names}
     all_passed = True
     for output_name in output_names:
         mean, _, _ = mm.evaluate(inputs, output_name)
-        if not torch.is_tensor(mean):
-            mean = torch.tensor(mean, dtype=torch.float)
-        else:
-            mean = mean.float()
-
         actual = torch.tensor(df_exp[output_name].values, dtype=torch.float)
         rel_errors = (mean - actual) / torch.max(torch.abs(actual), torch.abs(mean))
         rmse = torch.sqrt((rel_errors**2).mean()).item()
