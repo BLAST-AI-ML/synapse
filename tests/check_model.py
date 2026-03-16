@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Check that a model stored in MLflow loads and evaluates correctly,
-using the same download logic as the dashboard.
+using the same logic as the dashboard.
 
 Usage:
     python check_model.py --config_file <path/to/config.yaml> --model <GP|NN|ensemble_NN>

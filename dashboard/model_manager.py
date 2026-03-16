@@ -105,7 +105,7 @@ class ModelManager:
             elif model_type_tag == "GP":
                 self.__is_gaussian_process = True
             else:
-                raise ValueError(f"Unsupported model type tag: {model_type_tag}")
+                raise ValueError(f"Unsupported model type: {model_type_tag}")
         except Exception as e:
             title = f"Unable to load model {model_type_tag}"
             msg = f"Error occurred when loading model from MLflow: {e}"
