@@ -108,9 +108,7 @@ def load_data(db, experiment, date_range=None):
     # create date filter if date range is set
     date_filter = create_date_filter(date_range)
     # load experiment and simulation data points in dataframes
-    exp_data = pd.DataFrame(
-        db[experiment].find({"experiment_flag": 1, **date_filter})
-    )
+    exp_data = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     sim_data = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
     # Store '_id', 'date' as string
     for key in ["_id", "date"]:

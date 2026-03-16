@@ -75,7 +75,7 @@ class ModelManager:
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
-                f"No mlflow.tracking_uri in configuration file; cannot load model from MLflow."
+                "No mlflow.tracking_uri in configuration file; cannot load model from MLflow."
             )
             return
 

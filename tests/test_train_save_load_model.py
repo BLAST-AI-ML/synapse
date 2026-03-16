@@ -96,9 +96,7 @@ def check_db_reachable(cfg):
         )
         client.admin.command("ping")
     except Exception as e:
-        raise RuntimeError(
-            f"Cannot connect to MongoDB at {host}:{port}: {e}"
-        ) from e
+        raise RuntimeError(f"Cannot connect to MongoDB at {host}:{port}: {e}") from e
 
 
 def load_config(path):
@@ -227,6 +225,7 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
             # pytest.skip is only available inside pytest; detect it gracefully
             try:
                 import pytest
+
                 pytest.skip(msg)
             except ImportError:
                 print(f"[SKIP] {msg}")
@@ -269,15 +268,8 @@ def pytest_addoption(parser):
 def pytest_generate_tests(metafunc):
     if "config_file" in metafunc.fixturenames and "model_type" in metafunc.fixturenames:
         configs = get_all_configs()
-        params = [
-            (str(cfg), model)
-            for cfg in configs
-            for model in MODEL_TYPES
-        ]
-        ids = [
-            f"{Path(cfg).parent.name}-{model}"
-            for cfg, model in params
-        ]
+        params = [(str(cfg), model) for cfg in configs for model in MODEL_TYPES]
+        ids = [f"{Path(cfg).parent.name}-{model}" for cfg, model in params]
         metafunc.parametrize("config_file,model_type", params, ids=ids)
 
 
@@ -341,9 +333,9 @@ if __name__ == "__main__":
     for config_path in configs_to_test:
         exp_name = config_path.parent.name
         for model_type in models_to_test:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"Testing: {exp_name} / {model_type}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             try:
                 run_one_test(config_path, model_type, args.mlflow_uri)
                 results.append((exp_name, model_type, "PASS", ""))
@@ -355,9 +347,9 @@ if __name__ == "__main__":
                 print(f"[FAIL] {e}")
 
     # Summary table
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("SUMMARY")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     col_w = max(len(r[0]) for r in results) + 2
     header = f"{'Experiment':<{col_w}} {'Model':<14} {'Status'}"
     print(header)

@@ -68,7 +68,9 @@ def load_experimental_data(config_dict):
         raise RuntimeError(f"Missing columns in experimental data: {missing}")
 
     print(f"Fetched {len(exp_data)} experimental points from the database.")
-    inputs = {n: torch.tensor(exp_data[n].values, dtype=torch.float64) for n in input_names}
+    inputs = {
+        n: torch.tensor(exp_data[n].values, dtype=torch.float64) for n in input_names
+    }
     return inputs, exp_data, output_names
 
 
@@ -81,7 +83,9 @@ def check_evaluate(config_dict, model_type):
     inputs, df_exp, output_names = load_experimental_data(config_dict)
 
     if inputs is None:
-        print("[WARN] No experimental points found in the database; skipping accuracy check.")
+        print(
+            "[WARN] No experimental points found in the database; skipping accuracy check."
+        )
         return
 
     n_points = len(next(iter(inputs.values())))
@@ -97,9 +101,11 @@ def check_evaluate(config_dict, model_type):
 
         actual = torch.tensor(df_exp[output_name].values, dtype=torch.float)
         rel_errors = (mean - actual) / torch.max(torch.abs(actual), torch.abs(mean))
-        rmse = torch.sqrt((rel_errors ** 2).mean()).item()
+        rmse = torch.sqrt((rel_errors**2).mean()).item()
         status = "PASS" if rmse <= ACCURACY_TOLERANCE else "FAIL"
-        print(f"  [{status}] Output '{output_name}': relative RMSE = {rmse:.1%} (threshold {ACCURACY_TOLERANCE:.0%})")
+        print(
+            f"  [{status}] Output '{output_name}': relative RMSE = {rmse:.1%} (threshold {ACCURACY_TOLERANCE:.0%})"
+        )
         if rmse > ACCURACY_TOLERANCE:
             all_passed = False
 
