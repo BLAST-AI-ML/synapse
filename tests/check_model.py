@@ -65,19 +65,21 @@ def load_experimental_data(config_dict):
 
 def check_evaluate(config_dict, model_type):
     """Load model and evaluate with experimental data; verify accuracy (relative RMSE <= 25%)."""
+    # Load model
     mm = ModelManager(config_dict=config_dict, model_type_tag=model_type)
     if not mm.avail():
         raise RuntimeError(f"Model '{model_type}' could not be loaded from MLflow.")
-
+    # Load experimental data
     df_exp, input_names, output_names = load_experimental_data(config_dict)
-
     # Convert input to the format expected by the model manager
     inputs = {n: torch.tensor(df_exp[n].values) for n in input_names}
+
+    # Check accuracy
     all_passed = True
     for output_name in output_names:
-        mean, _, _ = mm.evaluate(inputs, output_name)
-        actual = torch.tensor(df_exp[output_name].values, dtype=torch.float)
-        rel_errors = (mean - actual) / torch.max(torch.abs(actual), torch.abs(mean))
+        prediction, _, _ = mm.evaluate(inputs, output_name)
+        actual = torch.tensor(df_exp[output_name].values)
+        rel_errors = (prediction - actual) / torch.max(torch.abs(actual), torch.abs(prediction))
         rmse = torch.sqrt((rel_errors**2).mean()).item()
         status = "PASS" if rmse <= ACCURACY_TOLERANCE else "FAIL"
         print(
