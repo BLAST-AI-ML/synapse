@@ -26,7 +26,7 @@ ACCURACY_TOLERANCE = 0.25
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Verify that an MLflow model loads and predicts with default parameters."
+        description="Verify that an MLflow model loads and evaluates correctly."
     )
     parser.add_argument(
         "--config_file",
@@ -53,7 +53,7 @@ def load_config(config_file):
 
 
 def load_experimental_data(config_dict):
-    """Fetch all experimental points from the database; return input dict and output DataFrame."""
+    """Fetch all experimental points from the database."""
     input_names = [v["name"] for v in config_dict["inputs"].values()]
     output_names = [v["name"] for v in config_dict["outputs"].values()]
 
