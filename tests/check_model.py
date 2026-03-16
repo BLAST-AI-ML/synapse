@@ -79,7 +79,9 @@ def check_evaluate(config_dict, model_type):
     for output_name in output_names:
         prediction, _, _ = mm.evaluate(inputs, output_name)
         actual = torch.tensor(df_exp[output_name].values)
-        rel_errors = (prediction - actual) / torch.max(torch.abs(actual), torch.abs(prediction))
+        rel_errors = (prediction - actual) / torch.max(
+            torch.abs(actual), torch.abs(prediction)
+        )
         rmse = torch.sqrt((rel_errors**2).mean()).item()
         status = "PASS" if rmse <= ACCURACY_TOLERANCE else "FAIL"
         print(
