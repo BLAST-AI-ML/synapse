@@ -32,7 +32,6 @@ import yaml
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
 GP_SKIP_THRESHOLD = 1000
-ACCURACY_TOLERANCE = 0.20
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
 CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"
 
@@ -192,13 +191,6 @@ def run_in_conda(conda_env, cmd, cwd=None):
 # ---------------------------------------------------------------------------
 # Core
 # ---------------------------------------------------------------------------
-
-
-def preflight(config_dict, mlflow_uri):
-    """Run pre-flight checks: MLflow reachability and DB connectivity."""
-    check_mlflow_reachable(mlflow_uri)
-    check_db_reachable(config_dict)
-
 
 def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     """
