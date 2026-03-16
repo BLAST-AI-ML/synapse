@@ -72,7 +72,9 @@ def check_evaluate(config_dict, model_type):
     for output_name in output_names:
         actual = torch.tensor(df_exp[output_name].values)
         if actual.isnan().all():
-            print(f"  [SKIP] Output '{output_name}': all actual values are NaN; skipping.")
+            print(
+                f"  [SKIP] Output '{output_name}': all actual values are NaN; skipping."
+            )
             continue
         prediction, _, _ = mm.evaluate(inputs, output_name)
         rel_errors = (prediction - actual) / torch.max(
