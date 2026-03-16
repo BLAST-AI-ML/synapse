@@ -2,16 +2,12 @@
 """
 Automated test: train ML models, save to MLflow, load and evaluate.
 
-Can be run standalone (CLI) or discovered by pytest.
+Can be run standalone (CLI).
 
 Usage (standalone):
     python tests/test_train_save_load_model.py
     python tests/test_train_save_load_model.py --model NN --config_file experiments/synapse-bella-ip2
     python tests/test_train_save_load_model.py --test-mlflow-uri http://localhost:5000
-
-Usage (pytest):
-    pytest tests/test_train_save_load_model.py -v
-    pytest tests/ --test-mlflow-uri http://localhost:5000
 """
 
 import argparse
@@ -188,13 +184,9 @@ def run_in_conda(conda_env, cmd, cwd=None):
         raise subprocess.CalledProcessError(result.returncode, full_cmd)
 
 
-# ---------------------------------------------------------------------------
-# Core
-# ---------------------------------------------------------------------------
-
 def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     """
-    Full train → save → load → evaluate cycle for one (config, model_type) pair.
+    Full train, save, load, and evaluate cycle for one (config, model_type) pair.
     Raises on failure; returns normally on success.
     """
     config_file = Path(config_file)
@@ -214,14 +206,8 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
                 f"{count} simulation datapoints > threshold {GP_SKIP_THRESHOLD}."
             )
             warnings.warn(msg)
-            # pytest.skip is only available inside pytest; detect it gracefully
-            try:
-                import pytest
-
-                pytest.skip(msg)
-            except ImportError:
-                print(f"[SKIP] {msg}")
-                return
+            print(f"[SKIP] {msg}")
+            return
 
     tmp_path = make_temp_config(config_dict, mlflow_uri)
     try:
@@ -243,45 +229,6 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
         except OSError:
             pass
 
-
-# ---------------------------------------------------------------------------
-# Pytest interface
-# ---------------------------------------------------------------------------
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--test-mlflow-uri",
-        default=DEFAULT_MLFLOW_URI,
-        help=f"MLflow tracking URI to use during tests (default: {DEFAULT_MLFLOW_URI})",
-    )
-
-
-def pytest_generate_tests(metafunc):
-    if "config_file" in metafunc.fixturenames and "model_type" in metafunc.fixturenames:
-        configs = get_all_configs()
-        params = [(str(cfg), model) for cfg in configs for model in MODEL_TYPES]
-        ids = [f"{Path(cfg).parent.name}-{model}" for cfg, model in params]
-        metafunc.parametrize("config_file,model_type", params, ids=ids)
-
-
-try:
-    import pytest
-
-    @pytest.fixture(scope="session")
-    def mlflow_uri(request):
-        return request.config.getoption("--test-mlflow-uri", default=DEFAULT_MLFLOW_URI)
-
-    def test_train_save_load(config_file, model_type, mlflow_uri):
-        run_one_test(config_file, model_type, mlflow_uri)
-
-except ImportError:
-    pass  # pytest not available; CLI mode only
-
-
-# ---------------------------------------------------------------------------
-# CLI entrypoint
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
