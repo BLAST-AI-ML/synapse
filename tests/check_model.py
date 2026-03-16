@@ -24,27 +24,6 @@ MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
 ACCURACY_TOLERANCE = 0.25
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Verify that an MLflow model loads and evaluates correctly."
-    )
-    parser.add_argument(
-        "--config_file",
-        help="Path to the configuration file",
-        type=str,
-        required=True,
-    )
-    parser.add_argument(
-        "--model",
-        help="Model type: GP, NN, or ensemble_NN",
-        choices=MODEL_TYPES,
-        required=True,
-    )
-    args = parser.parse_args()
-    print(f"Config file: {args.config_file}, Model type: {args.model}")
-    return args.config_file, args.model
-
-
 def load_config(config_file):
     if not os.path.exists(config_file):
         raise RuntimeError(f"Configuration file not found: {config_file}")
@@ -97,15 +76,30 @@ def check_evaluate(config_dict, model_type):
 
 
 if __name__ == "__main__":
-    config_file, model_type = parse_arguments()
+    parser = argparse.ArgumentParser(
+        description="Verify that an MLflow model loads and evaluates correctly."
+    )
+    parser.add_argument(
+        "--config_file",
+        help="Path to the configuration file",
+        type=str,
+        required=True,
+    )
+    parser.add_argument(
+        "--model",
+        help="Model type: GP, NN, or ensemble_NN",
+        choices=MODEL_TYPES,
+        required=True,
+    )
+    args = parser.parse_args()
 
     # Load configuration
-    config_dict = load_config(config_file)
+    config_dict = load_config(args.config_file)
     print(f"Experiment: {config_dict['experiment']}")
 
     # Load model and evaluate with experimental data
     try:
-        check_evaluate(config_dict, model_type)
+        check_evaluate(config_dict, args.model)
     except Exception as e:
         print(f"[FAIL] {e}")
         sys.exit(1)

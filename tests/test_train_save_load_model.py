@@ -210,8 +210,8 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
         config_file = config_file / "config.yaml"
 
     config_dict = load_config(config_file)
-
-    preflight(config_dict, mlflow_uri)
+    check_mlflow_reachable(mlflow_uri)
+    check_db_reachable(config_dict)
 
     # GP: skip if dataset is too large
     if model_type == "GP":
