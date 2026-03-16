@@ -65,14 +65,14 @@ def update(
         state.experiment
     )
     # load data
-    db = load_database(state.experiment)
-    exp_data, sim_data = load_data(db)
+    config_dict = load_config_dict(state.experiment)
+    db = load_database(config_dict)
+    exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
     # reset model
     if reset_model:
-        config_dict = load_config_dict(state.experiment)
         mod_manager = ModelManager(
             config_dict=config_dict,
             model_type_tag=model_type_tag_dict[state.model_type],
@@ -262,7 +262,8 @@ def find_simulation(event, db):
 
 
 def open_simulation_dialog(event):
-    db = load_database(state.experiment)
+    config_dict = load_config_dict(state.experiment)
+    db = load_database(config_dict)
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")

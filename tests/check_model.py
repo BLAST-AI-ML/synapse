@@ -11,14 +11,13 @@ import argparse
 import os
 import sys
 from pathlib import Path
-import pandas as pd
-import pymongo
 import torch
 import yaml
 
 _DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
 sys.path.insert(0, str(_DASHBOARD_DIR))
 from model_manager import ModelManager
+from utils import load_database, load_data
 
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
@@ -55,42 +54,22 @@ def load_config(config_file):
 
 def load_experimental_data(config_dict):
     """Fetch all experimental points from the database; return input dict and output DataFrame."""
-    experiment = config_dict["experiment"]
-    input_variables = config_dict["inputs"]
-    input_names = [v["name"] for v in input_variables.values()]
-    output_variables = config_dict["outputs"]
-    output_names = [v["name"] for v in output_variables.values()]
+    input_names = [v["name"] for v in config_dict["inputs"].values()]
+    output_names = [v["name"] for v in config_dict["outputs"].values()]
 
-    db_cfg = config_dict["database"]
-    db_password = os.getenv(db_cfg["password_ro_env"])
-    if db_password is None:
-        raise RuntimeError(f"Environment variable {db_cfg['password_ro_env']} must be set!")
-    db = pymongo.MongoClient(
-        host=db_cfg["host"],
-        port=db_cfg["port"],
-        authSource=db_cfg["auth"],
-        username=db_cfg["username_ro"],
-        password=db_password,
-        directConnection=(db_cfg["host"] in ["localhost", "127.0.0.1"]),
-    )[db_cfg["name"]]
+    db = load_database(config_dict)
+    exp_data, _ = load_data(db, config_dict["experiment"])
 
-    date_filter = config_dict.get("date_filter", {})
-    df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
-
-    if df_exp.empty:
+    if exp_data.empty:
         return None, None, output_names
 
-    missing = [name for name in input_names + output_names if name not in df_exp.columns]
+    missing = [n for n in input_names + output_names if n not in exp_data.columns]
     if missing:
         raise RuntimeError(f"Missing columns in experimental data: {missing}")
 
-    print(f"Fetched {len(df_exp)} experimental points from the database.")
-
-    inputs = {
-        name: torch.tensor(df_exp[name].values, dtype=torch.float64)
-        for name in input_names
-    }
-    return inputs, df_exp, output_names
+    print(f"Fetched {len(exp_data)} experimental points from the database.")
+    inputs = {n: torch.tensor(exp_data[n].values, dtype=torch.float64) for n in input_names}
+    return inputs, exp_data, output_names
 
 
 def check_evaluate(config_dict, model_type):
