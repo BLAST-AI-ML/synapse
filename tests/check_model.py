@@ -53,7 +53,9 @@ def check_evaluate(config_dict, model_type):
 
     # Skip accuracy check if no experimental data available
     if len(df_exp) == 0:
-        print(f"[SKIP] No experimental data available for {config_dict['experiment']}; skipping accuracy check.")
+        print(
+            f"[SKIP] No experimental data available for {config_dict['experiment']}; skipping accuracy check."
+        )
         return
     # Convert input to the format expected by the model manager
     inputs = {n: torch.tensor(df_exp[n].values) for n in input_names}
