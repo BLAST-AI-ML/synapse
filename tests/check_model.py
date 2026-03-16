@@ -50,6 +50,11 @@ def check_evaluate(config_dict, model_type):
         raise RuntimeError(f"Model '{model_type}' could not be loaded from MLflow.")
     # Load experimental data
     df_exp, input_names, output_names = load_experimental_data(config_dict)
+
+    # Skip accuracy check if no experimental data available
+    if len(df_exp) == 0:
+        print(f"[SKIP] No experimental data available for {config_dict['experiment']}; skipping accuracy check.")
+        return
     # Convert input to the format expected by the model manager
     inputs = {n: torch.tensor(df_exp[n].values) for n in input_names}
 
@@ -62,12 +67,14 @@ def check_evaluate(config_dict, model_type):
             torch.abs(actual), torch.abs(prediction)
         )
         rmse = torch.sqrt((rel_errors**2).mean()).item()
-        status = "PASS" if rmse <= ACCURACY_TOLERANCE else "FAIL"
+        if rmse <= ACCURACY_TOLERANCE:
+            status = "PASS"
+        else:
+            status = "FAIL"
+            all_passed = False
         print(
             f"  [{status}] Output '{output_name}': relative RMSE = {rmse:.1%} (threshold {ACCURACY_TOLERANCE:.0%})"
         )
-        if rmse > ACCURACY_TOLERANCE:
-            all_passed = False
 
     if not all_passed:
         raise RuntimeError(

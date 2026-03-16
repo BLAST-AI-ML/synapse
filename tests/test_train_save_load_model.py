@@ -29,7 +29,6 @@ import yaml
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
 GP_SKIP_THRESHOLD = 1000
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
-CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _ML_DIR = _REPO_ROOT / "ml"
@@ -172,7 +171,7 @@ def run_in_conda(conda_env, cmd, cwd=None):
     Run `cmd` inside the given conda environment via a login shell.
     Raises subprocess.CalledProcessError on non-zero exit.
     """
-    full_cmd = f"{CONDA_INIT} && conda activate {conda_env} && {cmd}"
+    full_cmd = f"conda activate {conda_env} && {cmd}"
     result = subprocess.run(
         full_cmd,
         shell=True,
@@ -279,7 +278,6 @@ if __name__ == "__main__":
                 run_one_test(config_path, model_type, args.mlflow_uri)
                 results.append((exp_name, model_type, "PASS", ""))
             except SystemExit:
-                # pytest.skip or explicit skip
                 results.append((exp_name, model_type, "SKIP", ""))
             except Exception as e:
                 results.append((exp_name, model_type, "FAIL", str(e)))
