@@ -94,10 +94,6 @@ def check_db_reachable(cfg):
         ) from e
 
 
-def get_all_configs():
-    """Return list of config.yaml paths for experiments that have an mlflow section."""
-    return sorted(glob.glob(os.path.join(EXPERIMENTS_DIR, "*/config.yaml")))
-
 
 def count_sim_datapoints(cfg):
     """Count simulation datapoints (experiment_flag=0) in MongoDB. Returns None on error."""
@@ -227,7 +223,7 @@ if __name__ == "__main__":
         p = args.config_file
         configs_to_test = [os.path.join(p, "config.yaml") if os.path.isdir(p) else p]
     else:
-        configs_to_test = get_all_configs()
+        configs_to_test = sorted(glob.glob(os.path.join(EXPERIMENTS_DIR, "*/config.yaml")))
 
     if not configs_to_test:
         print("No config files found with an mlflow.tracking_uri section.")
