@@ -34,7 +34,6 @@ import yaml
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
-CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"  # Needed in order to use conda in the subprocesses
 
 # GP training takes too long above this number of simulation datapoints
 GP_SKIP_THRESHOLD = 1000
@@ -120,19 +119,6 @@ def override_mlflow_config(cfg, mlflow_uri):
     return tmp_cfg
 
 
-def run_in_conda(conda_env, cmd, cwd=None):
-    """Run `cmd` inside the given conda environment via a login shell."""
-    full_cmd = f"{CONDA_INIT} && conda activate {conda_env} && {cmd}"
-    result = subprocess.run(
-        full_cmd,
-        shell=True,
-        executable="/bin/bash",
-        cwd=cwd,
-    )
-    if result.returncode != 0:
-        raise subprocess.CalledProcessError(result.returncode, full_cmd)
-
-
 def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     """
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
@@ -158,14 +144,16 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
         tmp_path = os.path.join(tmpdir, "config.yaml")
         with open(tmp_path, "w") as f:
             yaml.dump(tmp_cfg, f)
-        run_in_conda(
-            "synapse-ml",
-            f"python train_model.py --config_file {tmp_path} --model {model_type}",
+        subprocess.run(
+            f"conda run -n synapse-ml python train_model.py --config_file {tmp_path} --model {model_type}",
+            shell=True,
             cwd=ML_DIR,
+            check=True,
         )
-        run_in_conda(
-            "synapse-gui",
-            f"python {os.path.join(TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
+        subprocess.run(
+            f"conda run -n synapse-gui python {os.path.join(TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
+            shell=True,
+            check=True,
         )
 
 
