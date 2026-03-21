@@ -30,30 +30,25 @@ from urllib.parse import urlparse
 
 import yaml
 
-# ---------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
 GP_SKIP_THRESHOLD = 1000  # GP training takes too long above this number of simulation datapoints
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
-CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"
+CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh" # Needed in order to use conda in the subprocesses
 
-_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_ML_DIR = os.path.join(_REPO_ROOT, "ml")
-_EXPERIMENTS_DIR = os.path.join(_REPO_ROOT, "experiments")
-_TESTS_DIR = os.path.join(_REPO_ROOT, "tests")
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # similar to "cd ../.."
+ML_DIR = os.path.join(REPO_ROOT, "ml")
+EXPERIMENTS_DIR = os.path.join(REPO_ROOT, "experiments")
+TESTS_DIR = os.path.join(REPO_ROOT, "tests")
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
-
 
 def check_mlflow_reachable(uri, timeout=5):
     """Socket-connect to the MLflow server; raise with a clear message if unreachable."""
     parsed = urlparse(uri)
     host = parsed.hostname
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    port = parsed.port
     try:
         with socket.create_connection((host, port), timeout=timeout):
             pass
@@ -93,25 +88,9 @@ def check_db_reachable(cfg):
         ) from e
 
 
-def load_config(path):
-    """Accept a directory or .yaml file path; return parsed config dict."""
-    if os.path.isdir(path):
-        path = os.path.join(path, "config.yaml")
-    with open(path) as f:
-        return yaml.safe_load(f)
-
-
 def get_all_configs():
     """Return list of config.yaml paths for experiments that have an mlflow section."""
-    configs = []
-    for config_path in sorted(glob.glob(os.path.join(_EXPERIMENTS_DIR, "*/config.yaml"))):
-        try:
-            cfg = load_config(config_path)
-            if cfg.get("mlflow", {}).get("tracking_uri"):
-                configs.append(config_path)
-        except Exception:
-            pass
-    return configs
+    return sorted(glob.glob(os.path.join(EXPERIMENTS_DIR, "*/config.yaml")))
 
 
 def count_sim_datapoints(cfg):
@@ -172,7 +151,8 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
     Raises on failure; returns normally on success.
     """
-    cfg = load_config(config_file)
+    with open(config_file) as f:
+        cfg = yaml.safe_load(f)
     check_mlflow_reachable(mlflow_uri)
     check_db_reachable(cfg)
 
@@ -191,11 +171,11 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
         run_in_conda(
             "synapse-ml",
             f"python train_model.py --config_file {tmp_path} --model {model_type}",
-            cwd=_ML_DIR,
+            cwd=ML_DIR,
         )
         run_in_conda(
             "synapse-gui",
-            f"python {os.path.join(_TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
+            f"python {os.path.join(TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
         )
     finally:
         try:
@@ -262,19 +242,9 @@ if __name__ == "__main__":
                 results.append((exp_name, model_type, "FAIL", str(e)))
                 print(f"[FAIL] {e}")
 
-    # Summary table
-    print(f"\n{'=' * 60}")
-    print("SUMMARY")
-    print(f"{'=' * 60}")
-    col_w = max(len(r[0]) for r in results) + 2
-    header = f"{'Experiment':<{col_w}} {'Model':<14} {'Status'}"
-    print(header)
-    print("-" * len(header))
+    print("\nSUMMARY")
     for exp_name, model_type, status, error in results:
-        line = f"{exp_name:<{col_w}} {model_type:<14} [{status}]"
-        if error:
-            line += f"  {error[:80]}"
-        print(line)
+        print(f"  [{status}] {exp_name} / {model_type}" + (f": {error}" if error else ""))
 
     any_fail = any(r[2] == "FAIL" for r in results)
     sys.exit(1 if any_fail else 0)
