@@ -119,7 +119,9 @@ def make_temp_config(cfg, mlflow_uri):
     """
     tmp_cfg = copy.deepcopy(cfg)
     tmp_cfg["mlflow"]["tracking_uri"] = mlflow_uri  # Replace the MLflow URI
-    tmp_cfg["mlflow"].pop("api_key_env", None) # Remove the API key environment variable
+    tmp_cfg["mlflow"].pop(
+        "api_key_env", None
+    )  # Remove the API key environment variable
 
     fd, tmp_path = tempfile.mkstemp(suffix=".yaml", prefix="synapse_test_")
     with os.fdopen(fd, "w") as f:
