@@ -119,10 +119,10 @@ def override_mlflow_config(cfg, mlflow_uri):
     return tmp_cfg
 
 
-def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
+def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> tuple[str, str]:
     """
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
-    Raises on failure; returns normally on success.
+    Returns ("PASS", "") or ("SKIP", reason). Raises on failure.
     """
     with open(config_file) as f:
         cfg = yaml.safe_load(f)
@@ -133,29 +133,28 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     if model_type == "GP":
         count = count_sim_datapoints(cfg)
         if count > GP_SKIP_THRESHOLD:
-            print(
-                f"[SKIP] GP test for '{cfg['experiment']}': "
-                f"{count} simulation datapoints > threshold {GP_SKIP_THRESHOLD}."
-            )
-            return
+            reason = f"{count} simulation datapoints > threshold {GP_SKIP_THRESHOLD}"
+            print(f"[SKIP] GP test for '{cfg['experiment']}': {reason}.")
+            return "SKIP", reason
 
     tmp_cfg = override_mlflow_config(cfg, mlflow_uri)
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = os.path.join(tmpdir, "config.yaml")
         with open(tmp_path, "w") as f:
             yaml.dump(tmp_cfg, f)
-        train_script = os.path.join(ML_DIR, "train_model.py")
-        check_script = os.path.join(TESTS_DIR, "check_model.py")
         subprocess.run(
-            f"conda run -n synapse-ml python {train_script} --config_file {tmp_path} --model {model_type}",
+            f"conda run -n synapse-ml python train_model.py --config_file {tmp_path} --model {model_type}",
             shell=True,
             check=True,
+            cwd=ML_DIR,
         )
         subprocess.run(
-            f"conda run -n synapse-gui python {check_script} --config_file {tmp_path} --model {model_type}",
+            f"conda run -n synapse-gui python check_model.py --config_file {tmp_path} --model {model_type}",
             shell=True,
             check=True,
+            cwd=TESTS_DIR,
         )
+    return "PASS", ""
 
 
 if __name__ == "__main__":
@@ -188,8 +187,10 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # Check which models to test
     models_to_test = [args.model] if args.model else MODEL_TYPES
 
+    # Check which config files to test
     if args.config_file:
         p = args.config_file
         configs_to_test = [os.path.join(p, "config.yaml") if os.path.isdir(p) else p]
@@ -197,9 +198,8 @@ if __name__ == "__main__":
         configs_to_test = sorted(
             glob.glob(os.path.join(EXPERIMENTS_DIR, "*/config.yaml"))
         )
-
     if not configs_to_test:
-        print("No config files found with an mlflow.tracking_uri section.")
+        print("No config files found.")
         sys.exit(1)
 
     results = []
@@ -210,10 +210,8 @@ if __name__ == "__main__":
             print(f"Testing: {exp_name} / {model_type}")
             print(f"{'=' * 60}")
             try:
-                run_one_test(config_path, model_type, args.mlflow_uri)
-                results.append((exp_name, model_type, "PASS", ""))
-            except SystemExit:
-                results.append((exp_name, model_type, "SKIP", ""))
+                status, msg = run_one_test(config_path, model_type, args.mlflow_uri)
+                results.append((exp_name, model_type, status, msg))
             except Exception as e:
                 results.append((exp_name, model_type, "FAIL", str(e)))
                 print(f"[FAIL] {e}")
