@@ -16,8 +16,8 @@ import yaml
 
 _DASHBOARD_DIR = Path(__file__).resolve().parents[1] / "dashboard"
 sys.path.insert(0, str(_DASHBOARD_DIR))
-from model_manager import ModelManager
-from utils import load_database, load_data
+from model_manager import ModelManager  # noqa: E402
+from utils import load_database, load_data  # noqa: E402
 
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
