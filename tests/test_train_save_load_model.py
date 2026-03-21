@@ -80,6 +80,7 @@ def check_db_reachable(cfg):
             authSource=db_cfg["auth"],
             username=db_cfg["username_ro"],
             password=password,
+            serverSelectionTimeoutMS=5000,  # fail after 5 seconds if DB is unreachable
         )
         client.admin.command("ping")
     except Exception as e:
@@ -108,6 +109,7 @@ def count_sim_datapoints(cfg):
             authSource=db_cfg["auth"],
             username=db_cfg["username_ro"],
             password=password,
+            serverSelectionTimeoutMS=5000,  # fail after 5 seconds if DB is unreachable
         )
         db = client[db_cfg["name"]]
         date_filter = cfg.get("date_filter", {})
