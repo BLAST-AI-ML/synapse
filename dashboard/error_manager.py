@@ -3,6 +3,11 @@ from state_manager import state
 
 
 def add_error(title, msg):
+    # state.errors is initialized to [] by initialize_state() when the Trame
+    # app starts. Outside of Trame (e.g. check_model.py), it remains None, so
+    # we raise instead to surface the error to the caller.
+    if state.errors is None:
+        raise RuntimeError(f"{title}: {msg}")
     state.errors.append(
         {
             "id": state.error_counter,
