@@ -96,30 +96,23 @@ def check_db_reachable(cfg):
 
 
 def count_sim_datapoints(cfg):
-    """Count simulation datapoints (experiment_flag=0) in MongoDB. Returns None on error."""
-    try:
-        import pymongo
+    """Count simulation datapoints (experiment_flag=0) in MongoDB."""
+    import pymongo
 
-        db_cfg = cfg["database"]
-        password = os.getenv(db_cfg["password_ro_env"])
-        if not password:
-            return None
-        client = pymongo.MongoClient(
-            host=db_cfg["host"],
-            port=db_cfg["port"],
-            authSource=db_cfg["auth"],
-            username=db_cfg["username_ro"],
-            password=password,
-            serverSelectionTimeoutMS=5000,  # fail after 5 seconds if DB is unreachable
-        )
-        db = client[db_cfg["name"]]
-        date_filter = cfg.get("date_filter", {})
-        return db[cfg["experiment"]].count_documents(
-            {"experiment_flag": 0, **date_filter}
-        )
-    except Exception:
-        return None
-
+    db_cfg = cfg["database"]
+    password = os.getenv(db_cfg["password_ro_env"])
+    client = pymongo.MongoClient(
+        host=db_cfg["host"],
+        port=db_cfg["port"],
+        authSource=db_cfg["auth"],
+        username=db_cfg["username_ro"],
+        password=password,
+    )
+    db = client[db_cfg["name"]]
+    date_filter = cfg.get("date_filter", {})
+    return db[cfg["experiment"]].count_documents(
+        {"experiment_flag": 0, **date_filter}
+    )
 
 def make_temp_config(cfg, mlflow_uri):
     """
@@ -162,7 +155,7 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     # GP training is too slow on large datasets; skip if above threshold
     if model_type == "GP":
         count = count_sim_datapoints(cfg)
-        if count is not None and count > GP_SKIP_THRESHOLD:
+        if count > GP_SKIP_THRESHOLD:
             print(
                 f"[SKIP] GP test for '{cfg['experiment']}': "
                 f"{count} simulation datapoints > threshold {GP_SKIP_THRESHOLD}."
