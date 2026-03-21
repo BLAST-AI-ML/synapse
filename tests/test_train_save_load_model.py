@@ -19,13 +19,13 @@ Usage (standalone):
 """
 
 import argparse
+import copy
+import glob
 import os
 import socket
 import subprocess
 import sys
 import tempfile
-import warnings
-from pathlib import Path
 from urllib.parse import urlparse
 
 import yaml
@@ -35,14 +35,14 @@ import yaml
 # ---------------------------------------------------------------------------
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
-GP_SKIP_THRESHOLD = 1000
+GP_SKIP_THRESHOLD = 1000  # GP training takes too long above this number of simulation datapoints
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
 CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_ML_DIR = _REPO_ROOT / "ml"
-_EXPERIMENTS_DIR = _REPO_ROOT / "experiments"
-_TESTS_DIR = _REPO_ROOT / "tests"
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ML_DIR = os.path.join(_REPO_ROOT, "ml")
+_EXPERIMENTS_DIR = os.path.join(_REPO_ROOT, "experiments")
+_TESTS_DIR = os.path.join(_REPO_ROOT, "tests")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -66,17 +66,11 @@ def check_mlflow_reachable(uri, timeout=5):
 
 
 def check_db_reachable(cfg):
-    """
-    Check that the DB password env var is set and that MongoDB responds to a ping.
-    Raises RuntimeError with a clear message on failure.
-    """
+    """Check that the DB password env var is set and that MongoDB responds to a ping."""
     import pymongo
 
-    db_cfg = cfg.get("database", {})
-    password_ro_env = db_cfg.get("password_ro_env")
-    if not password_ro_env:
-        raise RuntimeError("No 'database.password_ro_env' found in config.")
-
+    db_cfg = cfg["database"]
+    password_ro_env = db_cfg["password_ro_env"]
     password = os.getenv(password_ro_env)
     if password is None:
         raise RuntimeError(
@@ -84,40 +78,33 @@ def check_db_reachable(cfg):
             f"Export it before running: export {password_ro_env}=<password>"
         )
 
-    host = db_cfg.get("host", "localhost")
-    port = db_cfg.get("port", 27017)
-    auth = db_cfg.get("auth", "admin")
-    username = db_cfg.get("username_ro")
-
     try:
         client = pymongo.MongoClient(
-            host=host,
-            port=port,
-            authSource=auth,
-            username=username,
+            host=db_cfg["host"],
+            port=db_cfg["port"],
+            authSource=db_cfg["auth"],
+            username=db_cfg["username_ro"],
             password=password,
-            serverSelectionTimeoutMS=5000,
         )
         client.admin.command("ping")
     except Exception as e:
-        raise RuntimeError(f"Cannot connect to MongoDB at {host}:{port}: {e}") from e
+        raise RuntimeError(
+            f"Cannot connect to MongoDB at {db_cfg['host']}:{db_cfg['port']}: {e}"
+        ) from e
 
 
 def load_config(path):
     """Accept a directory or .yaml file path; return parsed config dict."""
-    p = Path(path)
-    if p.is_dir():
-        p = p / "config.yaml"
-    if not p.exists():
-        raise RuntimeError(f"Configuration file not found: {p}")
-    with open(p) as f:
+    if os.path.isdir(path):
+        path = os.path.join(path, "config.yaml")
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
 def get_all_configs():
     """Return list of config.yaml paths for experiments that have an mlflow section."""
     configs = []
-    for config_path in sorted(_EXPERIMENTS_DIR.glob("*/config.yaml")):
+    for config_path in sorted(glob.glob(os.path.join(_EXPERIMENTS_DIR, "*/config.yaml"))):
         try:
             cfg = load_config(config_path)
             if cfg.get("mlflow", {}).get("tracking_uri"):
@@ -138,11 +125,10 @@ def count_sim_datapoints(cfg):
             return None
         client = pymongo.MongoClient(
             host=db_cfg["host"],
-            port=db_cfg.get("port", 27017),
-            authSource=db_cfg.get("auth", "admin"),
-            username=db_cfg.get("username_ro"),
+            port=db_cfg["port"],
+            authSource=db_cfg["auth"],
+            username=db_cfg["username_ro"],
             password=password,
-            serverSelectionTimeoutMS=5000,
         )
         db = client[db_cfg["name"]]
         date_filter = cfg.get("date_filter", {})
@@ -158,36 +144,24 @@ def make_temp_config(cfg, mlflow_uri):
     Write a temporary YAML config with tracking_uri overridden and api_key_env removed.
     Returns the path to the temp file (caller is responsible for cleanup).
     """
-    import copy
-
     tmp_cfg = copy.deepcopy(cfg)
-    if "mlflow" not in tmp_cfg:
-        tmp_cfg["mlflow"] = {}
     tmp_cfg["mlflow"]["tracking_uri"] = mlflow_uri
     tmp_cfg["mlflow"].pop("api_key_env", None)
 
     fd, tmp_path = tempfile.mkstemp(suffix=".yaml", prefix="synapse_test_")
-    try:
-        with os.fdopen(fd, "w") as f:
-            yaml.dump(tmp_cfg, f)
-    except Exception:
-        os.unlink(tmp_path)
-        raise
+    with os.fdopen(fd, "w") as f:
+        yaml.dump(tmp_cfg, f)
     return tmp_path
 
 
 def run_in_conda(conda_env, cmd, cwd=None):
-    """
-    Run `cmd` inside the given conda environment via a login shell.
-    Raises subprocess.CalledProcessError on non-zero exit.
-    """
+    """Run `cmd` inside the given conda environment via a login shell."""
     full_cmd = f"{CONDA_INIT} && conda activate {conda_env} && {cmd}"
     result = subprocess.run(
         full_cmd,
         shell=True,
         executable="/bin/bash",
-        cwd=str(cwd) if cwd else None,
-        capture_output=False,
+        cwd=cwd,
     )
     if result.returncode != 0:
         raise subprocess.CalledProcessError(result.returncode, full_cmd)
@@ -198,44 +172,35 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
     Raises on failure; returns normally on success.
     """
-    config_file = Path(config_file)
-    if config_file.is_dir():
-        config_file = config_file / "config.yaml"
-
-    config_dict = load_config(config_file)
+    cfg = load_config(config_file)
     check_mlflow_reachable(mlflow_uri)
-    check_db_reachable(config_dict)
+    check_db_reachable(cfg)
 
-    # GP: skip if dataset is too large
+    # GP training is too slow on large datasets; skip if above threshold
     if model_type == "GP":
-        count = count_sim_datapoints(config_dict)
+        count = count_sim_datapoints(cfg)
         if count is not None and count > GP_SKIP_THRESHOLD:
-            msg = (
-                f"Skipping GP test for '{config_dict.get('experiment')}': "
+            print(
+                f"[SKIP] GP test for '{cfg['experiment']}': "
                 f"{count} simulation datapoints > threshold {GP_SKIP_THRESHOLD}."
             )
-            warnings.warn(msg)
-            print(f"[SKIP] {msg}")
             return
 
-    tmp_path = make_temp_config(config_dict, mlflow_uri)
+    tmp_path = make_temp_config(cfg, mlflow_uri)
     try:
-        # Train
         run_in_conda(
             "synapse-ml",
             f"python train_model.py --config_file {tmp_path} --model {model_type}",
             cwd=_ML_DIR,
         )
-
-        # Load and evaluate
         run_in_conda(
             "synapse-gui",
-            f"python {_TESTS_DIR / 'check_model.py'} --config_file {tmp_path} --model {model_type}",
+            f"python {os.path.join(_TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
         )
     finally:
         try:
             os.unlink(tmp_path)
-        except OSError:
+        except FileNotFoundError:
             pass
 
 
@@ -269,14 +234,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Resolve model types
     models_to_test = [args.model] if args.model else MODEL_TYPES
 
-    # Resolve config files
     if args.config_file:
-        configs_to_test = [Path(args.config_file)]
-        if configs_to_test[0].is_dir():
-            configs_to_test = [configs_to_test[0] / "config.yaml"]
+        p = args.config_file
+        configs_to_test = [os.path.join(p, "config.yaml") if os.path.isdir(p) else p]
     else:
         configs_to_test = get_all_configs()
 
@@ -286,7 +248,7 @@ if __name__ == "__main__":
 
     results = []
     for config_path in configs_to_test:
-        exp_name = config_path.parent.name
+        exp_name = os.path.basename(os.path.dirname(config_path))
         for model_type in models_to_test:
             print(f"\n{'=' * 60}")
             print(f"Testing: {exp_name} / {model_type}")
