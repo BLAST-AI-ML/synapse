@@ -2,6 +2,14 @@
 """
 Automated test: train ML models, save to MLflow, load and evaluate.
 
+Exercises the full ML lifecycle: training -> upload to MLflow -> download -> accuracy check.
+
+Requires a local, empty MLflow server. Start one before running, e.g. with Docker:
+    docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0.0.0
+
+This script makes a temporary copy of each config file with the MLflow URI replaced by the
+test server URI, so it never touches the production MLflow server.
+
 Can be run standalone (CLI).
 
 Usage (standalone):
@@ -52,7 +60,8 @@ def check_mlflow_reachable(uri, timeout=5):
     except OSError as e:
         raise RuntimeError(
             f"MLflow server at {uri} is not reachable: {e}\n"
-            "Start the MLflow server (e.g. `mlflow server --port 5000`) and retry."
+            "Start a local MLflow server and retry, e.g.:\n"
+            "  docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0.0.0"
         ) from e
 
 
@@ -232,7 +241,14 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Train, save, and load ML models end-to-end."
+        description=(
+            "Train, save, and load ML models end-to-end against a local test MLflow server.\n"
+            "Requires a local MLflow server running before execution, e.g.:\n"
+            "  docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0.0.0\n"
+            "Config files are copied temporarily with the MLflow URI replaced by the test server URI, "
+            "so the production MLflow server is never touched."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--model",
