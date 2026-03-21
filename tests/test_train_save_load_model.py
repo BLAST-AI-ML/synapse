@@ -109,9 +109,8 @@ def count_sim_datapoints(cfg):
     )
     db = client[db_cfg["name"]]
     date_filter = cfg.get("date_filter", {})
-    return db[cfg["experiment"]].count_documents(
-        {"experiment_flag": 0, **date_filter}
-    )
+    return db[cfg["experiment"]].count_documents({"experiment_flag": 0, **date_filter})
+
 
 def make_temp_config(cfg, mlflow_uri):
     """
