@@ -119,10 +119,10 @@ def override_mlflow_config(cfg, mlflow_uri):
     return tmp_cfg
 
 
-def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> tuple[str, str]:
+def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> str:
     """
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
-    Returns ("PASS", "") or ("SKIP", reason). Raises on failure.
+    Returns "PASS" or "SKIP". Raises on failure.
     """
     with open(config_file) as f:
         cfg = yaml.safe_load(f)
@@ -135,7 +135,7 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> tupl
         if count > GP_SKIP_THRESHOLD:
             reason = f"{count} simulation datapoints > threshold {GP_SKIP_THRESHOLD}"
             print(f"[SKIP] GP test for '{cfg['experiment']}': {reason}.")
-            return "SKIP", reason
+            return "SKIP"
 
     tmp_cfg = override_mlflow_config(cfg, mlflow_uri)
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -154,7 +154,7 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> tupl
             check=True,
             cwd=TESTS_DIR,
         )
-    return "PASS", ""
+    return "PASS"
 
 
 if __name__ == "__main__":
@@ -210,8 +210,8 @@ if __name__ == "__main__":
             print(f"Testing: {exp_name} / {model_type}")
             print(f"{'=' * 60}")
             try:
-                status, msg = run_one_test(config_path, model_type, args.mlflow_uri)
-                results.append((exp_name, model_type, status, msg))
+                status = run_one_test(config_path, model_type, args.mlflow_uri)
+                results.append((exp_name, model_type, status, ""))
             except Exception as e:
                 results.append((exp_name, model_type, "FAIL", str(e)))
                 print(f"[FAIL] {e}")
