@@ -25,13 +25,6 @@ MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
 ACCURACY_TOLERANCE = 0.80
 
 
-def load_config(config_file):
-    if not os.path.exists(config_file):
-        raise RuntimeError(f"Configuration file not found: {config_file}")
-    with open(config_file) as f:
-        return yaml.safe_load(f.read())
-
-
 def load_experimental_data(config_dict):
     """Fetch all experimental points from the database."""
     input_names = [v["name"] for v in config_dict["inputs"].values()]
@@ -52,12 +45,6 @@ def check_evaluate(config_dict, model_type):
     # Load experimental data
     df_exp, input_names, output_names = load_experimental_data(config_dict)
 
-    # Skip accuracy check if no experimental data available
-    if len(df_exp) == 0:
-        print(
-            f"[SKIP] No experimental data available for {config_dict['experiment']}; skipping accuracy check."
-        )
-        return
     # Skip accuracy check if no experimental data available
     if len(df_exp) == 0:
         print(
@@ -116,7 +103,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load configuration
-    config_dict = load_config(args.config_file)
+    with open(args.config_file) as f:
+        config_dict = yaml.safe_load(f)
     print(f"Experiment: {config_dict['experiment']}")
 
     # Load model and evaluate with experimental data
