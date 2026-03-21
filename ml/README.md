@@ -72,25 +72,6 @@ This section describes how to train ML models locally.
    python train_model.py --test --model <your_model> --config_file <your_config_file>
    ```
 
-### Check a model: `check_model.py`
-
-[`tests/check_model.py`](../tests/check_model.py) verifies that a model stored in MLflow loads and evaluates correctly, using the same logic as the dashboard.
-
-1. Activate the `synapse-gui` conda environment:
-   ```bash
-   conda activate synapse-gui
-   ```
-
-2. Run from the root of the repository:
-   ```bash
-   python tests/check_model.py --config_file <path/to/config.yaml> --model <GP|NN|ensemble_NN>
-   ```
-
-   For example:
-   ```bash
-   python tests/check_model.py --config_file experiments/synapse-bella-ip2/config.yaml --model NN
-   ```
-
 ### Test the full train/save/load cycle: `test_train_save_load_model.py`
 
 [`tests/test_train_save_load_model.py`](../tests/test_train_save_load_model.py) exercises the full ML lifecycle: training → upload to MLflow → download → accuracy check. It requires a local, empty MLflow server to avoid touching any production server.
