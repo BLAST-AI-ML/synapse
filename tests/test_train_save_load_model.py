@@ -119,7 +119,9 @@ def override_mlflow_config(cfg, mlflow_uri):
     return tmp_cfg
 
 
-def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> tuple[str, str]:
+def run_one_test(
+    config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI
+) -> tuple[str, str]:
     """
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
     Returns ("PASS", "") or ("SKIP", reason). Raises on failure.
