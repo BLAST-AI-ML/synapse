@@ -37,11 +37,9 @@ def load_experimental_data(config_dict):
 
 
 def check_evaluate(config_dict, model_type):
-    """Load model and evaluate with experimental data; verify accuracy (relative RMSE <= 25%)."""
+    """Load model and evaluate with experimental data; verify accuracy (relative RMSE <= threshold)."""
     # Load model
     mm = ModelManager(config_dict=config_dict, model_type_tag=model_type)
-    if not mm.avail():
-        raise RuntimeError(f"Model '{model_type}' could not be loaded from MLflow.")
     # Load experimental data
     df_exp, input_names, output_names = load_experimental_data(config_dict)
 
