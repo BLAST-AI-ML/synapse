@@ -112,21 +112,12 @@ def count_sim_datapoints(cfg):
     return db[cfg["experiment"]].count_documents({"experiment_flag": 0, **date_filter})
 
 
-def make_temp_config(cfg, mlflow_uri):
-    """
-    Write a temporary YAML config with tracking_uri overridden and api_key_env removed.
-    Returns the path to the temp file (caller is responsible for cleanup).
-    """
+def override_mlflow_config(cfg, mlflow_uri):
+    """Return a copy of cfg with tracking_uri overridden and api_key_env removed."""
     tmp_cfg = copy.deepcopy(cfg)
-    tmp_cfg["mlflow"]["tracking_uri"] = mlflow_uri  # Replace the MLflow URI
-    tmp_cfg["mlflow"].pop(
-        "api_key_env", None
-    )  # Remove the API key environment variable
-
-    fd, tmp_path = tempfile.mkstemp(suffix=".yaml", prefix="synapse_test_")
-    with os.fdopen(fd, "w") as f:
-        yaml.dump(tmp_cfg, f)
-    return tmp_path
+    tmp_cfg["mlflow"]["tracking_uri"] = mlflow_uri
+    tmp_cfg["mlflow"].pop("api_key_env", None)
+    return tmp_cfg
 
 
 def run_in_conda(conda_env, cmd, cwd=None):
@@ -162,8 +153,11 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
             )
             return
 
-    tmp_path = make_temp_config(cfg, mlflow_uri)
-    try:
+    tmp_cfg = override_mlflow_config(cfg, mlflow_uri)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = os.path.join(tmpdir, "config.yaml")
+        with open(tmp_path, "w") as f:
+            yaml.dump(tmp_cfg, f)
         run_in_conda(
             "synapse-ml",
             f"python train_model.py --config_file {tmp_path} --model {model_type}",
@@ -173,11 +167,6 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
             "synapse-gui",
             f"python {os.path.join(TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
         )
-    finally:
-        try:
-            os.unlink(tmp_path)
-        except FileNotFoundError:
-            pass
 
 
 if __name__ == "__main__":
