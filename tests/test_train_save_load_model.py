@@ -33,11 +33,11 @@ import yaml
 # Constants
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
-GP_SKIP_THRESHOLD = (
-    1000  # GP training takes too long above this number of simulation datapoints
-)
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
 CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"  # Needed in order to use conda in the subprocesses
+
+# GP training takes too long above this number of simulation datapoints
+GP_SKIP_THRESHOLD = 1000
 
 REPO_ROOT = os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))
