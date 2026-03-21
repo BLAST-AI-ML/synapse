@@ -13,7 +13,9 @@ import sys
 import torch
 import yaml
 
-DASHBOARD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dashboard") # similar to "cd ../dashboard"
+DASHBOARD_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dashboard"
+)  # similar to "cd ../dashboard"
 sys.path.insert(0, DASHBOARD_DIR)
 from model_manager import ModelManager  # noqa: E402
 from utils import load_database, load_data  # noqa: E402

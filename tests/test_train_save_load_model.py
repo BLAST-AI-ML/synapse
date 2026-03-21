@@ -33,16 +33,21 @@ import yaml
 # Constants
 
 MODEL_TYPES = ["GP", "NN", "ensemble_NN"]
-GP_SKIP_THRESHOLD = 1000  # GP training takes too long above this number of simulation datapoints
+GP_SKIP_THRESHOLD = (
+    1000  # GP training takes too long above this number of simulation datapoints
+)
 DEFAULT_MLFLOW_URI = "http://localhost:5000"
-CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh" # Needed in order to use conda in the subprocesses
+CONDA_INIT = "source ~/miniconda3/etc/profile.d/conda.sh"  # Needed in order to use conda in the subprocesses
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # similar to "cd ../.."
+REPO_ROOT = os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))
+)  # similar to "cd ../.."
 ML_DIR = os.path.join(REPO_ROOT, "ml")
 EXPERIMENTS_DIR = os.path.join(REPO_ROOT, "experiments")
 TESTS_DIR = os.path.join(REPO_ROOT, "tests")
 
 # Helpers
+
 
 def check_mlflow_reachable(uri, timeout=5):
     """Socket-connect to the MLflow server; raise with a clear message if unreachable."""
@@ -246,7 +251,9 @@ if __name__ == "__main__":
 
     print("\nSUMMARY")
     for exp_name, model_type, status, error in results:
-        print(f"  [{status}] {exp_name} / {model_type}" + (f": {error}" if error else ""))
+        print(
+            f"  [{status}] {exp_name} / {model_type}" + (f": {error}" if error else "")
+        )
 
     any_fail = any(r[2] == "FAIL" for r in results)
     sys.exit(1 if any_fail else 0)
