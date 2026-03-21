@@ -144,14 +144,15 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI):
         tmp_path = os.path.join(tmpdir, "config.yaml")
         with open(tmp_path, "w") as f:
             yaml.dump(tmp_cfg, f)
+        train_script = os.path.join(ML_DIR, "train_model.py")
+        check_script = os.path.join(TESTS_DIR, "check_model.py")
         subprocess.run(
-            f"conda run -n synapse-ml python train_model.py --config_file {tmp_path} --model {model_type}",
+            f"conda run -n synapse-ml python {train_script} --config_file {tmp_path} --model {model_type}",
             shell=True,
-            cwd=ML_DIR,
             check=True,
         )
         subprocess.run(
-            f"conda run -n synapse-gui python {os.path.join(TESTS_DIR, 'check_model.py')} --config_file {tmp_path} --model {model_type}",
+            f"conda run -n synapse-gui python {check_script} --config_file {tmp_path} --model {model_type}",
             shell=True,
             check=True,
         )
