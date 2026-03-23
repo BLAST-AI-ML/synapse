@@ -14,7 +14,7 @@ Can be run standalone (CLI).
 
 Usage (standalone):
     python tests/test_train_save_load_model.py
-    python tests/test_train_save_load_model.py --model NN --config_file experiments/synapse-bella-ip2
+    python tests/test_train_save_load_model.py --model NN --config_file experiments/synapse-bella-ip2/config.yaml
     python tests/test_train_save_load_model.py --test-mlflow-uri http://localhost:5000
 """
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config_file",
         default=None,
-        help="Path to a config.yaml file or experiment directory. Defaults to all.",
+        help="Path to a config.yaml file. Defaults to all available config.yaml files in the experiments directory.",
     )
     parser.add_argument(
         "--test-mlflow-uri",
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     # Check which config files to test
     if args.config_file:
         p = args.config_file
-        configs_to_test = [os.path.join(p, "config.yaml") if os.path.isdir(p) else p]
+        configs_to_test = [p]
     else:
         configs_to_test = sorted(
             glob.glob(os.path.join(EXPERIMENTS_DIR, "*/config.yaml"))
