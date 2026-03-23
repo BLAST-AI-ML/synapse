@@ -73,7 +73,7 @@ def check_evaluate(config_dict, model_type):
             status = "FAIL"
             all_passed = False
         print(
-            f"  [{status}] Output '{output_name}': relative RMSE = {rmse:.1%} (threshold {ACCURACY_TOLERANCE:.0%})"
+            f"  [{status}] Output '{output_name}': relative RMSE = {rmse:.1%} (tolerance {ACCURACY_TOLERANCE:.0%})"
         )
 
     if not all_passed:
