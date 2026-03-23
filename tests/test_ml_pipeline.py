@@ -13,9 +13,9 @@ test server URI, so it never touches the production MLflow server.
 Can be run standalone (CLI).
 
 Usage (standalone):
-    python tests/test_train_save_load_model.py
-    python tests/test_train_save_load_model.py --model NN --config_file experiments/synapse-bella-ip2/config.yaml
-    python tests/test_train_save_load_model.py --test-mlflow-uri http://localhost:5000
+    python tests/test_my_pipeline.py
+    python tests/test_my_pipeline.py --model NN --config_file experiments/synapse-bella-ip2/config.yaml
+    python tests/test_my_pipeline.py --test-mlflow-uri http://localhost:5000
 """
 
 import argparse
