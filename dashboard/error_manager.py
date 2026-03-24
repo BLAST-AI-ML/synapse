@@ -1,5 +1,5 @@
 from trame.widgets import vuetify3 as vuetify, html
-from state_manager import state
+from state_manager import state, server
 
 
 def add_error(title, msg):
