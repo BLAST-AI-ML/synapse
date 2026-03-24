@@ -65,29 +65,17 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self):
+    def __init__(self, config_dict, model_type_tag):
         print("Initializing model manager...")
-        # Set initial default values
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
         self.__is_neural_network_ensemble = False
-
-        model_type_tag = model_type_tag_dict[state.model_type]
-        try:
-            config_dict = load_config_dict(state.experiment)
-        except Exception as e:
-            title = "Unable to load experiment configuration"
-            msg = (
-                f"Error occurred when loading configuration for {state.experiment}: {e}"
-            )
-            add_error(title, msg)
-            print(msg)
-            return
+        self.__model_type_tag = model_type_tag
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
-                f"No mlflow.tracking_uri in configuration file for {state.experiment}; cannot load model from MLflow."
+                f"No mlflow.tracking_uri in configuration file for {config_dict['experiment']}; cannot load model from MLflow."
             )
             return
 
@@ -99,7 +87,9 @@ class ModelManager:
             == "https://mlflow.american-science-cloud.org"
         ):
             enable_amsc_x_api_key(config_dict)
-        model_name = f"{state.experiment}_{model_type_tag}"
+
+        experiment = config_dict["experiment"]
+        model_name = f"{experiment}_{model_type_tag}"
 
         try:
             # Download model from MLflow server
@@ -108,16 +98,16 @@ class ModelManager:
                 .unwrap_python_model()
                 .model
             )
-            if state.model_type == "Neural Network (single)":
+            if model_type_tag == "NN":
                 self.__is_neural_network = True
-            elif state.model_type == "Neural Network (ensemble)":
+            elif model_type_tag == "ensemble_NN":
                 self.__is_neural_network_ensemble = True
-            elif state.model_type == "Gaussian Process":
+            elif model_type_tag == "GP":
                 self.__is_gaussian_process = True
             else:
-                raise ValueError(f"Unsupported model type: {state.model_type}")
+                raise ValueError(f"Unsupported model type: {model_type_tag}")
         except Exception as e:
-            title = f"Unable to load model {state.model_type}"
+            title = f"Unable to load model {model_type_tag}"
             msg = f"Error occurred when loading model from MLflow: {e}"
             add_error(title, msg)
             print(msg)
@@ -156,7 +146,7 @@ class ModelManager:
                 std_dev = output_dict[output].variance.sqrt().detach()
                 mean_error = 2.0 * std_dev
             else:
-                raise ValueError(f"Unsupported model type: {state.model_type}")
+                raise ValueError(f"Unsupported model type: {self.__model_type_tag}")
             # compute lower/upper bounds for error range
             lower = mean - mean_error
             upper = mean + mean_error

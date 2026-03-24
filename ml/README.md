@@ -72,6 +72,30 @@ This section describes how to train ML models locally.
    python train_model.py --test --model <your_model> --config_file <your_config_file>
    ```
 
+### Test the full train/save/load cycle: `test_ml_pipeline.py`
+
+[`tests/test_ml_pipeline.py`](../tests/test_ml_pipeline.py) exercises the full ML lifecycle: training → upload to MLflow → download → accuracy check. It requires a local, empty MLflow server to avoid touching any production server.
+
+1. Start a local MLflow server, e.g. with Docker:
+   ```bash
+   docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0.0.0
+   ```
+
+2. Run the test script from the root of the repository (by default this expects the MLflow server to run on `localhost:5000`):
+   ```bash
+   python tests/test_ml_pipeline.py
+   ```
+
+   Optionally, restrict to a specific model type or config file:
+   ```bash
+   python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2
+   ```
+
+   If your MLflow server is running on a different port (e.g. 5001 instead of 5000), pass it explicitly:
+   ```bash
+   python tests/test_ml_pipeline.py --test-mlflow-uri http://localhost:5001
+   ```
+
 ## With Docker
 
 Coming soon.
