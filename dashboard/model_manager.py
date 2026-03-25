@@ -233,18 +233,8 @@ class ModelManager:
 
     async def _training_kernel_local(self):
         try:
-            # locate train_model.py
-            train_model_path = None
-            script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
-            for script_dir in script_locations:
-                candidate = script_dir / "train_model.py"
-                if candidate.exists():
-                    train_model_path = candidate.resolve()
-                    break
-            if train_model_path is None:
-                raise RuntimeError("Could not find train_model.py")
-
-            ml_dir = train_model_path.parent
+            ml_dir = (Path(__file__).parent / "../ml").resolve()
+            train_model_path = ml_dir / "train_model.py"
             model_tag = model_type_tag_dict[state.model_type]
 
             with tempfile.TemporaryDirectory() as temp_dir:
