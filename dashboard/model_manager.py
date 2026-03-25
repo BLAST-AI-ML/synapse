@@ -177,7 +177,7 @@ class ModelManager:
             yaml.dump(config_dict, f)
         return config_path
 
-    async def training_kernel(self):
+    async def _training_kernel(self):
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -296,7 +296,7 @@ class ModelManager:
             if self.__local_mode:
                 result = await self._training_kernel_local()
             else:
-                result = await self.training_kernel()
+                result = await self._training_kernel()
             if result:
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
                 state.flush()
