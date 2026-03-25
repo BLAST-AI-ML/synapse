@@ -279,6 +279,9 @@ class ModelManager:
             msg = f"Error occurred when executing local training: {e}"
             add_error(title, msg)
             print(msg)
+            state.model_training_status = "Failed"
+            state.flush()
+            return False
 
     async def training_async(self):
         try:
