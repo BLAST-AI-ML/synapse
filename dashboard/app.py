@@ -475,7 +475,7 @@ def gui_setup():
 
 if __name__ == "__main__":
     # parse command-line arguments
-    parser = argparse.ArgumentParser(description="Synapse Dashboard")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
         "--local",
         action="store_true",
