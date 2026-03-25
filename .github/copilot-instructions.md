@@ -84,7 +84,8 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 - Built on [Trame](https://kitware.github.io/trame/) — a Python framework for interactive web applications.
 - Uses the **manager pattern**: each feature area has a dedicated `*_manager.py` class that handles its UI components and business logic.
 - `state_manager.py` manages the global Trame server, state, and controller.
-- Data flows through MongoDB (PyMongo) for experiment/simulation data and ML models.
+- Data flows through MongoDB (PyMongo) for experiment and simulation data.
+- Data flows through MLflow for ML models.
 - NERSC Superfacility API integration is in `sfapi_manager.py`.
 
 ### ML Training
@@ -92,11 +93,12 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 - `train_model.py` supports three model types: Gaussian Process (GP), Neural Network (NN), and Ensemble.
 - Uses PyTorch, BoTorch, and GPyTorch for model training.
 - CUDA is auto-detected for GPU acceleration.
-- Models are serialized and stored in MongoDB.
+- Models are serialized and stored in an MLflow tracking server.
 
 ### Data Storage
 
-- **MongoDB** is used for all persistent data (experiments, simulation data, ML models).
+- **MongoDB** is used for persistent data from experiments and simulations.
+- **MLflow** is used for persistent data from ML models.
 - Database access requires SSH tunneling to NERSC when running locally.
 - Environment variables: `SF_DB_HOST`, `SF_DB_READONLY_PASSWORD` (dashboard), `SF_DB_ADMIN_PASSWORD` (ML training).
 
