@@ -1,4 +1,3 @@
-import argparse
 from bson.objectid import ObjectId
 import os
 import re
@@ -67,6 +66,9 @@ def update(
     )
     # load data
     config_dict = load_config_dict(state.experiment)
+    # derive local_mode from local_execution in the experiment config
+    local_execution = config_dict.get("local_execution", {})
+    state.model_training_local = bool(local_execution.get("ml_training", False))
     db = load_database(config_dict)
     exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
@@ -77,7 +79,7 @@ def update(
         mod_manager = ModelManager(
             config_dict=config_dict,
             model_type_tag=model_type_tag_dict[state.model_type],
-            local_mode=state.local_mode,
+            model_training_local=state.model_training_local,
         )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
@@ -474,17 +476,8 @@ def gui_setup():
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    # parse command-line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--local",
-        action="store_true",
-        help="Run ML model training locally instead of on Perlmutter",
-    )
-    args, _ = parser.parse_known_args()
     # initialize state variables needed at startup
     initialize_state()
-    state.local_mode = args.local
     # initialize Superfacility API
     initialize_sfapi()
     # update for the first time

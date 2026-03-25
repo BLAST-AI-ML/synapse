@@ -29,6 +29,7 @@ def initialize_state():
     # ML model
     state.model_type = "Neural Network (single)"
     state.model_training = False
+    state.model_training_local = False
     state.model_training_status = None
     state.model_training_time = None
     # Optimization
@@ -57,5 +58,3 @@ def initialize_state():
     state.error_counter = 0
     # Calibration toggles
     state.use_inferred_calibration = False
-    # Execution mode
-    state.local_mode = False

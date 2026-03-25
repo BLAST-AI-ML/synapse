@@ -66,14 +66,14 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self, config_dict, model_type_tag, local_mode=False):
+    def __init__(self, config_dict, model_type_tag, model_training_local):
         print("Initializing model manager...")
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
         self.__is_neural_network_ensemble = False
         self.__model_type_tag = model_type_tag
-        self.__local_mode = local_mode
+        self.__model_training_local = model_training_local
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
@@ -283,7 +283,7 @@ class ModelManager:
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            if self.__local_mode:
+            if self.__model_training_local:
                 result = await self._training_kernel_local()
             else:
                 result = await self._training_kernel()
@@ -346,7 +346,7 @@ class ModelManager:
                                 "Train",
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || (!local_mode && perlmutter_status != 'active')",
+                                    "model_training || (!model_training_local && perlmutter_status != 'active')",
                                 ),
                                 style="text-transform: none",
                             )
