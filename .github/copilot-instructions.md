@@ -22,7 +22,7 @@ synapse/
 │   └── environment-lock.yml
 ├── experiments/            # Experiment configs (cloned from private repos)
 ├── tests/                  # Integration tests (ML pipeline)
-│   ├── test_ml_pipeline.py # Full train/save/load ML lifecycle test
+│   ├── test_ml_pipeline.py # Full ML training pipeline test
 │   └── check_model.py      # Model checking utility
 ├── dashboard.Dockerfile    # Docker image for the GUI
 ├── ml.Dockerfile           # Docker image for ML training (CUDA 12.4)
@@ -74,7 +74,7 @@ python publish_container.py --gui --ml
 
 ## Testing
 
-There is no pytest/unittest framework configured, but `tests/test_ml_pipeline.py` exercises the full ML lifecycle (training → upload to MLflow → download → accuracy check). It requires a local MLflow server:
+There is no pytest/unittest framework configured, but `tests/test_ml_pipeline.py` tests the full ML training pipeline (training → upload to MLflow → download from MLflow → check accuracy). It requires a local MLflow server:
 
 ```bash
 # Start a local MLflow server
