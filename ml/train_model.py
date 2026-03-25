@@ -151,12 +151,9 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
     # lume-model calls untransform() on input transformers and transform() on output transformers,
     # so output_guess_calibration (sim -> exp) uses the same coefficients and lume-model's
     # untransform gives: exp = sim / alpha + beta.
-    simulation_calibration = config_dict.get("simulation_calibration", {})
 
     # Build lookup from experimental variable name (depends_on) to calibration entry.
-    # This mirrors the dashboard approach: calibration entries are matched by depends_on,
-    # not by key, so entries keyed "input6" can map an output variable just as well as
-    # entries keyed "output1".
+    simulation_calibration = config_dict.get("simulation_calibration", {})
     depends_on_lookup = {
         entry["depends_on"]: entry
         for entry in simulation_calibration.values()
@@ -165,10 +162,15 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
 
     def _get_calibration(exp_name):
         if exp_name in depends_on_lookup:
+            # Experimental variables is part of the "simulation_calibration" section
             entry = depends_on_lookup[exp_name]
             return entry["name"], entry["alpha_guess"], entry["beta_guess"]
-        return exp_name, 1.0, 0.0
+        else:
+            # Experimental variable is not part of the "simulation_calibration" section
+            # In this case, no calibration is needed ; the simulation variable is identical
+            return exp_name, 1.0, 0.0
 
+    # Build the list of simulation variables
     sim_input_names = []
     alpha_input_list = []
     beta_input_list = []
@@ -177,7 +179,6 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
         sim_input_names.append(sim_name)
         alpha_input_list.append(alpha)
         beta_input_list.append(beta)
-
     sim_output_names = []
     alpha_output_list = []
     beta_output_list = []
@@ -187,11 +188,11 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
         alpha_output_list.append(alpha)
         beta_output_list.append(beta)
 
+    # Build the AffineInputTransforms for the guess calibration
     alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
     beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
     alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
     beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
-
     n_inputs = len(input_variables)
     n_outputs = len(output_variables)
     input_guess_calibration = AffineInputTransform(
@@ -200,6 +201,7 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
     output_guess_calibration = AffineInputTransform(
         n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
     )
+
     return (
         input_guess_calibration,
         output_guess_calibration,
