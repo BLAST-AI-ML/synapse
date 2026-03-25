@@ -226,8 +226,8 @@ class ModelManager:
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
         except Exception as e:
-            title = "Unable to complete training kernel"
-            msg = f"Error occurred when executing training kernel: {e}"
+            title = "Unable to complete remote training"
+            msg = f"Error occurred when executing remote training: {e}"
             add_error(title, msg)
             print(msg)
 
