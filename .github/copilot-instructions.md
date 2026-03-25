@@ -21,6 +21,9 @@ synapse/
 │   ├── environment.yml     # Conda dependencies for ML
 │   └── environment-lock.yml
 ├── experiments/            # Experiment configs (cloned from private repos)
+├── tests/                  # Integration tests (ML pipeline)
+│   ├── test_ml_pipeline.py # Full train/save/load ML lifecycle test
+│   └── check_model.py      # Model checking utility
 ├── dashboard.Dockerfile    # Docker image for the GUI
 ├── ml.Dockerfile           # Docker image for ML training (CUDA 12.4)
 ├── publish_container.py    # Script to build & push Docker containers to NERSC registry
@@ -71,7 +74,20 @@ python publish_container.py --gui --ml
 
 ## Testing
 
-There is **no automated test suite** in this repository — no pytest, unittest, or similar framework is configured. There are no test files. Validation is done manually by running the dashboard or ML training scripts.
+There is no pytest/unittest framework configured, but `tests/test_ml_pipeline.py` exercises the full ML lifecycle (training → upload to MLflow → download → accuracy check). It requires a local MLflow server:
+
+```bash
+# Start a local MLflow server
+docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0.0.0
+
+# Run the test from the repository root
+python tests/test_ml_pipeline.py
+
+# Optionally restrict to a specific model type or config
+python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2
+```
+
+Dashboard validation is done manually by running the application.
 
 ## CI/CD
 
@@ -100,7 +116,7 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 - **MongoDB** is used for persistent data from experiments and simulations.
 - **MLflow** is used for persistent data from ML models.
 - Database access requires SSH tunneling to NERSC when running locally.
-- Environment variables: `SF_DB_HOST`, `SF_DB_READONLY_PASSWORD` (dashboard), `SF_DB_ADMIN_PASSWORD` (ML training).
+- Environment variables: `SF_DB_HOST` (dashboard), `SF_DB_READONLY_PASSWORD` (dashboard and ML training), `AM_SC_API_KEY` (dashboard and ML training, required when MLflow tracking_uri is AmSC).
 
 ## Common Pitfalls and Workarounds
 
@@ -108,7 +124,7 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 2. **Conda, not pip**: Dependencies are managed via `conda` and `conda-lock`, not `pip`. Do not add `requirements.txt` or modify `pyproject.toml` for dependencies. Update `environment.yml` in the relevant component directory and regenerate the lock file.
 3. **Separate environments**: The dashboard and ML components have independent Conda environments (`synapse-gui` and `synapse-ml`). Changes to dependencies must be made in the correct `environment.yml`.
 4. **Docker builds from root**: Dockerfiles reference paths relative to the repository root. Always run `docker build` from the repository root directory.
-5. **No test infrastructure**: Since there is no test framework, validate changes by running the linter (`ruff check .`) and verifying logic through code review.
+5. **Limited test infrastructure**: There is no pytest/unittest framework, but `tests/test_ml_pipeline.py` can validate ML changes end-to-end (requires a local MLflow server). Always run the linter (`ruff check .`) and verify logic through code review.
 6. **Experiment configs are external**: The `experiments/` directory contains cloned private repositories. These are not checked into this repository (excluded via `.gitignore`).
 7. **NERSC-specific infrastructure**: Much of the deployment depends on NERSC services (Spin, Superfacility API, Perlmutter). Code changes affecting deployment or data access should be tested against NERSC services when possible.
 

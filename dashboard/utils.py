@@ -103,15 +103,13 @@ def create_date_filter(experiment_date_range):
 
 
 @timer
-def load_data(db):
+def load_data(db, experiment, date_range=None):
     print("Loading data from database...")
     # create date filter if date range is set
-    date_filter = create_date_filter(state.experiment_date_range)
+    date_filter = create_date_filter(date_range)
     # load experiment and simulation data points in dataframes
-    exp_data = pd.DataFrame(
-        db[state.experiment].find({"experiment_flag": 1, **date_filter})
-    )
-    sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
+    exp_data = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
+    sim_data = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
     # Store '_id', 'date' as string
     for key in ["_id", "date"]:
         if key in exp_data.columns:
@@ -121,32 +119,9 @@ def load_data(db):
     return (exp_data, sim_data)
 
 
-def verify_input_variables(model_file, experiment):
-    print("Checking model consistency...")
-    # read configuration file
-    input_vars, _, _ = load_variables(experiment)
-    config_vars = [input_var["name"] for input_var in input_vars.values()]
-    config_vars.sort()
-    # read model file
-    with open(model_file) as f:
-        model_str = f.read()
-    # load model dictionary
-    model_dict = yaml.safe_load(model_str)
-    # load model input variables list
-    model_vars = list(model_dict["input_variables"].keys())
-    model_vars.sort()
-    # check if configuration list and model list match
-    match = config_vars == model_vars
-    if not match:
-        print("Input variables in configuration file and model file do not match")
-    return match
-
-
 @timer
-def load_database(experiment):
+def load_database(config_dict):
     print("Loading database...")
-    # load configuration dictionary
-    config_dict = load_config_dict(experiment)
     # read database information from configuration dictionary
     db_host = config_dict["database"]["host"]
     db_port = config_dict["database"]["port"]
