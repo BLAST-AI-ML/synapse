@@ -66,8 +66,8 @@ def update(
     )
     # load data
     config_dict = load_config_dict(state.experiment)
-    # derive local_mode from local_execution in the experiment config
-    local_execution = config_dict.get("local_execution", {})
+    # derive local_execution from local_execution in the experiment config
+    local_execution = config_dict.get("local_execution") or {}
     state.model_training_local = bool(local_execution.get("ml_training", False))
     db = load_database(config_dict)
     exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
