@@ -1,3 +1,4 @@
+import argparse
 from bson.objectid import ObjectId
 import os
 import re
@@ -76,6 +77,7 @@ def update(
         mod_manager = ModelManager(
             config_dict=config_dict,
             model_type_tag=model_type_tag_dict[state.model_type],
+            local_mode=state.local_mode,
         )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
@@ -472,8 +474,17 @@ def gui_setup():
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    # parse command-line arguments
+    parser = argparse.ArgumentParser(description="Synapse Dashboard")
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Run ML model training locally instead of on Perlmutter",
+    )
+    args, _ = parser.parse_known_args()
     # initialize state variables needed at startup
     initialize_state()
+    state.local_mode = args.local
     # initialize Superfacility API
     initialize_sfapi()
     # update for the first time

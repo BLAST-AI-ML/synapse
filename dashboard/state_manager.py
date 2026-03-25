@@ -57,3 +57,5 @@ def initialize_state():
     state.error_counter = 0
     # Calibration toggles
     state.use_inferred_calibration = False
+    # Execution mode
+    state.local_mode = False
