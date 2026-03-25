@@ -14,7 +14,7 @@ from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
 
-model_type_tag_dict = {
+model_type_dict = {
     "Gaussian Process": "GP",
     "Neural Network (single)": "NN",
     "Neural Network (ensemble)": "ensemble_NN",
@@ -65,13 +65,13 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self, config_dict, model_type_tag):
+    def __init__(self, config_dict, model_type):
         print("Initializing model manager...")
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
         self.__is_neural_network_ensemble = False
-        self.__model_type_tag = model_type_tag
+        self.__model_type = model_type
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
@@ -89,7 +89,7 @@ class ModelManager:
             enable_amsc_x_api_key(config_dict)
 
         experiment = config_dict["experiment"]
-        model_name = f"{experiment}_{model_type_tag}"
+        model_name = f"{experiment}_{model_type}"
 
         try:
             # Download model from MLflow server
@@ -98,16 +98,16 @@ class ModelManager:
                 .unwrap_python_model()
                 .model
             )
-            if model_type_tag == "NN":
+            if model_type == "NN":
                 self.__is_neural_network = True
-            elif model_type_tag == "ensemble_NN":
+            elif model_type == "ensemble_NN":
                 self.__is_neural_network_ensemble = True
-            elif model_type_tag == "GP":
+            elif model_type == "GP":
                 self.__is_gaussian_process = True
             else:
-                raise ValueError(f"Unsupported model type: {model_type_tag}")
+                raise ValueError(f"Unsupported model type: {model_type}")
         except Exception as e:
-            title = f"Unable to load model {model_type_tag}"
+            title = f"Unable to load model {model_type}"
             msg = f"Error occurred when loading model from MLflow: {e}"
             add_error(title, msg)
             print(msg)
@@ -146,7 +146,7 @@ class ModelManager:
                 std_dev = output_dict[output].variance.sqrt().detach()
                 mean_error = 2.0 * std_dev
             else:
-                raise ValueError(f"Unsupported model type: {self.__model_type_tag}")
+                raise ValueError(f"Unsupported model type: {self.__model_type}")
             # compute lower/upper bounds for error range
             lower = mean - mean_error
             upper = mean + mean_error
@@ -206,7 +206,7 @@ class ModelManager:
                 # replace the --model argument in the python command with the current model type from the state
                 training_script = re.sub(
                     pattern=r"--model \$\{model\}",
-                    repl=rf"--model {model_type_tag_dict[state.model_type]}",
+                    repl=rf"--model {model_type_dict[state.model_type_displayed_name]}",
                     string=training_script,
                 )
 
@@ -271,7 +271,7 @@ class ModelManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
-                                v_model=("model_type",),
+                                v_model=("model_type_displayed_name",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,

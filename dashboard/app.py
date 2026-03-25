@@ -6,7 +6,7 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
-from model_manager import ModelManager, model_type_tag_dict
+from model_manager import ModelManager, model_type_dict
 from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
@@ -75,7 +75,7 @@ def update(
     if reset_model:
         mod_manager = ModelManager(
             config_dict=config_dict,
-            model_type_tag=model_type_tag_dict[state.model_type],
+            model_type=model_type_dict[state.model_type_displayed_name],
         )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
@@ -113,7 +113,7 @@ def update(
 @state.change(
     "experiment",
     "experiment_date_range",
-    "model_type",
+    "model_type_displayed_name",
     "model_training_time",
     "displayed_output",
     "parameters",
@@ -149,7 +149,7 @@ def reset(**kwargs):
         elif any(
             key in state.modified_keys
             for key in [
-                "model_type",
+                "model_type_displayed_name",
                 "model_training_time",
             ]
         ):
