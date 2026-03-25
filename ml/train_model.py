@@ -461,7 +461,7 @@ if __name__ == "__main__":
             df_val, input_names, input_normalization, output_names, output_normalization
         )
 
-    print("training started")
+    print("Training started")
     train_start_time = time.time()
     ######################################################
     # Neural Net and Ensemble Creation and training
@@ -486,7 +486,7 @@ if __name__ == "__main__":
             device,
         )
 
-    print("training ended")
+    print("Training ended")
 
     end_time = time.time()
 
