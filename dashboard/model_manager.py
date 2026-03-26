@@ -1,25 +1,27 @@
 import asyncio
-from datetime import datetime
-from pathlib import Path
 import os
 import re
 import sys
 import tempfile
+from datetime import datetime
+from pathlib import Path
+
+import mlflow
 import urllib3
 import yaml
-import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
+from urllib3.exceptions import InsecureRequestWarning
 
 # Add parent directory to path so we can import mlflow_utils from root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils import timer, load_config_dict, create_date_filter
 from error_manager import add_error
+from mlflow_utils import enable_amsc_x_api_key
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
-from mlflow_utils import enable_amsc_x_api_key
+from utils import timer, load_config_dict, create_date_filter
 
 model_type_tag_dict = {
     "Gaussian Process": "GP",
@@ -52,7 +54,7 @@ class ModelManager:
         ):
             # Tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
             os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            urllib3.disable_warnings(InsecureRequestWarning)
             # Inject the X-Api-Key into the requests.
             try:
                 enable_amsc_x_api_key(config_dict)
