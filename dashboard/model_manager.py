@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
+import sys
 import tempfile
 import os
 import yaml
@@ -65,13 +66,14 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self, config_dict, model_type_tag):
+    def __init__(self, config_dict, model_type_tag, model_training_local):
         print("Initializing model manager...")
         self.__model = None
         self.__is_neural_network = False
         self.__is_gaussian_process = False
         self.__is_neural_network_ensemble = False
         self.__model_type_tag = model_type_tag
+        self.__model_training_local = model_training_local
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
@@ -161,7 +163,21 @@ class ModelManager:
         if self.__model is not None:
             return self.__model.output_transformers
 
-    async def training_kernel(self):
+    def _prepare_training_config(self, temp_dir):
+        """Prepare a merged training config YAML in the given temp directory.
+
+        Returns the path to the written config file.
+        """
+        config_dict = load_config_dict(state.experiment)
+        config_dict["simulation_calibration"] = state.simulation_calibration
+        date_filter = create_date_filter(state.experiment_date_range)
+        config_dict["date_filter"] = date_filter
+        config_path = Path(temp_dir) / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+        return config_path
+
+    async def _training_kernel(self):
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -169,20 +185,12 @@ class ModelManager:
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # upload the configuration file to NERSC
-                config_dict = load_config_dict(state.experiment)
-                config_dict["simulation_calibration"] = state.simulation_calibration
-                # add date range filter to the configuration dictionary
-                date_filter = create_date_filter(state.experiment_date_range)
-                config_dict["date_filter"] = date_filter
-                # define the target path on NERSC
-                target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
-                [target_path] = await perlmutter.ls(target_path, directory=True)
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    temp_file_path = Path(temp_dir) / "config.yaml"
-                    with open(temp_file_path, "w") as temp_file:
-                        yaml.dump(config_dict, temp_file)
-                        temp_file.flush()
-                    with open(temp_file_path, "rb") as temp_file:
+                    config_path = self._prepare_training_config(temp_dir)
+                    # define the target path on NERSC
+                    target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
+                    [target_path] = await perlmutter.ls(target_path, directory=True)
+                    with open(config_path, "rb") as temp_file:
                         print("Uploading config file to NERSC")
                         temp_file.filename = "config.yaml"
                         await target_path.upload(temp_file)
@@ -218,10 +226,62 @@ class ModelManager:
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
         except Exception as e:
-            title = "Unable to complete training kernel"
-            msg = f"Error occurred when executing training kernel: {e}"
+            title = "Unable to complete remote training"
+            msg = f"Error occurred when executing remote training: {e}"
             add_error(title, msg)
             print(msg)
+            state.model_training_status = "Failed"
+            state.flush()
+            return False
+
+    async def _training_kernel_local(self):
+        try:
+            ml_dir = (Path(__file__).parent / "../ml").resolve()
+            train_model_path = ml_dir / "train_model.py"
+            model_tag = model_type_tag_dict[state.model_type]
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                config_path = self._prepare_training_config(temp_dir)
+                state.model_training_status = "Running"
+                state.flush()
+                print(
+                    f"Starting local training: {train_model_path} --model {model_tag}"
+                )
+                proc = await asyncio.create_subprocess_exec(
+                    sys.executable,  # path to the currently running Python interpreter
+                    str(train_model_path),
+                    "--config_file",
+                    str(config_path),
+                    "--model",
+                    model_tag,
+                    cwd=str(ml_dir),  # working directory of the subprocess
+                    stdout=asyncio.subprocess.PIPE,  # capture the standard output into a pipe
+                    stderr=asyncio.subprocess.STDOUT,  # redirect the standard error into the same pipe
+                )
+                # stream subprocess output to console
+                while True:
+                    line = await proc.stdout.readline()
+                    if not line:
+                        break
+                    print(line.decode(), end="")
+                await proc.wait()
+
+            if proc.returncode == 0:
+                state.model_training_status = "Completed"
+                state.flush()
+                return True
+            else:
+                state.model_training_status = "Failed"
+                state.flush()
+                return False
+        except Exception as e:
+            title = "Unable to complete local training"
+            msg = f"Error occurred when executing local training: {e}"
+            add_error(title, msg)
+            print(msg)
+            state.model_training_status = "Failed"
+            state.flush()
+            return False
 
     async def training_async(self):
         try:
@@ -229,7 +289,11 @@ class ModelManager:
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            if await self.training_kernel():
+            if self.__model_training_local:
+                result = await self._training_kernel_local()
+            else:
+                result = await self._training_kernel()
+            if result:
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
                 state.flush()
                 print(f"Finished training model at {state.model_training_time}")
@@ -288,7 +352,7 @@ class ModelManager:
                                 "Train",
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || perlmutter_status != 'active'",
+                                    "model_training || (!model_training_local && perlmutter_status != 'active')",
                                 ),
                                 style="text-transform: none",
                             )

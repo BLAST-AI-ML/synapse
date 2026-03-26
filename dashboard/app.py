@@ -66,6 +66,9 @@ def update(
     )
     # load data
     config_dict = load_config_dict(state.experiment)
+    # derive local_execution from local_execution in the experiment config
+    local_execution = config_dict.get("local_execution") or {}
+    state.model_training_local = bool(local_execution.get("ml_training", False))
     db = load_database(config_dict)
     exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
@@ -76,6 +79,7 @@ def update(
         mod_manager = ModelManager(
             config_dict=config_dict,
             model_type_tag=model_type_tag_dict[state.model_type],
+            model_training_local=state.model_training_local,
         )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
