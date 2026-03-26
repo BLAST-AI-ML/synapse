@@ -103,15 +103,13 @@ def create_date_filter(experiment_date_range):
 
 
 @timer
-def load_data(db):
+def load_data(db, experiment, date_range=None):
     print("Loading data from database...")
     # create date filter if date range is set
-    date_filter = create_date_filter(state.experiment_date_range)
+    date_filter = create_date_filter(date_range)
     # load experiment and simulation data points in dataframes
-    exp_data = pd.DataFrame(
-        db[state.experiment].find({"experiment_flag": 1, **date_filter})
-    )
-    sim_data = pd.DataFrame(db[state.experiment].find({"experiment_flag": 0}))
+    exp_data = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
+    sim_data = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
     # Store '_id', 'date' as string
     for key in ["_id", "date"]:
         if key in exp_data.columns:
@@ -122,10 +120,8 @@ def load_data(db):
 
 
 @timer
-def load_database(experiment):
+def load_database(config_dict):
     print("Loading database...")
-    # load configuration dictionary
-    config_dict = load_config_dict(experiment)
     # read database information from configuration dictionary
     db_host = config_dict["database"]["host"]
     db_port = config_dict["database"]["port"]

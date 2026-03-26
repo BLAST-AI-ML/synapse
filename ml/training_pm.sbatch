@@ -66,7 +66,7 @@ echo "Container check/pull took ${SECONDS} seconds."
 #   Reference: nvidia-smi topo -m
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
-    -v $HOME/db.profile:/root/db.profile \
     -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
+    --env-file $HOME/db-podman.profile \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
     python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}

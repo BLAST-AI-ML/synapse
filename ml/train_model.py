@@ -8,15 +8,12 @@ import_start_time = time.time()
 
 import argparse
 import os
-import urllib3
-from urllib3.exceptions import InsecureRequestWarning
 import torch
 from botorch.models.transforms.input import AffineInputTransform
-from botorch.models import MultiTaskGP, SingleTaskGP, ModelListGP
+from botorch.models import SingleTaskGP, ModelListGP
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import ScaleKernel, MaternKernel
 import pymongo
-import re
 import yaml
 import mlflow
 from lume_model.models import TorchModel
@@ -95,13 +92,9 @@ def connect_to_db(config_dict):
     db_auth = config_dict["database"]["auth"]
     db_username = config_dict["database"]["username_ro"]
     db_password_env = config_dict["database"]["password_ro_env"]
-    # Look for the password in the profile file
-    with open(os.path.join(os.getenv("HOME"), "db.profile")) as f:
-        db_profile = f.read()
-    match = re.search(f"{db_password_env}='([^']*)'", db_profile)
-    if not match:
-        raise RuntimeError(f"Environment variable {db_password_env} must be set")
-    db_password = match.group(1)
+    db_password = os.getenv(db_password_env)
+    if db_password is None:
+        raise RuntimeError(f"Environment variable {db_password_env} must be set!")
     return pymongo.MongoClient(
         host=db_host,
         authSource=db_auth,
@@ -110,11 +103,11 @@ def connect_to_db(config_dict):
     )[db_name]
 
 
-def normalize(df, input_names, input_transform, output_names, output_transform):
+def normalize(df, input_names, input_normalization, output_names, output_normalization):
     # Apply normalization to the training data set
     norm_df = df.copy()
-    norm_df[input_names] = input_transform(torch.tensor(df[input_names].values))
-    norm_df[output_names] = output_transform(torch.tensor(df[output_names].values))
+    norm_df[input_names] = input_normalization(torch.tensor(df[input_names].values))
+    norm_df[output_names] = output_normalization(torch.tensor(df[output_names].values))
     return norm_df
 
 
@@ -141,15 +134,17 @@ def split_data(df_exp, df_sim, variables, model_type):
             return (sim_train_df[variables], sim_val_df[variables])
 
 
-def build_transforms(n_inputs, X_train, n_outputs, y_train):
-    input_transform = AffineInputTransform(
+def build_normalizations(n_inputs, X_train, n_outputs, y_train):
+    input_normalization = AffineInputTransform(
         n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
     # For output normalization, we need to handle potential NaN values
     y_mean = torch.nanmean(y_train, dim=0)
     y_std = torch.sqrt(torch.nanmean((y_train - y_mean) ** 2, dim=0))
-    output_transform = AffineInputTransform(n_outputs, coefficient=y_std, offset=y_mean)
-    return input_transform, output_transform
+    output_normalization = AffineInputTransform(
+        n_outputs, coefficient=y_std, offset=y_mean
+    )
+    return input_normalization, output_normalization
 
 
 def train_nn_ensemble(
@@ -224,66 +219,79 @@ def train_nn_ensemble(
     return ensemble
 
 
-def build_torch_model_from_nn(
-    ensemble,
+def build_lume_model(
+    model,
     model_type,
     input_variables,
     output_variables,
-    input_transform,
-    output_transform,
-    output_names,
+    input_normalization,
+    output_normalization,
 ):
-    torch_models = []
+    # Fix mismatch in name between the config file and the expected lume-model format
+    for k in input_variables:
+        input_variables[k]["default_value"] = input_variables[k]["default"]
+        del input_variables[k]["default"]
 
-    for model_nn in ensemble:
-        calibration_transform = AffineInputTransform(
-            len(output_names),
-            coefficient=model_nn.sim_to_exp_calibration_weight.clone().detach().cpu(),
-            offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
-        )
-
-        # Fix mismatch in name between the config file and the expected lume-model format
-        for k in input_variables:
-            input_variables[k]["default_value"] = input_variables[k]["default"]
-
-        torch_models.append(
-            TorchModel(
-                model=model_nn,
-                input_variables=[
-                    ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-                ],
-                output_variables=[
-                    ScalarVariable(**output_variables[k])
-                    for k in output_variables.keys()
-                ],
-                input_transformers=[input_transform],
-                output_transformers=[
-                    calibration_transform,
-                    output_transform,
-                ],  # saving calibration before normalization
+    # Define lume-model input and output variables
+    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
+    output_vars = [
+        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
+    ]
+    if model_type in ["GP", "ensemble_NN"]:
+        distribution_output_vars = [
+            DistributionVariable(
+                **output_variables[k], distribution_type="MultiVariateNormal"
             )
-        )
+            for k in output_variables.keys()
+        ]
 
-    if model_type == "NN":
-        # Return single NN
-        return torch_models[0]
+    # Create lume-model objects
+    if model_type == "GP":
+        return GPModel(
+            model=model.cpu(),
+            input_variables=input_vars,
+            output_variables=distribution_output_vars,
+            input_transformers=[input_normalization],
+            output_transformers=[output_normalization],
+        )
     else:
-        # Return ensemble of NNs
-        return NNEnsemble(
-            models=torch_models,
-            input_variables=[
-                ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-            ],
-            output_variables=[
-                DistributionVariable(**output_variables[k])
-                for k in output_variables.keys()
-            ],
-        )
+        # model is an ensemble list of NNs
+        torch_models = []
+        for model_nn in model:
+            calibration_transform = AffineInputTransform(
+                len(output_vars),
+                coefficient=model_nn.sim_to_exp_calibration_weight.clone()
+                .detach()
+                .cpu(),
+                offset=model_nn.sim_to_exp_calibration_bias.clone().detach().cpu(),
+            )
+
+            torch_models.append(
+                TorchModel(
+                    model=model_nn.cpu(),
+                    input_variables=input_vars,
+                    output_variables=output_vars,
+                    input_transformers=[input_normalization],
+                    output_transformers=[
+                        calibration_transform,
+                        output_normalization,
+                    ],  # saving calibration before normalization
+                )
+            )
+
+        if model_type == "NN":
+            # Return single NN
+            return torch_models[0]
+        else:
+            # Return ensemble of NNs
+            return NNEnsemble(
+                models=torch_models,
+                input_variables=input_vars,
+                output_variables=distribution_output_vars,
+            )
 
 
-def train_gp(
-    norm_df_train, input_names, output_names, input_transform, output_transform, device
-):
+def train_gp(norm_df_train, input_names, output_names, device):
     # Create separate GP models for each output to handle NaN values in the training data
     gp_models = []
 
@@ -304,78 +312,24 @@ def train_gp(
             -1
         )
 
-        # Create GP model based on whether we have experimental data
-        if (
-            False
-        ):  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
-            # MultiTaskGP for experimental vs simulation data
-            exp_flag_valid = torch.tensor(
-                norm_df_train[["experiment_flag"]].values[valid_mask],
-                dtype=torch.float64,
-            )
-            X_with_task = torch.cat([exp_flag_valid, X_valid], dim=1)
-
-            gp_model = MultiTaskGP(
-                X_with_task,
-                y_valid,
-                task_feature=0,
-                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-                outcome_transform=None,
-            ).to(device)
-
-        else:
-            # SingleTaskGP for simulation data only
-            gp_model = SingleTaskGP(
-                X_valid,
-                y_valid,
-                covar_module=ScaleKernel(MaternKernel(nu=1.5)),
-                outcome_transform=None,
-            ).to(device)
-
+        # Create GP model
+        gp_model = SingleTaskGP(
+            X_valid,
+            y_valid,
+            covar_module=ScaleKernel(MaternKernel(nu=1.5)),
+            outcome_transform=None,
+        ).to(device)
         gp_models.append(gp_model)
 
     combined_gp = ModelListGP(*gp_models)
     print(f"ModelListGP created with {len(gp_models)} separate GP models")
     # Fit each separately
-    GP_start_time = time.time()
     for i, sub_gp in enumerate(gp_models):
         print(f"Training GP model {i + 1}/{len(gp_models)}...")
         mll = ExactMarginalLogLikelihood(sub_gp.likelihood, sub_gp)
         fit_gpytorch_mll(mll)
-    GP_end_time = time.time()
-    print(f"All GP models training time: {GP_end_time - GP_start_time:.2f} seconds")
 
-    # Fix mismatch in name between the config file and the expected lume-model format
-    for k in input_variables:
-        input_variables[k]["default_value"] = input_variables[k]["default"]
-        del input_variables[k]["default"]
-
-    if False:  # len(df_exp) > 0: # Temporarily deactivate MultiTaskGP for simplicity
-        output_variables = [
-            DistributionVariable(
-                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
-            )
-            for name in output_names
-            for suffix in ["sim_task", "exp_task"]
-        ]
-    else:
-        output_variables = [
-            DistributionVariable(
-                name=f"{name}_{suffix}", distribution_type="MultiVariateNormal"
-            )
-            for name in output_names
-            for suffix in ["sim_task"]
-        ]
-
-    return GPModel(
-        model=combined_gp.cpu(),
-        input_variables=[
-            ScalarVariable(**input_variables[k]) for k in input_variables.keys()
-        ],
-        output_variables=output_variables,
-        input_transformers=[input_transform],
-        output_transformers=[output_transform],
-    )
+    return combined_gp
 
 
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
@@ -428,17 +382,13 @@ if __name__ == "__main__":
     df_exp = pd.DataFrame(db[experiment].find({"experiment_flag": 1, **date_filter}))
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 
-    # When using the AmSC MLflow:
+    # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
     # (see https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
     if (
         "mlflow" in config_dict
         and config_dict["mlflow"].get("tracking_uri")
         == "https://mlflow.american-science-cloud.org"
     ):
-        # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
-        os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
-        urllib3.disable_warnings(InsecureRequestWarning)
-        # - inject the X-Api-Key into the requests.
         enable_amsc_x_api_key(config_dict)
 
     # Apply simulation calibration to the simulation data
@@ -458,24 +408,24 @@ if __name__ == "__main__":
     # Apply normalization to the training data
     X_train = torch.tensor(df_train[input_names].values, dtype=torch.float)
     y_train = torch.tensor(df_train[output_names].values, dtype=torch.float)
-    input_transform, output_transform = build_transforms(
+    input_normalization, output_normalization = build_normalizations(
         len(input_names), X_train, len(output_names), y_train
     )
     norm_df_train = normalize(
-        df_train, input_names, input_transform, output_names, output_transform
+        df_train, input_names, input_normalization, output_names, output_normalization
     )
+    if model_type != "GP":
+        norm_df_val = normalize(
+            df_val, input_names, input_normalization, output_names, output_normalization
+        )
 
-    model = None
+    print("training started")
+    train_start_time = time.time()
     ######################################################
     # Neural Net and Ensemble Creation and training
     ######################################################
     if model_type != "GP":
-        norm_df_val = normalize(
-            df_val, input_names, input_transform, output_names, output_transform
-        )
-        print("training started")
-        NN_start_time = time.time()
-        ensemble = train_nn_ensemble(
+        trained_model = train_nn_ensemble(
             model_type,
             norm_df_train,
             norm_df_val,
@@ -483,38 +433,36 @@ if __name__ == "__main__":
             output_names,
             device,
         )
-        print("training ended")
-
-        model = build_torch_model_from_nn(
-            ensemble,
-            model_type,
-            input_variables,
-            output_variables,
-            input_transform,
-            output_transform,
-            output_names,
-        )
-        end_time = time.time()
-
-        elapsed_time = end_time - start_time
-        data_time = NN_start_time - start_time
-        NN_time = end_time - NN_start_time
-        print(f"Total time taken: {elapsed_time:.2f} seconds")
-        print(f"Data prep time taken: {data_time:.2f} seconds")
-        print(f"NN time taken: {NN_time:.2f} seconds")
-
     ###############################################################
     # Gaussian Process Creation and training
     ###############################################################
     else:
-        model = train_gp(
+        trained_model = train_gp(
             norm_df_train,
             input_names,
             output_names,
-            input_transform,
-            output_transform,
             device,
         )
+
+    print("training ended")
+
+    end_time = time.time()
+
+    elapsed_time = end_time - start_time
+    data_time = train_start_time - start_time
+    train_time = end_time - train_start_time
+    print(f"Data prep time taken: {data_time:.2f} seconds")
+    print(f"Train time taken: {train_time:.2f} seconds")
+    print(f"Total time taken: {elapsed_time:.2f} seconds")
+
+    model = build_lume_model(
+        trained_model,
+        model_type,
+        input_variables,
+        output_variables,
+        input_normalization,
+        output_normalization,
+    )
 
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
