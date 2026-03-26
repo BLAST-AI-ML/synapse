@@ -50,10 +50,10 @@ class ModelManager:
             config_dict["mlflow"]["tracking_uri"]
             == "https://mlflow.american-science-cloud.org"
         ):
-            # - tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
+            # Tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
             os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-            # - inject the X-Api-Key into the requests.
+            # Inject the X-Api-Key into the requests.
             try:
                 enable_amsc_x_api_key(config_dict)
             except ValueError as e:
