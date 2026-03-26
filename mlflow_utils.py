@@ -34,7 +34,7 @@ def enable_amsc_x_api_key(config_dict):
             "Please specify the name of the environment variable containing the AmSC API key."
         )
 
-    api_key = os.getenv(api_key_env)
+    api_key = os.environ.get(api_key_env)
     if api_key is None:
         raise ValueError(
             f"The environment variable '{api_key_env}' specified in 'mlflow.api_key_env' "
@@ -44,14 +44,9 @@ def enable_amsc_x_api_key(config_dict):
     _orig = rest_utils.http_request
 
     def patched(host_creds, endpoint, method, *args, **kwargs):
-        if "headers" in kwargs and kwargs["headers"] is not None:
-            h = dict(kwargs["headers"])
-            h["X-Api-Key"] = api_key
-            kwargs["headers"] = h
-        else:
-            h = dict(kwargs.get("extra_headers") or {})
-            h["X-Api-Key"] = api_key
-            kwargs["extra_headers"] = h
+        h = dict(kwargs.get("headers") or kwargs.get("extra_headers") or {})
+        h["X-Api-Key"] = api_key
+        kwargs["headers" if "headers" in kwargs else "extra_headers"] = h
         return _orig(host_creds, endpoint, method, *args, **kwargs)
 
     rest_utils.http_request = patched
