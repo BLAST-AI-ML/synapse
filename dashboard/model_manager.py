@@ -1,12 +1,12 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
-import tempfile
 import os
-import sys
-import yaml
 import re
+import sys
+import tempfile
 import urllib3
+import yaml
 import mlflow
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
