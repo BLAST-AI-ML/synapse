@@ -1,4 +1,4 @@
-# Copilot Coding Agent Instructions for Synapse
+# Coding Agent Instructions for Synapse
 
 ## Project Overview
 
