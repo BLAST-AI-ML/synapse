@@ -75,7 +75,7 @@ def update(
     if reset_model:
         mod_manager = ModelManager(
             config_dict=config_dict,
-            model_type=model_type_dict[state.model_type_displayed_name],
+            model_type=model_type_dict[state.model_type_verbose],
         )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
@@ -113,7 +113,7 @@ def update(
 @state.change(
     "experiment",
     "experiment_date_range",
-    "model_type_displayed_name",
+    "model_type_verbose",
     "model_training_time",
     "displayed_output",
     "parameters",
@@ -149,7 +149,7 @@ def reset(**kwargs):
         elif any(
             key in state.modified_keys
             for key in [
-                "model_type_displayed_name",
+                "model_type_verbose",
                 "model_training_time",
             ]
         ):

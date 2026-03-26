@@ -206,7 +206,7 @@ class ModelManager:
                 # replace the --model argument in the python command with the current model type from the state
                 training_script = re.sub(
                     pattern=r"--model \$\{model\}",
-                    repl=rf"--model {model_type_dict[state.model_type_displayed_name]}",
+                    repl=rf"--model {model_type_dict[state.model_type_verbose]}",
                     string=training_script,
                 )
 
@@ -271,7 +271,7 @@ class ModelManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
-                                v_model=("model_type_displayed_name",),
+                                v_model=("model_type_verbose",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,

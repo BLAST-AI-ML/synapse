@@ -27,7 +27,7 @@ def initialize_state():
     state.experiment = default_experiment
     state.experiment_date_range = []
     # ML model
-    state.model_type_displayed_name = "Neural Network (single)"
+    state.model_type_verbose = "Neural Network (single)"
     state.model_training = False
     state.model_training_status = None
     state.model_training_time = None
