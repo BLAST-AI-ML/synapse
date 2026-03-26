@@ -248,15 +248,15 @@ class ModelManager:
                     f"Starting local training: {train_model_path} --model {model_tag}"
                 )
                 proc = await asyncio.create_subprocess_exec(
-                    sys.executable,
+                    sys.executable,  # path to the currently running Python interpreter
                     str(train_model_path),
                     "--config_file",
                     str(config_path),
                     "--model",
                     model_tag,
-                    cwd=str(ml_dir),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
+                    cwd=str(ml_dir),  # working directory of the subprocess
+                    stdout=asyncio.subprocess.PIPE,  # capture the standard output into a pipe
+                    stderr=asyncio.subprocess.STDOUT,  # redirect the standard error into the same pipe
                 )
                 # stream subprocess output to console
                 while True:
