@@ -5,9 +5,9 @@
 % \usepackage{tikz}
 % \usetikzlibrary{arrows.meta, positioning, backgrounds, fit}
 % \begin{document}
-% \begin{frame}{Test TikZ figure}
+% \begin{frame}[plain]
 %     \begin{center}
-%         \resizebox{0.9\textwidth}{!}{\input{synapse}}
+%         \resizebox{0.8\textwidth}{!}{\input{synapse_1}}
 %     \end{center}
 % \end{frame}
 % \end{document}
@@ -48,8 +48,8 @@
     \draw[data] (hpc) -- (ml) node[midway, sloped, above] {write};
     \draw[data] (dashbe) -- (db) node[midway, sloped, above] {read};
     \draw[data] (dashbe) -- (ml) node[midway, sloped, above] {read};
-    \draw[api] (dashfe) -- (dashbe);
     \draw[ctrl] (dashbe) -- (hpc) node[midway, rotate=90, yshift=7pt] {launch};
     \draw[ctrl] (dashfe) -- (exp) node[midway, rotate=90, yshift=7pt] {feedback};
+    \draw[api] (dashfe) -- (dashbe);
 
 \end{tikzpicture}
