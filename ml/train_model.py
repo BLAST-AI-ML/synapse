@@ -599,13 +599,15 @@ if __name__ == "__main__":
     # Phase 2: Train calibration on experimental data
     if norm_exp is not None and len(norm_exp) > 0:
         print("Phase 2: Training calibration on experimental data")
-        input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = train_calibration_phase(
-            trained_model,
-            model_type,
-            norm_exp,
-            sim_input_names,
-            sim_output_names,
-            device,
+        input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = (
+            train_calibration_phase(
+                trained_model,
+                model_type,
+                norm_exp,
+                sim_input_names,
+                sim_output_names,
+                device,
+            )
         )
         input_transformers = [
             input_guess_calibration,
