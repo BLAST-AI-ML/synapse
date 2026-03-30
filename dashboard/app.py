@@ -6,7 +6,7 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
-from model_manager import ModelManager
+from model_manager import ModelManager, model_type_dict
 from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
@@ -16,6 +16,7 @@ from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
     data_depth_panel,
+    load_config_dict,
     load_experiments,
     load_database,
     load_data,
@@ -64,14 +65,18 @@ def update(
         state.experiment
     )
     # load data
-    db = load_database(state.experiment)
-    exp_data, sim_data = load_data(db)
+    config_dict = load_config_dict(state.experiment)
+    db = load_database(config_dict)
+    exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
     # reset model
     if reset_model:
-        mod_manager = ModelManager()
+        mod_manager = ModelManager(
+            config_dict=config_dict,
+            model_type=model_type_dict[state.model_type_verbose],
+        )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
@@ -108,7 +113,7 @@ def update(
 @state.change(
     "experiment",
     "experiment_date_range",
-    "model_type",
+    "model_type_verbose",
     "model_training_time",
     "displayed_output",
     "parameters",
@@ -144,7 +149,7 @@ def reset(**kwargs):
         elif any(
             key in state.modified_keys
             for key in [
-                "model_type",
+                "model_type_verbose",
                 "model_training_time",
             ]
         ):
@@ -257,7 +262,8 @@ def find_simulation(event, db):
 
 
 def open_simulation_dialog(event):
-    db = load_database(state.experiment)
+    config_dict = load_config_dict(state.experiment)
+    db = load_database(config_dict)
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")

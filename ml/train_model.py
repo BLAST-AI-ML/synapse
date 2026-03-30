@@ -118,7 +118,7 @@ def split_data(df, variables, model_type):
         return (train_df[variables], val_df[variables])
 
 
-def build_normalization(n_inputs, X_train, n_outputs, y_train):
+def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     input_normalization = AffineInputTransform(
         n_inputs, coefficient=X_train.std(axis=0), offset=X_train.mean(axis=0)
     )
@@ -129,6 +129,73 @@ def build_normalization(n_inputs, X_train, n_outputs, y_train):
         n_outputs, coefficient=y_std, offset=y_mean
     )
     return input_normalization, output_normalization
+
+
+def build_guess_calibration(config_dict, input_variables, output_variables):
+    # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
+    # The forward transform maps experimental variables to simulation variables:
+    #   sim = alpha * (exp - beta), implemented as AffineInputTransform with
+    #   coefficient=1/alpha and offset=beta, so untransform(exp) = (exp - beta) / (1/alpha) = alpha*(exp-beta).
+    # lume-model calls untransform() on input transformers and transform() on output transformers,
+    # so output_guess_calibration (sim -> exp) uses the same coefficients and lume-model's
+    # untransform gives: exp = sim / alpha + beta.
+
+    # Build lookup from experimental variable name (depends_on) to calibration entry.
+    simulation_calibration = config_dict.get("simulation_calibration", {})
+    depends_on_lookup = {
+        entry["depends_on"]: entry
+        for entry in simulation_calibration.values()
+        if "depends_on" in entry
+    }
+
+    def _get_calibration(exp_name):
+        if exp_name in depends_on_lookup:
+            # Experimental variables is part of the "simulation_calibration" section
+            entry = depends_on_lookup[exp_name]
+            return entry["name"], entry["alpha_guess"], entry["beta_guess"]
+        else:
+            # Experimental variable is not part of the "simulation_calibration" section
+            # In this case, no calibration is needed ; the simulation variable is identical
+            return exp_name, 1.0, 0.0
+
+    # Build the list of simulation variables
+    sim_input_names = []
+    alpha_input_list = []
+    beta_input_list = []
+    for key in input_variables:
+        sim_name, alpha, beta = _get_calibration(input_variables[key]["name"])
+        sim_input_names.append(sim_name)
+        alpha_input_list.append(alpha)
+        beta_input_list.append(beta)
+    sim_output_names = []
+    alpha_output_list = []
+    beta_output_list = []
+    for key in output_variables:
+        sim_name, alpha, beta = _get_calibration(output_variables[key]["name"])
+        sim_output_names.append(sim_name)
+        alpha_output_list.append(alpha)
+        beta_output_list.append(beta)
+
+    # Build the AffineInputTransforms for the guess calibration
+    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
+    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
+    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
+    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
+    n_inputs = len(input_variables)
+    n_outputs = len(output_variables)
+    input_guess_calibration = AffineInputTransform(
+        n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
+    )
+    output_guess_calibration = AffineInputTransform(
+        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
+    )
+
+    return (
+        input_guess_calibration,
+        output_guess_calibration,
+        sim_input_names,
+        sim_output_names,
+    )
 
 
 def train_nn_ensemble(
@@ -441,53 +508,13 @@ if __name__ == "__main__":
     ):
         enable_amsc_x_api_key(config_dict)
 
-    # Build simulation variable name mappings and alpha/beta vectors
-    simulation_calibration = config_dict.get("simulation_calibration", {})
-    n_inputs = len(input_names)
-    n_outputs = len(output_names)
-
-    # Build sim variable names and per-dimension alpha/beta for inputs
-    sim_input_names = []
-    alpha_input_list = []
-    beta_input_list = []
-    for key in input_variables:
-        if key in simulation_calibration:
-            sim_input_names.append(simulation_calibration[key]["name"])
-            alpha_input_list.append(simulation_calibration[key]["alpha_guess"])
-            beta_input_list.append(simulation_calibration[key]["beta_guess"])
-        else:
-            sim_input_names.append(input_variables[key]["name"])
-            alpha_input_list.append(1.0)
-            beta_input_list.append(0.0)
-
-    # Build sim variable names and per-dimension alpha/beta for outputs
-    sim_output_names = []
-    alpha_output_list = []
-    beta_output_list = []
-    for key in output_variables:
-        if key in simulation_calibration:
-            sim_output_names.append(simulation_calibration[key]["name"])
-            alpha_output_list.append(simulation_calibration[key]["alpha_guess"])
-            beta_output_list.append(simulation_calibration[key]["beta_guess"])
-        else:
-            sim_output_names.append(output_variables[key]["name"])
-            alpha_output_list.append(1.0)
-            beta_output_list.append(0.0)
-
-    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
-    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
-    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
-    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
-
-    # Build exp-to-sim and sim-to-exp AffineInputTransforms
-    # exp_to_sim: sim = alpha * (exp - beta), i.e. AffineInputTransform with
-    #   coefficient=1/alpha, offset=beta  =>  (exp - beta) / (1/alpha) = alpha*(exp-beta)
-    input_guess_calibration = AffineInputTransform(
-        n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
-    )
-    output_guess_calibration = AffineInputTransform(
-        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
-    )
+    # Build guess calibration transforms (exp <-> sim variable conversion)
+    (
+        input_guess_calibration,
+        output_guess_calibration,
+        sim_input_names,
+        sim_output_names,
+    ) = build_guess_calibration(config_dict, input_variables, output_variables)
 
     # Convert experimental data to simulation variable space
     if len(df_exp) > 0:
@@ -514,8 +541,8 @@ if __name__ == "__main__":
         df_all = df_sim[sim_variables]
     X_all = torch.tensor(df_all[sim_input_names].values, dtype=torch.float)
     y_all = torch.tensor(df_all[sim_output_names].values, dtype=torch.float)
-    input_normalization, output_normalization = build_normalization(
-        n_inputs, X_all, n_outputs, y_all
+    input_normalization, output_normalization = build_normalizations(
+        len(sim_input_names), X_all, len(sim_output_names), y_all
     )
 
     # Split simulation data for Phase 1
@@ -613,6 +640,8 @@ if __name__ == "__main__":
     print(f"Data prep time taken: {data_time:.2f} seconds")
     print(f"Train time taken: {train_time:.2f} seconds")
     print(f"Total time taken: {elapsed_time:.2f} seconds")
+
+    print("training ended")
 
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
