@@ -384,7 +384,7 @@ def train_gp(norm_df_train, input_names, output_names, device):
             -1
         )
 
-        # SingleTaskGP for simulation data only
+        # Create GP model
         gp_model = SingleTaskGP(
             X_valid,
             y_valid,
@@ -518,19 +518,11 @@ if __name__ == "__main__":
 
     # Convert experimental data to simulation variable space
     if len(df_exp) > 0:
-        df_exp[sim_input_names] = (
-            input_guess_calibration(
-                torch.tensor(df_exp[input_names].values, dtype=torch.float)
-            )
-            .detach()
-            .numpy()
+        df_exp[sim_input_names] = input_guess_calibration(
+            torch.tensor(df_exp[input_names].values)
         )
-        df_exp[sim_output_names] = (
-            output_guess_calibration(
-                torch.tensor(df_exp[output_names].values, dtype=torch.float)
-            )
-            .detach()
-            .numpy()
+        df_exp[sim_output_names] = output_guess_calibration(
+            torch.tensor(df_exp[output_names].values)
         )
 
     # Build normalization transforms in simulation variable space
