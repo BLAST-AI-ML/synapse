@@ -617,15 +617,7 @@ if __name__ == "__main__":
         output_transformers = [output_normalization, output_guess_calibration]
         print("Phase 2: No experimental data available, skipping calibration")
 
-    # Build LUME model
-    model = build_lume_model(
-        trained_model,
-        model_type,
-        input_variables,
-        output_variables,
-        input_transformers,
-        output_transformers,
-    )
+    print("training ended")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -635,7 +627,15 @@ if __name__ == "__main__":
     print(f"Train time taken: {train_time:.2f} seconds")
     print(f"Total time taken: {elapsed_time:.2f} seconds")
 
-    print("training ended")
+    # Build LUME model
+    model = build_lume_model(
+        trained_model,
+        model_type,
+        input_variables,
+        output_variables,
+        input_transformers,
+        output_transformers,
+    )
 
     if test_mode:
         print("Test mode enabled: Skipping writing trained model to MLflow")
