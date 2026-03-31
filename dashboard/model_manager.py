@@ -1,7 +1,6 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
-import sys
 import tempfile
 import os
 import yaml
@@ -227,7 +226,12 @@ class ModelManager:
                     f"Starting local training: {train_model_path} --model {model_type}"
                 )
                 proc = await asyncio.create_subprocess_exec(
-                    sys.executable,  # path to the currently running Python interpreter
+                    "conda",
+                    "run",
+                    "--no-capture-output",
+                    "-n",
+                    "synapse-ml",
+                    "python",
                     str(train_model_path),
                     "--config_file",
                     str(config_path),
