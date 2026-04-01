@@ -98,9 +98,11 @@ class ModelManager:
             if model_type not in ("NN", "ensemble_NN", "GP"):
                 raise ValueError(f"Unsupported model type: {model_type}")
             # Populate inferred calibration in physics units for GUI
-            self.populate_inferred_calibration(
-                config_dict["inputs"], config_dict["outputs"]
-            )
+            # (only meaningful inside the dashboard where state.simulation_calibration is set)
+            if state.simulation_calibration is not None:
+                self.populate_inferred_calibration(
+                    config_dict["inputs"], config_dict["outputs"]
+                )
         except Exception as e:
             title = f"Unable to load model {model_type}"
             msg = f"Error occurred when loading model from MLflow: {e}"
