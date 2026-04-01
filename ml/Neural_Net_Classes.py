@@ -184,10 +184,18 @@ def train_calibration(
     n_inputs = exp_inputs.shape[1]
     device = exp_inputs.device
 
-    input_cal_weight = nn.Parameter(torch.ones(n_inputs, dtype=exp_inputs.dtype, device=device))
-    input_cal_bias = nn.Parameter(torch.zeros(n_inputs, dtype=exp_inputs.dtype, device=device))
-    output_cal_weight = nn.Parameter(torch.ones(n_outputs, dtype=exp_inputs.dtype, device=device))
-    output_cal_bias = nn.Parameter(torch.zeros(n_outputs, dtype=exp_inputs.dtype, device=device))
+    input_cal_weight = nn.Parameter(
+        torch.ones(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    input_cal_bias = nn.Parameter(
+        torch.zeros(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    output_cal_weight = nn.Parameter(
+        torch.ones(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+    output_cal_bias = nn.Parameter(
+        torch.zeros(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
 
     optimizer = optim.Adam(
         [input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias], lr=lr
