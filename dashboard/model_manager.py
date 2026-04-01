@@ -65,11 +65,11 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self, config_dict, model_type, model_training_local):
+    def __init__(self, config_dict, model_type, model_training_mode):
         print("Initializing model manager...")
         self.__model = None
         self.__model_type = model_type
-        self.__model_training_local = model_training_local
+        self.__model_training_mode = model_training_mode
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
@@ -272,13 +272,13 @@ class ModelManager:
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            if self.__model_training_local == "local":
+            if self.__model_training_mode == "local":
                 result = await self._training_kernel_local()
-            elif self.__model_training_local == "sfapi":
+            elif self.__model_training_mode == "sfapi":
                 result = await self._training_kernel()
             else:
                 raise ValueError(
-                    f"Unsupported training mode: {self.__model_training_local}"
+                    f"Unsupported training mode: {self.__model_training_mode}"
                 )
             if result:
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -339,7 +339,7 @@ class ModelManager:
                                 "Train",
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || (model_training_local === 'sfapi' && perlmutter_status !== 'active')",
+                                    "model_training || (model_training_mode === 'sfapi' && perlmutter_status !== 'active')",
                                 ),
                                 style="text-transform: none",
                             )
