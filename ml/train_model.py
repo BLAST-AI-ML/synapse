@@ -381,7 +381,6 @@ def train_calibration_phase(
     return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
 
 
-
 def build_lume_model(
     model,
     model_type,
