@@ -55,7 +55,7 @@ def nan_mse_loss(target, pred):
 
 class CombinedNN(nn.Module):
     """
-    Model that trains a 5 layer neural network and a calibration layer
+    5 layer neural network
     """
 
     def __init__(
@@ -87,21 +87,11 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
-        # Component-wise linear transformation: weight * input + bias
-        # where weight and bias are vectors of size output_size
-        self.sim_to_exp_calibration_weight = nn.Parameter(torch.ones(output_size))
-        self.sim_to_exp_calibration_bias = nn.Parameter(torch.zeros(output_size))
-
         self.learning_rate = learning_rate
         self.patience_LRreduction = patience_LRreduction
         self.patience_earlystopping = patience_earlystopping
         self.factor = factor
         self.threshold = threshold
-
-    @torch.jit.export
-    def calibrate(self, x):
-        """Apply component-wise linear transformation: weight * x + bias."""
-        return self.sim_to_exp_calibration_weight * x + self.sim_to_exp_calibration_bias
 
     def forward(self, x):
         """
@@ -117,19 +107,14 @@ class CombinedNN(nn.Module):
         x = self.relu(self.hidden4(x))
         x = self.relu(self.hidden5(x))
         x = self.output(x)
-
         return x
 
     def train_model(
         self,
-        sim_inputs,
-        sim_targets,
-        exp_inputs,
-        exp_targets,
-        sim_inputs_val,
-        sim_targets_val,
-        exp_inputs_val,
-        exp_targets_val,
+        train_inputs,
+        train_targets,
+        val_inputs,
+        val_targets,
         num_epochs=1500,
     ):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -145,13 +130,8 @@ class CombinedNN(nn.Module):
         for epoch in range(num_epochs):
             optimizer.zero_grad()
 
-            loss = 0
-            if len(sim_inputs) > 0:
-                sim_outputs = self(sim_inputs)
-                loss += nan_mse_loss(sim_targets, sim_outputs)
-            if len(exp_inputs) > 0:
-                exp_outputs = self.calibrate(self(exp_inputs))
-                loss += nan_mse_loss(exp_targets, exp_outputs)
+            outputs = self(train_inputs)
+            loss = nan_mse_loss(train_targets, outputs)
             loss.backward()
 
             optimizer.step()
@@ -159,15 +139,9 @@ class CombinedNN(nn.Module):
             current_loss = loss.item()
             scheduler.step(current_loss)
 
-            # compute validation loss for early stopping
             with torch.no_grad():
-                val_loss = 0
-                if len(sim_inputs_val) > 0:
-                    sim_outputs_val = self(sim_inputs_val)
-                    val_loss += nan_mse_loss(sim_targets_val, sim_outputs_val)
-                if len(exp_inputs_val) > 0:
-                    exp_outputs_val = self(exp_inputs_val)
-                    val_loss += nan_mse_loss(exp_targets_val, exp_outputs_val)
+                val_outputs = self(val_inputs)
+                val_loss = nan_mse_loss(val_targets, val_outputs)
 
             if (epoch + 1) % (num_epochs / 10) == 0:
                 print(
@@ -177,6 +151,89 @@ class CombinedNN(nn.Module):
             early_stopper(val_loss.item())
             if early_stopper.early_stop:
                 print(
-                    f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}'
+                    f"Early stopping triggered at epoch {epoch} with val loss {val_loss.item():.6f}"
                 )
                 break
+
+
+def train_calibration(
+    model,
+    exp_inputs,
+    exp_targets,
+    num_epochs=5000,
+    lr=0.001,
+):
+    """
+    Train per-output affine calibration parameters (weight * prediction + bias)
+    on experimental data. The base model is evaluated at each iteration so that,
+    in the future, input calibration parameters (applied before the model) can
+    also be trained in the same loop.
+
+    Args:
+        model: frozen callable that maps exp_inputs -> predictions
+        exp_inputs: experimental input tensor
+        exp_targets: experimental target values (may contain NaN)
+        n_outputs: number of output dimensions
+        num_epochs: number of training epochs
+        lr: learning rate
+
+    Returns:
+        (cal_weight, cal_bias) as detached tensors
+    """
+    n_outputs = exp_targets.shape[1]
+    n_inputs = exp_inputs.shape[1]
+    device = exp_inputs.device
+
+    input_cal_weight = nn.Parameter(
+        torch.ones(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    input_cal_bias = nn.Parameter(
+        torch.zeros(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    output_cal_weight = nn.Parameter(
+        torch.ones(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+    output_cal_bias = nn.Parameter(
+        torch.zeros(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+
+    optimizer = optim.Adam(
+        [input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias], lr=lr
+    )
+    scheduler = ReduceLROnPlateau(
+        optimizer, "min", factor=0.5, patience=200, threshold=1e-4
+    )
+    early_stopper = EarlyStopping(patience=500)
+
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
+
+        calibrated_inputs = input_cal_weight * exp_inputs + input_cal_bias
+        base_predictions = model(calibrated_inputs)
+        calibrated_outputs = output_cal_weight * base_predictions + output_cal_bias
+
+        loss = nan_mse_loss(exp_targets, calibrated_outputs)
+        loss.backward()
+        optimizer.step()
+
+        current_loss = loss.item()
+        scheduler.step(current_loss)
+
+        if (epoch + 1) % (num_epochs / 10) == 0:
+            print(
+                f"Calibration Epoch [{epoch + 1}/{num_epochs}], Loss:{current_loss:.6f}"
+            )
+
+        early_stopper(current_loss)
+        if early_stopper.early_stop:
+            print(
+                f"Calibration early stopping at epoch {epoch} with loss {current_loss:.6f}"
+            )
+            break
+
+    return (
+        input_cal_weight.detach(),
+        input_cal_bias.detach(),
+        output_cal_weight.detach(),
+        output_cal_bias.detach(),
+    )

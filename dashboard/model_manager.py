@@ -23,7 +23,7 @@ from sfapi_manager import monitor_sfapi_job
 from state_manager import state
 from utils import timer, load_config_dict, create_date_filter
 
-model_type_tag_dict = {
+model_type_dict = {
     "Gaussian Process": "GP",
     "Neural Network (single)": "NN",
     "Neural Network (ensemble)": "ensemble_NN",
@@ -31,13 +31,10 @@ model_type_tag_dict = {
 
 
 class ModelManager:
-    def __init__(self, config_dict, model_type_tag):
+    def __init__(self, config_dict, model_type):
         print("Initializing model manager...")
         self.__model = None
-        self.__is_neural_network = False
-        self.__is_gaussian_process = False
-        self.__is_neural_network_ensemble = False
-        self.__model_type_tag = model_type_tag
+        self.__model_type = model_type
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
@@ -64,7 +61,7 @@ class ModelManager:
                 add_error(title, msg)
                 print(msg)
         experiment = config_dict["experiment"]
-        model_name = f"{experiment}_{model_type_tag}"
+        model_name = f"{experiment}_{model_type}"
 
         try:
             # Download model from MLflow server
@@ -73,16 +70,10 @@ class ModelManager:
                 .unwrap_python_model()
                 .model
             )
-            if model_type_tag == "NN":
-                self.__is_neural_network = True
-            elif model_type_tag == "ensemble_NN":
-                self.__is_neural_network_ensemble = True
-            elif model_type_tag == "GP":
-                self.__is_gaussian_process = True
-            else:
-                raise ValueError(f"Unsupported model type: {model_type_tag}")
+            if model_type not in ("NN", "ensemble_NN", "GP"):
+                raise ValueError(f"Unsupported model type: {model_type}")
         except Exception as e:
-            title = f"Unable to load model {model_type_tag}"
+            title = f"Unable to load model {model_type}"
             msg = f"Error occurred when loading model from MLflow: {e}"
             add_error(title, msg)
             print(msg)
@@ -92,36 +83,24 @@ class ModelManager:
         model_avail = True if self.__model is not None else False
         return model_avail
 
-    @property
-    def is_neural_network(self):
-        return self.__is_neural_network
-
-    @property
-    def is_gaussian_process(self):
-        return self.__is_gaussian_process
-
-    @property
-    def is_neural_network_ensemble(self):
-        return self.__is_neural_network_ensemble
-
     @timer
     def evaluate(self, parameters, output):
         print("Evaluating model...")
         if self.__model is not None:
             # evaluate model
             output_dict = self.__model.evaluate(parameters)
-            if self.__is_neural_network:
+            if self.__model_type == "NN":
                 # compute mean and mean error
                 mean = output_dict[output]
                 mean_error = 0.0  # trick to collapse error range when lower/upper bounds are not predicted
-            elif self.__is_gaussian_process or self.__is_neural_network_ensemble:
+            elif self.__model_type in ("GP", "ensemble_NN"):
                 # compute mean, standard deviation and mean error
                 # (call detach method to detach gradients from tensors)
                 mean = output_dict[output].mean.detach()
                 std_dev = output_dict[output].variance.sqrt().detach()
                 mean_error = 2.0 * std_dev
             else:
-                raise ValueError(f"Unsupported model type: {self.__model_type_tag}")
+                raise ValueError(f"Unsupported model type: {self.__model_type}")
             # compute lower/upper bounds for error range
             lower = mean - mean_error
             upper = mean + mean_error
@@ -181,7 +160,7 @@ class ModelManager:
                 # replace the --model argument in the python command with the current model type from the state
                 training_script = re.sub(
                     pattern=r"--model \$\{model\}",
-                    repl=rf"--model {model_type_tag_dict[state.model_type]}",
+                    repl=rf"--model {model_type_dict[state.model_type_verbose]}",
                     string=training_script,
                 )
 
@@ -246,7 +225,7 @@ class ModelManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
-                                v_model=("model_type",),
+                                v_model=("model_type_verbose",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,
