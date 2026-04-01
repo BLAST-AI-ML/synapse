@@ -88,7 +88,7 @@ This section describes how to train ML models locally.
 
    Optionally, restrict to a specific model type or config file:
    ```bash
-   python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2
+   python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2/config.yaml
    ```
 
    If your MLflow server is running on a different port (e.g. 5001 instead of 5000), pass it explicitly:
