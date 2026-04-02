@@ -208,7 +208,7 @@ def train_calibration(
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
-        calibrated_inputs = (1./input_cal_weight) * (exp_inputs - input_cal_bias)
+        calibrated_inputs = (1.0 / input_cal_weight) * (exp_inputs - input_cal_bias)
         base_predictions = model(calibrated_inputs)
         calibrated_outputs = output_cal_weight * base_predictions + output_cal_bias
 
