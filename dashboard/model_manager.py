@@ -155,7 +155,7 @@ class ModelManager:
             yaml.dump(config_dict, f)
         return config_path
 
-    async def _training_kernel(self):
+    async def _training_kernel_sfapi(self):
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -275,7 +275,7 @@ class ModelManager:
             if self.__model_training_mode == "local":
                 result = await self._training_kernel_local()
             elif self.__model_training_mode == "sfapi":
-                result = await self._training_kernel()
+                result = await self._training_kernel_sfapi()
             else:
                 raise ValueError(
                     f"Unsupported training mode: {self.__model_training_mode}"
