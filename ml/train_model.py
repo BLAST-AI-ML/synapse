@@ -131,6 +131,84 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
+def build_input_inferred_calibration(
+    input_guess_calibration,
+    input_normalization,
+    input_inferred_normalizedcalibration,
+    n_inputs,
+):
+    """
+    Build input_inferred_calibration so that:
+      [input_inferred_calibration, input_normalization]
+    is equivalent to:
+      [input_guess_calibration, input_normalization, input_inferred_normalizedcalibration]
+
+    AffineInputTransform convention:
+      T(x) = (x - offset) / coefficient
+    """
+    c_guess = input_guess_calibration.coefficient
+    o_guess = input_guess_calibration.offset
+
+    c_norm = input_normalization.coefficient
+    o_norm = input_normalization.offset
+
+    c_normcalibration = input_inferred_normalizedcalibration.coefficient
+    o_normcalibration = input_inferred_normalizedcalibration.offset
+
+    c_inferred = c_guess * c_normcalibration
+    o_inferred = (
+        o_guess
+        + c_guess * o_norm
+        + c_guess * c_norm * o_normcalibration
+        - c_inferred * o_norm
+    )
+
+    input_inferred_calibration = AffineInputTransform(
+        n_inputs,
+        coefficient=c_inferred,
+        offset=o_inferred,
+    )
+
+    return input_inferred_calibration
+
+
+def build_output_inferred_calibration(
+    output_inferred_normalizedcalibration,
+    output_normalization,
+    output_guess_calibration,
+    n_outputs,
+):
+    """
+    Build output_inferred_calibration so that:
+      [output_normalization, output_inferred_calibration]
+    matches:
+      [output_inferred_normalizedcalibration, output_normalization, output_guess_calibration]
+    assuming lume-model applies output transformers via untransform().
+    """
+    c_normcalibration = output_inferred_normalizedcalibration.coefficient
+    o_normcalibration = output_inferred_normalizedcalibration.offset
+
+    c_norm = output_normalization.coefficient
+    o_norm = output_normalization.offset
+
+    c_guess = output_guess_calibration.coefficient
+    o_guess = output_guess_calibration.offset
+
+    c_inf = c_guess * c_normcalibration
+    o_inf = (
+        c_guess * c_norm * o_normcalibration
+        + c_guess * (1.0 - c_normcalibration) * o_norm
+        + o_guess
+    )
+
+    output_inferred_calibration = AffineInputTransform(
+        n_outputs,
+        coefficient=c_inf,
+        offset=o_inf,
+    )
+    return output_inferred_calibration
+
+
 def build_guess_calibration(config_dict, input_variables, output_variables):
     # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
     # For AffineInputTransform:
@@ -388,7 +466,7 @@ def train_gp(norm_df_train, input_names, output_names, device):
             -1
         )
 
-        # Create GP model
+        # SingleTaskGP for simulation data only
         gp_model = SingleTaskGP(
             X_valid,
             y_valid,
@@ -605,15 +683,30 @@ if __name__ == "__main__":
                 device,
             )
         )
-        input_transformers = [
+
+        # Build calibration transforms in physical units
+        input_inferred_calibration = build_input_inferred_calibration(
             input_guess_calibration,
             input_normalization,
             input_inferred_normalizedcalibration,
+            len(sim_input_names),
+        )
+
+        input_transformers = [
+            input_inferred_calibration,
+            input_normalization,
         ]
-        output_transformers = [
+
+        output_inferred_calibration = build_output_inferred_calibration(
             output_inferred_normalizedcalibration,
             output_normalization,
             output_guess_calibration,
+            len(sim_output_names),
+        )
+
+        output_transformers = [
+            output_normalization,
+            output_inferred_calibration,
         ]
         print("Phase 2: Calibration training complete")
     else:
