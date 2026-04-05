@@ -211,12 +211,16 @@ def build_output_inferred_calibration(
 
 def build_guess_calibration(config_dict, input_variables, output_variables):
     # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
-    # The forward transform maps experimental variables to simulation variables:
-    #   sim = alpha * (exp - beta), implemented as AffineInputTransform with
-    #   coefficient=1/alpha and offset=beta, so untransform(exp) = (exp - beta) / (1/alpha) = alpha*(exp-beta).
-    # lume-model calls untransform() on input transformers and transform() on output transformers,
-    # so output_guess_calibration (sim -> exp) uses the same coefficients and lume-model's
-    # untransform gives: exp = sim / alpha + beta.
+    # For AffineInputTransform:
+    #   transform(x) = (x - offset)/coefficient
+    #   untransform(x) = coefficient*y + offset
+    #       where, coefficient = 1/alpha ; offset=beta.
+    #
+    # For inputs, lume-model applies transform(), so:
+    #   sim = transform(exp) = (exp-beta)/(1/alpha) = alpha*(exp-beta)
+    #
+    # For outputs, lume-model applies untransform(), so:
+    #   exp = untransform(sim) = beta_inferred + (1/alpha_inferred)*sim
 
     # Build lookup from experimental variable name (depends_on) to calibration entry.
     simulation_calibration = config_dict.get("simulation_calibration", {})
