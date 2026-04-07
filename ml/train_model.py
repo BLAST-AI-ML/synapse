@@ -131,82 +131,53 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
-def build_input_inferred_calibration(
-    input_guess_calibration,
-    input_normalization,
-    input_inferred_normalizedcalibration,
-    n_inputs,
+def build_inferred_calibration(
+    guess_calibration,
+    normalization,
+    inferred_normalizedcalibration,
+    n_features,
 ):
     """
-    Build input_inferred_calibration so that:
-      [input_inferred_calibration, input_normalization]
-    is equivalent to:
-      [input_guess_calibration, input_normalization, input_inferred_normalizedcalibration]
+    Combine three affine transforms into two, by folding the guess calibration
+    and inferred normalized calibration into a single inferred calibration.
 
-    AffineInputTransform convention:
-      T(x) = (x - offset) / coefficient
+    Given three AffineInputTransform objects (guess_calibration, normalization,
+    inferred_normalizedcalibration), this function computes a new
+    inferred_calibration transform such that applying the pair:
+
+        [inferred_calibration, normalization]
+
+    is equivalent to applying the original triple:
+
+        [guess_calibration, normalization, inferred_normalizedcalibration]
+
+    This works for both input and output variables. For inputs, transform()
+    is applied left-to-right on the list above. For outputs, untransform()
+    is applied right-to-left on the same list, which is mathematically
+    equivalent.
     """
-    c_guess = input_guess_calibration.coefficient
-    o_guess = input_guess_calibration.offset
+    c_guess = guess_calibration.coefficient
+    o_guess = guess_calibration.offset
 
-    c_norm = input_normalization.coefficient
-    o_norm = input_normalization.offset
+    c_norm = normalization.coefficient
+    o_norm = normalization.offset
 
-    c_normcalibration = input_inferred_normalizedcalibration.coefficient
-    o_normcalibration = input_inferred_normalizedcalibration.offset
+    c_normcal = inferred_normalizedcalibration.coefficient
+    o_normcal = inferred_normalizedcalibration.offset
 
-    c_inferred = c_guess * c_normcalibration
+    c_inferred = c_guess * c_normcal
     o_inferred = (
         o_guess
         + c_guess * o_norm
-        + c_guess * c_norm * o_normcalibration
+        + c_guess * c_norm * o_normcal
         - c_inferred * o_norm
     )
 
-    input_inferred_calibration = AffineInputTransform(
-        n_inputs,
+    return AffineInputTransform(
+        n_features,
         coefficient=c_inferred,
         offset=o_inferred,
     )
-
-    return input_inferred_calibration
-
-
-def build_output_inferred_calibration(
-    output_inferred_normalizedcalibration,
-    output_normalization,
-    output_guess_calibration,
-    n_outputs,
-):
-    """
-    Build output_inferred_calibration so that:
-      [output_normalization, output_inferred_calibration]
-    matches:
-      [output_inferred_normalizedcalibration, output_normalization, output_guess_calibration]
-    assuming lume-model applies output transformers via untransform().
-    """
-    c_normcalibration = output_inferred_normalizedcalibration.coefficient
-    o_normcalibration = output_inferred_normalizedcalibration.offset
-
-    c_norm = output_normalization.coefficient
-    o_norm = output_normalization.offset
-
-    c_guess = output_guess_calibration.coefficient
-    o_guess = output_guess_calibration.offset
-
-    c_inf = c_guess * c_normcalibration
-    o_inf = (
-        c_guess * c_norm * o_normcalibration
-        + c_guess * (1.0 - c_normcalibration) * o_norm
-        + o_guess
-    )
-
-    output_inferred_calibration = AffineInputTransform(
-        n_outputs,
-        coefficient=c_inf,
-        offset=o_inf,
-    )
-    return output_inferred_calibration
 
 
 def build_guess_calibration(config_dict, input_variables, output_variables):
@@ -685,7 +656,7 @@ if __name__ == "__main__":
         )
 
         # Build calibration transforms in physical units
-        input_inferred_calibration = build_input_inferred_calibration(
+        input_inferred_calibration = build_inferred_calibration(
             input_guess_calibration,
             input_normalization,
             input_inferred_normalizedcalibration,
@@ -697,10 +668,10 @@ if __name__ == "__main__":
             input_normalization,
         ]
 
-        output_inferred_calibration = build_output_inferred_calibration(
-            output_inferred_normalizedcalibration,
-            output_normalization,
+        output_inferred_calibration = build_inferred_calibration(
             output_guess_calibration,
+            output_normalization,
+            output_inferred_normalizedcalibration,
             len(sim_output_names),
         )
 
