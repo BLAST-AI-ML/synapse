@@ -160,7 +160,6 @@ class ModelManager:
         input_inferred_calibration = input_transformers[0]
         alpha_inferred = 1.0 / input_inferred_calibration.coefficient
         beta_inferred = input_inferred_calibration.offset
-
         for i, key in enumerate(input_variables.keys()):
             state.simulation_calibration[key]["alpha_inferred"] = float(
                 alpha_inferred[i]
@@ -176,7 +175,6 @@ class ModelManager:
         output_inferred_calibration = output_transformers[-1]
         alpha_output_inferred = 1.0 / output_inferred_calibration.coefficient
         beta_output_inferred = output_inferred_calibration.offset
-
         for i, key in enumerate(output_variables.keys()):
             state.simulation_calibration[key]["alpha_inferred"] = float(
                 alpha_output_inferred[i]
