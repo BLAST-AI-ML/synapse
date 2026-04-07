@@ -154,7 +154,7 @@ class ModelManager:
         # Input calibration
         input_transformers = self.__model.input_transformers
         assert len(input_transformers) == 2, (
-            f"Expected exactly 2 input transformers (calibration + standardization), "
+            f"Expected exactly 2 input transformers (calibration + normalization), "
             f"but got {len(input_transformers)}."
         )
         input_inferred_calibration = input_transformers[0]
@@ -170,7 +170,7 @@ class ModelManager:
         # Output calibration
         output_transformers = self.__model.output_transformers
         assert len(output_transformers) == 2, (
-            f"Expected exactly 2 output transformers (standardization + calibration), "
+            f"Expected exactly 2 output transformers (normalization + calibration), "
             f"but got {len(output_transformers)}."
         )
         output_inferred_calibration = output_transformers[-1]
