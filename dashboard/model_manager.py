@@ -165,9 +165,7 @@ class ModelManager:
             state.simulation_calibration[key]["alpha_inferred"] = float(
                 alpha_inferred[i]
             )
-            state.simulation_calibration[key]["beta_inferred"] = float(
-                beta_inferred[i]
-            )
+            state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
 
         # Output calibration
         output_transformers = self.__model.output_transformers
