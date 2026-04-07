@@ -141,16 +141,6 @@ class ModelManager:
                 mean = float(mean)
             return (mean, lower, upper)
 
-    def get_output_transformers(self):
-        print("Getting output transformers...")
-        if self.__model is not None:
-            return self.__model.output_transformers
-
-    def get_input_transformers(self):
-        print("Getting input transformers...")
-        if self.__model is not None:
-            return self.__model.input_transformers
-
     def populate_inferred_calibration(self, input_variables, output_variables):
         """
         Populate alpha_inferred/beta_inferred in state.simulation_calibration for
@@ -162,17 +152,13 @@ class ModelManager:
             value.pop("beta_inferred", None)
 
         # Input calibration
-        input_transformers = self.get_input_transformers()
+        input_transformers = self.__model.input_transformers
         if input_transformers or len(input_transformers) >= 1:
             input_inferred_calibration = input_transformers[0]
-            alpha_inferred = (
-                (1.0 / input_inferred_calibration.coefficient).detach().cpu()
-            )
-            beta_inferred = input_inferred_calibration.offset.detach().cpu()
+            alpha_inferred = 1.0 / input_inferred_calibration.coefficient
+            beta_inferred = input_inferred_calibration.offset
 
             for i, key in enumerate(input_variables.keys()):
-                if key not in state.simulation_calibration:
-                    continue
                 state.simulation_calibration[key]["alpha_inferred"] = float(
                     alpha_inferred[i]
                 )
@@ -181,23 +167,20 @@ class ModelManager:
                 )
 
         # Output calibration
-        output_transformers = self.get_output_transformers()
+        output_transformers = self.__model.output_transformers
         if output_transformers:
             output_inferred_calibration = output_transformers[-1]
-            alpha_output_inferred = (
-                (1.0 / output_inferred_calibration.coefficient).detach().cpu()
-            )
-            beta_output_inferred = output_inferred_calibration.offset.detach().cpu()
+            alpha_output_inferred = 1.0 / output_inferred_calibration.coefficient
+            beta_output_inferred = output_inferred_calibration.offset
 
             for i, key in enumerate(output_variables.keys()):
-                if key not in state.simulation_calibration:
-                    continue
                 state.simulation_calibration[key]["alpha_inferred"] = float(
                     alpha_output_inferred[i]
                 )
                 state.simulation_calibration[key]["beta_inferred"] = float(
                     beta_output_inferred[i]
                 )
+        # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
 
     async def training_kernel(self):
