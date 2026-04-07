@@ -153,33 +153,39 @@ class ModelManager:
 
         # Input calibration
         input_transformers = self.__model.input_transformers
-        if input_transformers or len(input_transformers) >= 1:
-            input_inferred_calibration = input_transformers[0]
-            alpha_inferred = 1.0 / input_inferred_calibration.coefficient
-            beta_inferred = input_inferred_calibration.offset
+        assert len(input_transformers) == 2, (
+            f"Expected exactly 2 input transformers (calibration + standardization), "
+            f"but got {len(input_transformers)}."
+        )
+        input_inferred_calibration = input_transformers[0]
+        alpha_inferred = 1.0 / input_inferred_calibration.coefficient
+        beta_inferred = input_inferred_calibration.offset
 
-            for i, key in enumerate(input_variables.keys()):
-                state.simulation_calibration[key]["alpha_inferred"] = float(
-                    alpha_inferred[i]
-                )
-                state.simulation_calibration[key]["beta_inferred"] = float(
-                    beta_inferred[i]
-                )
+        for i, key in enumerate(input_variables.keys()):
+            state.simulation_calibration[key]["alpha_inferred"] = float(
+                alpha_inferred[i]
+            )
+            state.simulation_calibration[key]["beta_inferred"] = float(
+                beta_inferred[i]
+            )
 
         # Output calibration
         output_transformers = self.__model.output_transformers
-        if output_transformers:
-            output_inferred_calibration = output_transformers[-1]
-            alpha_output_inferred = 1.0 / output_inferred_calibration.coefficient
-            beta_output_inferred = output_inferred_calibration.offset
+        assert len(output_transformers) == 2, (
+            f"Expected exactly 2 output transformers (standardization + calibration), "
+            f"but got {len(output_transformers)}."
+        )
+        output_inferred_calibration = output_transformers[-1]
+        alpha_output_inferred = 1.0 / output_inferred_calibration.coefficient
+        beta_output_inferred = output_inferred_calibration.offset
 
-            for i, key in enumerate(output_variables.keys()):
-                state.simulation_calibration[key]["alpha_inferred"] = float(
-                    alpha_output_inferred[i]
-                )
-                state.simulation_calibration[key]["beta_inferred"] = float(
-                    beta_output_inferred[i]
-                )
+        for i, key in enumerate(output_variables.keys()):
+            state.simulation_calibration[key]["alpha_inferred"] = float(
+                alpha_output_inferred[i]
+            )
+            state.simulation_calibration[key]["beta_inferred"] = float(
+                beta_output_inferred[i]
+            )
         # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
 
