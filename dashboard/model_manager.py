@@ -179,9 +179,7 @@ class ModelManager:
             state.simulation_calibration[key]["alpha_inferred"] = float(
                 alpha_inferred[i]
             )
-            state.simulation_calibration[key]["beta_inferred"] = float(
-                beta_inferred[i]
-            )
+            state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
         # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
 
