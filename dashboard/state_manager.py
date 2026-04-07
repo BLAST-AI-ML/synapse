@@ -56,4 +56,4 @@ def initialize_state():
     state.errors = []
     state.error_counter = 0
     # Calibration toggles
-    state.use_inferred_calibration = True
+    state.use_inferred_calibration = False
