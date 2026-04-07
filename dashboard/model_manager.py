@@ -173,14 +173,14 @@ class ModelManager:
             f"but got {len(output_transformers)}."
         )
         output_inferred_calibration = output_transformers[-1]
-        alpha_output_inferred = 1.0 / output_inferred_calibration.coefficient
-        beta_output_inferred = output_inferred_calibration.offset
+        alpha_inferred = 1.0 / output_inferred_calibration.coefficient
+        beta_inferred = output_inferred_calibration.offset
         for i, key in enumerate(output_variables.keys()):
             state.simulation_calibration[key]["alpha_inferred"] = float(
-                alpha_output_inferred[i]
+                alpha_inferred[i]
             )
             state.simulation_calibration[key]["beta_inferred"] = float(
-                beta_output_inferred[i]
+                beta_inferred[i]
             )
         # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
