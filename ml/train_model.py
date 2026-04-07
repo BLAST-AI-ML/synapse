@@ -167,10 +167,7 @@ def build_inferred_calibration(
 
     c_inferred = c_guess * c_normcal
     o_inferred = (
-        o_guess
-        + c_guess * o_norm
-        + c_guess * c_norm * o_normcal
-        - c_inferred * o_norm
+        o_guess + c_guess * o_norm + c_guess * c_norm * o_normcal - c_inferred * o_norm
     )
 
     return AffineInputTransform(
