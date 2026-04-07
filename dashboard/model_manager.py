@@ -97,6 +97,12 @@ class ModelManager:
             )
             if model_type not in ("NN", "ensemble_NN", "GP"):
                 raise ValueError(f"Unsupported model type: {model_type}")
+            # Populate inferred calibration in physics units for GUI
+            # (only meaningful inside the dashboard where state.simulation_calibration is set)
+            if state.simulation_calibration is not None:
+                self.populate_inferred_calibration(
+                    config_dict["inputs"], config_dict["outputs"]
+                )
         except Exception as e:
             title = f"Unable to load model {model_type}"
             msg = f"Error occurred when loading model from MLflow: {e}"
@@ -135,10 +141,47 @@ class ModelManager:
                 mean = float(mean)
             return (mean, lower, upper)
 
-    def get_output_transformers(self):
-        print("Getting output transformers...")
-        if self.__model is not None:
-            return self.__model.output_transformers
+    def populate_inferred_calibration(self, input_variables, output_variables):
+        """
+        Populate alpha_inferred/beta_inferred in state.simulation_calibration for
+        both input and output calibration entries.
+        """
+        # Clear stale inferred values
+        for value in state.simulation_calibration.values():
+            value.pop("alpha_inferred", None)
+            value.pop("beta_inferred", None)
+
+        # Input calibration
+        input_transformers = self.__model.input_transformers
+        assert len(input_transformers) == 2, (
+            f"Expected exactly 2 input transformers (calibration + normalization), "
+            f"but got {len(input_transformers)}."
+        )
+        input_inferred_calibration = input_transformers[0]
+        alpha_inferred = 1.0 / input_inferred_calibration.coefficient
+        beta_inferred = input_inferred_calibration.offset
+        for i, key in enumerate(input_variables.keys()):
+            state.simulation_calibration[key]["alpha_inferred"] = float(
+                alpha_inferred[i]
+            )
+            state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
+
+        # Output calibration
+        output_transformers = self.__model.output_transformers
+        assert len(output_transformers) == 2, (
+            f"Expected exactly 2 output transformers (normalization + calibration), "
+            f"but got {len(output_transformers)}."
+        )
+        output_inferred_calibration = output_transformers[-1]
+        alpha_inferred = 1.0 / output_inferred_calibration.coefficient
+        beta_inferred = output_inferred_calibration.offset
+        for i, key in enumerate(output_variables.keys()):
+            state.simulation_calibration[key]["alpha_inferred"] = float(
+                alpha_inferred[i]
+            )
+            state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
+        # Notify Trame that the dict was modified in-place, so the UI updates
+        state.dirty("simulation_calibration")
 
     async def training_kernel(self):
         try:

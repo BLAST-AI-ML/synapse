@@ -131,6 +131,52 @@ def build_normalizations(n_inputs, X_train, n_outputs, y_train):
     return input_normalization, output_normalization
 
 
+def build_inferred_calibration(
+    guess_calibration,
+    normalization,
+    inferred_normalizedcalibration,
+    n_features,
+):
+    """
+    Combine three affine transforms into two, by folding the guess calibration
+    and inferred normalized calibration into a single inferred calibration.
+
+    Given three AffineInputTransform objects (guess_calibration, normalization,
+    inferred_normalizedcalibration), this function computes a new
+    inferred_calibration transform such that applying the pair:
+
+        [inferred_calibration, normalization]
+
+    is equivalent to applying the original triple:
+
+        [guess_calibration, normalization, inferred_normalizedcalibration]
+
+    This works for both input and output variables. For inputs, transform()
+    is applied left-to-right on the list above. For outputs, untransform()
+    is applied right-to-left on the same list, which is mathematically
+    equivalent.
+    """
+    c_guess = guess_calibration.coefficient
+    o_guess = guess_calibration.offset
+
+    c_norm = normalization.coefficient
+    o_norm = normalization.offset
+
+    c_normcal = inferred_normalizedcalibration.coefficient
+    o_normcal = inferred_normalizedcalibration.offset
+
+    c_inferred = c_guess * c_normcal
+    o_inferred = (
+        o_guess + c_guess * o_norm + c_guess * c_norm * o_normcal - c_inferred * o_norm
+    )
+
+    return AffineInputTransform(
+        n_features,
+        coefficient=c_inferred,
+        offset=o_inferred,
+    )
+
+
 def build_guess_calibration(config_dict, input_variables, output_variables):
     # Build AffineInputTransforms for the guess calibration (exp <-> sim variable conversion).
     # For AffineInputTransform:
@@ -388,7 +434,7 @@ def train_gp(norm_df_train, input_names, output_names, device):
             -1
         )
 
-        # Create GP model
+        # SingleTaskGP for simulation data only
         gp_model = SingleTaskGP(
             X_valid,
             y_valid,
@@ -605,15 +651,30 @@ if __name__ == "__main__":
                 device,
             )
         )
-        input_transformers = [
+
+        # Build calibration transforms in physical units
+        input_inferred_calibration = build_inferred_calibration(
             input_guess_calibration,
             input_normalization,
             input_inferred_normalizedcalibration,
+            len(sim_input_names),
+        )
+
+        input_transformers = [
+            input_inferred_calibration,
+            input_normalization,
         ]
-        output_transformers = [
-            output_inferred_normalizedcalibration,
-            output_normalization,
+
+        output_inferred_calibration = build_inferred_calibration(
             output_guess_calibration,
+            output_normalization,
+            output_inferred_normalizedcalibration,
+            len(sim_output_names),
+        )
+
+        output_transformers = [
+            output_normalization,
+            output_inferred_calibration,
         ]
         print("Phase 2: Calibration training complete")
     else:

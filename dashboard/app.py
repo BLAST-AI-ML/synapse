@@ -71,6 +71,9 @@ def update(
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
+    # reset calibration
+    if reset_calibration:
+        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset model
     if reset_model:
         mod_manager = ModelManager(
@@ -84,9 +87,6 @@ def update(
     elif reset_model:
         # if resetting only model, model attribute must be updated
         par_manager.model = mod_manager
-    # reset calibration
-    if reset_calibration:
-        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
