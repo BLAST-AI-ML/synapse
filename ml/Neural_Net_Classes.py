@@ -164,41 +164,48 @@ def train_calibration(
     lr=0.001,
 ):
     """
-    Train per-output affine calibration parameters (weight * prediction + bias)
-    on experimental data. The base model is evaluated at each iteration so that,
-    in the future, input calibration parameters (applied before the model) can
-    also be trained in the same loop.
+    Train per-output affine calibration parameters on experimental data.
+    The base model is evaluated at each iteration so that input calibration
+    parameters (applied before the model) can also be trained in the same loop.
+
+    The learned parameters follow the same convention as `AffineInputTransform`:
+      - coefficients (c_normcal): scale factors (initialized to 1)
+      - offsets (o_normcal): shift values (initialized to 0)
+
+    The calibrated forward pass is:
+      calibrated_input  = (1 / c_normcal_input) * (x - o_normcal_input)
+      calibrated_output = c_normcal_output * model(calibrated_input) + o_normcal_output
 
     Args:
         model: frozen callable that maps exp_inputs -> predictions
         exp_inputs: experimental input tensor
         exp_targets: experimental target values (may contain NaN)
-        n_outputs: number of output dimensions
         num_epochs: number of training epochs
         lr: learning rate
 
     Returns:
-        (cal_weight, cal_bias) as detached tensors
+        (c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output)
+        as detached tensors
     """
     n_outputs = exp_targets.shape[1]
     n_inputs = exp_inputs.shape[1]
     device = exp_inputs.device
 
-    input_cal_weight = nn.Parameter(
+    c_normcal_input = nn.Parameter(
         torch.ones(n_inputs, dtype=exp_inputs.dtype, device=device)
     )
-    input_cal_bias = nn.Parameter(
+    o_normcal_input = nn.Parameter(
         torch.zeros(n_inputs, dtype=exp_inputs.dtype, device=device)
     )
-    output_cal_weight = nn.Parameter(
+    c_normcal_output = nn.Parameter(
         torch.ones(n_outputs, dtype=exp_inputs.dtype, device=device)
     )
-    output_cal_bias = nn.Parameter(
+    o_normcal_output = nn.Parameter(
         torch.zeros(n_outputs, dtype=exp_inputs.dtype, device=device)
     )
 
     optimizer = optim.Adam(
-        [input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias], lr=lr
+        [c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output], lr=lr
     )
     scheduler = ReduceLROnPlateau(
         optimizer, "min", factor=0.5, patience=200, threshold=1e-4
@@ -208,9 +215,9 @@ def train_calibration(
     for epoch in range(num_epochs):
         optimizer.zero_grad()
 
-        calibrated_inputs = (1.0 / input_cal_weight) * (exp_inputs - input_cal_bias)
+        calibrated_inputs = (1.0 / c_normcal_input) * (exp_inputs - o_normcal_input)
         base_predictions = model(calibrated_inputs)
-        calibrated_outputs = output_cal_weight * base_predictions + output_cal_bias
+        calibrated_outputs = c_normcal_output * base_predictions + o_normcal_output
 
         loss = nan_mse_loss(exp_targets, calibrated_outputs)
         loss.backward()
@@ -232,8 +239,8 @@ def train_calibration(
             break
 
     return (
-        input_cal_weight.detach(),
-        input_cal_bias.detach(),
-        output_cal_weight.detach(),
-        output_cal_bias.detach(),
+        c_normcal_input.detach(),
+        o_normcal_input.detach(),
+        c_normcal_output.detach(),
+        o_normcal_output.detach(),
     )
