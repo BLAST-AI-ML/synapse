@@ -165,8 +165,6 @@ def train_calibration(
 ):
     """
     Train per-output affine calibration parameters on experimental data.
-    The base model is evaluated at each iteration so that input calibration
-    parameters (applied before the model) can also be trained in the same loop.
 
     The learned parameters follow the same convention as `AffineInputTransform`:
       - coefficients (c_normcal): scale factors (initialized to 1)
