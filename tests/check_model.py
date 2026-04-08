@@ -128,8 +128,12 @@ def check_evaluate_sim(config_dict, model_type):
             m.input_transformers = m.input_transformers[1:]
             m.output_transformers = m.output_transformers[:-1]
     else:
-        model_sim.input_transformers = model_sim.input_transformers[1:]   # skip exp->sim calibration
-        model_sim.output_transformers = model_sim.output_transformers[:-1]  # skip sim->exp calibration
+        model_sim.input_transformers = model_sim.input_transformers[
+            1:
+        ]  # skip exp->sim calibration
+        model_sim.output_transformers = model_sim.output_transformers[
+            :-1
+        ]  # skip sim->exp calibration
 
     # The lume-model uses exp variable names as keys; map exp names -> sim data columns
     exp_input_names = [v["name"] for v in config_dict["inputs"].values()]
