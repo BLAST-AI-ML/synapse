@@ -122,8 +122,12 @@ def check_evaluate_sim(config_dict, model_type):
 
     # Create a copy of the underlying model without the exp<->sim calibration transformers
     model_sim = copy.deepcopy(mm._ModelManager__model)
-    model_sim.input_transformers = model_sim.input_transformers[1:]   # skip exp->sim calibration
-    model_sim.output_transformers = model_sim.output_transformers[:-1]  # skip sim->exp calibration
+    model_sim.input_transformers = model_sim.input_transformers[
+        1:
+    ]  # skip exp->sim calibration
+    model_sim.output_transformers = model_sim.output_transformers[
+        :-1
+    ]  # skip sim->exp calibration
 
     # Convert sim inputs to the format expected by the model
     inputs = {n: torch.tensor(df_sim[n].values) for n in sim_input_names}
