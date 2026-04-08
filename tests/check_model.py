@@ -122,19 +122,26 @@ def check_evaluate_sim(config_dict, model_type):
 
     # Create a copy of the underlying model without the exp<->sim calibration transformers
     model_sim = copy.deepcopy(mm._ModelManager__model)
-    model_sim.input_transformers = model_sim.input_transformers[
-        1:
-    ]  # skip exp->sim calibration
-    model_sim.output_transformers = model_sim.output_transformers[
-        :-1
-    ]  # skip sim->exp calibration
+    if model_type == "ensemble_NN":
+        # NNEnsemble wraps constituent TorchModels; trim transformers from each
+        for m in model_sim.models:
+            m.input_transformers = m.input_transformers[1:]
+            m.output_transformers = m.output_transformers[:-1]
+    else:
+        model_sim.input_transformers = model_sim.input_transformers[1:]   # skip exp->sim calibration
+        model_sim.output_transformers = model_sim.output_transformers[:-1]  # skip sim->exp calibration
 
-    # Convert sim inputs to the format expected by the model
-    inputs = {n: torch.tensor(df_sim[n].values) for n in sim_input_names}
+    # The lume-model uses exp variable names as keys; map exp names -> sim data columns
+    exp_input_names = [v["name"] for v in config_dict["inputs"].values()]
+    exp_output_names = [v["name"] for v in config_dict["outputs"].values()]
+    inputs = {
+        exp_name: torch.tensor(df_sim[sim_name].values)
+        for exp_name, sim_name in zip(exp_input_names, sim_input_names)
+    }
 
     # Check accuracy
     all_passed = True
-    for sim_out_name in sim_output_names:
+    for exp_out_name, sim_out_name in zip(exp_output_names, sim_output_names):
         actual = torch.tensor(df_sim[sim_out_name].values)
         if actual.isnan().all():
             print(
@@ -143,9 +150,9 @@ def check_evaluate_sim(config_dict, model_type):
             continue
         output_dict = model_sim.evaluate(inputs)
         if model_type == "NN":
-            prediction = output_dict[sim_out_name]
+            prediction = output_dict[exp_out_name]
         else:
-            prediction = output_dict[sim_out_name].mean.detach()
+            prediction = output_dict[exp_out_name].mean.detach()
         rel_errors = (prediction - actual) / torch.max(
             torch.abs(actual), torch.abs(prediction)
         )
