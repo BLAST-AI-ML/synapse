@@ -10,7 +10,6 @@ from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
 from utils import timer, load_config_dict, create_date_filter
-from calibration_manager import populate_inferred_calibration
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
@@ -163,7 +162,11 @@ class ModelManager:
         input_inferred_calibration = input_transformers[0]
         alpha_inferred = 1.0 / input_inferred_calibration.coefficient
         beta_inferred = input_inferred_calibration.offset
-        populate_inferred_calibration(input_variables, alpha_inferred, beta_inferred)
+        for i, key in enumerate(input_variables.keys()):
+            state.simulation_calibration[key]["alpha_inferred"] = float(
+                alpha_inferred[i]
+            )
+            state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
 
         # Output calibration
         # For ensemble_NN, transformers live on each inner TorchModel (not on NNEnsemble itself)
@@ -178,7 +181,11 @@ class ModelManager:
         output_inferred_calibration = output_transformers[-1]
         alpha_inferred = 1.0 / output_inferred_calibration.coefficient
         beta_inferred = output_inferred_calibration.offset
-        populate_inferred_calibration(output_variables, alpha_inferred, beta_inferred)
+        for i, key in enumerate(output_variables.keys()):
+            state.simulation_calibration[key]["alpha_inferred"] = float(
+                alpha_inferred[i]
+            )
+            state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
         # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
 
