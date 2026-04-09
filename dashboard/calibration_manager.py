@@ -24,17 +24,18 @@ class SimulationCalibrationManager:
                 df_sim[sim_name], value["alpha_guess"], value["beta_guess"]
             )
             if state.use_inferred_calibration:
-                if all(
-                    inferred_key in value.values()
+                has_inferred = all(
+                    value.get(inferred_key) is not None
                     for inferred_key in ["alpha_inferred", "beta_inferred"]
-                ):
+                )
+                if has_inferred:
                     df_sim[exp_name] = convert(
                         df_sim[sim_name],
                         value["alpha_inferred"],
                         value["beta_inferred"],
                     )
                 else:
-                    title = "Inferrred calibration does not exist"
+                    title = "Inferred calibration does not exist"
                     msg = "Attempted to use the inferred calibration values to apply to the simulation points but calibration hasn't been inferred yet. Applying the guess calibration instead."
                     add_error(title, msg)
                     print(msg)
