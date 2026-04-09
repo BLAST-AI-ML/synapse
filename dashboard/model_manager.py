@@ -69,7 +69,6 @@ class ModelManager:
         print("Initializing model manager...")
         self.__model = None
         self.__model_type = model_type
-        self.__model_training_mode = model_training_mode
 
         if "mlflow" not in config_dict or not config_dict["mlflow"].get("tracking_uri"):
             print(
@@ -315,13 +314,13 @@ class ModelManager:
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            if self.__model_training_mode == "local":
+            if state.model_training_mode == "local":
                 result = await self._training_kernel_local()
-            elif self.__model_training_mode == "sfapi":
+            elif state.model_training_mode == "sfapi":
                 result = await self._training_kernel_sfapi()
             else:
                 raise ValueError(
-                    f"Unsupported training mode: {self.__model_training_mode}"
+                    f"Unsupported training mode: {state.model_training_mode}"
                 )
             if result:
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
