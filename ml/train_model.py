@@ -335,20 +335,20 @@ def train_calibration_phase(
             return torch.stack([m.forward(x) for m in model]).mean(dim=0)
 
     # Train calibration
-    input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
+    c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output = (
         train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
     )
 
     # Build calibration transforms
     input_inferred_normalizedcalibration = AffineInputTransform(
         len(input_names),
-        coefficient=input_cal_weight.cpu(),
-        offset=input_cal_bias.cpu(),
+        coefficient=c_normcal_input.cpu(),
+        offset=o_normcal_input.cpu(),
     )
     output_inferred_normalizedcalibration = AffineInputTransform(
         len(output_names),
-        coefficient=output_cal_weight.cpu(),
-        offset=output_cal_bias.cpu(),
+        coefficient=c_normcal_output.cpu(),
+        offset=o_normcal_output.cpu(),
     )
     return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
 
