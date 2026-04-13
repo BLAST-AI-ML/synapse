@@ -36,13 +36,12 @@ def load_experimental_data(config_dict):
     return exp_data, input_names, output_names
 
 
-def check_evaluate(config_dict, model_type, model_training_mode):
+def check_evaluate(config_dict, model_type):
     """Load model and evaluate with experimental data; verify accuracy (relative RMSE <= threshold)."""
     # Load model
     mm = ModelManager(
         config_dict=config_dict,
         model_type=model_type,
-        model_training_mode=model_training_mode,
     )
     # Load experimental data
     df_exp, input_names, output_names = load_experimental_data(config_dict)
@@ -111,7 +110,7 @@ if __name__ == "__main__":
 
     # Load model and evaluate with experimental data
     try:
-        check_evaluate(config_dict, args.model, model_training_mode="local")
+        check_evaluate(config_dict, args.model)
     except Exception as e:
         print(f"[FAIL] {e}")
         sys.exit(1)

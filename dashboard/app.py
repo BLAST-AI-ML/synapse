@@ -82,7 +82,6 @@ def update(
         mod_manager = ModelManager(
             config_dict=config_dict,
             model_type=model_type_dict[state.model_type_verbose],
-            model_training_mode=state.model_training_mode,
         )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters

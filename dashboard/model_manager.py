@@ -65,7 +65,7 @@ def enable_amsc_x_api_key(config_dict):
 
 
 class ModelManager:
-    def __init__(self, config_dict, model_type, model_training_mode):
+    def __init__(self, config_dict, model_type):
         print("Initializing model manager...")
         self.__model = None
         self.__model_type = model_type
