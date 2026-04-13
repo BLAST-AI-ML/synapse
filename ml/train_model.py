@@ -503,11 +503,11 @@ def enable_amsc_x_api_key(config_dict):
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
     tracking_uri = config_dict["mlflow"]["tracking_uri"]
-    model_name = f"{experiment}_{model_type}"
+    model_name = f"synapse-{experiment}_{model_type}"
 
     try:
         mlflow.set_tracking_uri(tracking_uri)
-        mlflow.set_experiment(experiment)
+        mlflow.set_experiment(f"synapse-{experiment}")
 
         model.register_to_mlflow(
             artifact_path=f"{model_name}_run",

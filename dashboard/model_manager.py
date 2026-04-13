@@ -86,7 +86,7 @@ class ModelManager:
             enable_amsc_x_api_key(config_dict)
 
         experiment = config_dict["experiment"]
-        model_name = f"{experiment}_{model_type}"
+        model_name = f"synapse-{experiment}_{model_type}"
 
         try:
             # Download model from MLflow server
