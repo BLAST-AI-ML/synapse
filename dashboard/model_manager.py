@@ -192,9 +192,10 @@ class ModelManager:
         state.dirty("simulation_calibration")
 
     def _prepare_training_config(self, temp_dir):
-        """Prepare a merged training config YAML in the given temp directory.
+        """Prepare a training configuration file in the given temporary directory,
+        updated with information from the dashboard.
 
-        Returns the path to the written config file.
+        Returns the path to the written configuration file.
         """
         config_dict = load_config_dict(state.experiment)
         config_dict["simulation_calibration"] = state.simulation_calibration
@@ -219,7 +220,7 @@ class ModelManager:
                     target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
                     [target_path] = await perlmutter.ls(target_path, directory=True)
                     with open(config_path, "rb") as temp_file:
-                        print("Uploading config file to NERSC")
+                        print("Uploading configuration file to NERSC...")
                         temp_file.filename = "config.yaml"
                         await target_path.upload(temp_file)
 
@@ -335,7 +336,7 @@ class ModelManager:
                 state.flush()
                 print(f"Finished training model at {state.model_training_time}")
             else:
-                print("Unable to complete training job.")
+                print("Unable to complete training job")
             # flush state and enable button
             state.model_training = False
             state.flush()
