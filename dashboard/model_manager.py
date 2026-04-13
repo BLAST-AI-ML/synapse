@@ -86,7 +86,7 @@ class ModelManager:
             enable_amsc_x_api_key(config_dict)
 
         experiment = config_dict["experiment"]
-        model_name = f"{experiment}_{model_type}"
+        model_name = f"synapse-{experiment}_{model_type}"
 
         try:
             # Download model from MLflow server
@@ -152,7 +152,11 @@ class ModelManager:
             value.pop("beta_inferred", None)
 
         # Input calibration
-        input_transformers = self.__model.input_transformers
+        # For ensemble_NN, transformers live on each inner TorchModel (not on NNEnsemble itself)
+        if self.__model_type == "ensemble_NN":
+            input_transformers = self.__model.models[0].input_transformers
+        else:
+            input_transformers = self.__model.input_transformers
         assert len(input_transformers) == 2, (
             f"Expected exactly 2 input transformers (calibration + normalization), "
             f"but got {len(input_transformers)}."
@@ -167,7 +171,11 @@ class ModelManager:
             state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
 
         # Output calibration
-        output_transformers = self.__model.output_transformers
+        # For ensemble_NN, transformers live on each inner TorchModel (not on NNEnsemble itself)
+        if self.__model_type == "ensemble_NN":
+            output_transformers = self.__model.models[0].output_transformers
+        else:
+            output_transformers = self.__model.output_transformers
         assert len(output_transformers) == 2, (
             f"Expected exactly 2 output transformers (normalization + calibration), "
             f"but got {len(output_transformers)}."
