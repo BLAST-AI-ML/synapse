@@ -66,6 +66,9 @@ def update(
     )
     # load data
     config_dict = load_config_dict(state.experiment)
+    # derive execution mode from execution_mode in the experiment configuration file
+    execution_mode = config_dict.get("execution_mode") or {}
+    state.model_training_mode = execution_mode.get("ml_training", "local")
     db = load_database(config_dict)
     exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output

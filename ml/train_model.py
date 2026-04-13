@@ -682,7 +682,7 @@ if __name__ == "__main__":
         output_transformers = [output_normalization, output_guess_calibration]
         print("Phase 2: No experimental data available, skipping calibration")
 
-    print("training ended")
+    print("Training ended")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
