@@ -214,8 +214,8 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
 
     # Build the list of simulation variables
     sim_input_names = []
-    alpha_input_list = []
-    beta_input_list = []
+    alpha_guess_input_list = []
+    beta_guess_input_list = []
     alpha_uncertainty_input_list = []
     beta_uncertainty_input_list = []
     for key in input_variables:
@@ -223,13 +223,13 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
             input_variables[key]["name"]
         )
         sim_input_names.append(sim_name)
-        alpha_input_list.append(alpha)
-        beta_input_list.append(beta)
+        alpha_guess_input_list.append(alpha)
+        beta_guess_input_list.append(beta)
         alpha_uncertainty_input_list.append(alpha_u)
         beta_uncertainty_input_list.append(beta_u)
     sim_output_names = []
-    alpha_output_list = []
-    beta_output_list = []
+    alpha_guess_output_list = []
+    beta_guess_output_list = []
     alpha_uncertainty_output_list = []
     beta_uncertainty_output_list = []
     for key in output_variables:
@@ -237,23 +237,23 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
             output_variables[key]["name"]
         )
         sim_output_names.append(sim_name)
-        alpha_output_list.append(alpha)
-        beta_output_list.append(beta)
+        alpha_guess_output_list.append(alpha)
+        beta_guess_output_list.append(beta)
         alpha_uncertainty_output_list.append(alpha_u)
         beta_uncertainty_output_list.append(beta_u)
 
     # Build the AffineInputTransforms for the guess calibration
-    alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
-    beta_inputs = torch.tensor(beta_input_list, dtype=torch.float)
-    alpha_outputs = torch.tensor(alpha_output_list, dtype=torch.float)
-    beta_outputs = torch.tensor(beta_output_list, dtype=torch.float)
+    alpha_guess_inputs = torch.tensor(alpha_guess_input_list, dtype=torch.float)
+    beta_guess_inputs = torch.tensor(beta_guess_input_list, dtype=torch.float)
+    alpha_guess_outputs = torch.tensor(alpha_guess_output_list, dtype=torch.float)
+    beta_guess_outputs = torch.tensor(beta_guess_output_list, dtype=torch.float)
     n_inputs = len(input_variables)
     n_outputs = len(output_variables)
     input_guess_calibration = AffineInputTransform(
-        n_inputs, coefficient=1.0 / alpha_inputs, offset=beta_inputs
+        n_inputs, coefficient=1.0 / alpha_guess_inputs, offset=beta_guess_inputs
     )
     output_guess_calibration = AffineInputTransform(
-        n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
+        n_outputs, coefficient=1.0 / alpha_guess_outputs, offset=beta_guess_outputs
     )
 
     uncertainty_inputs = {
