@@ -200,31 +200,47 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
 
     def _get_calibration(exp_name):
         if exp_name in depends_on_lookup:
-            # Experimental variables is part of the "simulation_calibration" section
             entry = depends_on_lookup[exp_name]
-            return entry["name"], entry["alpha_guess"], entry["beta_guess"]
+            return (
+                entry["name"],
+                entry["alpha_guess"],
+                entry["beta_guess"],
+                entry.get("alpha_uncertainty", float("inf")),
+                entry.get("beta_uncertainty", float("inf")),
+            )
         else:
-            # Experimental variable is not part of the "simulation_calibration" section
-            # In this case, no calibration is needed ; the simulation variable is identical
-            return exp_name, 1.0, 0.0
+            # No calibration needed; the simulation variable is identical
+            return exp_name, 1.0, 0.0, float("inf"), float("inf")
 
     # Build the list of simulation variables
     sim_input_names = []
     alpha_input_list = []
     beta_input_list = []
+    alpha_uncertainty_input_list = []
+    beta_uncertainty_input_list = []
     for key in input_variables:
-        sim_name, alpha, beta = _get_calibration(input_variables[key]["name"])
+        sim_name, alpha, beta, alpha_u, beta_u = _get_calibration(
+            input_variables[key]["name"]
+        )
         sim_input_names.append(sim_name)
         alpha_input_list.append(alpha)
         beta_input_list.append(beta)
+        alpha_uncertainty_input_list.append(alpha_u)
+        beta_uncertainty_input_list.append(beta_u)
     sim_output_names = []
     alpha_output_list = []
     beta_output_list = []
+    alpha_uncertainty_output_list = []
+    beta_uncertainty_output_list = []
     for key in output_variables:
-        sim_name, alpha, beta = _get_calibration(output_variables[key]["name"])
+        sim_name, alpha, beta, alpha_u, beta_u = _get_calibration(
+            output_variables[key]["name"]
+        )
         sim_output_names.append(sim_name)
         alpha_output_list.append(alpha)
         beta_output_list.append(beta)
+        alpha_uncertainty_output_list.append(alpha_u)
+        beta_uncertainty_output_list.append(beta_u)
 
     # Build the AffineInputTransforms for the guess calibration
     alpha_inputs = torch.tensor(alpha_input_list, dtype=torch.float)
@@ -240,11 +256,22 @@ def build_guess_calibration(config_dict, input_variables, output_variables):
         n_outputs, coefficient=1.0 / alpha_outputs, offset=beta_outputs
     )
 
+    uncertainty_inputs = {
+        "alpha": torch.tensor(alpha_uncertainty_input_list, dtype=torch.float),
+        "beta": torch.tensor(beta_uncertainty_input_list, dtype=torch.float),
+    }
+    uncertainty_outputs = {
+        "alpha": torch.tensor(alpha_uncertainty_output_list, dtype=torch.float),
+        "beta": torch.tensor(beta_uncertainty_output_list, dtype=torch.float),
+    }
+
     return (
         input_guess_calibration,
         output_guess_calibration,
         sim_input_names,
         sim_output_names,
+        uncertainty_inputs,
+        uncertainty_outputs,
     )
 
 
@@ -307,11 +334,18 @@ def train_calibration_phase(
     input_names,
     output_names,
     device,
+    input_guess_calibration,
+    output_guess_calibration,
+    input_normalization,
+    output_normalization,
+    uncertainty_inputs,
+    uncertainty_outputs,
 ):
     """Phase 2: Train calibration layers on experimental data.
 
     Passes the frozen model to train_calibration(), which re-evaluates it at
-    each iteration.
+    each iteration. A penalization term constrains inferred alpha/beta toward
+    their guess values, weighted by the provided uncertainties.
 
     Returns an AffineInputTransform representing the learned calibration.
     """
@@ -336,7 +370,25 @@ def train_calibration_phase(
 
     # Train calibration
     c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output = (
-        train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
+        train_calibration(
+            predict_fn,
+            exp_X,
+            exp_y,
+            c_guess_input=input_guess_calibration.coefficient.to(device),
+            o_guess_input=input_guess_calibration.offset.to(device),
+            c_norm_input=input_normalization.coefficient.to(device),
+            o_norm_input=input_normalization.offset.to(device),
+            alpha_uncertainty_input=uncertainty_inputs["alpha"].to(device),
+            beta_uncertainty_input=uncertainty_inputs["beta"].to(device),
+            c_guess_output=output_guess_calibration.coefficient.to(device),
+            o_guess_output=output_guess_calibration.offset.to(device),
+            c_norm_output=output_normalization.coefficient.to(device),
+            o_norm_output=output_normalization.offset.to(device),
+            alpha_uncertainty_output=uncertainty_outputs["alpha"].to(device),
+            beta_uncertainty_output=uncertainty_outputs["beta"].to(device),
+            num_epochs=5000,
+            lr=0.001,
+        )
     )
 
     # Build calibration transforms
@@ -564,6 +616,8 @@ if __name__ == "__main__":
         output_guess_calibration,
         sim_input_names,
         sim_output_names,
+        uncertainty_inputs,
+        uncertainty_outputs,
     ) = build_guess_calibration(config_dict, input_variables, output_variables)
 
     # Convert experimental data to simulation variable space
@@ -649,6 +703,12 @@ if __name__ == "__main__":
                 sim_input_names,
                 sim_output_names,
                 device,
+                input_guess_calibration=input_guess_calibration,
+                output_guess_calibration=output_guess_calibration,
+                input_normalization=input_normalization,
+                output_normalization=output_normalization,
+                uncertainty_inputs=uncertainty_inputs,
+                uncertainty_outputs=uncertainty_outputs,
             )
         )
 
