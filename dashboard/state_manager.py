@@ -37,6 +37,8 @@ def initialize_state():
     state.optimization_status = None
     # Opacity
     state.opacity = 0.05
+    # HPC connection
+    state.hpc_connection = "local"
     # Superfacility API
     state.sfapi_client_id = None
     state.sfapi_key = None
@@ -50,6 +52,7 @@ def initialize_state():
     state.simulation_video = False
     # Simulation jobs
     state.simulation_running = False
+    # state.simulation_running_mode = "local"  # TODO
     state.simulation_running_status = None
     state.simulation_running_time = None
     state.simulatable = False
