@@ -24,4 +24,8 @@ dependencies:
   - trame-router
   - trame-vuetify
   - pip:
+    - --extra-index-url https://gitlab.com/api/v4/projects/77567162/packages/pypi/simple \
+    - --extra-index-url https://gitlab.com/api/v4/projects/76368190/packages/pypi/simple \
+    - --extra-index-url https://gitlab.com/api/v4/projects/80654726/packages/pypi/simple \
+    - amsc-client
     - sfapi_client
