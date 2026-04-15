@@ -49,7 +49,7 @@ def update(
     reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
-    reset_gui_route_nersc=True,
+    reset_gui_route_hpc=True,
     reset_gui_route_chat=True,
     reset_gui_layout=True,
     **kwargs,
@@ -93,9 +93,9 @@ def update(
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
-    # reset GUI NERSC route
-    if reset_gui_route_nersc:
-        nersc_route()
+    # reset GUI HPC route
+    if reset_gui_route_hpc:
+        hpc_route()
     # reset GUI chat route
     if reset_gui_route_chat:
         chat_route()
@@ -145,7 +145,7 @@ def reset(**kwargs):
                 reset_calibration=True,
                 reset_plots=True,
                 reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
+                reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
             )
@@ -163,7 +163,7 @@ def reset(**kwargs):
                 reset_calibration=False,
                 reset_plots=True,
                 reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
+                reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
             )
@@ -187,7 +187,7 @@ def reset(**kwargs):
                 reset_calibration=False,
                 reset_plots=True,
                 reset_gui_route_home=False,
-                reset_gui_route_nersc=False,
+                reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
             )
@@ -356,10 +356,10 @@ def home_route():
                             ctrl.figure_update = figure.update
 
 
-# NERSC route
-def nersc_route():
-    print("Setting GUI NERSC route...")
-    with RouterViewLayout(server, "/nersc"):
+# HPC route
+def hpc_route():
+    print("Setting GUI HPC route...")
+    with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
                 # Superfacility API card
@@ -429,11 +429,11 @@ def gui_setup():
                     prepend_icon="mdi-chat",
                     title="AI Assistant",
                 )
-                # NERSC route
+                # HPC route
                 vuetify.VListItem(
-                    to="/nersc",
+                    to="/hpc",
                     prepend_icon="mdi-lan-connect",
-                    title="NERSC API key",
+                    title="HPC Connection",
                 )
         # interactive dialog for simulation plots
         with vuetify.VDialog(
