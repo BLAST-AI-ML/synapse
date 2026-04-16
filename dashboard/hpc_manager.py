@@ -1,5 +1,6 @@
 from trame.widgets import vuetify3 as vuetify
 
+from iriapi_manager import load_iriapi_card
 from sfapi_manager import load_sfapi_card
 from state_manager import state
 
@@ -47,8 +48,4 @@ def load_hpc_card():
                         load_sfapi_card()
                 with vuetify.VRow(v_if=("hpc_connection == 'iriapi'",)):
                     with vuetify.VCol():
-                        vuetify.VAlert(
-                            "Coming soon",
-                            type="info",
-                            variant="tonal",
-                        )
+                        load_iriapi_card()
