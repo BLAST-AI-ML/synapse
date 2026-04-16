@@ -1,67 +1,33 @@
 import asyncio
+import os
+import re
+import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
-import tempfile
-import os
-import yaml
-import re
+
 import mlflow
+import urllib3
+import yaml
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
-from utils import timer, load_config_dict, create_date_filter
+from urllib3.exceptions import InsecureRequestWarning
+
+# Add parent directory to path so we can import mlflow_utils from root
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from error_manager import add_error
+from mlflow_utils import enable_amsc_x_api_key
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
+from utils import timer, load_config_dict, create_date_filter
 
 model_type_dict = {
     "Gaussian Process": "GP",
     "Neural Network (single)": "NN",
     "Neural Network (ensemble)": "ensemble_NN",
 }
-
-
-def enable_amsc_x_api_key(config_dict):
-    """
-    MLflow authentication helper for the AmSC MLflow server.
-    Standard MLflow does not automatically inject custom headers like 'X-Api-Key'.
-    This patches the http_request function to ensure every request to the server
-    includes the AmSC API key.
-
-    See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
-    """
-    import mlflow.utils.rest_utils as rest_utils
-
-    mlflow_cfg = config_dict.get("mlflow") or {}
-    api_key_env = mlflow_cfg.get("api_key_env")
-    if not api_key_env:
-        title = "Unable to enable AmSC X-Api-Key authentication"
-        msg = "MLFlow configuration is missing 'mlflow.api_key_env'"
-        add_error(title, msg)
-        print(msg)
-        return
-
-    api_key = os.environ.get(api_key_env)
-    if not api_key:
-        title = "Unable to enable AmSC X-Api-Key authentication"
-        msg = f"Environment variable '{api_key_env}' in 'mlflow.api_key_env' is not set"
-        add_error(title, msg)
-        print(msg)
-        return
-    _orig = rest_utils.http_request
-
-    def patched(host_creds, endpoint, method, *args, **kwargs):
-        if "headers" in kwargs and kwargs["headers"] is not None:
-            h = dict(kwargs["headers"])
-            h["X-Api-Key"] = api_key
-            kwargs["headers"] = h
-        else:
-            h = dict(kwargs.get("extra_headers") or {})
-            h["X-Api-Key"] = api_key
-            kwargs["extra_headers"] = h
-        return _orig(host_creds, endpoint, method, *args, **kwargs)
-
-    rest_utils.http_request = patched
 
 
 class ModelManager:
@@ -78,13 +44,22 @@ class ModelManager:
 
         mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
         # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
-        # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
+        # (see https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
         if (
             config_dict["mlflow"]["tracking_uri"]
             == "https://mlflow.american-science-cloud.org"
         ):
-            enable_amsc_x_api_key(config_dict)
-
+            # Tell MLflow to ignore SSL certificate errors (common with self-signed internal servers)
+            os.environ["MLFLOW_TRACKING_INSECURE_TLS"] = "true"
+            urllib3.disable_warnings(InsecureRequestWarning)
+            # Inject the X-Api-Key into the requests.
+            try:
+                enable_amsc_x_api_key(config_dict)
+            except ValueError as e:
+                title = "AmSC MLflow authentication setup failed"
+                msg = f"Error occurred when setting up AmSC MLflow authentication: {e}"
+                add_error(title, msg)
+                print(msg)
         experiment = config_dict["experiment"]
         model_name = f"synapse-{experiment}_{model_type}"
 

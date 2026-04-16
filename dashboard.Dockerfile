@@ -24,6 +24,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 COPY dashboard /app/dashboard
 COPY experiments /app/experiments
 COPY ml/training_pm.sbatch /app/ml/training_pm.sbatch
+COPY mlflow_utils.py /app/mlflow_utils.py
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080

@@ -25,9 +25,13 @@ from sklearn.model_selection import train_test_split
 import sys
 import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
+from pathlib import Path
 
-sys.path.append(".")
+# Add parent directories to path for module imports
+sys.path.insert(0, str(Path(__file__).parent.parent))  # For mlflow_utils in root
+sys.path.insert(0, str(Path(__file__).parent))  # For Neural_Net_Classes in ml/
 from Neural_Net_Classes import CombinedNN, train_calibration
+from mlflow_utils import enable_amsc_x_api_key
 
 # measure the time it took to import everything
 import_end_time = time.time()
@@ -454,52 +458,6 @@ def train_gp(norm_df_train, input_names, output_names, device):
     return combined_gp
 
 
-def enable_amsc_x_api_key(config_dict):
-    """
-    MLflow authentication helper for the AmSC MLflow server.
-    Standard MLflow does not automatically inject custom headers like 'X-Api-Key'.
-    This patches the http_request function to ensure every request to the server
-    includes the AmSC API key.
-
-    See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
-    """
-    import mlflow.utils.rest_utils as rest_utils
-
-    mlflow_cfg = config_dict.get("mlflow") if config_dict is not None else None
-    if not isinstance(mlflow_cfg, dict):
-        raise KeyError(
-            "Missing 'mlflow' configuration section required for AmSC MLFlow authentication."
-        )
-
-    api_key_env = mlflow_cfg.get("api_key_env")
-    if not api_key_env:
-        raise KeyError(
-            "Missing 'api_key_env' in 'mlflow' configuration. "
-            "Please specify the name of the environment variable containing the AmSC API key."
-        )
-
-    api_key = os.getenv(api_key_env)
-    if api_key is None:
-        raise KeyError(
-            f"The environment variable '{api_key_env}' specified in 'mlflow.api_key_env' "
-            "is not set. Please export it with the AmSC MLFlow API key."
-        )
-    _orig = rest_utils.http_request
-
-    def patched(host_creds, endpoint, method, *args, **kwargs):
-        if "headers" in kwargs and kwargs["headers"] is not None:
-            h = dict(kwargs["headers"])
-            h["X-Api-Key"] = api_key
-            kwargs["headers"] = h
-        else:
-            h = dict(kwargs.get("extra_headers") or {})
-            h["X-Api-Key"] = api_key
-            kwargs["extra_headers"] = h
-        return _orig(host_creds, endpoint, method, *args, **kwargs)
-
-    rest_utils.http_request = patched
-
-
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
     tracking_uri = config_dict["mlflow"]["tracking_uri"]
@@ -550,7 +508,7 @@ if __name__ == "__main__":
     df_sim = pd.DataFrame(db[experiment].find({"experiment_flag": 0}))
 
     # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
-    # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
+    # (see https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
     if (
         "mlflow" in config_dict
         and config_dict["mlflow"].get("tracking_uri")
