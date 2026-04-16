@@ -61,7 +61,7 @@ class ModelManager:
                 add_error(title, msg)
                 print(msg)
         experiment = config_dict["experiment"]
-        model_name = f"{experiment}_{model_type}"
+        model_name = f"synapse-{experiment}_{model_type}"
 
         try:
             # Download model from MLflow server
@@ -127,7 +127,11 @@ class ModelManager:
             value.pop("beta_inferred", None)
 
         # Input calibration
-        input_transformers = self.__model.input_transformers
+        # For ensemble_NN, transformers live on each inner TorchModel (not on NNEnsemble itself)
+        if self.__model_type == "ensemble_NN":
+            input_transformers = self.__model.models[0].input_transformers
+        else:
+            input_transformers = self.__model.input_transformers
         assert len(input_transformers) == 2, (
             f"Expected exactly 2 input transformers (calibration + normalization), "
             f"but got {len(input_transformers)}."
@@ -142,7 +146,11 @@ class ModelManager:
             state.simulation_calibration[key]["beta_inferred"] = float(beta_inferred[i])
 
         # Output calibration
-        output_transformers = self.__model.output_transformers
+        # For ensemble_NN, transformers live on each inner TorchModel (not on NNEnsemble itself)
+        if self.__model_type == "ensemble_NN":
+            output_transformers = self.__model.models[0].output_transformers
+        else:
+            output_transformers = self.__model.output_transformers
         assert len(output_transformers) == 2, (
             f"Expected exactly 2 output transformers (normalization + calibration), "
             f"but got {len(output_transformers)}."
@@ -158,7 +166,22 @@ class ModelManager:
         # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
 
-    async def training_kernel(self):
+    def _prepare_training_config(self, temp_dir):
+        """Prepare a training configuration file in the given temporary directory,
+        updated with information from the dashboard.
+
+        Returns the path to the written configuration file.
+        """
+        config_dict = load_config_dict(state.experiment)
+        config_dict["simulation_calibration"] = state.simulation_calibration
+        date_filter = create_date_filter(state.experiment_date_range)
+        config_dict["date_filter"] = date_filter
+        config_path = Path(temp_dir) / "config.yaml"
+        with open(config_path, "w") as f:
+            yaml.dump(config_dict, f)
+        return config_path
+
+    async def _training_kernel_sfapi(self):
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -166,21 +189,13 @@ class ModelManager:
             ) as client:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # upload the configuration file to NERSC
-                config_dict = load_config_dict(state.experiment)
-                config_dict["simulation_calibration"] = state.simulation_calibration
-                # add date range filter to the configuration dictionary
-                date_filter = create_date_filter(state.experiment_date_range)
-                config_dict["date_filter"] = date_filter
-                # define the target path on NERSC
-                target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
-                [target_path] = await perlmutter.ls(target_path, directory=True)
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    temp_file_path = Path(temp_dir) / "config.yaml"
-                    with open(temp_file_path, "w") as temp_file:
-                        yaml.dump(config_dict, temp_file)
-                        temp_file.flush()
-                    with open(temp_file_path, "rb") as temp_file:
-                        print("Uploading config file to NERSC")
+                    config_path = self._prepare_training_config(temp_dir)
+                    # define the target path on NERSC
+                    target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
+                    [target_path] = await perlmutter.ls(target_path, directory=True)
+                    with open(config_path, "rb") as temp_file:
+                        print("Uploading configuration file to NERSC...")
                         temp_file.filename = "config.yaml"
                         await target_path.upload(temp_file)
 
@@ -215,10 +230,67 @@ class ModelManager:
                 print(f"Training job submitted (job ID: {sfapi_job.jobid})")
                 return await monitor_sfapi_job(sfapi_job, "model_training_status")
         except Exception as e:
-            title = "Unable to complete training kernel"
-            msg = f"Error occurred when executing training kernel: {e}"
+            title = "Unable to complete remote training"
+            msg = f"Error occurred when executing remote training: {e}"
             add_error(title, msg)
             print(msg)
+            state.model_training_status = "Failed"
+            state.flush()
+            return False
+
+    async def _training_kernel_local(self):
+        try:
+            ml_dir = (Path(__file__).parent / "../ml").resolve()
+            train_model_path = ml_dir / "train_model.py"
+            model_type = model_type_dict[state.model_type_verbose]
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                config_path = self._prepare_training_config(temp_dir)
+                state.model_training_status = "Running"
+                state.flush()
+                print(
+                    f"Starting local training: {train_model_path} --model {model_type}"
+                )
+                proc = await asyncio.create_subprocess_exec(
+                    "conda",
+                    "run",
+                    "--no-capture-output",
+                    "-n",
+                    "synapse-ml",
+                    "python",
+                    str(train_model_path),
+                    "--config_file",
+                    str(config_path),
+                    "--model",
+                    model_type,
+                    cwd=str(ml_dir),  # working directory of the subprocess
+                    stdout=asyncio.subprocess.PIPE,  # capture the standard output into a pipe
+                    stderr=asyncio.subprocess.STDOUT,  # redirect the standard error into the same pipe
+                )
+                # stream subprocess output to console
+                while True:
+                    line = await proc.stdout.readline()
+                    if not line:
+                        break
+                    print(line.decode(), end="")
+                await proc.wait()
+
+            if proc.returncode == 0:
+                state.model_training_status = "Completed"
+                state.flush()
+                return True
+            else:
+                state.model_training_status = "Failed"
+                state.flush()
+                return False
+        except Exception as e:
+            title = "Unable to complete local training"
+            msg = f"Error occurred when executing local training: {e}"
+            add_error(title, msg)
+            print(msg)
+            state.model_training_status = "Failed"
+            state.flush()
+            return False
 
     async def training_async(self):
         try:
@@ -226,12 +298,20 @@ class ModelManager:
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            if await self.training_kernel():
+            if state.model_training_mode == "local":
+                result = await self._training_kernel_local()
+            elif state.model_training_mode == "sfapi":
+                result = await self._training_kernel_sfapi()
+            else:
+                raise ValueError(
+                    f"Unsupported training mode: {state.model_training_mode}"
+                )
+            if result:
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
                 state.flush()
                 print(f"Finished training model at {state.model_training_time}")
             else:
-                print("Unable to complete training job.")
+                print("Unable to complete training job")
             # flush state and enable button
             state.model_training = False
             state.flush()
@@ -285,7 +365,7 @@ class ModelManager:
                                 "Train",
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || perlmutter_status != 'active'",
+                                    "model_training || (model_training_mode === 'sfapi' && perlmutter_status !== 'active')",
                                 ),
                                 style="text-transform: none",
                             )

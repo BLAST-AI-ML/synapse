@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
@@ -34,26 +33,6 @@ def parse_sfapi_key(key_str):
     state.sfapi_client_id = key_lines.pop(0).rstrip()
     # set the key from the remaining lines in the file
     state.sfapi_key = "".join(key_lines)
-
-
-def initialize_sfapi():
-    print("Initializing Superfacility API...")
-    # look for a key file in the current directory
-    key_path = os.path.join(os.getcwd(), "priv_key.pem")
-    if os.path.isfile(key_path):
-        try:
-            with Client(key=key_path) as client:
-                # store the whole content of the key file in a string
-                key_str = client._secret
-                # store the client ID and key in the respective state variables
-                parse_sfapi_key(key_str)
-                # update Superfacility API info
-                update_sfapi_info()
-        except Exception as e:
-            title = "Unable to initialize the Superfacility API connection"
-            msg = f"Error occurred when initializing the Superfacility API connection: {e}"
-            add_error(title, msg)
-            print(msg)
 
 
 def update_sfapi_info():
