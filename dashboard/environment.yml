@@ -1,19 +1,27 @@
-name: synapse-ml
+name: synapse-gui
 
 channels:
   - conda-forge
+  - pytorch
   - nodefaults
 
 dependencies:
   - botorch
-  - gpytorch
+  - cpuonly
   - lume-model>=2.0.1
   - mlflow
   - pandas
   - pip
+  - plotly
+  - pre-commit
   - pymongo
   - python<3.13
   - pytorch
   - pyyaml
-  - cuda-version=12.4  # [linux]
-  - pytorch =*=cuda*  # [linux]
+  - scipy
+  - trame
+  - trame-plotly
+  - trame-router
+  - trame-vuetify
+  - pip:
+    - sfapi_client

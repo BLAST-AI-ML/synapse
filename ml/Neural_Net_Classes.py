@@ -55,7 +55,7 @@ def nan_mse_loss(target, pred):
 
 class CombinedNN(nn.Module):
     """
-    Model that trains a 5 layer neural network and a calibration layer
+    5 layer neural network
     """
 
     def __init__(
@@ -87,26 +87,11 @@ class CombinedNN(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
 
-        # Component-wise linear transformation: weight * input + bias
-        # where weight and bias are vectors of size output_size
-        self.sim_to_exp_calibration_weight = nn.Parameter(torch.ones(output_size))
-        self.sim_to_exp_calibration_bias = nn.Parameter(torch.zeros(output_size))
-
-        # Use custom loss function instead of nn.MSELoss()
-        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
-        self.scheduler = ReduceLROnPlateau(
-            self.optimizer,
-            "min",
-            factor=factor,
-            patience=patience_LRreduction,
-            threshold=threshold,
-        )
-        self.early_stopper = EarlyStopping(patience=patience_earlystopping)
-
-    @torch.jit.export
-    def calibrate(self, x):
-        """Apply component-wise linear transformation: weight * x + bias."""
-        return self.sim_to_exp_calibration_weight * x + self.sim_to_exp_calibration_bias
+        self.learning_rate = learning_rate
+        self.patience_LRreduction = patience_LRreduction
+        self.patience_earlystopping = patience_earlystopping
+        self.factor = factor
+        self.threshold = threshold
 
     def forward(self, x):
         """
@@ -122,86 +107,138 @@ class CombinedNN(nn.Module):
         x = self.relu(self.hidden4(x))
         x = self.relu(self.hidden5(x))
         x = self.output(x)
-
         return x
 
     def train_model(
         self,
-        sim_inputs,
-        sim_targets,
-        exp_inputs,
-        exp_targets,
-        sim_inputs_val,
-        sim_targets_val,
-        exp_inputs_val,
-        exp_targets_val,
+        train_inputs,
+        train_targets,
+        val_inputs,
+        val_targets,
         num_epochs=1500,
     ):
-        for epoch in range(num_epochs):
-            self.optimizer.zero_grad()
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        scheduler = ReduceLROnPlateau(
+            optimizer,
+            "min",
+            factor=self.factor,
+            patience=self.patience_LRreduction,
+            threshold=self.threshold,
+        )
+        early_stopper = EarlyStopping(patience=self.patience_earlystopping)
 
-            loss = 0
-            if len(sim_inputs) > 0:
-                sim_outputs = self(sim_inputs)
-                loss += nan_mse_loss(sim_targets, sim_outputs)
-            if len(exp_inputs) > 0:
-                exp_outputs = self.calibrate(self(exp_inputs))
-                loss += nan_mse_loss(exp_targets, exp_outputs)
+        for epoch in range(num_epochs):
+            optimizer.zero_grad()
+
+            outputs = self(train_inputs)
+            loss = nan_mse_loss(train_targets, outputs)
             loss.backward()
 
-            self.optimizer.step()
+            optimizer.step()
 
             current_loss = loss.item()
-            self.scheduler.step(current_loss)
+            scheduler.step(current_loss)
 
-            # compute validation loss for early stopping
             with torch.no_grad():
-                val_loss = 0
-                if len(sim_inputs_val) > 0:
-                    sim_outputs_val = self(sim_inputs_val)
-                    val_loss += nan_mse_loss(sim_targets_val, sim_outputs_val)
-                if len(exp_inputs_val) > 0:
-                    exp_outputs_val = self(exp_inputs_val)
-                    val_loss += nan_mse_loss(exp_targets_val, exp_outputs_val)
+                val_outputs = self(val_inputs)
+                val_loss = nan_mse_loss(val_targets, val_outputs)
 
             if (epoch + 1) % (num_epochs / 10) == 0:
                 print(
                     f"Epoch [{epoch + 1}/{num_epochs}], Loss:{loss.item():.6f}, Val Loss:{val_loss.item():.6f}"
                 )
 
-            self.early_stopper(val_loss.item())
-            if self.early_stopper.early_stop:
+            early_stopper(val_loss.item())
+            if early_stopper.early_stop:
                 print(
-                    f'Early stopping triggered at, {epoch}  "with val loss ", {val_loss.item():.6f}'
+                    f"Early stopping triggered at epoch {epoch} with val loss {val_loss.item():.6f}"
                 )
                 break
 
-    def predict_sim(self, inputs):
-        """
-        args:
-            tensor inputs
-        returns:
-            numpy array with predictions
-        """
-        inputs = inputs.to(torch.float32)
-        self.eval()
-        with torch.no_grad():
-            output = self(inputs)
-            predictions = output.detach().numpy()
 
-        return predictions
+def train_calibration(
+    model,
+    exp_inputs,
+    exp_targets,
+    num_epochs=5000,
+    lr=0.001,
+):
+    """
+    Train per-output affine calibration parameters on experimental data.
 
-    def predict_exp(self, inputs):
-        """
-        args:
-            tensor inputs
-        returns:
-            numpy array with predictions
-        """
-        inputs = inputs.to(torch.float32)
-        self.eval()
-        with torch.no_grad():
-            output = self.calibrate(self(inputs))
-            predictions = output.detach().numpy()
+    The learned parameters follow the same convention as `AffineInputTransform`:
+      - coefficients (c_normcal): scale factors (initialized to 1)
+      - offsets (o_normcal): shift values (initialized to 0)
 
-        return predictions
+    The calibrated forward pass is:
+      calibrated_input  = (1 / c_normcal_input) * (x - o_normcal_input)
+      calibrated_output = c_normcal_output * model(calibrated_input) + o_normcal_output
+
+    Args:
+        model: frozen callable that maps exp_inputs -> predictions
+        exp_inputs: experimental input tensor
+        exp_targets: experimental target values (may contain NaN)
+        num_epochs: number of training epochs
+        lr: learning rate
+
+    Returns:
+        (c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output)
+        as detached tensors
+    """
+    n_outputs = exp_targets.shape[1]
+    n_inputs = exp_inputs.shape[1]
+    device = exp_inputs.device
+
+    c_normcal_input = nn.Parameter(
+        torch.ones(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    o_normcal_input = nn.Parameter(
+        torch.zeros(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    c_normcal_output = nn.Parameter(
+        torch.ones(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+    o_normcal_output = nn.Parameter(
+        torch.zeros(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+
+    optimizer = optim.Adam(
+        [c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output], lr=lr
+    )
+    scheduler = ReduceLROnPlateau(
+        optimizer, "min", factor=0.5, patience=200, threshold=1e-4
+    )
+    early_stopper = EarlyStopping(patience=500)
+
+    for epoch in range(num_epochs):
+        optimizer.zero_grad()
+
+        calibrated_inputs = (1.0 / c_normcal_input) * (exp_inputs - o_normcal_input)
+        base_predictions = model(calibrated_inputs)
+        calibrated_outputs = c_normcal_output * base_predictions + o_normcal_output
+
+        loss = nan_mse_loss(exp_targets, calibrated_outputs)
+        loss.backward()
+        optimizer.step()
+
+        current_loss = loss.item()
+        scheduler.step(current_loss)
+
+        if (epoch + 1) % (num_epochs / 10) == 0:
+            print(
+                f"Calibration Epoch [{epoch + 1}/{num_epochs}], Loss:{current_loss:.6f}"
+            )
+
+        early_stopper(current_loss)
+        if early_stopper.early_stop:
+            print(
+                f"Calibration early stopping at epoch {epoch} with loss {current_loss:.6f}"
+            )
+            break
+
+    return (
+        c_normcal_input.detach(),
+        o_normcal_input.detach(),
+        c_normcal_output.detach(),
+        o_normcal_output.detach(),
+    )

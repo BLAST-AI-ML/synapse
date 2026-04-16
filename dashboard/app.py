@@ -6,16 +6,17 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
-from model_manager import ModelManager
+from model_manager import ModelManager, model_type_dict
 from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
-from sfapi_manager import initialize_sfapi, load_sfapi_card
+from sfapi_manager import load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
     data_depth_panel,
+    load_config_dict,
     load_experiments,
     load_database,
     load_data,
@@ -33,8 +34,6 @@ par_manager = None
 opt_manager = None
 cal_manager = None
 
-# load database
-db = load_database()
 # list of available experiments
 experiments = load_experiments()
 
@@ -51,6 +50,7 @@ def update(
     reset_plots=True,
     reset_gui_route_home=True,
     reset_gui_route_nersc=True,
+    reset_gui_route_chat=True,
     reset_gui_layout=True,
     **kwargs,
 ):
@@ -60,18 +60,29 @@ def update(
     global par_manager
     global opt_manager
     global cal_manager
-    # load data
-    exp_data, sim_data = load_data(db)
     # load input and output variables
     input_variables, output_variables, simulation_calibration = load_variables(
         state.experiment
     )
+    # load data
+    config_dict = load_config_dict(state.experiment)
+    # derive execution mode from execution_mode in the experiment configuration file
+    execution_mode = config_dict.get("execution_mode") or {}
+    state.model_training_mode = execution_mode.get("ml_training", "local")
+    db = load_database(config_dict)
+    exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
     if reset_output:
         out_manager = OutputManager(output_variables)
+    # reset calibration
+    if reset_calibration:
+        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset model
     if reset_model:
-        mod_manager = ModelManager(db)
+        mod_manager = ModelManager(
+            config_dict=config_dict,
+            model_type=model_type_dict[state.model_type_verbose],
+        )
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
@@ -79,15 +90,15 @@ def update(
     elif reset_model:
         # if resetting only model, model attribute must be updated
         par_manager.model = mod_manager
-    # reset calibration
-    if reset_calibration:
-        cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
     # reset GUI NERSC route
     if reset_gui_route_nersc:
         nersc_route()
+    # reset GUI chat route
+    if reset_gui_route_chat:
+        chat_route()
     # reset GUI layout
     if reset_gui_layout:
         gui_setup()
@@ -102,41 +113,11 @@ def update(
         ctrl.figure_update(fig)
 
 
-@state.change("experiment")
-def update_on_change_experiment(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        print("Experiment changed...")
-        update(
-            reset_model=True,
-            reset_output=True,
-            reset_parameters=True,
-            reset_calibration=True,
-            reset_plots=True,
-            reset_gui_route_home=True,
-            reset_gui_route_nersc=False,
-            reset_gui_layout=False,
-        )
-
-
-@state.change("model_type", "model_training_time")
-def update_on_change_model(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        print("Model type changed...")
-        update(
-            reset_model=True,
-            reset_output=False,
-            reset_parameters=False,
-            reset_calibration=False,
-            reset_plots=True,
-            reset_gui_route_home=True,
-            reset_gui_route_nersc=False,
-            reset_gui_layout=False,
-        )
-
-
 @state.change(
+    "experiment",
+    "experiment_date_range",
+    "model_type_verbose",
+    "model_training_time",
     "displayed_output",
     "parameters",
     "opacity",
@@ -144,21 +125,72 @@ def update_on_change_model(**kwargs):
     "parameters_max",
     "parameters_show_all",
     "simulation_calibration",
+    "use_inferred_calibration",
 )
-def update_on_change_others(**kwargs):
+def reset(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        print("Parameters, opacity changed...")
-        update(
-            reset_model=False,
-            reset_output=False,
-            reset_parameters=False,
-            reset_calibration=False,
-            reset_plots=True,
-            reset_gui_route_home=False,
-            reset_gui_route_nersc=False,
-            reset_gui_layout=False,
-        )
+        print(f"Reacting to state change in {state.modified_keys}...")
+        if any(
+            key in state.modified_keys
+            for key in [
+                "experiment",
+                "experiment_date_range",
+            ]
+        ):
+            update(
+                reset_model=True,
+                reset_output=True,
+                reset_parameters=True,
+                reset_calibration=True,
+                reset_plots=True,
+                reset_gui_route_home=True,
+                reset_gui_route_nersc=False,
+                reset_gui_route_chat=False,
+                reset_gui_layout=False,
+            )
+        elif any(
+            key in state.modified_keys
+            for key in [
+                "model_type_verbose",
+                "model_training_time",
+            ]
+        ):
+            update(
+                reset_model=True,
+                reset_output=False,
+                reset_parameters=False,
+                reset_calibration=False,
+                reset_plots=True,
+                reset_gui_route_home=True,
+                reset_gui_route_nersc=False,
+                reset_gui_route_chat=False,
+                reset_gui_layout=False,
+            )
+        elif any(
+            key in state.modified_keys
+            for key in [
+                "displayed_output",
+                "parameters",
+                "opacity",
+                "parameters_min",
+                "parameters_max",
+                "parameters_show_all",
+                "simulation_calibration",
+                "use_inferred_calibration",
+            ]
+        ):
+            update(
+                reset_model=False,
+                reset_output=False,
+                reset_parameters=False,
+                reset_calibration=False,
+                reset_plots=True,
+                reset_gui_route_home=False,
+                reset_gui_route_nersc=False,
+                reset_gui_route_chat=False,
+                reset_gui_layout=False,
+            )
 
 
 def find_simulation(event, db):
@@ -233,6 +265,8 @@ def find_simulation(event, db):
 
 
 def open_simulation_dialog(event):
+    config_dict = load_config_dict(state.experiment)
+    db = load_database(config_dict)
     try:
         data_directory, file_path = find_simulation(event, db)
         state.simulation_video = file_path.endswith(".mp4")
@@ -314,7 +348,10 @@ def home_route():
                             figure = plotly.Figure(
                                 display_mode_bar="true",
                                 config={"responsive": True},
-                                click=(open_simulation_dialog, "[utils.safe($event)]"),
+                                click=(
+                                    open_simulation_dialog,
+                                    "[utils.safe($event)]",
+                                ),
                             )
                             ctrl.figure_update = figure.update
 
@@ -331,6 +368,17 @@ def nersc_route():
                         load_sfapi_card()
 
 
+# Chat route
+def chat_route():
+    print("Setting GUI Chat route...")
+    with RouterViewLayout(server, "/chat"):
+        with vuetify.VContainer(fluid=True, style="height: 80vh; width: 100%;"):
+            html.Iframe(
+                src="https://synapse-chat.lbl.gov/",
+                style="width: 100%; height: 100%; border: none;",
+            )
+
+
 # GUI layout
 def gui_setup():
     print("Setting GUI layout...")
@@ -339,6 +387,7 @@ def gui_setup():
         # add toolbar components
         with layout.toolbar:
             vuetify.VSpacer()
+            # experiment selector
             vuetify.VSelect(
                 v_model=("experiment",),
                 label="Experiments",
@@ -346,28 +395,45 @@ def gui_setup():
                 dense=True,
                 hide_details=True,
                 prepend_icon="mdi-atom",
-                style="max-width: 250px",
+                style="max-width: 250px; margin-right: 14px;",
+            )
+            # date range selector for experiment filtering
+            vuetify.VDateInput(
+                v_model=("experiment_date_range",),
+                label="Date range",
+                multiple="range",
+                dense=True,
+                hide_details=True,
+                style="max-width: 250px; margin-right: 14px;",
             )
         # set up router view
         with layout.content:
             error_panel()
-            with vuetify.VContainer(style="height: 100vh; overflow-y: auto"):
+            with vuetify.VContainer(
+                fluid=True, style="height: 100vh; overflow-y: auto"
+            ):
                 router.RouterView()
         # add router components to the drawer
         with layout.drawer:
             with vuetify.VList(shaped=True, v_model=("selectedRoute", 0)):
                 vuetify.VListSubheader("")
-                # Home route
+                # Dashboard route
                 vuetify.VListItem(
                     to="/",
-                    prepend_icon="mdi-home",
-                    title="Home",
+                    prepend_icon="mdi-monitor-dashboard",
+                    title="Digital Twin Prototype",
+                )
+                # Chat route
+                vuetify.VListItem(
+                    to="/chat",
+                    prepend_icon="mdi-chat",
+                    title="AI Assistant",
                 )
                 # NERSC route
                 vuetify.VListItem(
                     to="/nersc",
                     prepend_icon="mdi-lan-connect",
-                    title="NERSC",
+                    title="NERSC API key",
                 )
         # interactive dialog for simulation plots
         with vuetify.VDialog(
@@ -411,8 +477,6 @@ def gui_setup():
 if __name__ == "__main__":
     # initialize state variables needed at startup
     initialize_state()
-    # initialize Superfacility API
-    initialize_sfapi()
     # update for the first time
     update()
     # start server
