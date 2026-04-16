@@ -11,7 +11,7 @@ from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
-from sfapi_manager import initialize_sfapi, load_sfapi_card
+from sfapi_manager import load_sfapi_card
 from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
@@ -477,8 +477,6 @@ def gui_setup():
 if __name__ == "__main__":
     # initialize state variables needed at startup
     initialize_state()
-    # initialize Superfacility API
-    initialize_sfapi()
     # update for the first time
     update()
     # start server
