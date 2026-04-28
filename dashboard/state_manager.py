@@ -39,11 +39,16 @@ def initialize_state():
     state.opacity = 0.05
     # HPC connection
     state.hpc_connection = "local"
+    # IRI API
+    state.iriapi_key = None
+    state.iriapi_key_dict = None
+    state.iriapi_key_expiration = "Unavailable"
     # Superfacility API
     state.sfapi_client_id = None
     state.sfapi_key = None
     state.sfapi_key_dict = None
     state.sfapi_key_expiration = "Unavailable"
+    # NERSC
     state.perlmutter_description = "Unavailable"
     state.perlmutter_status = "unavailable"
     # Simulation plots in interactive dialog
