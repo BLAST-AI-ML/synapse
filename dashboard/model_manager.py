@@ -12,6 +12,7 @@ from trame.widgets import vuetify3 as vuetify
 from utils import timer, load_config_dict, create_date_filter
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
+from iriapi_manager import create_iriapi_client, monitor_iriapi_job
 from state_manager import state
 
 model_type_dict = {
@@ -263,6 +264,82 @@ class ModelManager:
             state.flush()
             return False
 
+    async def _training_kernel_iriapi(self):
+        try:
+            # Create an authenticated client
+            client = create_iriapi_client()
+            # Connect to NERSC
+            nersc = await asyncio.to_thread(client.facility, "nersc")
+            # Get the compute resource (Perlmutter)
+            perlmutter = await asyncio.to_thread(nersc.resource, "compute")
+            # Get the CFS resource for uploading files shared with compute jobs
+            cfs = await asyncio.to_thread(nersc.resource, "cfs")
+            target_dir = "/global/cfs/cdirs/m558/superfacility/model_training"
+            remote_training_script = f"{target_dir}/training_pm.sbatch"
+
+            # Upload the configuration file and training script to NERSC
+            with tempfile.TemporaryDirectory() as temp_dir:
+                config_path = self._prepare_training_config(temp_dir)
+                # FIXME: Verify the IRI client keeps this ls contract
+                [target_path] = await cfs.ls(target_dir, directory=True)
+                with open(config_path, "rb") as temp_file:
+                    print("Uploading configuration file to NERSC...")
+                    temp_file.filename = "config.yaml"
+                    # FIXME: Verify the IRI upload API keeps this file-object contract
+                    await target_path.upload(temp_file)
+
+                # Set the path of the script used to run the training job on NERSC
+                training_script_path = None
+                # Multiple locations supported, to make development easier:
+                #   container (production): script is in cwd
+                #   development, starting the gui app from dashboard/: script is in ../ml/
+                #   development, starting the gui app from the repo root dir: script is in ml/
+                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
+                for script_dir in script_locations:
+                    script_path = script_dir / "training_pm.sbatch"
+                    if os.path.exists(script_path):
+                        training_script_path = script_path
+                        break
+                if training_script_path is None:
+                    raise RuntimeError("Could not find training_pm.sbatch")
+
+                with open(training_script_path, "rb") as script_file:
+                    print("Uploading training script to NERSC...")
+                    script_file.filename = "training_pm.sbatch"
+                    # FIXME: Verify the IRI upload API keeps this file-object contract
+                    await target_path.upload(script_file)
+
+            model_type = model_type_dict[state.model_type_verbose]
+            # Submit the training job through the AmSC IRI API
+            iriapi_job = await asyncio.to_thread(
+                perlmutter.submit,
+                executable="/bin/bash",
+                arguments=[remote_training_script, model_type],
+                directory=target_dir,
+                name="trainsf",
+                queue="realtime",
+                account="m558",
+                duration=15 * 60,
+                nodes=1,
+                stdout_path=f"{target_dir}/logs/sf.o%j",
+                stderr_path=f"{target_dir}/logs/sf.e%j",
+                constraint="gpu",
+            )
+            state.model_training_status = "Submitted"
+            state.flush()
+            # Print some logs
+            print(f"Training job submitted (job ID: {iriapi_job.id})")
+            return await monitor_iriapi_job(iriapi_job, "model_training_status")
+
+        except Exception as e:
+            title = "Unable to complete remote training"
+            msg = f"Error occurred when executing remote training: {e}"
+            add_error(title, msg)
+            print(msg)
+            state.model_training_status = "Failed"
+            state.flush()
+            return False
+
     async def _training_kernel_local(self):
         try:
             ml_dir = (Path(__file__).parent / "../ml").resolve()
@@ -327,6 +404,8 @@ class ModelManager:
                 result = await self._training_kernel_local()
             elif state.model_training_mode == "sfapi":
                 result = await self._training_kernel_sfapi()
+            elif state.model_training_mode == "iriapi":
+                result = await self._training_kernel_iriapi()
             else:
                 raise ValueError(
                     f"Unsupported training mode: {state.model_training_mode}"

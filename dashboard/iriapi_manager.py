@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 from amsc_client import Client
@@ -9,11 +10,37 @@ from state_manager import state
 IRI_ACCESS_TOKEN_ENV = "IRI_ACCESS_TOKEN"
 
 
+def create_iriapi_client():
+    iriapi_key = (state.iriapi_key or "").strip()
+    if not iriapi_key:
+        raise ValueError("Missing AmSC IRI API token")
+    client = Client(token=iriapi_key)
+    client.register_facility(
+        "nersc",
+        auth_method="token",
+        token=iriapi_key,
+    )
+    return client
+
+
+async def monitor_iriapi_job(iriapi_job, state_variable):
+    while not iriapi_job.is_terminal:
+        await asyncio.sleep(5)
+        await asyncio.to_thread(iriapi_job.refresh)
+        # Make the status more readable by putting in spaces and capitalizing the words.
+        job_status = iriapi_job.state.replace("_", " ").title()
+        if state[state_variable] != job_status:
+            state[state_variable] = job_status
+            state.flush()
+            print("Job status: ", state[state_variable])
+    return iriapi_job.state == "completed"
+
+
 def update_iriapi_info():
     print("Updating AmSC IRI API info...")
     try:
         # Create an authenticated client
-        client = Client(token=state.iriapi_key)
+        client = create_iriapi_client()
         # Update Perlmutter info
         nersc = client.facility("nersc")
         perlmutter = nersc.resource("compute")
@@ -40,17 +67,23 @@ def load_iriapi_credentials(**kwargs):
     # Load credentials from the uploaded token file
     if state.iriapi_key_dict is not None:
         print("Loading AmSC IRI API credentials from file...")
-        state.iriapi_key = state.iriapi_key_dict["content"].decode("utf-8")
-        update_iriapi_info()
+        state.iriapi_key = state.iriapi_key_dict["content"].decode("utf-8").strip()
+        if state.iriapi_key:
+            update_iriapi_info()
+        else:
+            print("Uploaded AmSC IRI API token file is empty.")
 
 
 def load_iriapi_card():
     print("Setting AmSC IRI API card...")
     # Prefer an environment-provided token when running in deployed contexts
-    if IRI_ACCESS_TOKEN_ENV in os.environ:
+    iri_access_token = os.environ.get(IRI_ACCESS_TOKEN_ENV, "").strip()
+    if iri_access_token:
         print("Loading AmSC IRI API credentials from environment...")
-        state.iriapi_key = os.environ[IRI_ACCESS_TOKEN_ENV]
+        state.iriapi_key = iri_access_token
         update_iriapi_info()
+    elif IRI_ACCESS_TOKEN_ENV in os.environ:
+        print(f"{IRI_ACCESS_TOKEN_ENV} is set but empty; waiting for token upload.")
     # Row with component to upload input file with top padding
     with vuetify.VRow(style="padding-top: 20px;"):
         with vuetify.VCol():
