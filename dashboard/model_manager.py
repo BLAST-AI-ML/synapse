@@ -1,11 +1,13 @@
 import asyncio
 from datetime import datetime
+import os
+import re
+import shlex
 from pathlib import Path
 import tempfile
-import os
-import yaml
-import re
+
 import mlflow
+import yaml
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
@@ -20,6 +22,109 @@ model_type_dict = {
     "Neural Network (single)": "NN",
     "Neural Network (ensemble)": "ensemble_NN",
 }
+
+
+SBATCH_SUBMIT_OPTION_MAP = {
+    "-J": "name",
+    "--job-name": "name",
+    "-q": "queue",
+    "--qos": "queue",
+    "-A": "account",
+    "--account": "account",
+    "-t": "duration",
+    "--time": "duration",
+    "-N": "nodes",
+    "--nodes": "nodes",
+    "-o": "stdout_path",
+    "--output": "stdout_path",
+    "-e": "stderr_path",
+    "--error": "stderr_path",
+}
+SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
+
+
+def find_training_script_path():
+    # Multiple locations supported, to make development easier:
+    #   container (production): script is in cwd
+    #   development, starting the gui app from dashboard/: script is in ../ml/
+    #   development, starting the gui app from the repo root dir: script is in ml/
+    script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
+    for script_dir in script_locations:
+        script_path = script_dir / "training_pm.sbatch"
+        if script_path.exists():
+            return script_path
+    raise RuntimeError("Could not find training_pm.sbatch")
+
+
+def parse_slurm_duration(duration):
+    days = 0
+    time_part = duration.strip()
+    has_days = "-" in time_part
+    if has_days:
+        day_part, time_part = time_part.split("-", 1)
+        days = int(day_part)
+
+    time_values = [int(value) for value in time_part.split(":")]
+    if len(time_values) == 1:
+        if has_days:
+            seconds = time_values[0] * 60 * 60
+        else:
+            seconds = time_values[0] * 60
+    elif len(time_values) == 2:
+        if has_days:
+            hours, minutes = time_values
+            seconds = hours * 60 * 60 + minutes * 60
+        else:
+            minutes, seconds_part = time_values
+            seconds = minutes * 60 + seconds_part
+    elif len(time_values) == 3:
+        hours, minutes, seconds_part = time_values
+        seconds = hours * 60 * 60 + minutes * 60 + seconds_part
+    else:
+        raise ValueError(f"Unsupported Slurm duration format: {duration}")
+
+    return days * 24 * 60 * 60 + seconds
+
+
+def parse_sbatch_submit_options(script_path):
+    submit_options = {}
+    with open(script_path) as script_file:
+        for line in script_file:
+            line = line.strip()
+            if not line.startswith("#SBATCH"):
+                continue
+
+            directive = line.removeprefix("#SBATCH").strip()
+            if not directive:
+                continue
+
+            tokens = shlex.split(directive, comments=True)
+            if not tokens:
+                continue
+
+            option = tokens[0]
+            value = None
+            if "=" in option:
+                option, value = option.split("=", 1)
+            elif len(tokens) > 1:
+                value = tokens[1]
+
+            submit_option = SBATCH_SUBMIT_OPTION_MAP.get(option)
+            if submit_option and value is not None:
+                submit_options[submit_option] = value
+
+    missing_options = [
+        option
+        for option in SBATCH_REQUIRED_SUBMIT_OPTIONS
+        if option not in submit_options
+    ]
+    if missing_options:
+        missing_list = ", ".join(sorted(set(missing_options)))
+        raise ValueError(f"Missing required SBATCH option(s): {missing_list}")
+
+    submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
+    submit_options["nodes"] = int(submit_options["nodes"])
+    return submit_options
 
 
 def enable_amsc_x_api_key(config_dict):
@@ -226,20 +331,9 @@ class ModelManager:
                         await target_path.upload(temp_file)
 
                 # set the path of the script used to submit the training job on NERSC
-                training_script = None
-                # multiple locations supported, to make development easier
-                #   container (production): script is in cwd
-                #   development, starting the gui app from dashboard/: script is in ../ml/
-                #   development, starting the gui app from the repo root dir: script is in ml/
-                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
-                for script_dir in script_locations:
-                    script_path = script_dir / "training_pm.sbatch"
-                    if os.path.exists(script_path):
-                        with open(script_path, "r") as file:
-                            training_script = file.read()
-                        break
-                if training_script is None:
-                    raise RuntimeError("Could not find training_pm.sbatch")
+                training_script_path = find_training_script_path()
+                with open(training_script_path) as file:
+                    training_script = file.read()
 
                 # replace the --model argument in the python command with the current model type from the state
                 training_script = re.sub(
@@ -276,6 +370,9 @@ class ModelManager:
             cfs = await asyncio.to_thread(nersc.resource, "cfs")
             target_dir = "/global/cfs/cdirs/m558/superfacility/model_training"
             remote_training_script = f"{target_dir}/training_pm.sbatch"
+            training_script_path = find_training_script_path()
+            submit_options = parse_sbatch_submit_options(training_script_path)
+            print(f"submit_options: {submit_options}")
 
             # Upload the configuration file and training script to NERSC
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -287,21 +384,6 @@ class ModelManager:
                     temp_file.filename = "config.yaml"
                     # FIXME: Verify the IRI upload API keeps this file-object contract
                     await target_path.upload(temp_file)
-
-                # Set the path of the script used to run the training job on NERSC
-                training_script_path = None
-                # Multiple locations supported, to make development easier:
-                #   container (production): script is in cwd
-                #   development, starting the gui app from dashboard/: script is in ../ml/
-                #   development, starting the gui app from the repo root dir: script is in ml/
-                script_locations = [Path.cwd(), Path.cwd() / "../ml", Path.cwd() / "ml"]
-                for script_dir in script_locations:
-                    script_path = script_dir / "training_pm.sbatch"
-                    if os.path.exists(script_path):
-                        training_script_path = script_path
-                        break
-                if training_script_path is None:
-                    raise RuntimeError("Could not find training_pm.sbatch")
 
                 with open(training_script_path, "rb") as script_file:
                     print("Uploading training script to NERSC...")
@@ -316,13 +398,7 @@ class ModelManager:
                 executable="/bin/bash",
                 arguments=[remote_training_script, model_type],
                 directory=target_dir,
-                name="trainsf",
-                queue="realtime",
-                account="m558",
-                duration=15 * 60,
-                nodes=1,
-                stdout_path=f"{target_dir}/logs/sf.o%j",
-                stderr_path=f"{target_dir}/logs/sf.e%j",
+                **submit_options,
                 constraint="gpu",
             )
             state.model_training_status = "Submitted"
