@@ -60,30 +60,30 @@ def parse_slurm_duration(duration):
     days = 0
     time_part = duration.strip()
     has_days = "-" in time_part
+
     if has_days:
         day_part, time_part = time_part.split("-", 1)
         days = int(day_part)
 
-    time_values = [int(value) for value in time_part.split(":")]
-    if len(time_values) == 1:
-        if has_days:
-            seconds = time_values[0] * 60 * 60
-        else:
-            seconds = time_values[0] * 60
-    elif len(time_values) == 2:
-        if has_days:
-            hours, minutes = time_values
-            seconds = hours * 60 * 60 + minutes * 60
-        else:
-            minutes, seconds_part = time_values
-            seconds = minutes * 60 + seconds_part
-    elif len(time_values) == 3:
-        hours, minutes, seconds_part = time_values
-        seconds = hours * 60 * 60 + minutes * 60 + seconds_part
+    time_values = [int(v) for v in time_part.split(":")]
+    n = len(time_values)
+
+    if n == 3:
+        hours, minutes, secs = time_values
+    elif n == 2:
+        hours, minutes, secs = (
+            (time_values[0], time_values[1], 0)
+            if has_days
+            else (0, time_values[0], time_values[1])
+        )
+    elif n == 1:
+        hours, minutes, secs = (
+            (time_values[0], 0, 0) if has_days else (0, time_values[0], 0)
+        )
     else:
         raise ValueError(f"Unsupported Slurm duration format: {duration}")
 
-    return days * 24 * 60 * 60 + seconds
+    return days * 86400 + hours * 3600 + minutes * 60 + secs
 
 
 def parse_sbatch_submit_options(script_path):
