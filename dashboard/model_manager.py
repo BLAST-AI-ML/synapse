@@ -372,13 +372,13 @@ class ModelManager:
             remote_training_script = f"{target_dir}/training_pm.sbatch"
             training_script_path = find_training_script_path()
             submit_options = parse_sbatch_submit_options(training_script_path)
-            print(f"submit_options: {submit_options}")
 
             # Upload the configuration file and training script to NERSC
             with tempfile.TemporaryDirectory() as temp_dir:
                 config_path = self._prepare_training_config(temp_dir)
-                # FIXME: Verify the IRI client keeps this ls contract
-                [target_path] = await cfs.ls(target_dir, directory=True)
+                ls_task = await asyncio.to_thread(cfs.fs.ls, target_dir)
+                await asyncio.to_thread(ls_task.wait)
+                [target_path] = ls_task.result
                 with open(config_path, "rb") as temp_file:
                     print("Uploading configuration file to NERSC...")
                     temp_file.filename = "config.yaml"
