@@ -19,7 +19,7 @@ def sync_hpc_connection(**kwargs):
         print(
             f"HPC connection changed to {HPC_CONNECTION_LABELS[state.hpc_connection]}"
         )
-        # Overwrite model training mode and simulation running mode
+        # Keep the training backend aligned with the selected HPC connection.
         state.model_training_mode = state.hpc_connection
         # state.simulation_running_mode = state.hpc_connection  # TODO
 
@@ -29,6 +29,7 @@ def load_hpc_card():
     with vuetify.VCard():
         with vuetify.VCardTitle("HPC Connection"):
             with vuetify.VCardText():
+                # Let users choose the backend used by remote training workflows.
                 with vuetify.VRow():
                     with vuetify.VCol():
                         vuetify.VSelect(
@@ -43,6 +44,7 @@ def load_hpc_card():
                             dense=True,
                             hide_details=True,
                         )
+                # Show only the credential panel for the selected remote backend.
                 with vuetify.VRow(v_if=("hpc_connection == 'sfapi'",)):
                     with vuetify.VCol():
                         load_sfapi_card()

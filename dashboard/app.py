@@ -365,7 +365,7 @@ def hpc_route():
     with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=4):
-                # Superfacility API card
+                # Render the backend selector and its matching credentials form.
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_hpc_card()

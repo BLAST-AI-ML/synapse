@@ -68,6 +68,7 @@ def parse_slurm_duration(duration):
     time_values = [int(v) for v in time_part.split(":")]
     n = len(time_values)
 
+    # Slurm treats ambiguous two-part durations differently with a day prefix.
     if n == 3:
         hours, minutes, secs = time_values
     elif n == 2:
@@ -98,6 +99,7 @@ def parse_sbatch_submit_options(script_path):
             if not directive:
                 continue
 
+            # Use shell parsing so quoted SBATCH values are handled correctly.
             tokens = shlex.split(directive, comments=True)
             if not tokens:
                 continue
@@ -122,6 +124,7 @@ def parse_sbatch_submit_options(script_path):
         missing_list = ", ".join(sorted(missing_options))
         raise ValueError(f"Missing required SBATCH option(s): {missing_list}")
 
+    # Convert values to the types expected by the IRI submit endpoint.
     submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
     submit_options["nodes"] = int(submit_options["nodes"])
     return submit_options
@@ -371,6 +374,7 @@ class ModelManager:
             target_dir = "/global/cfs/cdirs/m558/superfacility/model_training"
             remote_training_script = f"{target_dir}/training_pm.sbatch"
             training_script_path = find_training_script_path()
+            # Reuse SBATCH directives so IRI submissions match the batch script.
             submit_options = parse_sbatch_submit_options(training_script_path)
 
             # Upload the configuration file and training script to NERSC

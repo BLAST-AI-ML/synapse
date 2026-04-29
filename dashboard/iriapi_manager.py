@@ -15,6 +15,7 @@ def create_iriapi_client():
     if not iriapi_key:
         raise ValueError("Missing AmSC IRI API token")
     client = Client(token=iriapi_key)
+    # Register NERSC before requesting facility resources through the IRI client.
     client.register_facility(
         "nersc",
         auth_method="token",
@@ -26,6 +27,7 @@ def create_iriapi_client():
 async def monitor_iriapi_job(iriapi_job, state_variable):
     while not iriapi_job.is_terminal:
         await asyncio.sleep(5)
+        # Refresh in a worker thread because the IRI client call is synchronous.
         await asyncio.to_thread(iriapi_job.refresh)
         # Make the status more readable by putting in spaces and capitalizing the words.
         job_status = iriapi_job.state.replace("_", " ").title()
@@ -41,7 +43,7 @@ def update_iriapi_info():
     try:
         # Create an authenticated client
         client = create_iriapi_client()
-        # Update Perlmutter info
+        # Ping Perlmutter so the UI reflects the current IRI resource status.
         nersc = client.facility("nersc")
         perlmutter = nersc.resource("compute")
         state.iriapi_perlmutter_description = f"{perlmutter.description}"
@@ -64,7 +66,7 @@ def update_iriapi_info():
 
 @state.change("iriapi_key_dict")
 def load_iriapi_credentials(**kwargs):
-    # Load credentials from the uploaded token file
+    # Decode the uploaded token file and immediately validate it against IRI.
     if state.iriapi_key_dict is not None:
         print("Loading AmSC IRI API credentials from file...")
         state.iriapi_key = state.iriapi_key_dict["content"].decode("utf-8").strip()
@@ -76,7 +78,7 @@ def load_iriapi_credentials(**kwargs):
 
 def load_iriapi_card():
     print("Setting AmSC IRI API card...")
-    # Prefer an environment-provided token when running in deployed contexts
+    # Prefer an environment-provided token when running in deployed contexts.
     iri_access_token = os.environ.get(IRI_ACCESS_TOKEN_ENV, "").strip()
     if iri_access_token:
         print("Loading AmSC IRI API credentials from environment...")
