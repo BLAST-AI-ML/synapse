@@ -44,18 +44,18 @@ def update_iriapi_info():
         # Update Perlmutter info
         nersc = client.facility("nersc")
         perlmutter = nersc.resource("compute")
-        state.perlmutter_description = f"{perlmutter.description}"
-        state.perlmutter_status = f"{perlmutter.status}"
+        state.iriapi_perlmutter_description = f"{perlmutter.description}"
+        state.iriapi_perlmutter_status = f"{perlmutter.status}"
         print(
-            f"Perlmutter status is {state.perlmutter_status} with description '{state.perlmutter_description}'"
+            f"Perlmutter status is {state.iriapi_perlmutter_status} with description '{state.iriapi_perlmutter_description}'"
         )
     except Exception as e:
         print(f"An unexpected error occurred when connecting to AmSC IRI API:\n{e}")
         # Reset key expiration date
         state.iriapi_key_expiration = "Unavailable"
         # Reset Perlmutter status
-        state.perlmutter_description = "Unavailable"
-        state.perlmutter_status = "unavailable"
+        state.iriapi_perlmutter_description = "Unavailable"
+        state.iriapi_perlmutter_status = "unavailable"
         title = "Unable to connect to NERSC"
         msg = f"Error occurred when connecting to NERSC through the AmSC IRI API: {e}"
         add_error(title, msg)
@@ -107,7 +107,7 @@ def load_iriapi_card():
     with vuetify.VRow():
         with vuetify.VCol():
             vuetify.VTextField(
-                v_model=("perlmutter_description",),
+                v_model=("iriapi_perlmutter_description",),
                 label="Perlmutter Status",
                 readonly=True,
             )

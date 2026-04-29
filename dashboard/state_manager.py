@@ -43,14 +43,15 @@ def initialize_state():
     state.iriapi_key = None
     state.iriapi_key_dict = None
     state.iriapi_key_expiration = "Unavailable"
+    state.iriapi_perlmutter_description = "Unavailable"
+    state.iriapi_perlmutter_status = "unavailable"
     # Superfacility API
     state.sfapi_client_id = None
     state.sfapi_key = None
     state.sfapi_key_dict = None
     state.sfapi_key_expiration = "Unavailable"
-    # NERSC
-    state.perlmutter_description = "Unavailable"
-    state.perlmutter_status = "unavailable"
+    state.sfapi_perlmutter_description = "Unavailable"
+    state.sfapi_perlmutter_status = "unavailable"
     # Simulation plots in interactive dialog
     state.simulation_url = None
     state.simulation_dialog = False

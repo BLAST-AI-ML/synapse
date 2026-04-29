@@ -62,10 +62,10 @@ def update_sfapi_info():
                 )
                 # update Perlmutter status
                 status = client.compute(Machine.perlmutter)
-                state.perlmutter_description = f"{status.description}"
-                state.perlmutter_status = f"{status.status.value}"
+                state.sfapi_perlmutter_description = f"{status.description}"
+                state.sfapi_perlmutter_status = f"{status.status.value}"
                 print(
-                    f"Perlmutter status is {state.perlmutter_status} with description '{state.perlmutter_description}'"
+                    f"Perlmutter status is {state.sfapi_perlmutter_status} with description '{state.sfapi_perlmutter_description}'"
                 )
             else:
                 # reset key expiration date
@@ -73,8 +73,8 @@ def update_sfapi_info():
                     f"Expired On {expiration.strftime(user_format)}"
                 )
                 # reset Perlmutter status
-                state.perlmutter_description = "Unavailable"
-                state.perlmutter_status = "unavailable"
+                state.sfapi_perlmutter_description = "Unavailable"
+                state.sfapi_perlmutter_status = "unavailable"
                 title = "Unable to find a valid Superfacility API key"
                 msg = f"Superfacility API key expired on {expiration.strftime(user_format)}"
                 add_error(title, msg)
@@ -84,8 +84,8 @@ def update_sfapi_info():
         # reset key expiration date
         state.sfapi_key_expiration = "Unavailable"
         # reset Perlmutter status
-        state.perlmutter_description = "Unavailable"
-        state.perlmutter_status = "unavailable"
+        state.sfapi_perlmutter_description = "Unavailable"
+        state.sfapi_perlmutter_status = "unavailable"
         title = "Unable to connect to NERSC"
         msg = f"Error occurred when connecting to NERSC through the Superfacility API: {e}"
         add_error(title, msg)
@@ -132,7 +132,7 @@ def load_sfapi_card():
     with vuetify.VRow():
         with vuetify.VCol():
             vuetify.VTextField(
-                v_model=("perlmutter_description",),
+                v_model=("sfapi_perlmutter_description",),
                 label="Perlmutter Status",
                 readonly=True,
             )

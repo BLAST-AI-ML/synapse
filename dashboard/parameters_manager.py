@@ -241,7 +241,7 @@ class ParametersManager:
                                             "Simulate",
                                             click=self.simulation_trigger,
                                             disabled=(
-                                                "simulation_running || perlmutter_status != 'active' || !simulatable",
+                                                "simulation_running || sfapi_perlmutter_status != 'active' || !simulatable",
                                             ),
                                             style="text-transform: none;",
                                         )

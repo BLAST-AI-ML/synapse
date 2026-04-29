@@ -545,7 +545,7 @@ class ModelManager:
                                 "Train",
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || (model_training_mode === 'sfapi' && perlmutter_status !== 'active')",
+                                    "model_training || (model_training_mode === 'sfapi' && sfapi_perlmutter_status !== 'active')",
                                 ),
                                 style="text-transform: none",
                             )
