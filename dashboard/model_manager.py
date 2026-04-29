@@ -119,7 +119,7 @@ def parse_sbatch_submit_options(script_path):
         if option not in submit_options
     ]
     if missing_options:
-        missing_list = ", ".join(sorted(set(missing_options)))
+        missing_list = ", ".join(sorted(missing_options))
         raise ValueError(f"Missing required SBATCH option(s): {missing_list}")
 
     submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
