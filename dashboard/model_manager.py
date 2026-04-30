@@ -39,8 +39,17 @@ SBATCH_SUBMIT_OPTION_MAP = {
     "--output": "stdout_path",
     "-e": "stderr_path",
     "--error": "stderr_path",
+    "-C": "constraint",
+    "--constraint": "constraint",
+    "--gpus-per-node": "gpus-per-node",
+    "--ntasks-per-node": "ntasks-per-node",
 }
 SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
+IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker.
+# Match model=$1 or model=${1}, with optional comment.
+SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
+# Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments.
+SHELL_ASSIGNMENT_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.+?)(?:\s+#.*)?$")
 
 
 def find_training_script_path():
@@ -57,6 +66,7 @@ def find_training_script_path():
 
 
 def parse_slurm_duration(duration):
+    # Normalize Slurm duration variants to the seconds expected by IRI.
     days = 0
     time_part = duration.strip()
     has_days = "-" in time_part
@@ -88,6 +98,7 @@ def parse_slurm_duration(duration):
 
 
 def parse_sbatch_submit_options(script_path):
+    # Extract only SBATCH fields that map cleanly onto IRI submit options.
     submit_options = {}
     with open(script_path) as script_file:
         for line in script_file:
@@ -128,6 +139,101 @@ def parse_sbatch_submit_options(script_path):
     submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
     submit_options["nodes"] = int(submit_options["nodes"])
     return submit_options
+
+
+def collapse_shell_command(lines):
+    # Preserve trailing-backslash continuations before tokenizing with shlex.
+    command_parts = []
+    current_command = ""
+    for line in lines:
+        stripped = line.strip()
+        if stripped.endswith("\\"):
+            current_command += f"{stripped[:-1]} "
+        else:
+            command_parts.append(f"{current_command}{stripped}".strip())
+            current_command = ""
+
+    if current_command:
+        command_parts.append(current_command.strip())
+
+    return " ".join(command_parts)
+
+
+def parse_shell_variable_assignments(lines):
+    # Keep static shell assignments that can be expanded without execution.
+    variables = {}
+    for line in lines:
+        match = SHELL_ASSIGNMENT_RE.match(line.strip())
+        if not match:
+            continue
+
+        name, raw_value = match.groups()
+        if "$(" in raw_value or "`" in raw_value:
+            continue
+
+        values = shlex.split(raw_value, comments=True)
+        if len(values) == 1:
+            variables[name] = values[0]
+
+    return variables
+
+
+def expand_iri_launch_argument(argument, model_type, variables):
+    # Expand the simple $name and ${name} forms used by training_pm.sbatch.
+    replacements = {**variables, "model": model_type}
+    for name, value in replacements.items():
+        argument = argument.replace(f"${{{name}}}", value)
+        argument = argument.replace(f"${name}", value)
+    return argument
+
+
+def parse_iri_training_launch_spec(script_path, model_type):
+    # Split the batch script into setup lines and the podman-hpc launch command.
+    pre_launch_lines = []
+    launch_lines = []
+    found_launch = False
+
+    with open(script_path) as script_file:
+        for raw_line in script_file:
+            line = raw_line.rstrip()
+            stripped = line.strip()
+
+            if found_launch:
+                launch_lines.append(line)
+            elif stripped.startswith(" ".join(IRI_TRAINING_LAUNCH_PREFIX)):
+                found_launch = True
+                launch_lines.append(line)
+            elif SCRIPT_MODEL_ARGUMENT_RE.match(stripped):
+                pre_launch_lines.append(f"model={shlex.quote(model_type)}")
+            elif (
+                stripped
+                and not stripped.startswith("#!")
+                and not stripped.startswith("#SBATCH")
+            ):
+                pre_launch_lines.append(line)
+
+    if not launch_lines:
+        raise ValueError("Could not find the IRI training launch command")
+
+    launch_command = collapse_shell_command(launch_lines)
+    launch_tokens = shlex.split(launch_command)
+    variables = parse_shell_variable_assignments(pre_launch_lines)
+    # IRI submit expects launcher, executable, and arguments separately.
+    launch_prefix_length = len(IRI_TRAINING_LAUNCH_PREFIX)
+    launch_prefix = launch_tokens[:launch_prefix_length]
+    launcher, *executable_tokens = launch_prefix
+    executable = " ".join(executable_tokens)
+    arguments = [
+        expand_iri_launch_argument(argument, model_type, variables)
+        for argument in launch_tokens[launch_prefix_length:]
+    ]
+
+    return {
+        "arguments": arguments,
+        "executable": executable,
+        "launcher": launcher,
+        "pre_launch": "\n".join(pre_launch_lines),
+    }
 
 
 def enable_amsc_x_api_key(config_dict):
@@ -372,12 +478,15 @@ class ModelManager:
             # Get the CFS resource for uploading files shared with compute jobs
             cfs = await asyncio.to_thread(nersc.resource, "cfs")
             target_dir = "/global/cfs/cdirs/m558/superfacility/model_training"
-            remote_training_script = f"{target_dir}/training_pm.sbatch"
             training_script_path = find_training_script_path()
+            model_type = model_type_dict[state.model_type_verbose]
             # Reuse SBATCH directives so IRI submissions match the batch script.
             submit_options = parse_sbatch_submit_options(training_script_path)
+            launch_spec = parse_iri_training_launch_spec(
+                training_script_path, model_type
+            )
 
-            # Upload the configuration file and training script to NERSC
+            # Training script is parsed locally; only config.yaml is uploaded.
             with tempfile.TemporaryDirectory() as temp_dir:
                 config_path = self._prepare_training_config(temp_dir)
                 ls_task = await asyncio.to_thread(cfs.fs.ls, target_dir)
@@ -389,21 +498,12 @@ class ModelManager:
                     # FIXME: Verify the IRI upload API keeps this file-object contract
                     await target_path.upload(temp_file)
 
-                with open(training_script_path, "rb") as script_file:
-                    print("Uploading training script to NERSC...")
-                    script_file.filename = "training_pm.sbatch"
-                    # FIXME: Verify the IRI upload API keeps this file-object contract
-                    await target_path.upload(script_file)
-
-            model_type = model_type_dict[state.model_type_verbose]
             # Submit the training job through the AmSC IRI API
             iriapi_job = await asyncio.to_thread(
                 perlmutter.submit,
-                executable="/bin/bash",
-                arguments=[remote_training_script, model_type],
                 directory=target_dir,
                 **submit_options,
-                constraint="gpu",
+                **launch_spec,
             )
             state.model_training_status = "Submitted"
             state.flush()
