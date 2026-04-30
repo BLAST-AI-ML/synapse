@@ -29,6 +29,7 @@ def initialize_state():
     # ML model
     state.model_type_verbose = "Neural Network (single)"
     state.model_training = False
+    state.model_training_mode = "local"
     state.model_training_status = None
     state.model_training_time = None
     # Optimization

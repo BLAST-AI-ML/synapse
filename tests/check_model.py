@@ -39,7 +39,10 @@ def load_experimental_data(config_dict):
 def check_evaluate(config_dict, model_type):
     """Load model and evaluate with experimental data; verify accuracy (relative RMSE <= threshold)."""
     # Load model
-    mm = ModelManager(config_dict=config_dict, model_type=model_type)
+    mm = ModelManager(
+        config_dict=config_dict,
+        model_type=model_type,
+    )
     # Load experimental data
     df_exp, input_names, output_names = load_experimental_data(config_dict)
 

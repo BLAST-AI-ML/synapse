@@ -335,20 +335,20 @@ def train_calibration_phase(
             return torch.stack([m.forward(x) for m in model]).mean(dim=0)
 
     # Train calibration
-    input_cal_weight, input_cal_bias, output_cal_weight, output_cal_bias = (
+    c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output = (
         train_calibration(predict_fn, exp_X, exp_y, num_epochs=5000, lr=0.001)
     )
 
     # Build calibration transforms
     input_inferred_normalizedcalibration = AffineInputTransform(
         len(input_names),
-        coefficient=input_cal_weight.cpu(),
-        offset=input_cal_bias.cpu(),
+        coefficient=c_normcal_input.cpu(),
+        offset=o_normcal_input.cpu(),
     )
     output_inferred_normalizedcalibration = AffineInputTransform(
         len(output_names),
-        coefficient=output_cal_weight.cpu(),
-        offset=output_cal_bias.cpu(),
+        coefficient=c_normcal_output.cpu(),
+        offset=o_normcal_output.cpu(),
     )
     return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
 
@@ -503,11 +503,11 @@ def enable_amsc_x_api_key(config_dict):
 def register_model_to_mlflow(model, model_type, experiment, config_dict):
     """Register the trained model to MLflow (tracking URI from config)."""
     tracking_uri = config_dict["mlflow"]["tracking_uri"]
-    model_name = f"{experiment}_{model_type}"
+    model_name = f"synapse-{experiment}_{model_type}"
 
     try:
         mlflow.set_tracking_uri(tracking_uri)
-        mlflow.set_experiment(experiment)
+        mlflow.set_experiment(f"synapse-{experiment}")
 
         model.register_to_mlflow(
             artifact_path=f"{model_name}_run",
@@ -682,7 +682,7 @@ if __name__ == "__main__":
         output_transformers = [output_normalization, output_guess_calibration]
         print("Phase 2: No experimental data available, skipping calibration")
 
-    print("training ended")
+    print("Training ended")
 
     end_time = time.time()
     elapsed_time = end_time - start_time

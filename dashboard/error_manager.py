@@ -1,9 +1,9 @@
 from trame.widgets import vuetify3 as vuetify, html
-from state_manager import state, server
+from state_manager import state
 
 
 def add_error(title, msg):
-    if not server.running:
+    if state.errors is None:
         # Outside of a Trame app (e.g. check_model.py), raise a Python error
         # to surface the error to the caller.
         raise RuntimeError(f"{title}: {msg}")
