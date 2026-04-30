@@ -14,13 +14,15 @@ def create_iriapi_client():
     iriapi_key = (state.iriapi_key or "").strip()
     if not iriapi_key:
         raise ValueError("Missing AmSC IRI API token")
-    client = Client(token=iriapi_key)
-    # Register NERSC before requesting facility resources through the IRI client.
-    client.register_facility(
-        "nersc",
-        auth_method="token",
-        token=iriapi_key,
-    )
+    # Token registration is kept here for quick reactivation if needed.
+    # client = Client(token=iriapi_key)
+    # client.register_facility(
+    #     "nersc",
+    #     auth_method="token",
+    #     token=iriapi_key,
+    # )
+    # Use Globus auth while token-based facility registration is disabled.
+    client = Client(auth_method="globus")
     return client
 
 
