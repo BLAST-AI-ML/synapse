@@ -482,14 +482,13 @@ class ModelManager:
             # Training script is parsed locally; only config.yaml is uploaded.
             with tempfile.TemporaryDirectory() as temp_dir:
                 config_path = self._prepare_training_config(temp_dir)
-                ls_task = await asyncio.to_thread(cfs.fs.ls, target_dir)
-                await asyncio.to_thread(ls_task.wait)
-                [target_path] = ls_task.result
-                with open(config_path, "rb") as temp_file:
-                    print("Uploading configuration file to NERSC...")
-                    temp_file.filename = "config.yaml"
-                    # FIXME: Verify the IRI upload API keeps this file-object contract
-                    await target_path.upload(temp_file)
+                print("Uploading configuration file to NERSC...")
+                upload_task = await asyncio.to_thread(
+                    cfs.fs.upload,
+                    config_path,
+                    f"{target_dir}/config.yaml",
+                )
+                await asyncio.to_thread(upload_task.wait)
 
             # Submit the training job through the AmSC IRI API
             iriapi_job = await asyncio.to_thread(
