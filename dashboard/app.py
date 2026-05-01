@@ -1,3 +1,4 @@
+import asyncio
 from bson.objectid import ObjectId
 import os
 import re
@@ -6,13 +7,21 @@ from trame.ui.router import RouterViewLayout
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
-from model_manager import ModelManager, model_type_dict
+from model_manager import (
+    GENESIS_MODEL_TYPE,
+    GENESIS_LOGO_URL,
+    ModelManager,
+    clear_model_load_errors,
+    is_missing_mlflow_model,
+    load_model_from_mlflow_with_progress,
+    model_type_dict,
+)
 from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import load_sfapi_card
-from state_manager import server, state, ctrl, initialize_state
+from state_manager import server, state, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
     data_depth_panel,
@@ -33,6 +42,7 @@ mod_manager = None
 par_manager = None
 opt_manager = None
 cal_manager = None
+PLOTS_FIGURE_STATE = "plots_figure"
 
 # list of available experiments
 experiments = load_experiments()
@@ -40,6 +50,13 @@ experiments = load_experiments()
 # -----------------------------------------------------------------------------
 # Functions and callbacks
 # -----------------------------------------------------------------------------
+
+
+def update_plot_figure(fig):
+    """Replace the figure shown in the Plots card."""
+    state[PLOTS_FIGURE_STATE] = plotly.Figure.to_data(fig)
+    state.dirty(PLOTS_FIGURE_STATE)
+    state.flush()
 
 
 def update(
@@ -52,6 +69,7 @@ def update(
     reset_gui_route_nersc=True,
     reset_gui_route_chat=True,
     reset_gui_layout=True,
+    preloaded_model_manager=None,
     **kwargs,
 ):
     print("Updating...")
@@ -79,10 +97,15 @@ def update(
         cal_manager = SimulationCalibrationManager(simulation_calibration)
     # reset model
     if reset_model:
-        mod_manager = ModelManager(
-            config_dict=config_dict,
-            model_type=model_type_dict[state.model_type_verbose],
-        )
+        state.model_available = False
+        if preloaded_model_manager is None:
+            mod_manager = ModelManager(
+                config_dict=config_dict,
+                model_type=model_type_dict[state.model_type_verbose],
+            )
+        else:
+            mod_manager = preloaded_model_manager
+        state.model_available = mod_manager.avail()
         opt_manager = OptimizationManager(mod_manager)
     # reset parameters
     if reset_parameters:
@@ -102,7 +125,6 @@ def update(
     # reset GUI layout
     if reset_gui_layout:
         gui_setup()
-    # reset plots
     if reset_plots:
         fig = plot(
             exp_data=exp_data,
@@ -110,7 +132,69 @@ def update(
             model_manager=mod_manager,
             cal_manager=cal_manager,
         )
-        ctrl.figure_update(fig)
+        update_plot_figure(fig)
+
+
+async def update_with_model_download_indicator(**update_kwargs):
+    """Run a dashboard update with visible download feedback for NN models."""
+    show_model_download = (
+        update_kwargs.get("reset_model", True)
+        and state.model_type_verbose == GENESIS_MODEL_TYPE
+    )
+    load_error = None
+    if show_model_download:
+        experiment = state.experiment
+        model_type_verbose = state.model_type_verbose
+        config_dict = load_config_dict(experiment)
+        model_type = model_type_dict[model_type_verbose]
+        state.model_available = False
+        state.model_downloading = True
+        state.model_download_status = "Downloading from American Science Cloud..."
+        state.model_download_progress = None
+        clear_model_load_errors()
+        state.flush()
+        await asyncio.sleep(0.05)
+        try:
+            loaded_model = await asyncio.to_thread(
+                load_model_from_mlflow_with_progress,
+                config_dict,
+                model_type,
+                asyncio.get_running_loop(),
+            )
+        except Exception as e:
+            loaded_model = None
+            model_name = f"synapse-{config_dict['experiment']}_{model_type}"
+            if is_missing_mlflow_model(e):
+                print(f"Model {model_name} not found in MLflow; continuing without it.")
+            else:
+                load_error = e
+        if (
+            state.experiment != experiment
+            or state.model_type_verbose != model_type_verbose
+        ):
+            state.model_downloading = False
+            state.model_download_status = None
+            state.model_download_progress = None
+            state.flush()
+            return
+        update_kwargs["preloaded_model_manager"] = ModelManager(
+            config_dict=config_dict,
+            model_type=model_type,
+            loaded_model=loaded_model,
+        )
+    try:
+        update(**update_kwargs)
+        if load_error is not None:
+            title = f"Unable to load model {model_type}"
+            msg = f"Error occurred when loading model from MLflow: {load_error}"
+            add_error(title, msg)
+            state.flush()
+    finally:
+        if show_model_download:
+            state.model_downloading = False
+            state.model_download_status = None
+            state.model_download_progress = None
+            state.flush()
 
 
 @state.change(
@@ -127,70 +211,68 @@ def update(
     "simulation_calibration",
     "use_inferred_calibration",
 )
-def reset(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        print(f"Reacting to state change in {state.modified_keys}...")
-        if any(
-            key in state.modified_keys
-            for key in [
-                "experiment",
-                "experiment_date_range",
-            ]
-        ):
-            update(
-                reset_model=True,
-                reset_output=True,
-                reset_parameters=True,
-                reset_calibration=True,
-                reset_plots=True,
-                reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
-                reset_gui_route_chat=False,
-                reset_gui_layout=False,
-            )
-        elif any(
-            key in state.modified_keys
-            for key in [
-                "model_type_verbose",
-                "model_training_time",
-            ]
-        ):
-            update(
-                reset_model=True,
-                reset_output=False,
-                reset_parameters=False,
-                reset_calibration=False,
-                reset_plots=True,
-                reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
-                reset_gui_route_chat=False,
-                reset_gui_layout=False,
-            )
-        elif any(
-            key in state.modified_keys
-            for key in [
-                "displayed_output",
-                "parameters",
-                "opacity",
-                "parameters_min",
-                "parameters_max",
-                "parameters_show_all",
-                "simulation_calibration",
-                "use_inferred_calibration",
-            ]
-        ):
-            update(
-                reset_model=False,
-                reset_output=False,
-                reset_parameters=False,
-                reset_calibration=False,
-                reset_plots=True,
-                reset_gui_route_home=False,
-                reset_gui_route_nersc=False,
-                reset_gui_route_chat=False,
-                reset_gui_layout=False,
-            )
+async def reset(**kwargs):
+    experiment_keys = {
+        "experiment",
+        "experiment_date_range",
+    }
+    model_keys = {
+        "model_type_verbose",
+        "model_training_time",
+    }
+    plot_keys = {
+        "displayed_output",
+        "parameters",
+        "opacity",
+        "parameters_min",
+        "parameters_max",
+        "parameters_show_all",
+        "simulation_calibration",
+        "use_inferred_calibration",
+    }
+    watched_keys = experiment_keys | model_keys | plot_keys
+    modified_keys = set(state.modified_keys) & watched_keys
+
+    if not modified_keys or modified_keys == watched_keys:
+        return
+
+    print(f"Reacting to state change in {modified_keys}...")
+    if modified_keys & experiment_keys:
+        await update_with_model_download_indicator(
+            reset_model=True,
+            reset_output=True,
+            reset_parameters=True,
+            reset_calibration=True,
+            reset_plots=True,
+            reset_gui_route_home=True,
+            reset_gui_route_nersc=False,
+            reset_gui_route_chat=False,
+            reset_gui_layout=False,
+        )
+    elif modified_keys & model_keys:
+        await update_with_model_download_indicator(
+            reset_model=True,
+            reset_output=False,
+            reset_parameters=False,
+            reset_calibration=False,
+            reset_plots=True,
+            reset_gui_route_home=True,
+            reset_gui_route_nersc=False,
+            reset_gui_route_chat=False,
+            reset_gui_layout=False,
+        )
+    elif modified_keys & plot_keys:
+        update(
+            reset_model=False,
+            reset_output=False,
+            reset_parameters=False,
+            reset_calibration=False,
+            reset_plots=True,
+            reset_gui_route_home=False,
+            reset_gui_route_nersc=False,
+            reset_gui_route_chat=False,
+            reset_gui_layout=False,
+        )
 
 
 def find_simulation(event, db):
@@ -345,7 +427,8 @@ def home_route():
                         with vuetify.VContainer(
                             style=f"height: {400 * len(state.parameters)}px;"
                         ):
-                            figure = plotly.Figure(
+                            plotly.Figure(
+                                state_variable_name=PLOTS_FIGURE_STATE,
                                 display_mode_bar="true",
                                 config={"responsive": True},
                                 click=(
@@ -353,7 +436,6 @@ def home_route():
                                     "[utils.safe($event)]",
                                 ),
                             )
-                            ctrl.figure_update = figure.update
 
 
 # NERSC route
@@ -382,6 +464,8 @@ def chat_route():
 # GUI layout
 def gui_setup():
     print("Setting GUI layout...")
+    if GENESIS_LOGO_URL:
+        state.trame__favicon = GENESIS_LOGO_URL
     with SinglePageWithDrawerLayout(server) as layout:
         layout.title.set_text("Synapse")
         # add toolbar components

@@ -32,6 +32,10 @@ def initialize_state():
     state.model_training_mode = "local"
     state.model_training_status = None
     state.model_training_time = None
+    state.model_available = False
+    state.model_downloading = False
+    state.model_download_status = None
+    state.model_download_progress = None
     # Optimization
     state.optimization_type = "Maximize"
     state.optimization_status = None
