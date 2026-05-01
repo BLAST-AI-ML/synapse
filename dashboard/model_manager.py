@@ -47,6 +47,12 @@ SBATCH_SUBMIT_OPTION_MAP = {
 }
 SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
 IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker.
+IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
+    "constraint": "slurm.constraint",
+    "gpus-per-node": "slurm.gpus-per-node",
+    "ntasks-per-node": "slurm.ntasks-per-node",
+    "queue": "slurm.qos",
+}
 # Match model=$1 or model=${1}, with optional comment.
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
 # Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments.
@@ -142,6 +148,15 @@ def parse_sbatch_submit_options(script_path):
     return submit_options
 
 
+def build_iri_slurm_submit_options(sbatch_submit_options):
+    # IRI submits a PSI/J job spec. Slurm-specific options need the `slurm.`
+    # custom-attribute prefix so they render as SBATCH directives.
+    return {
+        IRI_SLURM_CUSTOM_ATTRIBUTE_MAP.get(option, option): value
+        for option, value in sbatch_submit_options.items()
+    }
+
+
 def collapse_shell_command(lines):
     # Preserve trailing-backslash continuations before tokenizing with shlex.
     command_parts = []
@@ -179,13 +194,19 @@ def parse_shell_variable_assignments(lines):
     return variables
 
 
-def expand_iri_launch_argument(argument, model_type, variables):
-    # Expand the simple $name and ${name} forms used by training_pm.sbatch.
+def expand_iri_shell_command(command, model_type, variables):
+    # Expand values we can resolve locally while preserving runtime shell
+    # variables like $HOME for the remote login shell on Perlmutter.
+    expanded = command
     replacements = {**variables, "model": model_type}
-    for name, value in replacements.items():
-        argument = argument.replace(f"${{{name}}}", value)
-        argument = argument.replace(f"${name}", value)
-    return argument
+    for _ in replacements:
+        previous = expanded
+        for name, value in replacements.items():
+            expanded = expanded.replace(f"${{{name}}}", value)
+            expanded = expanded.replace(f"${name}", value)
+        if expanded == previous:
+            break
+    return expanded
 
 
 def parse_iri_training_launch_spec(script_path, model_type):
@@ -219,15 +240,17 @@ def parse_iri_training_launch_spec(script_path, model_type):
     launch_command = collapse_shell_command(launch_lines)
     launch_tokens = shlex.split(launch_command)
     variables = parse_shell_variable_assignments(pre_launch_lines)
-    # IRI submit expects launcher, executable, and arguments separately.
+    # IRI submit expects launcher, executable, and arguments separately. `run`
+    # is a podman-hpc subcommand, not part of the executable path.
     launch_prefix_length = len(IRI_TRAINING_LAUNCH_PREFIX)
-    launch_prefix = launch_tokens[:launch_prefix_length]
-    launcher, *executable_tokens = launch_prefix
-    executable = " ".join(executable_tokens)
-    arguments = [
-        expand_iri_launch_argument(argument, model_type, variables)
-        for argument in launch_tokens[launch_prefix_length:]
-    ]
+    if tuple(launch_tokens[:launch_prefix_length]) != IRI_TRAINING_LAUNCH_PREFIX:
+        raise ValueError("IRI training launch command does not match expected prefix")
+
+    launcher = launch_tokens[0]
+    executable = "/bin/bash"
+    shell_command = re.sub(r"^\s*srun\s+", "", launch_command, count=1)
+    shell_command = expand_iri_shell_command(shell_command, model_type, variables)
+    arguments = ["-lc", shell_command]
 
     return {
         "arguments": arguments,
@@ -474,9 +497,18 @@ class ModelManager:
             training_script_path = find_training_script_path()
             model_type = model_type_dict[state.model_type_verbose]
             # Reuse SBATCH directives so IRI submissions match the batch script.
-            submit_options = parse_sbatch_submit_options(training_script_path)
+            sbatch_submit_options = parse_sbatch_submit_options(training_script_path)
+            submit_options = build_iri_slurm_submit_options(sbatch_submit_options)
             launch_spec = parse_iri_training_launch_spec(
                 training_script_path, model_type
+            )
+            print(
+                "IRI training submit options: "
+                f"account={submit_options['account']}, "
+                f"qos={submit_options['slurm.qos']}, "
+                f"constraint={submit_options['slurm.constraint']}, "
+                f"nodes={submit_options['nodes']}, "
+                f"duration={submit_options['duration']}"
             )
 
             # Training script is parsed locally; only config.yaml is uploaded.
