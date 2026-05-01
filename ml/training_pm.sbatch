@@ -1,4 +1,5 @@
 #!/bin/bash -l
+set -euo pipefail
 
 #SBATCH -t 00:15:00
 #SBATCH -N 1
@@ -19,13 +20,29 @@ model=${1}  # e.g., "NN", "GP", etc.
 #       Ids, but should compare image Digests.
 #       We did not find a way to compare digests between the docker registry
 #       and the local podman-hpc images (they change, conversion?)
-SECONDS=0                      # built-in bash timer: reset
-source $HOME/registry.profile  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
+SECONDS=0  # built-in bash timer: reset
+REGISTRY_PROFILE="$HOME/registry.profile"
+DB_ENV_FILE="$HOME/db-podman.profile"
 REGISTRY_NAME="registry.nersc.gov"
 IMAGE_NAME="m558/superfacility/synapse-ml"
 IMAGE_VERSION="latest"
 
-podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
+if [ ! -r "${REGISTRY_PROFILE}" ]; then
+    echo "Missing registry credentials file: ${REGISTRY_PROFILE}" >&2
+    echo "Create it with REGISTRY_USER and REGISTRY_PASSWORD for ${REGISTRY_NAME}." >&2
+    exit 1
+fi
+source "${REGISTRY_PROFILE}"  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
+: "${REGISTRY_USER:?REGISTRY_USER must be set in ${REGISTRY_PROFILE}}"
+: "${REGISTRY_PASSWORD:?REGISTRY_PASSWORD must be set in ${REGISTRY_PROFILE}}"
+
+if [ ! -r "${DB_ENV_FILE}" ]; then
+    echo "Missing container environment file: ${DB_ENV_FILE}" >&2
+    echo "Create it with SF_DB_READONLY_PASSWORD and AM_SC_API_KEY." >&2
+    exit 1
+fi
+
+printf '%s\n' "${REGISTRY_PASSWORD}" | podman-hpc login --username "${REGISTRY_USER}" --password-stdin "${REGISTRY_NAME}"
 # As the local image, we use the digest id.
 #   podman-hpc lists to entries with the same digest id,
 #   one local and one migrated (read-write and read-only).
@@ -35,21 +52,21 @@ LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_N
 OCI_INDEX_TYPE="application/vnd.oci.image.index.v1+json"
 OCI_MANIFEST_TYPE="application/vnd.oci.image.manifest.v1+json"
 #   first we unwarp the provenance information to pick the right image manifest
-MANIFEST_INDEX=$(curl -s \
+MANIFEST_INDEX=$(curl -fsS \
     -H "Accept: ${OCI_INDEX_TYPE}" \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
-    jq -r '.manifests[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest' || echo "NOOCI")
+    jq -er '.manifests[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest' || echo "NOOCI")
 #   fallback for old Docker builders without OCI index
 if [ "${MANIFEST_INDEX}" == "NOOCI" ]; then
     MANIFEST_INDEX=${IMAGE_VERSION}
 fi
 #   then we download the manifest of the image and parse out the config digest SHA
-REMOTE_SHA=$(curl -s \
+REMOTE_SHA=$(curl -fsS \
     -H "Accept: ${OCI_MANIFEST_TYPE}" \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${MANIFEST_INDEX}" | \
-    jq -r '.config.digest')
+    jq -er '.config.digest')
 
 if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
     echo "Ids are different."
@@ -67,6 +84,6 @@ echo "Container check/pull took ${SECONDS} seconds."
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
     -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
-    --env-file $HOME/db-podman.profile \
+    --env-file "${DB_ENV_FILE}" \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
     python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}
