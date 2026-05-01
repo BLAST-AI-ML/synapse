@@ -89,7 +89,10 @@ def load_model_from_mlflow(config_dict, model_type):
     mlflow.set_tracking_uri(config_dict["mlflow"]["tracking_uri"])
     # When using the AmSC MLflow: inject the X-Api-Key into the requests to authenticate with the MLflow server
     # (See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch)
-    if config_dict["mlflow"]["tracking_uri"] == "https://mlflow.american-science-cloud.org":
+    if (
+        config_dict["mlflow"]["tracking_uri"]
+        == "https://mlflow.american-science-cloud.org"
+    ):
         enable_amsc_x_api_key(config_dict)
 
     experiment = config_dict["experiment"]
@@ -579,7 +582,9 @@ class ModelManager:
                                 vuetify.VSpacer()
                                 html.Span(
                                     v_if=("model_download_progress !== null",),
-                                    v_text=("`${Math.round(model_download_progress)}%`",),
+                                    v_text=(
+                                        "`${Math.round(model_download_progress)}%`",
+                                    ),
                                 )
                             vuetify.VProgressLinear(
                                 indeterminate=("model_download_progress === null",),
