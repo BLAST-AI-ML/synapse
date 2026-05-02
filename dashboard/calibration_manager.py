@@ -4,6 +4,28 @@ from error_manager import add_error
 import copy
 
 
+def build_inferred_calibration(variables, alpha_values, beta_values):
+    """
+    Write alpha_inferred / beta_inferred into state.simulation_calibration for each
+    variable that has a matching 'depends_on' entry.
+
+    variables: dict mapping config key -> variable dict with a 'name' field
+               (i.e. config_dict['inputs'] or config_dict['outputs'])
+    alpha_values, beta_values: tensors or lists, one value per variable (same order)
+    """
+    depends_on_lookup = {
+        entry["depends_on"]: entry
+        for entry in state.simulation_calibration.values()
+        if "depends_on" in entry
+    }
+    for i, var_info in enumerate(variables.values()):
+        exp_name = var_info["name"]
+        if exp_name in depends_on_lookup:
+            entry = depends_on_lookup[exp_name]
+            entry["alpha_inferred"] = float(alpha_values[i])
+            entry["beta_inferred"] = float(beta_values[i])
+
+
 class SimulationCalibrationManager:
     def __init__(self, simulation_calibration):
         state.simulation_calibration = copy.deepcopy(simulation_calibration)
