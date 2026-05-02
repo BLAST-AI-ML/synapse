@@ -121,7 +121,13 @@ class ParametersManager:
             state.simulation_running = True
             state.simulation_running_status = "Submitting"
             state.flush()
-            if await self.simulation_kernel():
+            if state.simulation_running_mode == "sfapi":
+                result = await self.simulation_kernel()
+            else:
+                raise ValueError(
+                    f"Unsupported simulation mode: {state.simulation_running_mode}"
+                )
+            if result:
                 state.simulation_running_time = datetime.now().strftime(
                     "%Y-%m-%d %H:%M"
                 )
@@ -136,6 +142,9 @@ class ParametersManager:
             msg = f"Error occurred when running simulation: {e}"
             add_error(title, msg)
             print(msg)
+            state.simulation_running = False
+            state.simulation_running_status = "Failed"
+            state.flush()
 
     def simulation_trigger(self):
         try:
@@ -241,7 +250,7 @@ class ParametersManager:
                                             "Simulate",
                                             click=self.simulation_trigger,
                                             disabled=(
-                                                "simulation_running || sfapi_perlmutter_status != 'active' || !simulatable",
+                                                "simulation_running || !simulatable || simulation_running_mode !== 'sfapi' || sfapi_perlmutter_status !== 'active'",
                                             ),
                                             style="text-transform: none;",
                                         )

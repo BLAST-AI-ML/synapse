@@ -69,9 +69,7 @@ def update(
     # derive execution mode from execution_mode in the experiment configuration file
     execution_mode = config_dict.get("execution_mode") or {}
     state.model_training_mode = execution_mode.get("ml_training", "local")
-    # sync hpc_connection to the execution mode set in the experiment configuration file
-    # (TODO decouple ML training mode and simulation running mode in the future)
-    state.hpc_connection = state.model_training_mode
+    state.simulation_running_mode = execution_mode.get("simulation", "local")
     db = load_database(config_dict)
     exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
@@ -364,8 +362,8 @@ def hpc_route():
     print("Setting GUI HPC route...")
     with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
-            with vuetify.VCol(cols=4):
-                # Render the backend selector and its matching credentials form.
+            with vuetify.VCol(cols=12):
+                # Render the backend selector and both API credential cards.
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_hpc_card()
