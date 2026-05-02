@@ -381,7 +381,7 @@ def build_lume_model(
 
     if model_type == "GP":
         # Clear prediction_strategy on each sub-GP before moving to CPU.
-        # It is set during calibration's posterior() call and holds cached CUDA
+        # It is set during training call and holds cached CUDA
         # tensors (e.g. Cholesky factors) that are plain Python attributes, so
         # .cpu() / _apply() won't reach them.
         for sub_gp in model.models:
