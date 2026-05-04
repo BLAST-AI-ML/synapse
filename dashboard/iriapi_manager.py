@@ -11,10 +11,10 @@ IRI_ACCESS_TOKEN_ENV = "IRI_ACCESS_TOKEN"
 
 
 def create_iriapi_client():
-    iriapi_key = (state.iriapi_key or "").strip()
-    if not iriapi_key:
-        raise ValueError("Missing AmSC IRI API token")
-    # Token registration is kept here for quick reactivation if needed.
+    # TODO Alternative authentication
+    # iriapi_key = (state.iriapi_key or "").strip()
+    # if not iriapi_key:
+    #    raise ValueError("Missing AmSC IRI API token")
     # client = Client(token=iriapi_key)
     # client.register_facility(
     #     "nersc",
