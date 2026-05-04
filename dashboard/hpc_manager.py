@@ -10,12 +10,9 @@ EXECUTION_MODE_LABELS = {
     "iriapi": "AmSC IRI API",
     "sfapi": "NERSC Superfacility API",
 }
-
-
-def execution_mode_items():
-    return [
-        {"title": label, "value": mode} for mode, label in EXECUTION_MODE_LABELS.items()
-    ]
+EXECUTION_MODE_ITEMS = [
+    {"title": label, "value": mode} for mode, label in EXECUTION_MODE_LABELS.items()
+]
 
 
 def _log_mode_change(state_key, description):
@@ -47,7 +44,7 @@ def load_hpc_card():
                             vuetify.VSelect(
                                 v_model=("simulation_running_mode",),
                                 label="Simulations",
-                                items=(execution_mode_items(),),
+                                items=(EXECUTION_MODE_ITEMS,),
                                 dense=True,
                                 hide_details=True,
                             )
@@ -55,7 +52,7 @@ def load_hpc_card():
                             vuetify.VSelect(
                                 v_model=("model_training_mode",),
                                 label="ML Training",
-                                items=(execution_mode_items(),),
+                                items=(EXECUTION_MODE_ITEMS,),
                                 dense=True,
                                 hide_details=True,
                             )
