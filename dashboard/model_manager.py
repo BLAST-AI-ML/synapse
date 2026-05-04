@@ -232,6 +232,7 @@ def expand_iri_shell_command(command, model_type, variables):
     # variables like $HOME for the remote login shell on Perlmutter.
     expanded = command
     replacements = {**variables, "model": model_type}
+    # Repeat so static assignment chains like IMAGE=${REGISTRY}/${NAME} resolve.
     for _ in replacements:
         previous = expanded
         for name, value in replacements.items():
