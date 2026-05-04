@@ -85,22 +85,19 @@ def parse_slurm_duration(duration):
     time_values = [int(v) for v in time_part.split(":")]
     n = len(time_values)
 
-    # Slurm treats ambiguous two-part durations differently with a day prefix.
-    if n == 3:
-        hours, minutes, secs = time_values
-    elif n == 2:
-        hours, minutes, secs = (
-            (time_values[0], time_values[1], 0)
-            if has_days
-            else (0, time_values[0], time_values[1])
-        )
-    elif n == 1:
-        hours, minutes, secs = (
-            (time_values[0], 0, 0) if has_days else (0, time_values[0], 0)
-        )
-    else:
+    if n > 3:
         raise ValueError(f"Unsupported Slurm duration format: {duration}")
 
+    # Slurm treats ambiguous durations differently with a day prefix:
+    # D-H[:M[:S]], H:M:S, M:S, or M.
+    if has_days:
+        time_values += [0] * (3 - n)
+    elif n == 1:
+        time_values = [0, time_values[0], 0]
+    else:
+        time_values = [0] * (3 - n) + time_values
+
+    hours, minutes, secs = time_values
     return days * 86400 + hours * 3600 + minutes * 60 + secs
 
 
