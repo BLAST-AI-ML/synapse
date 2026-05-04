@@ -18,24 +18,21 @@ def execution_mode_items():
     ]
 
 
+def _log_mode_change(state_key, description):
+    if len(state.modified_keys) == 1:
+        value = state[state_key]
+        label = EXECUTION_MODE_LABELS.get(value, value)
+        print(f"{description} execution mode changed to {label}")
+
+
 @state.change("simulation_running_mode")
 def log_simulation_running_mode(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        label = EXECUTION_MODE_LABELS.get(
-            state.simulation_running_mode, state.simulation_running_mode
-        )
-        print(f"Simulation execution mode changed to {label}")
+    _log_mode_change("simulation_running_mode", "Simulation")
 
 
 @state.change("model_training_mode")
 def log_model_training_mode(**kwargs):
-    # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        label = EXECUTION_MODE_LABELS.get(
-            state.model_training_mode, state.model_training_mode
-        )
-        print(f"ML training execution mode changed to {label}")
+    _log_mode_change("model_training_mode", "ML training")
 
 
 def load_hpc_card():
