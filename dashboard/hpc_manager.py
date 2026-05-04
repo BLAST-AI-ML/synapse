@@ -21,7 +21,7 @@ def execution_mode_items():
 def _log_mode_change(state_key, description):
     if len(state.modified_keys) == 1:
         value = state[state_key]
-        label = EXECUTION_MODE_LABELS.get(value, value)
+        label = EXECUTION_MODE_LABELS.get(value) or value
         print(f"{description} execution mode changed to {label}")
 
 
