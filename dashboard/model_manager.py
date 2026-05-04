@@ -1,9 +1,10 @@
 import asyncio
+from copy import deepcopy
 from datetime import datetime
 import os
 import re
 import shlex
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 
 import mlflow
@@ -47,6 +48,9 @@ SBATCH_SUBMIT_OPTION_MAP = {
 }
 SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
 IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker.
+TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
+TRAINING_CONFIG_REMOTE_PATH = f"{TRAINING_REMOTE_DIR}/config.yaml"
+TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
 IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
     "constraint": "slurm.constraint",
     "gpus-per-node": "slurm.gpus-per-node",
@@ -57,6 +61,20 @@ IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
 # Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments.
 SHELL_ASSIGNMENT_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.+?)(?:\s+#.*)?$")
+
+
+def line_starts_with_tokens(line, expected_tokens):
+    # Remove a trailing shell continuation so shlex can inspect the line prefix.
+    candidate = line.strip()
+    if candidate.endswith("\\"):
+        candidate = candidate[:-1].rstrip()
+
+    try:
+        tokens = shlex.split(candidate, comments=True)
+    except ValueError:
+        return False
+
+    return tuple(tokens[: len(expected_tokens)]) == expected_tokens
 
 
 def find_training_script_path():
@@ -73,7 +91,7 @@ def find_training_script_path():
 
 
 def parse_slurm_duration(duration):
-    # Normalize Slurm duration variants to the seconds expected by IRI.
+    # Normalize Slurm duration variants to the seconds expected by AmSC IRI API.
     days = 0
     time_part = duration.strip()
     has_days = "-" in time_part
@@ -102,7 +120,7 @@ def parse_slurm_duration(duration):
 
 
 def parse_sbatch_submit_options(script_path):
-    # Extract only SBATCH fields that map cleanly onto IRI submit options.
+    # Extract only SBATCH fields that map cleanly onto AmSC IRI API submit options.
     submit_options = {}
     with open(script_path) as script_file:
         for line in script_file:
@@ -139,19 +157,37 @@ def parse_sbatch_submit_options(script_path):
         missing_list = ", ".join(sorted(missing_options))
         raise ValueError(f"Missing required SBATCH option(s): {missing_list}")
 
-    # Convert values to the types expected by the IRI submit endpoint.
+    # Convert values to the types expected by the AmSC IRI API submit endpoint.
     submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
     submit_options["nodes"] = int(submit_options["nodes"])
     return submit_options
 
 
 def build_iri_slurm_submit_options(sbatch_submit_options):
-    # IRI submits a PSI/J job spec. Slurm-specific options need the `slurm.`
+    # AmSC IRI API submits a PSI/J job spec. Slurm-specific options need the `slurm.`
     # custom-attribute prefix so they render as SBATCH directives.
     return {
         IRI_SLURM_CUSTOM_ATTRIBUTE_MAP.get(option, option): value
         for option, value in sbatch_submit_options.items()
     }
+
+
+def build_remote_training_config_path(experiment, model_type):
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    safe_experiment = re.sub(r"[^A-Za-z0-9_.-]+", "-", experiment).strip("-")
+    safe_model_type = re.sub(r"[^A-Za-z0-9_.-]+", "-", model_type).strip("-")
+    config_name = f"config-{safe_experiment}-{safe_model_type}-{timestamp}.yaml"
+    return f"{TRAINING_REMOTE_DIR}/{config_name}"
+
+
+def replace_training_config_mount(command, remote_config_path):
+    default_mount = f"{TRAINING_CONFIG_REMOTE_PATH}:{TRAINING_CONFIG_CONTAINER_PATH}"
+    remote_mount = f"{remote_config_path}:{TRAINING_CONFIG_CONTAINER_PATH}"
+    if default_mount not in command:
+        raise ValueError(
+            "Could not find the training config bind mount in the launch command"
+        )
+    return command.replace(default_mount, remote_mount, 1)
 
 
 def collapse_shell_command(lines):
@@ -206,7 +242,7 @@ def expand_iri_shell_command(command, model_type, variables):
     return expanded
 
 
-def parse_iri_training_launch_spec(script_path, model_type):
+def parse_iri_training_launch_spec(script_path, model_type, remote_config_path=None):
     # Split the batch script into setup lines and the podman-hpc launch command.
     pre_launch_lines = []
     launch_lines = []
@@ -219,7 +255,7 @@ def parse_iri_training_launch_spec(script_path, model_type):
 
             if found_launch:
                 launch_lines.append(line)
-            elif stripped.startswith(" ".join(IRI_TRAINING_LAUNCH_PREFIX)):
+            elif line_starts_with_tokens(stripped, IRI_TRAINING_LAUNCH_PREFIX):
                 found_launch = True
                 launch_lines.append(line)
             elif SCRIPT_MODEL_ARGUMENT_RE.match(stripped):
@@ -232,21 +268,18 @@ def parse_iri_training_launch_spec(script_path, model_type):
                 pre_launch_lines.append(line)
 
     if not launch_lines:
-        raise ValueError("Could not find the IRI training launch command")
+        raise ValueError("Could not find the AmSC IRI API training launch command")
 
     launch_command = collapse_shell_command(launch_lines)
-    launch_tokens = shlex.split(launch_command)
     variables = parse_shell_variable_assignments(pre_launch_lines)
-    # IRI submit expects launcher, executable, and arguments separately. `run`
-    # is a podman-hpc subcommand, not part of the executable path.
-    launch_prefix_length = len(IRI_TRAINING_LAUNCH_PREFIX)
-    if tuple(launch_tokens[:launch_prefix_length]) != IRI_TRAINING_LAUNCH_PREFIX:
-        raise ValueError("IRI training launch command does not match expected prefix")
-
-    launcher = launch_tokens[0]
+    launcher = IRI_TRAINING_LAUNCH_PREFIX[0]
     executable = "/bin/bash"
-    shell_command = re.sub(r"^\s*srun\s+", "", launch_command, count=1)
+    shell_command = re.sub(
+        rf"^\s*{re.escape(launcher)}\s+", "", launch_command, count=1
+    )
     shell_command = expand_iri_shell_command(shell_command, model_type, variables)
+    if remote_config_path is not None:
+        shell_command = replace_training_config_mount(shell_command, remote_config_path)
     arguments = ["-lc", shell_command]
 
     return {
@@ -419,22 +452,39 @@ class ModelManager:
         # Notify Trame that the dict was modified in-place, so the UI updates
         state.dirty("simulation_calibration")
 
-    def _prepare_training_config(self, temp_dir):
+    def _prepare_training_config(
+        self,
+        temp_dir,
+        experiment,
+        experiment_date_range,
+        simulation_calibration,
+    ):
         """Prepare a training configuration file in the given temporary directory,
         updated with information from the dashboard.
 
         Returns the path to the written configuration file.
         """
-        config_dict = load_config_dict(state.experiment)
-        config_dict["simulation_calibration"] = state.simulation_calibration
-        date_filter = create_date_filter(state.experiment_date_range)
+        config_dict = load_config_dict(experiment)
+        if config_dict.get("experiment") != experiment:
+            raise ValueError(
+                "Selected experiment does not match config file experiment: "
+                f"{experiment} != {config_dict.get('experiment')}"
+            )
+        config_dict["simulation_calibration"] = simulation_calibration
+        date_filter = create_date_filter(experiment_date_range)
         config_dict["date_filter"] = date_filter
         config_path = Path(temp_dir) / "config.yaml"
         with open(config_path, "w") as f:
             yaml.dump(config_dict, f)
         return config_path
 
-    async def _training_kernel_sfapi(self):
+    async def _training_kernel_sfapi(
+        self,
+        experiment,
+        model_type,
+        experiment_date_range,
+        simulation_calibration,
+    ):
         try:
             # create an authenticated client
             async with AsyncClient(
@@ -443,14 +493,24 @@ class ModelManager:
                 perlmutter = await client.compute(Machine.perlmutter)
                 # upload the configuration file to NERSC
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    config_path = self._prepare_training_config(temp_dir)
-                    # define the target path on NERSC
-                    target_path = "/global/cfs/cdirs/m558/superfacility/model_training"
-                    [target_path] = await perlmutter.ls(target_path, directory=True)
+                    config_path = self._prepare_training_config(
+                        temp_dir,
+                        experiment,
+                        experiment_date_range,
+                        simulation_calibration,
+                    )
+                    remote_config_path = build_remote_training_config_path(
+                        experiment,
+                        model_type,
+                    )
+                    [target_path] = await perlmutter.ls(
+                        TRAINING_REMOTE_DIR, directory=True
+                    )
                     with open(config_path, "rb") as temp_file:
                         print("Uploading configuration file to NERSC...")
-                        temp_file.filename = "config.yaml"
+                        temp_file.filename = PurePosixPath(remote_config_path).name
                         await target_path.upload(temp_file)
+                    print(f"Uploaded configuration file to {remote_config_path}")
 
                 # set the path of the script used to submit the training job on NERSC
                 training_script_path = find_training_script_path()
@@ -460,8 +520,11 @@ class ModelManager:
                 # replace the --model argument in the python command with the current model type from the state
                 training_script = re.sub(
                     pattern=r"--model \$\{model\}",
-                    repl=rf"--model {model_type_dict[state.model_type_verbose]}",
+                    repl=rf"--model {model_type}",
                     string=training_script,
+                )
+                training_script = replace_training_config_mount(
+                    training_script, remote_config_path
                 )
 
                 # submit the training job through the Superfacility API
@@ -480,7 +543,13 @@ class ModelManager:
             state.flush()
             return False
 
-    async def _training_kernel_iriapi(self):
+    async def _training_kernel_iriapi(
+        self,
+        experiment,
+        model_type,
+        experiment_date_range,
+        simulation_calibration,
+    ):
         try:
             # Create an authenticated client
             client = create_iriapi_client()
@@ -490,17 +559,18 @@ class ModelManager:
             perlmutter = await asyncio.to_thread(nersc.resource, "compute")
             # Get the CFS resource for uploading files shared with compute jobs
             cfs = await asyncio.to_thread(nersc.resource, "cfs")
-            target_dir = "/global/cfs/cdirs/m558/superfacility/model_training"
             training_script_path = find_training_script_path()
-            model_type = model_type_dict[state.model_type_verbose]
-            # Reuse SBATCH directives so IRI submissions match the batch script.
+            remote_config_path = build_remote_training_config_path(
+                experiment, model_type
+            )
+            # Reuse SBATCH directives so AmSC IRI API submissions match the batch script.
             sbatch_submit_options = parse_sbatch_submit_options(training_script_path)
             submit_options = build_iri_slurm_submit_options(sbatch_submit_options)
             launch_spec = parse_iri_training_launch_spec(
-                training_script_path, model_type
+                training_script_path, model_type, remote_config_path
             )
             print(
-                "IRI training submit options: "
+                "AmSC IRI API training submit options: "
                 f"account={submit_options['account']}, "
                 f"qos={submit_options['slurm.qos']}, "
                 f"constraint={submit_options['slurm.constraint']}, "
@@ -510,19 +580,32 @@ class ModelManager:
 
             # Training script is parsed locally; only config.yaml is uploaded.
             with tempfile.TemporaryDirectory() as temp_dir:
-                config_path = self._prepare_training_config(temp_dir)
+                config_path = self._prepare_training_config(
+                    temp_dir,
+                    experiment,
+                    experiment_date_range,
+                    simulation_calibration,
+                )
                 print("Uploading configuration file to NERSC...")
                 upload_task = await asyncio.to_thread(
                     cfs.fs.upload,
                     config_path,
-                    f"{target_dir}/config.yaml",
+                    remote_config_path,
+                    file_name=PurePosixPath(remote_config_path).name,
                 )
-                await asyncio.to_thread(upload_task.wait)
+                upload_task = await asyncio.to_thread(upload_task.wait)
+                if upload_task.state != "completed":
+                    raise RuntimeError(
+                        "Uploading configuration file to NERSC failed "
+                        f"(task {upload_task.id} ended with state "
+                        f"{upload_task.state})"
+                    )
+                print(f"Uploaded training configuration to {remote_config_path}")
 
             # Submit the training job through the AmSC IRI API
             iriapi_job = await asyncio.to_thread(
                 perlmutter.submit,
-                directory=target_dir,
+                directory=TRAINING_REMOTE_DIR,
                 **submit_options,
                 **launch_spec,
             )
@@ -541,14 +624,24 @@ class ModelManager:
             state.flush()
             return False
 
-    async def _training_kernel_local(self):
+    async def _training_kernel_local(
+        self,
+        experiment,
+        model_type,
+        experiment_date_range,
+        simulation_calibration,
+    ):
         try:
             ml_dir = (Path(__file__).parent / "../ml").resolve()
             train_model_path = ml_dir / "train_model.py"
-            model_type = model_type_dict[state.model_type_verbose]
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                config_path = self._prepare_training_config(temp_dir)
+                config_path = self._prepare_training_config(
+                    temp_dir,
+                    experiment,
+                    experiment_date_range,
+                    simulation_calibration,
+                )
                 state.model_training_status = "Running"
                 state.flush()
                 print(
@@ -598,19 +691,37 @@ class ModelManager:
     async def training_async(self):
         try:
             print("Training model...")
+            experiment = state.experiment
+            model_type = model_type_dict[state.model_type_verbose]
+            training_mode = state.model_training_mode
+            experiment_date_range = list(state.experiment_date_range or [])
+            simulation_calibration = deepcopy(state.simulation_calibration)
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
-            if state.model_training_mode == "local":
-                result = await self._training_kernel_local()
-            elif state.model_training_mode == "sfapi":
-                result = await self._training_kernel_sfapi()
-            elif state.model_training_mode == "iriapi":
-                result = await self._training_kernel_iriapi()
-            else:
-                raise ValueError(
-                    f"Unsupported training mode: {state.model_training_mode}"
+            if training_mode == "local":
+                result = await self._training_kernel_local(
+                    experiment,
+                    model_type,
+                    experiment_date_range,
+                    simulation_calibration,
                 )
+            elif training_mode == "sfapi":
+                result = await self._training_kernel_sfapi(
+                    experiment,
+                    model_type,
+                    experiment_date_range,
+                    simulation_calibration,
+                )
+            elif training_mode == "iriapi":
+                result = await self._training_kernel_iriapi(
+                    experiment,
+                    model_type,
+                    experiment_date_range,
+                    simulation_calibration,
+                )
+            else:
+                raise ValueError(f"Unsupported training mode: {training_mode}")
             if result:
                 state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
                 state.flush()
