@@ -121,13 +121,11 @@ class ParametersManager:
             state.simulation_running = True
             state.simulation_running_status = "Submitting"
             state.flush()
-            if state.simulation_running_mode == "sfapi":
-                result = await self.simulation_kernel()
-            else:
+            if state.simulation_running_mode != "sfapi":
                 raise ValueError(
                     f"Unsupported simulation mode: {state.simulation_running_mode}"
                 )
-            if result:
+            if await self.simulation_kernel():
                 state.simulation_running_time = datetime.now().strftime(
                     "%Y-%m-%d %H:%M"
                 )
