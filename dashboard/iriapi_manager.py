@@ -1,6 +1,7 @@
 import asyncio
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 from amsc_client import Client
 from trame.widgets import vuetify3 as vuetify
@@ -9,15 +10,31 @@ from error_manager import add_error
 from state_manager import state
 
 
-def parse_iriapi_credentials():
+IRIAPI_CREDENTIALS_PATH = Path.home() / ".amsc" / "credentials.json"
+
+
+def get_uploaded_iriapi_credentials():
     content = state.iriapi_key_dict["content"]
     if isinstance(content, dict):
-        credentials = content
-    else:
-        if isinstance(content, (bytes, bytearray)):
-            content = bytes(content).decode("utf-8")
-        credentials = json.loads(content)
+        return content
 
+    if isinstance(content, (bytes, bytearray)):
+        content = bytes(content).decode("utf-8")
+
+    return json.loads(content)
+
+
+def write_iriapi_credentials(credentials):
+    IRIAPI_CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    IRIAPI_CREDENTIALS_PATH.write_text(
+        json.dumps(credentials, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    IRIAPI_CREDENTIALS_PATH.chmod(0o600)
+    print(f"Wrote AmSC IRI API credentials to {IRIAPI_CREDENTIALS_PATH}")
+
+
+def parse_iriapi_credentials(credentials):
     if not isinstance(credentials, dict) or len(credentials) != 1:
         raise ValueError(
             "Uploaded AmSC IRI API credentials must contain one Globus token entry"
@@ -60,7 +77,9 @@ def update_iriapi_info():
     print("Updating AmSC IRI API info...")
     try:
         # Store the access token from the uploaded file in the corresponding state variable
-        state.iriapi_key, expires_at = parse_iriapi_credentials()
+        credentials = get_uploaded_iriapi_credentials()
+        state.iriapi_key, expires_at = parse_iriapi_credentials(credentials)
+        write_iriapi_credentials(credentials)
         # (see https://docs.python.org/3/library/datetime.html#format-codes
         # for all format codes accepted by the methods strftime and strptime)
         user_format = "%B %d, %Y, %H:%M %Z"
@@ -115,13 +134,12 @@ def update_iriapi_info():
 
 @state.change("iriapi_key_dict")
 def load_iriapi_credentials(**kwargs):
-    # Decode the uploaded token file and immediately validate it against IRI
-    if state.iriapi_key_dict is not None:
-        print("Loading AmSC IRI API credentials...")
-        try:
+    # Skip if triggered on server ready (all state variables marked as modified)
+    if len(state.modified_keys) == 1:
+        if state.iriapi_key_dict is not None:
+            print("Loading AmSC IRI API credentials...")
+            # Decode, persist, and immediately validate the uploaded token file
             update_iriapi_info()
-        except Exception as e:
-            print(f"An error occurred while loading AmSC IRI API credentials: {e}")
 
 
 def load_iriapi_card():

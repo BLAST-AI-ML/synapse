@@ -96,7 +96,6 @@ def update_sfapi_info():
 def load_sfapi_credentials(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        # return if no key file has been uploaded (redundant)
         if state.sfapi_key_dict is not None:
             print("Loading Superfacility API credentials...")
             # store the whole content of the key file in a string
