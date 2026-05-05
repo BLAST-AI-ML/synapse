@@ -768,7 +768,7 @@ class ModelManager:
                         with vuetify.VCol():
                             vuetify.VSelect(
                                 v_model=("model_training_mode",),
-                                label="Training Backend",
+                                label="Training backend",
                                 items=(EXECUTION_MODE_ITEMS,),
                                 dense=True,
                                 hide_details=True,
