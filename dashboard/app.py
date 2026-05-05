@@ -11,7 +11,7 @@ from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
-from sfapi_manager import load_sfapi_card
+from hpc_manager import load_hpc_card
 from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
@@ -49,7 +49,7 @@ def update(
     reset_calibration=True,
     reset_plots=True,
     reset_gui_route_home=True,
-    reset_gui_route_nersc=True,
+    reset_gui_route_hpc=True,
     reset_gui_route_chat=True,
     reset_gui_layout=True,
     **kwargs,
@@ -69,6 +69,7 @@ def update(
     # derive execution mode from execution_mode in the experiment configuration file
     execution_mode = config_dict.get("execution_mode") or {}
     state.model_training_mode = execution_mode.get("ml_training", "local")
+    state.simulation_running_mode = execution_mode.get("simulation", "local")
     db = load_database(config_dict)
     exp_data, sim_data = load_data(db, state.experiment, state.experiment_date_range)
     # reset output
@@ -93,9 +94,9 @@ def update(
     # reset GUI home route
     if reset_gui_route_home:
         home_route()
-    # reset GUI NERSC route
-    if reset_gui_route_nersc:
-        nersc_route()
+    # reset GUI HPC route
+    if reset_gui_route_hpc:
+        hpc_route()
     # reset GUI chat route
     if reset_gui_route_chat:
         chat_route()
@@ -145,7 +146,7 @@ def reset(**kwargs):
                 reset_calibration=True,
                 reset_plots=True,
                 reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
+                reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
             )
@@ -163,7 +164,7 @@ def reset(**kwargs):
                 reset_calibration=False,
                 reset_plots=True,
                 reset_gui_route_home=True,
-                reset_gui_route_nersc=False,
+                reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
             )
@@ -187,7 +188,7 @@ def reset(**kwargs):
                 reset_calibration=False,
                 reset_plots=True,
                 reset_gui_route_home=False,
-                reset_gui_route_nersc=False,
+                reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
             )
@@ -356,16 +357,16 @@ def home_route():
                             ctrl.figure_update = figure.update
 
 
-# NERSC route
-def nersc_route():
-    print("Setting GUI NERSC route...")
-    with RouterViewLayout(server, "/nersc"):
+# HPC route
+def hpc_route():
+    print("Setting GUI HPC route...")
+    with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
-            with vuetify.VCol(cols=4):
-                # Superfacility API card
+            with vuetify.VCol(cols=12):
+                # Render the backend selector and both API credential cards.
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        load_sfapi_card()
+                        load_hpc_card()
 
 
 # Chat route
@@ -429,11 +430,11 @@ def gui_setup():
                     prepend_icon="mdi-chat",
                     title="AI Assistant",
                 )
-                # NERSC route
+                # HPC route
                 vuetify.VListItem(
-                    to="/nersc",
+                    to="/hpc",
                     prepend_icon="mdi-lan-connect",
-                    title="NERSC API key",
+                    title="HPC Connection",
                 )
         # interactive dialog for simulation plots
         with vuetify.VDialog(

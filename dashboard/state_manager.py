@@ -37,19 +37,26 @@ def initialize_state():
     state.optimization_status = None
     # Opacity
     state.opacity = 0.05
+    # IRI API
+    state.iriapi_key = None
+    state.iriapi_key_dict = None
+    state.iriapi_key_expiration = "Unavailable"
+    state.iriapi_perlmutter_description = "Unavailable"
+    state.iriapi_perlmutter_status = "unavailable"
     # Superfacility API
     state.sfapi_client_id = None
     state.sfapi_key = None
     state.sfapi_key_dict = None
     state.sfapi_key_expiration = "Unavailable"
-    state.perlmutter_description = "Unavailable"
-    state.perlmutter_status = "unavailable"
+    state.sfapi_perlmutter_description = "Unavailable"
+    state.sfapi_perlmutter_status = "unavailable"
     # Simulation plots in interactive dialog
     state.simulation_url = None
     state.simulation_dialog = False
     state.simulation_video = False
     # Simulation jobs
     state.simulation_running = False
+    state.simulation_running_mode = "local"
     state.simulation_running_status = None
     state.simulation_running_time = None
     state.simulatable = False
