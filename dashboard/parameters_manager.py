@@ -9,6 +9,7 @@ from sfapi_client.compute import Machine
 from trame.widgets import client, vuetify3 as vuetify
 from utils import load_variables
 from calibration_manager import SimulationCalibrationManager
+from execution_mode_manager import EXECUTION_MODE_ITEMS
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state, EXPERIMENTS_PATH
@@ -234,27 +235,39 @@ class ParametersManager:
                                         change="flushState('parameters_show_all')",
                                         label="Show all",
                                     )
-                        with vuetify.VRow(align="center"):
-                            with vuetify.VCol(cols=6):
-                                with vuetify.VRow():
-                                    with vuetify.VCol():
-                                        vuetify.VBtn(
-                                            "Reset",
-                                            click=self.reset,
-                                            style="text-transform: none",
-                                        )
-                                    with vuetify.VCol():
-                                        vuetify.VBtn(
-                                            "Simulate",
-                                            click=self.simulation_trigger,
-                                            disabled=(
-                                                "simulation_running || !simulatable || simulation_running_mode !== 'sfapi' || sfapi_perlmutter_status !== 'active'",
-                                            ),
-                                            style="text-transform: none;",
-                                        )
-                            with vuetify.VCol(cols=6):
+                        with vuetify.VRow():
+                            with vuetify.VCol():
+                                vuetify.VSelect(
+                                    v_model=("simulation_running_mode",),
+                                    label="Simulations Backend",
+                                    items=(EXECUTION_MODE_ITEMS,),
+                                    dense=True,
+                                    hide_details=True,
+                                )
+                        with vuetify.VRow():
+                            with vuetify.VCol():
                                 vuetify.VTextField(
                                     v_model_number=("simulation_running_status",),
                                     label="Simulation status",
                                     readonly=True,
+                                    dense=True,
+                                    hide_details=True,
+                                )
+                        with vuetify.VRow(align="center"):
+                            with vuetify.VCol(cols=6):
+                                vuetify.VBtn(
+                                    "Reset",
+                                    block=True,
+                                    click=self.reset,
+                                    style="text-transform: none",
+                                )
+                            with vuetify.VCol(cols=6):
+                                vuetify.VBtn(
+                                    "Simulate",
+                                    block=True,
+                                    click=self.simulation_trigger,
+                                    disabled=(
+                                        "simulation_running || !simulatable || simulation_running_mode !== 'sfapi' || sfapi_perlmutter_status !== 'active'",
+                                    ),
+                                    style="text-transform: none;",
                                 )

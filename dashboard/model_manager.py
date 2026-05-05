@@ -14,6 +14,7 @@ from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
 from utils import timer, load_config_dict, create_date_filter
 from calibration_manager import build_inferred_calibration
+from execution_mode_manager import EXECUTION_MODE_ITEMS
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from iriapi_manager import create_iriapi_client, monitor_iriapi_job
@@ -765,21 +766,35 @@ class ModelManager:
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
+                                v_model=("model_training_mode",),
+                                label="Training Backend",
+                                items=(EXECUTION_MODE_ITEMS,),
+                                dense=True,
+                                hide_details=True,
+                            )
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VSelect(
                                 v_model=("model_type_verbose",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,
+                                hide_details=True,
                             )
+                    with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VTextField(
                                 v_model_number=("model_training_status",),
                                 label="Training status",
                                 readonly=True,
+                                dense=True,
+                                hide_details=True,
                             )
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Train",
+                                block=True,
                                 click=self.training_trigger,
                                 disabled=(
                                     "model_training || (model_training_mode === 'sfapi' && sfapi_perlmutter_status !== 'active')",
