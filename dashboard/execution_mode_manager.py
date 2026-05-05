@@ -12,6 +12,13 @@ EXECUTION_MODE_ITEMS = [
 ]
 
 
+def remote_backend_unavailable_expr(mode_state):
+    return (
+        f"(({mode_state} === 'sfapi' && sfapi_perlmutter_status !== 'active') || "
+        f"({mode_state} === 'iriapi' && iriapi_perlmutter_status !== 'up'))"
+    )
+
+
 def _log_mode_change(state_key, description):
     if len(state.modified_keys) == 1:
         value = state[state_key]

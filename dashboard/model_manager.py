@@ -15,7 +15,7 @@ from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
 from utils import timer, load_config_dict, create_date_filter
 from calibration_manager import build_inferred_calibration
-from execution_mode_manager import EXECUTION_MODE_ITEMS
+from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from iriapi_manager import monitor_iriapi_job
@@ -798,7 +798,8 @@ class ModelManager:
                                 block=True,
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || (model_training_mode === 'sfapi' && sfapi_perlmutter_status !== 'active')",
+                                    "model_training || "
+                                    f"{remote_backend_unavailable_expr('model_training_mode')}",
                                 ),
                                 style="text-transform: none",
                             )

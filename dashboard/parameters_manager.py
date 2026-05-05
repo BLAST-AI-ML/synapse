@@ -9,7 +9,7 @@ from sfapi_client.compute import Machine
 from trame.widgets import client, vuetify3 as vuetify
 from utils import load_variables
 from calibration_manager import SimulationCalibrationManager
-from execution_mode_manager import EXECUTION_MODE_ITEMS
+from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state, EXPERIMENTS_PATH
@@ -267,7 +267,10 @@ class ParametersManager:
                                     block=True,
                                     click=self.simulation_trigger,
                                     disabled=(
-                                        "simulation_running || !simulatable || simulation_running_mode !== 'sfapi' || sfapi_perlmutter_status !== 'active'",
+                                        "simulation_running || !simulatable || "
+                                        "(simulation_running_mode !== 'sfapi' && "
+                                        "simulation_running_mode !== 'iriapi') || "
+                                        f"{remote_backend_unavailable_expr('simulation_running_mode')}",
                                     ),
                                     style="text-transform: none;",
                                 )
