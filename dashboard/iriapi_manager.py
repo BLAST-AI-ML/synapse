@@ -1,29 +1,10 @@
 import asyncio
-import os
 
 from amsc_client import Client
 from trame.widgets import vuetify3 as vuetify
 
 from error_manager import add_error
 from state_manager import state
-
-IRI_ACCESS_TOKEN_ENV = "IRI_ACCESS_TOKEN"
-
-
-def create_iriapi_client():
-    # TODO Alternative authentication
-    # iriapi_key = (state.iriapi_key or "").strip()
-    # if not iriapi_key:
-    #    raise ValueError("Missing AmSC IRI API token")
-    # client = Client(token=iriapi_key)
-    # client.register_facility(
-    #     "nersc",
-    #     auth_method="token",
-    #     token=iriapi_key,
-    # )
-    # Use Globus auth while token-based facility registration is disabled.
-    client = Client(auth_method="globus")
-    return client
 
 
 async def monitor_iriapi_job(iriapi_job, state_variable):
@@ -44,7 +25,7 @@ def update_iriapi_info():
     print("Updating AmSC IRI API info...")
     try:
         # Create an authenticated client
-        client = create_iriapi_client()
+        client = Client(auth_method="globus")
         # Ping Perlmutter so the UI reflects the current IRI resource status.
         nersc = client.facility("nersc")
         perlmutter = nersc.resource("compute")
@@ -80,14 +61,6 @@ def load_iriapi_credentials(**kwargs):
 
 def load_iriapi_card():
     print("Setting AmSC IRI API card...")
-    # Prefer an environment-provided token when running in deployed contexts.
-    iri_access_token = os.environ.get(IRI_ACCESS_TOKEN_ENV, "").strip()
-    if iri_access_token:
-        print("Loading AmSC IRI API credentials from environment...")
-        state.iriapi_key = iri_access_token
-        update_iriapi_info()
-    elif IRI_ACCESS_TOKEN_ENV in os.environ:
-        print(f"{IRI_ACCESS_TOKEN_ENV} is set but empty; waiting for token upload.")
     # Row with component to upload input file with top padding
     with vuetify.VRow(style="padding-top: 20px;"):
         with vuetify.VCol():

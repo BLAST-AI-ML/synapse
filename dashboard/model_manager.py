@@ -9,6 +9,7 @@ import tempfile
 
 import mlflow
 import yaml
+from amsc_client import Client
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify
@@ -17,7 +18,7 @@ from calibration_manager import build_inferred_calibration
 from execution_mode_manager import EXECUTION_MODE_ITEMS
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
-from iriapi_manager import create_iriapi_client, monitor_iriapi_job
+from iriapi_manager import monitor_iriapi_job
 from state_manager import state
 
 model_type_dict = {
@@ -554,7 +555,7 @@ class ModelManager:
     ):
         try:
             # Create an authenticated client
-            client = create_iriapi_client()
+            client = Client(auth_method="globus")
             # Connect to NERSC
             nersc = await asyncio.to_thread(client.facility, "nersc")
             # Get the compute resource (Perlmutter)
