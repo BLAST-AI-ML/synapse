@@ -6,7 +6,6 @@ channels:
   - nodefaults
 
 pip-repositories:
-  - https://gitlab.com/api/v4/projects/77567162/packages/pypi/simple
   - https://gitlab.com/api/v4/projects/76368190/packages/pypi/simple
   - https://gitlab.com/api/v4/projects/80654726/packages/pypi/simple
 
@@ -30,4 +29,4 @@ dependencies:
   - trame-vuetify
   - pip:
     - sfapi_client
-    - amsc-client
+    - "amsc-client @ file:///home/edoardo/src/amsc-python-client"
