@@ -239,7 +239,7 @@ class ParametersManager:
                             with vuetify.VCol():
                                 vuetify.VSelect(
                                     v_model=("simulation_running_mode",),
-                                    label="Simulations Backend",
+                                    label="Simulation Backend",
                                     items=(EXECUTION_MODE_ITEMS,),
                                     dense=True,
                                     hide_details=True,
