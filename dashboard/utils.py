@@ -387,7 +387,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             col=this_col,
         )
 
-    # A bit of padding on either end of the y range so we can see all the data.
+    # A bit of padding on either end of the y range so we can see all the data
     padding = 0.05 * (global_ymax - global_ymin)
     for i, key in enumerate(parameters.keys()):
         this_row = i + 1

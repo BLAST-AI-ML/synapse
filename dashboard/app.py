@@ -363,7 +363,7 @@ def hpc_route():
     with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
             with vuetify.VCol(cols=12):
-                # Render both API credential cards.
+                # Render both API credential cards
                 with vuetify.VRow():
                     with vuetify.VCol():
                         load_hpc_card()

@@ -49,7 +49,7 @@ SBATCH_SUBMIT_OPTION_MAP = {
     "--ntasks-per-node": "ntasks-per-node",
 }
 SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
-IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker.
+IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker
 TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
 TRAINING_CONFIG_REMOTE_PATH = f"{TRAINING_REMOTE_DIR}/config.yaml"
 TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
@@ -59,14 +59,14 @@ IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
     "ntasks-per-node": "slurm.ntasks-per-node",
     "queue": "slurm.qos",
 }
-# Match model=$1 or model=${1}, with optional comment.
+# Match model=$1 or model=${1}, with optional comment
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
-# Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments.
+# Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments
 SHELL_ASSIGNMENT_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.+?)(?:\s+#.*)?$")
 
 
 def line_starts_with_tokens(line, expected_tokens):
-    # Remove a trailing shell continuation so shlex can inspect the line prefix.
+    # Remove a trailing shell continuation so shlex can inspect the line prefix
     candidate = line.strip()
     if candidate.endswith("\\"):
         candidate = candidate[:-1].rstrip()
@@ -93,7 +93,7 @@ def find_training_script_path():
 
 
 def parse_slurm_duration(duration):
-    # Normalize Slurm duration variants to the seconds expected by AmSC IRI API.
+    # Normalize Slurm duration variants to the seconds expected by AmSC IRI API
     days = 0
     time_part = duration.strip()
     has_days = "-" in time_part
@@ -109,7 +109,7 @@ def parse_slurm_duration(duration):
         raise ValueError(f"Unsupported Slurm duration format: {duration}")
 
     # Slurm treats ambiguous durations differently with a day prefix:
-    # D-H[:M[:S]], H:M:S, M:S, or M.
+    # D-H[:M[:S]], H:M:S, M:S, or M
     if has_days:
         time_values += [0] * (3 - n)
     elif n == 1:
@@ -122,7 +122,7 @@ def parse_slurm_duration(duration):
 
 
 def parse_sbatch_submit_options(script_path):
-    # Extract only SBATCH fields that map cleanly onto AmSC IRI API submit options.
+    # Extract only SBATCH fields that map cleanly onto AmSC IRI API submit options
     submit_options = {}
     with open(script_path) as script_file:
         for line in script_file:
@@ -134,7 +134,7 @@ def parse_sbatch_submit_options(script_path):
             if not directive:
                 continue
 
-            # Use shell parsing so quoted SBATCH values are handled correctly.
+            # Use shell parsing so quoted SBATCH values are handled correctly
             tokens = shlex.split(directive, comments=True)
             if not tokens:
                 continue
@@ -159,7 +159,7 @@ def parse_sbatch_submit_options(script_path):
         missing_list = ", ".join(sorted(missing_options))
         raise ValueError(f"Missing required SBATCH option(s): {missing_list}")
 
-    # Convert values to the types expected by the AmSC IRI API submit endpoint.
+    # Convert values to the types expected by the AmSC IRI API submit endpoint
     submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
     submit_options["nodes"] = int(submit_options["nodes"])
     return submit_options
@@ -167,7 +167,7 @@ def parse_sbatch_submit_options(script_path):
 
 def build_iri_slurm_submit_options(sbatch_submit_options):
     # AmSC IRI API submits a PSI/J job spec. Slurm-specific options need the `slurm.`
-    # custom-attribute prefix so they render as SBATCH directives.
+    # custom-attribute prefix so they render as SBATCH directives
     return {
         IRI_SLURM_CUSTOM_ATTRIBUTE_MAP.get(option, option): value
         for option, value in sbatch_submit_options.items()
@@ -193,7 +193,7 @@ def replace_training_config_mount(command, remote_config_path):
 
 
 def collapse_shell_command(lines):
-    # Preserve trailing-backslash continuations before tokenizing with shlex.
+    # Preserve trailing-backslash continuations before tokenizing with shlex
     command_parts = []
     current_command = ""
     for line in lines:
@@ -211,7 +211,7 @@ def collapse_shell_command(lines):
 
 
 def parse_shell_variable_assignments(lines):
-    # Keep static shell assignments that can be expanded without execution.
+    # Keep static shell assignments that can be expanded without execution
     variables = {}
     for line in lines:
         match = SHELL_ASSIGNMENT_RE.match(line.strip())
@@ -231,10 +231,10 @@ def parse_shell_variable_assignments(lines):
 
 def expand_iri_shell_command(command, model_type, variables):
     # Expand values we can resolve locally while preserving runtime shell
-    # variables like $HOME for the remote login shell on Perlmutter.
+    # variables like $HOME for the remote login shell on Perlmutter
     expanded = command
     replacements = {**variables, "model": model_type}
-    # Repeat so static assignment chains like IMAGE=${REGISTRY}/${NAME} resolve.
+    # Repeat so static assignment chains like IMAGE=${REGISTRY}/${NAME} resolve
     for _ in replacements:
         previous = expanded
         for name, value in replacements.items():
@@ -246,7 +246,7 @@ def expand_iri_shell_command(command, model_type, variables):
 
 
 def parse_iri_training_launch_spec(script_path, model_type, remote_config_path=None):
-    # Split the batch script into setup lines and the podman-hpc launch command.
+    # Split the batch script into setup lines and the podman-hpc launch command
     pre_launch_lines = []
     launch_lines = []
     found_launch = False
@@ -566,7 +566,7 @@ class ModelManager:
             remote_config_path = build_remote_training_config_path(
                 experiment, model_type
             )
-            # Reuse SBATCH directives so AmSC IRI API submissions match the batch script.
+            # Reuse SBATCH directives so AmSC IRI API submissions match the batch script
             sbatch_submit_options = parse_sbatch_submit_options(training_script_path)
             submit_options = build_iri_slurm_submit_options(sbatch_submit_options)
             launch_spec = parse_iri_training_launch_spec(
@@ -581,7 +581,7 @@ class ModelManager:
                 f"duration={submit_options['duration']}"
             )
 
-            # Training script is parsed locally; only config.yaml is uploaded.
+            # Training script is parsed locally; only config.yaml is uploaded
             with tempfile.TemporaryDirectory() as temp_dir:
                 config_path = self._prepare_training_config(
                     temp_dir,

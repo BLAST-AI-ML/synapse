@@ -10,9 +10,9 @@ from state_manager import state
 async def monitor_iriapi_job(iriapi_job, state_variable):
     while not iriapi_job.is_terminal:
         await asyncio.sleep(5)
-        # Refresh in a worker thread because the IRI client call is synchronous.
+        # Refresh in a worker thread because the IRI client call is synchronous
         await asyncio.to_thread(iriapi_job.refresh)
-        # Make the status more readable by putting in spaces and capitalizing the words.
+        # Make the status more readable by putting in spaces and capitalizing the words
         job_status = iriapi_job.state.replace("_", " ").title()
         if state[state_variable] != job_status:
             state[state_variable] = job_status
