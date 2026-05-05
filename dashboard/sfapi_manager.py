@@ -65,7 +65,7 @@ def update_sfapi_info():
                 state.sfapi_perlmutter_description = f"{status.description}"
                 state.sfapi_perlmutter_status = f"{status.status.value}"
                 print(
-                    f"Perlmutter status is {state.sfapi_perlmutter_status} with description '{state.sfapi_perlmutter_description}'"
+                    f"Perlmutter status is '{state.sfapi_perlmutter_status}' with description '{state.sfapi_perlmutter_description}'"
                 )
             else:
                 # reset key expiration date
@@ -125,7 +125,7 @@ def load_sfapi_card():
         with vuetify.VCol():
             vuetify.VTextField(
                 v_model=("sfapi_key_expiration",),
-                label="Key Expiration (if expired or unavailable, please upload a valid key)",
+                label="Key Expiration",
                 readonly=True,
             )
     # row with text field to display Perlmutter status

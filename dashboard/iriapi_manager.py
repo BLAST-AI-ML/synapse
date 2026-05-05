@@ -29,7 +29,7 @@ def parse_iriapi_credentials():
             "Uploaded AmSC IRI API credentials must contain one globus_* token entry"
         )
 
-    required_keys = {"access_token", "refresh_token", "expires_at"}
+    required_keys = {"access_token", "expires_at"}
     if not required_keys <= credentials.keys():
         raise ValueError(
             "Uploaded AmSC IRI API credentials are missing required token fields"
@@ -86,7 +86,7 @@ def update_iriapi_info():
             state.iriapi_perlmutter_description = f"{perlmutter.description}"
             state.iriapi_perlmutter_status = f"{perlmutter.status}"
             print(
-                f"Perlmutter status is {state.iriapi_perlmutter_status} with description '{state.iriapi_perlmutter_description}'"
+                f"Perlmutter status is '{state.iriapi_perlmutter_status}' with description '{state.iriapi_perlmutter_description}'"
             )
         else:
             # Reset token expiration date
@@ -142,7 +142,7 @@ def load_iriapi_card():
         with vuetify.VCol():
             vuetify.VTextField(
                 v_model=("iriapi_key_expiration",),
-                label="Token Expiration (if expired or unavailable, please upload a valid token)",
+                label="Token Expiration",
                 readonly=True,
             )
     # Row with text field to display Perlmutter status
