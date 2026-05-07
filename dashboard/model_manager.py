@@ -54,9 +54,9 @@ TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
 TRAINING_CONFIG_REMOTE_PATH = f"{TRAINING_REMOTE_DIR}/config.yaml"
 TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
 IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
-    "constraint": "slurm.constraint",
-    "gpus-per-node": "slurm.gpus-per-node",
-    "ntasks-per-node": "slurm.ntasks-per-node",
+    "constraint": "constraint",
+    "gpus-per-node": "gpus-per-node",
+    "ntasks-per-node": "ntasks-per-node",
     "queue": "slurm.qos",
 }
 # Match model=$1 or model=${1}, with optional comment
@@ -166,8 +166,6 @@ def parse_sbatch_submit_options(script_path):
 
 
 def build_iri_slurm_submit_options(sbatch_submit_options):
-    # AmSC IRI API submits a PSI/J job spec. Slurm-specific options need the `slurm.`
-    # custom-attribute prefix so they render as SBATCH directives
     return {
         IRI_SLURM_CUSTOM_ATTRIBUTE_MAP.get(option, option): value
         for option, value in sbatch_submit_options.items()
@@ -576,7 +574,8 @@ class ModelManager:
                 "AmSC IRI API training submit options: "
                 f"account={submit_options['account']}, "
                 f"qos={submit_options['slurm.qos']}, "
-                f"constraint={submit_options['slurm.constraint']}, "
+                f"constraint={submit_options['constraint']}, "
+                f"gpus-per-node={submit_options['gpus-per-node']}, "
                 f"nodes={submit_options['nodes']}, "
                 f"duration={submit_options['duration']}"
             )
