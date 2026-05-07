@@ -820,7 +820,6 @@ class ModelManager:
                 print(f"Uploaded training configuration to {remote_config_path}")
 
             # Submit the training job through the AmSC IRI API
-            print(f"training_job_spec: {training_job_spec}")
             iriapi_job = await asyncio.to_thread(
                 perlmutter.submit,
                 body=training_job_spec,
