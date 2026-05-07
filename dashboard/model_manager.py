@@ -16,6 +16,12 @@ import mlflow.store.artifact.cloud_artifact_repo as mlflow_cloud_artifact_repo
 import mlflow.utils.file_utils as mlflow_file_utils
 from mlflow.exceptions import MlflowException
 from trame.assets.local import LocalFileManager
+from iri_api_autogen.models import (
+    JobAttributes,
+    JobAttributesCustomAttributes,
+    JobSpec,
+    ResourceSpec,
+)
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
 from trame.widgets import vuetify3 as vuetify, html
@@ -185,50 +191,54 @@ def parse_sbatch_submit_options(script_path):
     return submit_options
 
 
-def replace_training_config_mount(command, remote_config_path):
-    default_mount = f"{TRAINING_CONFIG_REMOTE_PATH}:{TRAINING_CONFIG_CONTAINER_PATH}"
-    remote_mount = f"{remote_config_path}:{TRAINING_CONFIG_CONTAINER_PATH}"
-    if default_mount not in command:
+def _custom_attributes_from_submit_options(submit_options):
+    custom_attributes = JobAttributesCustomAttributes()
+    for key in ("constraint",):
+        if key in submit_options:
+            custom_attributes.additional_properties[key] = submit_options[key]
+    return custom_attributes
+
+
+def _gpu_cores_per_process(submit_options):
+    gpus_per_node = int(submit_options["gpus-per-node"])
+    tasks_per_node = int(submit_options["ntasks-per-node"])
+    if gpus_per_node % tasks_per_node != 0:
         raise ValueError(
-            "Could not find the training config bind mount in the launch command"
+            "AmSC IRI API GPU resources require --gpus-per-node to be evenly "
+            "divisible by --ntasks-per-node"
         )
-    return command.replace(default_mount, remote_mount, 1)
+    return gpus_per_node // tasks_per_node
 
 
-def describe_iriapi_task(task):
-    """Return the useful details exposed by an AmSC IRI API filesystem task."""
-    details = [f"task {task.id} ended with state {task.state}"]
-    task_data = getattr(task, "_data", None)
-    if task_data is not None and hasattr(task_data, "to_dict"):
-        task_dict = task_data.to_dict()
-        command = task_dict.get("command")
-        result = task_dict.get("result")
-        if command:
-            details.append(f"command={command}")
-        if result:
-            details.append(f"result={result}")
-    return "; ".join(details)
+def build_iri_training_job_spec(submit_options, launch_spec, directory):
+    """Build an IRI JobSpec with GPU resources in the standard resource field."""
+    tasks_per_node = int(submit_options["ntasks-per-node"])
+    node_count = submit_options["nodes"]
 
+    resources = ResourceSpec(
+        node_count=node_count,
+        process_count=node_count * tasks_per_node,
+        processes_per_node=tasks_per_node,
+        gpu_cores_per_process=_gpu_cores_per_process(submit_options),
+    )
+    attributes = JobAttributes(
+        duration=submit_options["duration"],
+        queue_name=submit_options["queue"],
+        account=submit_options["account"],
+        custom_attributes=_custom_attributes_from_submit_options(submit_options),
+    )
 
-async def wait_iriapi_task(task, description):
-    task = await asyncio.to_thread(task.wait)
-    if task.state != "completed":
-        raise RuntimeError(f"{description} failed ({describe_iriapi_task(task)})")
-    return task
-
-
-async def remove_iriapi_file_if_present(fs, path):
-    stat_task = await asyncio.to_thread(fs.stat, path)
-    stat_task = await asyncio.to_thread(stat_task.wait)
-    if stat_task.state != "completed":
-        print(f"No existing training configuration found at {path}")
-        return
-
-    print(f"Removing existing training configuration at {path}...")
-    rm_task = await asyncio.to_thread(fs.rm, path)
-    await wait_iriapi_task(
-        rm_task,
-        f"Removing existing training configuration at {path}",
+    return JobSpec(
+        executable=launch_spec["executable"],
+        arguments=launch_spec["arguments"],
+        directory=directory,
+        name=submit_options["name"],
+        resources=resources,
+        attributes=attributes,
+        stdout_path=submit_options["stdout_path"],
+        stderr_path=submit_options["stderr_path"],
+        pre_launch=launch_spec["pre_launch"],
+        launcher=launch_spec["launcher"],
     )
 
 
@@ -238,16 +248,23 @@ def collapse_shell_command(lines):
     current_command = ""
     for line in lines:
         stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
         if stripped.endswith("\\"):
             current_command += f"{stripped[:-1]} "
         else:
-            command_parts.append(f"{current_command}{stripped}".strip())
+            command = f"{current_command}{stripped}".strip()
+            if command:
+                command_parts.append(command)
             current_command = ""
 
     if current_command:
-        command_parts.append(current_command.strip())
+        command = current_command.strip()
+        if command:
+            command_parts.append(command)
 
-    return " ".join(command_parts)
+    return "; ".join(command_parts)
 
 
 def parse_shell_variable_assignments(lines):
@@ -285,7 +302,7 @@ def expand_iri_shell_command(command, model_type, variables):
     return expanded
 
 
-def parse_iri_training_launch_spec(script_path, model_type, remote_config_path=None):
+def parse_iri_training_launch_spec(script_path, model_type):
     # Split the batch script into setup lines and the podman-hpc launch command
     pre_launch_lines = []
     launch_lines = []
@@ -321,8 +338,6 @@ def parse_iri_training_launch_spec(script_path, model_type, remote_config_path=N
         rf"^\s*{re.escape(launcher)}\s+", "", launch_command, count=1
     )
     shell_command = expand_iri_shell_command(shell_command, model_type, variables)
-    if remote_config_path is not None:
-        shell_command = replace_training_config_mount(shell_command, remote_config_path)
     arguments = ["-lc", shell_command]
 
     return {
@@ -664,10 +679,6 @@ class ModelManager:
                     repl=rf"--model {model_type}",
                     string=training_script,
                 )
-                training_script = replace_training_config_mount(
-                    training_script, remote_config_path
-                )
-
                 # submit the training job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(training_script)
                 state.model_training_status = "Submitted"
@@ -705,7 +716,11 @@ class ModelManager:
             # Reuse SBATCH directives so AmSC IRI API submissions match the batch script
             submit_options = parse_sbatch_submit_options(training_script_path)
             launch_spec = parse_iri_training_launch_spec(
-                training_script_path, model_type, remote_config_path
+                training_script_path,
+                model_type,
+            )
+            training_job_spec = build_iri_training_job_spec(
+                submit_options, launch_spec, TRAINING_REMOTE_DIR
             )
             print(
                 "AmSC IRI API training submit options: "
@@ -713,6 +728,8 @@ class ModelManager:
                 f"queue={submit_options['queue']}, "
                 f"constraint={submit_options['constraint']}, "
                 f"gpus-per-node={submit_options['gpus-per-node']}, "
+                f"gpu-cores-per-process="
+                f"{training_job_spec.resources.gpu_cores_per_process}, "
                 f"nodes={submit_options['nodes']}, "
                 f"duration={submit_options['duration']}"
             )
@@ -726,25 +743,26 @@ class ModelManager:
                     simulation_calibration,
                 )
                 print("Uploading configuration file to NERSC...")
-                await remove_iriapi_file_if_present(cfs.fs, remote_config_path)
                 upload_task = await asyncio.to_thread(
                     cfs.fs.upload,
                     config_path,
                     remote_config_path,
                     file_name=PurePosixPath(remote_config_path).name,
                 )
-                await wait_iriapi_task(
-                    upload_task,
-                    "Uploading configuration file to NERSC",
-                )
+                upload_task = await asyncio.to_thread(upload_task.wait)
+                if upload_task.state != "completed":
+                    raise RuntimeError(
+                        "Uploading configuration file to NERSC failed "
+                        f"(task {upload_task.id} ended with state "
+                        f"{upload_task.state})"
+                    )
                 print(f"Uploaded training configuration to {remote_config_path}")
 
             # Submit the training job through the AmSC IRI API
+            print(f"training_job_spec: {training_job_spec}")
             iriapi_job = await asyncio.to_thread(
                 perlmutter.submit,
-                directory=TRAINING_REMOTE_DIR,
-                **submit_options,
-                **launch_spec,
+                body=training_job_spec,
             )
             state.model_training_status = "Submitted"
             state.flush()
