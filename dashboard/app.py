@@ -101,7 +101,10 @@ def update(
         else:
             mod_manager = preloaded_model_manager
         state.model_available = mod_manager.avail()
-        opt_manager = OptimizationManager(mod_manager)
+        if opt_manager is None or reset_gui_route_home:
+            opt_manager = OptimizationManager(mod_manager)
+        else:
+            opt_manager.model = mod_manager
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -244,7 +247,7 @@ def reset(**kwargs):
                 reset_calibration=False,
                 reset_plots=True,
                 reset_execution_modes=False,
-                reset_gui_route_home=True,
+                reset_gui_route_home=False,
                 reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,

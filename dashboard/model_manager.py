@@ -898,15 +898,26 @@ class ModelManager:
                                 classes="d-flex align-center justify-end",
                             ):
                                 with html.A(
-                                    v_if=(AMSC_MLFLOW_LINK_ACTIVE_EXPR,),
-                                    href=(AMSC_MLFLOW_MODEL_URL_EXPR,),
+                                    href=(
+                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                        f"{AMSC_MLFLOW_MODEL_URL_EXPR} : null",
+                                    ),
                                     target="_blank",
                                     rel="noopener noreferrer",
-                                    title="Open selected model in AmSC MLflow",
+                                    title=(
+                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                        "'Open selected model in AmSC MLflow' : "
+                                        "'Selected model is not available in AmSC "
+                                        "MLflow'",
+                                    ),
                                     style=(
-                                        "display: block; width: 100%; "
+                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                        "'display: block; width: 100%; "
                                         "max-width: 300px; margin-left: auto; "
-                                        "cursor: pointer;"
+                                        "cursor: pointer;' : "
+                                        "'display: block; width: 100%; "
+                                        "max-width: 300px; margin-left: auto; "
+                                        "cursor: default;'"
                                     ),
                                 ):
                                     vuetify.VImg(
@@ -915,23 +926,8 @@ class ModelManager:
                                         max_width=300,
                                         max_height=72,
                                         contain=True,
-                                        style="width: 100%;",
+                                        style="width: 100%; cursor: inherit;",
                                     )
-                                vuetify.VImg(
-                                    v_if=(f"!({AMSC_MLFLOW_LINK_ACTIVE_EXPR})",),
-                                    src=AMSC_LOGO_URL,
-                                    alt="AmSC",
-                                    max_width=300,
-                                    max_height=72,
-                                    contain=True,
-                                    title=(
-                                        "Selected model is not available in AmSC MLflow"
-                                    ),
-                                    style=(
-                                        "width: 100%; max-width: 300px; "
-                                        "margin-left: auto;"
-                                    ),
-                                )
                     with vuetify.VRow(
                         no_gutters=True,
                         align="center",
@@ -940,7 +936,13 @@ class ModelManager:
                         ),
                     ):
                         with vuetify.VCol():
-                            with html.Div(v_if=(MODEL_DOWNLOAD_ACTIVE_EXPR,)):
+                            with html.Div(
+                                style=(
+                                    f"{MODEL_DOWNLOAD_ACTIVE_EXPR} ? "
+                                    "'visibility: visible; opacity: 1;' : "
+                                    "'visibility: hidden; opacity: 0;'",
+                                )
+                            ):
                                 with html.Div(
                                     classes=(
                                         "d-flex align-center text-caption "
@@ -955,10 +957,12 @@ class ModelManager:
                                     html.Span(v_text=("model_download_status",))
                                     vuetify.VSpacer()
                                     html.Span(
-                                        v_if=("model_download_progress !== null",),
                                         v_text=(
+                                            "model_download_progress === null ? "
+                                            "'' : "
                                             "`${Math.round(model_download_progress)}%`",
                                         ),
+                                        style="min-width: 3em; text-align: right;",
                                     )
                                 vuetify.VProgressLinear(
                                     indeterminate=("model_download_progress === null"),
