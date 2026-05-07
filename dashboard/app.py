@@ -383,7 +383,7 @@ def chat_route():
 def gui_setup():
     print("Setting GUI layout...")
     with SinglePageWithDrawerLayout(server) as layout:
-        layout.title.set_text("AI real-time guidance platform for accelerators")
+        layout.title.set_text("AI Real-Time Guidance Platform for Accelerators")
         # add toolbar components
         with layout.toolbar:
             vuetify.VSpacer()
