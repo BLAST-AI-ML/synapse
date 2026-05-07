@@ -57,7 +57,7 @@ IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
     "constraint": "constraint",
     "gpus-per-node": "gpus-per-node",
     "ntasks-per-node": "ntasks-per-node",
-    "queue": "slurm.qos",
+    "queue": "queue",
 }
 # Match model=$1 or model=${1}, with optional comment
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
@@ -573,7 +573,7 @@ class ModelManager:
             print(
                 "AmSC IRI API training submit options: "
                 f"account={submit_options['account']}, "
-                f"qos={submit_options['slurm.qos']}, "
+                f"queue={submit_options['queue']}, "
                 f"constraint={submit_options['constraint']}, "
                 f"gpus-per-node={submit_options['gpus-per-node']}, "
                 f"nodes={submit_options['nodes']}, "
