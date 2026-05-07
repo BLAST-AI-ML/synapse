@@ -33,11 +33,7 @@ MODEL_TYPE_GP = "Gaussian Process"
 MODEL_TYPE_NN_SINGLE = "Neural Network (single)"
 MODEL_TYPE_NN_ENSEMBLE = "Neural Network (ensemble)"
 AMSC_LOGO_PATH = LOGO_DIR / "AmSC_300px.png"
-AMSC_LOGO_URL = (
-    LocalFileManager(LOGO_DIR).url("amsc_logo", AMSC_LOGO_PATH)
-    if AMSC_LOGO_PATH.is_file()
-    else None
-)
+AMSC_LOGO_URL = LocalFileManager(LOGO_DIR).url("amsc_logo", AMSC_LOGO_PATH)
 MODEL_DOWNLOAD_ACTIVE_EXPR = "model_downloading"
 AMSC_MLFLOW_LINK_ACTIVE_EXPR = (
     f"model_available && model_mlflow_tracking_uri === '{AMSC_MLFLOW_URL}'"
@@ -874,7 +870,6 @@ class ModelManager:
             MODEL_TYPE_NN_SINGLE,
             MODEL_TYPE_NN_ENSEMBLE,
         ]
-        model_type_cols = 8 if AMSC_LOGO_URL else 12
         with vuetify.VExpansionPanels(v_model=("expand_panel_control_model", 0)):
             with vuetify.VExpansionPanel(
                 title="Control: Models",
@@ -882,9 +877,7 @@ class ModelManager:
             ):
                 with vuetify.VExpansionPanelText():
                     with vuetify.VRow(align="center"):
-                        with vuetify.VCol(
-                            cols=model_type_cols, classes="d-flex align-center"
-                        ):
+                        with vuetify.VCol(cols=8, classes="d-flex align-center"):
                             vuetify.VSelect(
                                 v_model=("model_type_verbose",),
                                 label="Model type",
@@ -892,42 +885,41 @@ class ModelManager:
                                 dense=True,
                                 hide_details=True,
                             )
-                        if AMSC_LOGO_URL:
-                            with vuetify.VCol(
-                                cols=4,
-                                classes="d-flex align-center justify-end",
+                        with vuetify.VCol(
+                            cols=4,
+                            classes="d-flex align-center justify-end",
+                        ):
+                            with html.A(
+                                href=(
+                                    f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                    f"{AMSC_MLFLOW_MODEL_URL_EXPR} : null",
+                                ),
+                                target="_blank",
+                                rel="noopener noreferrer",
+                                title=(
+                                    f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                    "'Open selected model in AmSC MLflow' : "
+                                    "'Selected model is not available in AmSC "
+                                    "MLflow'",
+                                ),
+                                style=(
+                                    f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                    "'display: block; width: 100%; "
+                                    "max-width: 300px; margin-left: auto; "
+                                    "cursor: pointer;' : "
+                                    "'display: block; width: 100%; "
+                                    "max-width: 300px; margin-left: auto; "
+                                    "cursor: default;'"
+                                ),
                             ):
-                                with html.A(
-                                    href=(
-                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
-                                        f"{AMSC_MLFLOW_MODEL_URL_EXPR} : null",
-                                    ),
-                                    target="_blank",
-                                    rel="noopener noreferrer",
-                                    title=(
-                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
-                                        "'Open selected model in AmSC MLflow' : "
-                                        "'Selected model is not available in AmSC "
-                                        "MLflow'",
-                                    ),
-                                    style=(
-                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
-                                        "'display: block; width: 100%; "
-                                        "max-width: 300px; margin-left: auto; "
-                                        "cursor: pointer;' : "
-                                        "'display: block; width: 100%; "
-                                        "max-width: 300px; margin-left: auto; "
-                                        "cursor: default;'"
-                                    ),
-                                ):
-                                    vuetify.VImg(
-                                        src=AMSC_LOGO_URL,
-                                        alt="AmSC",
-                                        max_width=300,
-                                        max_height=72,
-                                        contain=True,
-                                        style="width: 100%; cursor: inherit;",
-                                    )
+                                vuetify.VImg(
+                                    src=AMSC_LOGO_URL,
+                                    alt="AmSC",
+                                    max_width=300,
+                                    max_height=72,
+                                    contain=True,
+                                    style="width: 100%; cursor: inherit;",
+                                )
                     with vuetify.VRow(
                         no_gutters=True,
                         align="center",
