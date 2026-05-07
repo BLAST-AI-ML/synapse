@@ -1,5 +1,4 @@
 #!/bin/bash -l
-set -euo pipefail
 
 #SBATCH -t 00:15:00
 #SBATCH -N 1
