@@ -909,7 +909,7 @@ class ModelManager:
                                     "cursor: pointer;' : "
                                     "'display: block; width: 100%; "
                                     "max-width: 300px; margin-left: auto; "
-                                    "cursor: default;'"
+                                    "cursor: default;'",
                                 ),
                             ):
                                 vuetify.VImg(
