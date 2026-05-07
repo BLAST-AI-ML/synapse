@@ -85,6 +85,16 @@ IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch m
 TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
 TRAINING_CONFIG_REMOTE_PATH = f"{TRAINING_REMOTE_DIR}/config.yaml"
 TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
+TRAINING_CONFIG_MOUNT_RE = re.compile(
+    rf"(?P<prefix>(?:^|\s)-v\s+)"
+    rf"(?P<host_quote>[\"']?)"
+    rf"(?P<host>[^\"'\s:]+)"
+    rf"(?P=host_quote):"
+    rf"(?P<container_quote>[\"']?)"
+    rf"{re.escape(TRAINING_CONFIG_CONTAINER_PATH)}"
+    rf"(?P=container_quote)"
+    rf"(?=\s|\\|$)"
+)
 # Match model=$1 or model=${1}, with optional comment
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
 # Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments
@@ -191,6 +201,35 @@ def parse_sbatch_submit_options(script_path):
     return submit_options
 
 
+def build_remote_training_config_path(experiment, model_type):
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    safe_experiment = re.sub(r"[^A-Za-z0-9_.-]+", "-", experiment).strip("-")
+    safe_model_type = re.sub(r"[^A-Za-z0-9_.-]+", "-", model_type).strip("-")
+    config_name = f"config-{safe_experiment}-{safe_model_type}-{timestamp}.yaml"
+    return f"{TRAINING_REMOTE_DIR}/{config_name}"
+
+
+def replace_training_config_mount(command, remote_config_path):
+    """Rewrite only the host path bound to the fixed container config path."""
+
+    def replace_mount(match):
+        return (
+            f"{match.group('prefix')}"
+            f"{shlex.quote(remote_config_path)}:{TRAINING_CONFIG_CONTAINER_PATH}"
+        )
+
+    rewritten_command, replacement_count = TRAINING_CONFIG_MOUNT_RE.subn(
+        replace_mount,
+        command,
+        count=1,
+    )
+    if replacement_count != 1:
+        raise ValueError(
+            "Could not find the training config bind mount in the launch command"
+        )
+    return rewritten_command
+
+
 def _custom_attributes_from_submit_options(submit_options):
     custom_attributes = JobAttributesCustomAttributes()
     for key in ("constraint",):
@@ -243,7 +282,10 @@ def build_iri_training_job_spec(submit_options, launch_spec, directory):
 
 
 def collapse_shell_command(lines):
-    # Preserve trailing-backslash continuations before tokenizing with shlex
+    """Return the one command from a launch block.
+
+    Blank and comment-only lines are ignored before enforcing the command count.
+    """
     command_parts = []
     current_command = ""
     for line in lines:
@@ -264,7 +306,13 @@ def collapse_shell_command(lines):
         if command:
             command_parts.append(command)
 
-    return "; ".join(command_parts)
+    if len(command_parts) != 1:
+        raise ValueError(
+            "Expected exactly one AmSC IRI API training launch command, "
+            f"but found {len(command_parts)}"
+        )
+
+    return command_parts[0]
 
 
 def parse_shell_variable_assignments(lines):
@@ -302,8 +350,9 @@ def expand_iri_shell_command(command, model_type, variables):
     return expanded
 
 
-def parse_iri_training_launch_spec(script_path, model_type):
-    # Split the batch script into setup lines and the podman-hpc launch command
+def parse_iri_training_launch_spec(script_path, model_type, remote_config_path=None):
+    # Keep setup as raw pre_launch lines; only the podman-hpc launch command
+    # is collapsed and rewritten locally.
     pre_launch_lines = []
     launch_lines = []
     found_launch = False
@@ -338,6 +387,8 @@ def parse_iri_training_launch_spec(script_path, model_type):
         rf"^\s*{re.escape(launcher)}\s+", "", launch_command, count=1
     )
     shell_command = expand_iri_shell_command(shell_command, model_type, variables)
+    if remote_config_path is not None:
+        shell_command = replace_training_config_mount(shell_command, remote_config_path)
     arguments = ["-lc", shell_command]
 
     return {
@@ -658,7 +709,10 @@ class ModelManager:
                         experiment_date_range,
                         simulation_calibration,
                     )
-                    remote_config_path = TRAINING_CONFIG_REMOTE_PATH
+                    remote_config_path = build_remote_training_config_path(
+                        experiment,
+                        model_type,
+                    )
                     [target_path] = await perlmutter.ls(
                         TRAINING_REMOTE_DIR, directory=True
                     )
@@ -678,6 +732,9 @@ class ModelManager:
                     pattern=r"--model \$\{model\}",
                     repl=rf"--model {model_type}",
                     string=training_script,
+                )
+                training_script = replace_training_config_mount(
+                    training_script, remote_config_path
                 )
                 # submit the training job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(training_script)
@@ -712,12 +769,16 @@ class ModelManager:
             # Get the CFS resource for uploading files shared with compute jobs
             cfs = await asyncio.to_thread(nersc.resource, "cfs")
             training_script_path = find_training_script_path()
-            remote_config_path = TRAINING_CONFIG_REMOTE_PATH
+            remote_config_path = build_remote_training_config_path(
+                experiment,
+                model_type,
+            )
             # Reuse SBATCH directives so AmSC IRI API submissions match the batch script
             submit_options = parse_sbatch_submit_options(training_script_path)
             launch_spec = parse_iri_training_launch_spec(
                 training_script_path,
                 model_type,
+                remote_config_path,
             )
             training_job_spec = build_iri_training_job_spec(
                 submit_options, launch_spec, TRAINING_REMOTE_DIR

@@ -25,7 +25,6 @@ DB_ENV_FILE="$HOME/db-podman.profile"
 REGISTRY_NAME="registry.nersc.gov"
 IMAGE_NAME="m558/superfacility/synapse-ml"
 IMAGE_VERSION="latest"
-TRAINING_CONFIG_FILE="/global/cfs/cdirs/m558/superfacility/model_training/config.yaml"
 
 if [ ! -r "${REGISTRY_PROFILE}" ]; then
     echo "Missing registry credentials file: ${REGISTRY_PROFILE}" >&2
@@ -81,15 +80,10 @@ echo "Container check/pull took ${SECONDS} seconds."
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
+# API submissions rewrite only the host side of the config mount.
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
-    -v "${TRAINING_CONFIG_FILE}":/app/ml/config.yaml \
+    -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
     --env-file "${DB_ENV_FILE}" \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
     python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}
-
-# Remove the uploaded config after training while preserving the training exit code
-training_exit=$?
-rm -f "${TRAINING_CONFIG_FILE}"
-cleanup_exit=$?
-exit $(( training_exit != 0 ? training_exit : cleanup_exit ))
