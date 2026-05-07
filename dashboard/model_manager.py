@@ -933,38 +933,40 @@ class ModelManager:
                                     ),
                                 )
                     with vuetify.VRow(
-                        v_if=(MODEL_DOWNLOAD_ACTIVE_EXPR,),
                         no_gutters=True,
                         align="center",
-                        style="margin-top: -8px; margin-bottom: 8px;",
+                        style=(
+                            "margin-top: -8px; margin-bottom: 8px; min-height: 32px;"
+                        ),
                     ):
                         with vuetify.VCol():
-                            with html.Div(
-                                classes=(
-                                    "d-flex align-center text-caption "
-                                    "text-medium-emphasis mb-1"
+                            with html.Div(v_if=(MODEL_DOWNLOAD_ACTIVE_EXPR,)):
+                                with html.Div(
+                                    classes=(
+                                        "d-flex align-center text-caption "
+                                        "text-medium-emphasis mb-1"
+                                    )
+                                ):
+                                    vuetify.VIcon(
+                                        "mdi-cloud-download-outline",
+                                        size=16,
+                                        classes="mr-1",
+                                    )
+                                    html.Span(v_text=("model_download_status",))
+                                    vuetify.VSpacer()
+                                    html.Span(
+                                        v_if=("model_download_progress !== null",),
+                                        v_text=(
+                                            "`${Math.round(model_download_progress)}%`",
+                                        ),
+                                    )
+                                vuetify.VProgressLinear(
+                                    indeterminate=("model_download_progress === null"),
+                                    model_value=("model_download_progress",),
+                                    color="primary",
+                                    height=4,
+                                    rounded=True,
                                 )
-                            ):
-                                vuetify.VIcon(
-                                    "mdi-cloud-download-outline",
-                                    size=16,
-                                    classes="mr-1",
-                                )
-                                html.Span(v_text=("model_download_status",))
-                                vuetify.VSpacer()
-                                html.Span(
-                                    v_if=("model_download_progress !== null",),
-                                    v_text=(
-                                        "`${Math.round(model_download_progress)}%`",
-                                    ),
-                                )
-                            vuetify.VProgressLinear(
-                                indeterminate=("model_download_progress === null",),
-                                model_value=("model_download_progress",),
-                                color="primary",
-                                height=4,
-                                rounded=True,
-                            )
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
