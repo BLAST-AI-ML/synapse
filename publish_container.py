@@ -6,7 +6,11 @@ Perlmutter (NERSC) and publish it to registry.nersc.gov
 """
 
 import argparse
+import os
 import subprocess
+from pathlib import Path
+
+DEFAULT_AMSC_CLIENT_SRC = Path(__file__).resolve().parent.parent / "amsc-python-client"
 
 
 def run(command: str, proceed: str, auto_yes: bool):
@@ -37,9 +41,18 @@ def build_container(container: str, auto_yes: bool):
         "ml": "synapse-ml",
     }
 
+    extra = ""
+    if container == "gui":
+        src = (
+            Path(os.environ.get("AMSC_CLIENT_SRC", DEFAULT_AMSC_CLIENT_SRC))
+            .expanduser()
+            .resolve()
+        )
+        extra = f" --build-context amsc-client-src={src}"
+
     # build the new image
     proceed = "y" if auto_yes else input(f"\nBuild new {container} image? [y/N] ")
-    command = f"docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t {imagename[container]} -f {folders[container]}.Dockerfile ."
+    command = f"docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t {imagename[container]} -f {folders[container]}.Dockerfile{extra} ."
     run(command, proceed, auto_yes)
 
     # upload to the NERSC registry

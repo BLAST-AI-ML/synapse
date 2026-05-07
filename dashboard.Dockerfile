@@ -7,8 +7,17 @@ WORKDIR /app/dashboard
 # Silence pip error to install in root dirs
 ENV PIP_ROOT_USER_ACTION=ignore
 
+# Spin assigns a random UID with no usable home directory. Pre-create
+# ~/.amsc as world-writable+sticky so the runtime UID can write to it.
+RUN mkdir -p /app/dashboard/.amsc && chmod 1777 /app/dashboard/.amsc
+
 # Install any needed packages specified in the environment file
 COPY dashboard/environment-lock.yml /app/dashboard/environment-lock.yml
+
+# The lock file installs amsc-client from this local source URL. Pass it with:
+#   --build-context amsc-client-src=/path/to/amsc-python-client
+COPY --from=amsc-client-src / /home/edoardo/src/amsc-python-client
+
 RUN conda install -c conda-forge conda-lock \
     && conda-lock install --name synapse-gui environment-lock.yml \
     && conda clean --all -y
