@@ -185,14 +185,6 @@ def parse_sbatch_submit_options(script_path):
     return submit_options
 
 
-def build_remote_training_config_path(experiment, model_type):
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    safe_experiment = re.sub(r"[^A-Za-z0-9_.-]+", "-", experiment).strip("-")
-    safe_model_type = re.sub(r"[^A-Za-z0-9_.-]+", "-", model_type).strip("-")
-    config_name = f"config-{safe_experiment}-{safe_model_type}-{timestamp}.yaml"
-    return f"{TRAINING_REMOTE_DIR}/{config_name}"
-
-
 def replace_training_config_mount(command, remote_config_path):
     default_mount = f"{TRAINING_CONFIG_REMOTE_PATH}:{TRAINING_CONFIG_CONTAINER_PATH}"
     remote_mount = f"{remote_config_path}:{TRAINING_CONFIG_CONTAINER_PATH}"
@@ -201,6 +193,43 @@ def replace_training_config_mount(command, remote_config_path):
             "Could not find the training config bind mount in the launch command"
         )
     return command.replace(default_mount, remote_mount, 1)
+
+
+def describe_iriapi_task(task):
+    """Return the useful details exposed by an AmSC IRI API filesystem task."""
+    details = [f"task {task.id} ended with state {task.state}"]
+    task_data = getattr(task, "_data", None)
+    if task_data is not None and hasattr(task_data, "to_dict"):
+        task_dict = task_data.to_dict()
+        command = task_dict.get("command")
+        result = task_dict.get("result")
+        if command:
+            details.append(f"command={command}")
+        if result:
+            details.append(f"result={result}")
+    return "; ".join(details)
+
+
+async def wait_iriapi_task(task, description):
+    task = await asyncio.to_thread(task.wait)
+    if task.state != "completed":
+        raise RuntimeError(f"{description} failed ({describe_iriapi_task(task)})")
+    return task
+
+
+async def remove_iriapi_file_if_present(fs, path):
+    stat_task = await asyncio.to_thread(fs.stat, path)
+    stat_task = await asyncio.to_thread(stat_task.wait)
+    if stat_task.state != "completed":
+        print(f"No existing training configuration found at {path}")
+        return
+
+    print(f"Removing existing training configuration at {path}...")
+    rm_task = await asyncio.to_thread(fs.rm, path)
+    await wait_iriapi_task(
+        rm_task,
+        f"Removing existing training configuration at {path}",
+    )
 
 
 def collapse_shell_command(lines):
@@ -614,10 +643,7 @@ class ModelManager:
                         experiment_date_range,
                         simulation_calibration,
                     )
-                    remote_config_path = build_remote_training_config_path(
-                        experiment,
-                        model_type,
-                    )
+                    remote_config_path = TRAINING_CONFIG_REMOTE_PATH
                     [target_path] = await perlmutter.ls(
                         TRAINING_REMOTE_DIR, directory=True
                     )
@@ -675,9 +701,7 @@ class ModelManager:
             # Get the CFS resource for uploading files shared with compute jobs
             cfs = await asyncio.to_thread(nersc.resource, "cfs")
             training_script_path = find_training_script_path()
-            remote_config_path = build_remote_training_config_path(
-                experiment, model_type
-            )
+            remote_config_path = TRAINING_CONFIG_REMOTE_PATH
             # Reuse SBATCH directives so AmSC IRI API submissions match the batch script
             submit_options = parse_sbatch_submit_options(training_script_path)
             launch_spec = parse_iri_training_launch_spec(
@@ -702,19 +726,17 @@ class ModelManager:
                     simulation_calibration,
                 )
                 print("Uploading configuration file to NERSC...")
+                await remove_iriapi_file_if_present(cfs.fs, remote_config_path)
                 upload_task = await asyncio.to_thread(
                     cfs.fs.upload,
                     config_path,
                     remote_config_path,
                     file_name=PurePosixPath(remote_config_path).name,
                 )
-                upload_task = await asyncio.to_thread(upload_task.wait)
-                if upload_task.state != "completed":
-                    raise RuntimeError(
-                        "Uploading configuration file to NERSC failed "
-                        f"(task {upload_task.id} ended with state "
-                        f"{upload_task.state})"
-                    )
+                await wait_iriapi_task(
+                    upload_task,
+                    "Uploading configuration file to NERSC",
+                )
                 print(f"Uploaded training configuration to {remote_config_path}")
 
             # Submit the training job through the AmSC IRI API
