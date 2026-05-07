@@ -53,12 +53,6 @@ IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch m
 TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
 TRAINING_CONFIG_REMOTE_PATH = f"{TRAINING_REMOTE_DIR}/config.yaml"
 TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
-IRI_SLURM_CUSTOM_ATTRIBUTE_MAP = {
-    "constraint": "constraint",
-    "gpus-per-node": "gpus-per-node",
-    "ntasks-per-node": "ntasks-per-node",
-    "queue": "queue",
-}
 # Match model=$1 or model=${1}, with optional comment
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
 # Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments
@@ -163,13 +157,6 @@ def parse_sbatch_submit_options(script_path):
     submit_options["duration"] = parse_slurm_duration(submit_options["duration"])
     submit_options["nodes"] = int(submit_options["nodes"])
     return submit_options
-
-
-def build_iri_slurm_submit_options(sbatch_submit_options):
-    return {
-        IRI_SLURM_CUSTOM_ATTRIBUTE_MAP.get(option, option): value
-        for option, value in sbatch_submit_options.items()
-    }
 
 
 def build_remote_training_config_path(experiment, model_type):
@@ -565,8 +552,7 @@ class ModelManager:
                 experiment, model_type
             )
             # Reuse SBATCH directives so AmSC IRI API submissions match the batch script
-            sbatch_submit_options = parse_sbatch_submit_options(training_script_path)
-            submit_options = build_iri_slurm_submit_options(sbatch_submit_options)
+            submit_options = parse_sbatch_submit_options(training_script_path)
             launch_spec = parse_iri_training_launch_spec(
                 training_script_path, model_type, remote_config_path
             )
