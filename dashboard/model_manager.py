@@ -578,8 +578,17 @@ class ModelManager:
                                 height=4,
                                 rounded=True,
                             )
-                    with vuetify.VRow(align="center"):
-                        with vuetify.VCol(cols="auto"):
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("model_training_status",),
+                                label="Training status",
+                                readonly=True,
+                                dense=True,
+                                hide_details=True,
+                            )
+                    with vuetify.VRow():
+                        with vuetify.VCol():
                             vuetify.VBtn(
                                 "Train",
                                 click=self.training_trigger,
@@ -588,11 +597,6 @@ class ModelManager:
                                     "(model_training_mode === 'sfapi' && "
                                     "perlmutter_status !== 'active')",
                                 ),
+                                block=True,
                                 style="text-transform: none",
-                            )
-                        with vuetify.VCol(cols=6, style="margin-left: auto;"):
-                            vuetify.VTextField(
-                                v_model_number=("model_training_status",),
-                                label="Training status",
-                                readonly=True,
                             )
