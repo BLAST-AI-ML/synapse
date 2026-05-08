@@ -493,13 +493,12 @@ class ModelManager:
             ):
                 with vuetify.VExpansionPanelText():
                     with vuetify.VRow(align="center"):
-                        with vuetify.VCol(cols=8, classes="d-flex align-center"):
+                        with vuetify.VCol(cols=8):
                             vuetify.VSelect(
                                 v_model=("model_type_verbose",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,
-                                hide_details=True,
                             )
                         with vuetify.VCol(
                             cols=4,
