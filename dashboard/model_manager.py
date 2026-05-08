@@ -498,17 +498,20 @@ class ModelManager:
             ):
                 with vuetify.VExpansionPanelText():
                     with vuetify.VRow(align="center"):
-                        with vuetify.VCol(cols=model_type_cols):
+                        with vuetify.VCol(
+                            cols=model_type_cols, classes="d-flex align-center"
+                        ):
                             vuetify.VSelect(
                                 v_model=("model_type_verbose",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,
+                                hide_details=True,
                             )
                         if AMSC_LOGO_URL:
                             with vuetify.VCol(
                                 cols=4,
-                                classes="d-flex align-center justify-end",
+                                classes="d-flex align-center",
                             ):
                                 with html.A(
                                     v_if=(AMSC_MLFLOW_LINK_ACTIVE_EXPR,),
