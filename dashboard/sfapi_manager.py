@@ -110,7 +110,7 @@ def load_sfapi_credentials(**kwargs):
 def load_sfapi_card():
     print("Setting Superfacility API card...")
     with vuetify.VCard():
-        with vuetify.VCardTitle("Superfacility API"):
+        with vuetify.VCardTitle("NERSC Superfacility API"):
             with vuetify.VCardText():
                 # row with component to upload input file
                 with vuetify.VRow():
