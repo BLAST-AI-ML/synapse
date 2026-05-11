@@ -114,12 +114,17 @@ def load_sfapi_card():
             with vuetify.VCardText():
                 # row with component to upload input file
                 with vuetify.VRow():
-                    vuetify.VFileInput(
-                        v_model=("sfapi_key_dict",),
-                        label="Key File (pem format, must include client ID in first line)",
-                        accept=".pem",
-                        __properties=["accept"],
-                    )
+                    with vuetify.VCol():
+                        vuetify.VFileInput(
+                            v_model=("sfapi_key_dict",),
+                            label="Key File (pem format, must include client ID in first line)",
+                            accept=".pem",
+                            prepend_icon="",
+                            prepend_inner_icon="mdi-paperclip",
+                            hide_details=True,
+                            style="cursor: pointer",
+                            __properties=["accept"],
+                        )
                 # row with text field to display key expiration date
                 with vuetify.VRow():
                     with vuetify.VCol():
@@ -127,6 +132,7 @@ def load_sfapi_card():
                             v_model=("sfapi_key_expiration",),
                             label="Key Expiration (if expired or unavailable, please upload a valid key)",
                             readonly=True,
+                            hide_details=True,
                         )
                 # row with text field to display Perlmutter status
                 with vuetify.VRow():
@@ -135,4 +141,5 @@ def load_sfapi_card():
                             v_model=("perlmutter_description",),
                             label="Perlmutter Status",
                             readonly=True,
+                            hide_details=True,
                         )
