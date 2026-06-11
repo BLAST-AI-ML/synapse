@@ -43,17 +43,11 @@ synapse/
 This project uses **Ruff** for linting and formatting, configured via `.pre-commit-config.yaml`. There is no `ruff.toml` or `pyproject.toml` — Ruff runs with default rules.
 
 ```bash
-# Run the linter (with auto-fix)
-ruff check --fix .
-
-# Run the formatter
-ruff format .
-
-# Run both via pre-commit (if installed)
-pre-commit run --all-files
+# Run linting and formatting on modified files
+pre-commit run --files <file1> <file2> ...
 ```
 
-Always run `ruff check` and `ruff format` before committing changes.
+Always run `pre-commit run --files <modified files>` before committing changes.
 
 ## Building
 
@@ -124,13 +118,13 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 2. **Conda, not pip**: Dependencies are managed via `conda` and `conda-lock`, not `pip`. Do not add `requirements.txt` or modify `pyproject.toml` for dependencies. Update `environment.yml` in the relevant component directory and regenerate the lock file.
 3. **Separate environments**: The dashboard and ML components have independent Conda environments (`synapse-gui` and `synapse-ml`). Changes to dependencies must be made in the correct `environment.yml`.
 4. **Docker builds from root**: Dockerfiles reference paths relative to the repository root. Always run `docker build` from the repository root directory.
-5. **Limited test infrastructure**: There is no pytest/unittest framework, but `tests/test_ml_pipeline.py` can validate ML changes end-to-end (requires a local MLflow server). Always run the linter (`ruff check .`) and verify logic through code review.
+5. **Limited test infrastructure**: There is no pytest/unittest framework, but `tests/test_ml_pipeline.py` can validate ML changes end-to-end (requires a local MLflow server). Always run the linter (`pre-commit run --files <modified files>`) and verify logic through code review.
 6. **Experiment configs are external**: The `experiments/` directory contains cloned private repositories. These are not checked into this repository (excluded via `.gitignore`).
 7. **NERSC-specific infrastructure**: Much of the deployment depends on NERSC services (Spin, Superfacility API, Perlmutter). Code changes affecting deployment or data access should be tested against NERSC services when possible.
 
 ## Making Changes
 
-- **Python code**: Edit files directly in `dashboard/` or `ml/`. Run `ruff check --fix .` and `ruff format .` after changes.
+- **Python code**: Edit files directly in `dashboard/` or `ml/`. Run `pre-commit run --files <modified files>` after changes.
 - **Dependencies**: Edit the appropriate `environment.yml` file. Regenerate the lock file with `conda-lock`.
 - **Docker**: Modify `dashboard.Dockerfile` or `ml.Dockerfile`. Rebuild with the commands above.
 - **New features**: Follow the manager pattern for dashboard features — create a new `*_manager.py` file and integrate it with `app.py` and `state_manager.py`.
