@@ -498,17 +498,20 @@ class ModelManager:
             ):
                 with vuetify.VExpansionPanelText():
                     with vuetify.VRow(align="center"):
-                        with vuetify.VCol(cols=model_type_cols):
+                        with vuetify.VCol(
+                            cols=model_type_cols, classes="d-flex align-center"
+                        ):
                             vuetify.VSelect(
                                 v_model=("model_type_verbose",),
                                 label="Model type",
                                 items=(model_type_list,),
                                 dense=True,
+                                hide_details=True,
                             )
                         if AMSC_LOGO_URL:
                             with vuetify.VCol(
                                 cols=4,
-                                classes="d-flex align-center justify-end",
+                                classes="d-flex align-center",
                             ):
                                 with html.A(
                                     v_if=(AMSC_MLFLOW_LINK_ACTIVE_EXPR,),
@@ -578,8 +581,17 @@ class ModelManager:
                                 height=4,
                                 rounded=True,
                             )
-                    with vuetify.VRow(align="center"):
-                        with vuetify.VCol(cols="auto"):
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("model_training_status",),
+                                label="Training status",
+                                readonly=True,
+                                dense=True,
+                                hide_details=True,
+                            )
+                    with vuetify.VRow():
+                        with vuetify.VCol():
                             vuetify.VBtn(
                                 "Train",
                                 click=self.training_trigger,
@@ -588,11 +600,6 @@ class ModelManager:
                                     "(model_training_mode === 'sfapi' && "
                                     "perlmutter_status !== 'active')",
                                 ),
+                                block=True,
                                 style="text-transform: none",
-                            )
-                        with vuetify.VCol(cols=6, style="margin-left: auto;"):
-                            vuetify.VTextField(
-                                v_model_number=("model_training_status",),
-                                label="Training status",
-                                readonly=True,
                             )
