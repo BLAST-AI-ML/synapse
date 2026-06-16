@@ -1,10 +1,16 @@
 repos:
 - repo: https://github.com/astral-sh/ruff-pre-commit
   # Ruff version
-  rev: v0.15.12
+  rev: v0.15.17
   hooks:
     # Run the linter
     - id: ruff-check
       args: [--fix, --exit-non-zero-on-fix]
     # Run the formatter
     - id: ruff-format
+
+# Scan for secret files that should not be committed
+- repo: https://github.com/gitleaks/gitleaks
+  rev: v8.30.0
+  hooks:
+  - id: gitleaks

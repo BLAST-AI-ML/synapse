@@ -1020,6 +1020,20 @@ class ModelManager:
                                     contain=True,
                                     style="width: 100%; cursor: inherit;",
                                 )
+                            vuetify.VImg(
+                                v_if=(f"!({AMSC_MLFLOW_LINK_ACTIVE_EXPR})",),
+                                src=AMSC_LOGO_URL,
+                                alt="AmSC",
+                                max_width=300,
+                                max_height=72,
+                                contain=True,
+                                title=(
+                                    "Selected model is not available in AmSC MLflow"
+                                ),
+                                style=(
+                                    "width: 100%; max-width: 300px; margin-left: auto;"
+                                ),
+                            )
                     with vuetify.VRow(
                         no_gutters=True,
                         align="center",
