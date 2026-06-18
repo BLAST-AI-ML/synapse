@@ -5,10 +5,15 @@ Welcome to the Synapse documentation!
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    overview
-   experiments
+   getting-started
+   dashboard
+   experiment-configuration
+   data-model
    simulations
-   models
+   ml-training
+   deployment
+   developer-notes
