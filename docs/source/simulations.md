@@ -28,7 +28,7 @@ Before submission, it writes the current dashboard parameters to `single_simulat
    /global/cfs/cdirs/m558/superfacility/simulation_running/<experiment>/templates
    ```
 
-5. The dashboard reads `submission_script_single` and submits it through SFAPI.
+5. The dashboard reads `submission_script_single` and submits it through Superfacility API.
 6. Job status is polled until a terminal state.
 
 ## Parameter Scans

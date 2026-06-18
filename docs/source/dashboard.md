@@ -1,7 +1,7 @@
 # Dashboard
 
 The dashboard is a Trame application rooted at `dashboard/app.py`.
-It discovers experiments from `experiments/synapse-*`, reads each experiment's `config.yaml`, connects to MongoDB, loads MLflow models, and builds the GUI from manager classes.
+It discovers experiments from `experiments/synapse-*`, reads each experiment's `config.yaml`, connects to MongoDB, loads MLflow models, and builds the GUI for operator control.
 
 ## Main Managers
 
@@ -24,4 +24,4 @@ It discovers experiments from `experiments/synapse-*`, reads each experiment's `
 ## NERSC Credentials
 
 Simulation and ML training launches require a Superfacility API key file uploaded through the dashboard.
-The file must be PEM-formatted and include the SFAPI client ID as the first line, followed by the private key.
+The file must be PEM-formatted and include the Superfacility API client ID as the first line, followed by the private key.
