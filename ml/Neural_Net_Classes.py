@@ -245,7 +245,12 @@ def train_calibration(
         return c_normcal_output * base_predictions + o_normcal_output
 
     _run_training_loop(
-        parameters=[c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output],
+        parameters=[
+            c_normcal_input,
+            o_normcal_input,
+            c_normcal_output,
+            o_normcal_output,
+        ],
         forward_fn=calibrated_forward,
         train_inputs=exp_inputs,
         train_targets=exp_targets,
