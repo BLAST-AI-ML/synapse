@@ -30,4 +30,4 @@ dependencies:
   - trame-vuetify
   - pip:
     - sfapi_client
-    - amsc-client[globus]
+    - amsc-client
