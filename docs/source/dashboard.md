@@ -19,7 +19,7 @@ It discovers experiments from `experiments/synapse-*`, reads each experiment's `
 
 - `/`: experiment selection, plots, parameter controls, optimization, ML controls, calibration controls, and errors.
 - `/hpc`: NERSC Superfacility API credential and Perlmutter status panel.
-- `/chat`: embedded assistant route for experiment support; currently backed by `https://synapse-chat.lbl.gov/`.
+- `/chat`: embedded assistant route for experiment support; currently backed by [synapse-chat.lbl.gov](https://synapse-chat.lbl.gov/).
 
 ## NERSC Credentials
 
