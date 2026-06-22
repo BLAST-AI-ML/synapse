@@ -10,7 +10,7 @@ The collection name should match `experiment` in `config.yaml`.
 
 ## Required Fields
 
-Records should include fields for the configured input and output variable names.
+Each record must contain fields for the configured input and output variables, named to match `config.yaml`.
 
 Simulation records may use simulation-space names when `simulation_calibration` maps them back to experimental names.
 
@@ -21,7 +21,7 @@ The dashboard uses these when present:
 - `date`: filtering and hover text for experimental records.
 - `scan_number`: hover text.
 - `shot_number`: hover text.
-- `_id`: hover text and simulation media lookup.
+- `_id`: hover text and lookup for linked simulation media, such as MP4 files described in [Simulation Outputs](simulations.md#simulation-outputs).
 
 ## Date Filtering
 

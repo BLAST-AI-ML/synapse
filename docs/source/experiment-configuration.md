@@ -46,10 +46,12 @@ Simulation launch uses:
 simulation = alpha * (experimental - beta)
 ```
 
+These are inverse conversions: display maps simulation to experimental units, while launch maps dashboard parameters back to simulation units.
+
 ## Add an Experiment
 
 1. Clone or create `experiments/synapse-<experiment>/`.
 2. Add `config.yaml`.
-3. Ensure MongoDB records match the configured names.
+3. Ensure MongoDB fields match the configured input and output variable names.
 4. Add `simulation_scripts/` only if dashboard launch is needed.
 5. Train and register a model if dashboard predictions are needed.

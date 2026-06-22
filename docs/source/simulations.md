@@ -29,11 +29,11 @@ Before submission, it writes the current dashboard parameters to `single_simulat
    ```
 
 5. The dashboard reads `submission_script_single` and submits it through Superfacility API.
-6. Job status is polled until a terminal state.
+6. Job status is polled until a terminal state, such as completed, failed, or cancelled.
 
 ## Parameter Scans
 
-Several experiment repositories also include `submission_script_multi` or custom scan scripts.
+Some experiment repositories also include `submission_script_multi` or custom scan scripts.
 These are experiment-specific and are usually run manually on Perlmutter.
 
 ## Simulation Outputs

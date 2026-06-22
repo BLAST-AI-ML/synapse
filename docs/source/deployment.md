@@ -18,6 +18,8 @@ From the repository root:
 docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t synapse-ml -f ml.Dockerfile .
 ```
 
+The two build commands differ only by image tag and Dockerfile.
+
 ## Publish Helper
 
 ```bash
@@ -29,4 +31,4 @@ python publish_container.py --gui --ml
 - Dashboard runs on Spin.
 - Training and simulations run on Perlmutter through Superfacility API.
 - Images are pushed to `registry.nersc.gov/m558/superfacility`.
-- Production changes should be tested carefully before publishing images.
+- Before publishing, validate locally and, when possible, against a staging Spin deployment.

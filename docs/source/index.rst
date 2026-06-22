@@ -11,8 +11,8 @@ Welcome to the Synapse documentation!
    overview
    getting-started
    dashboard
-   experiment-configuration
    data-model
+   experiment-configuration
    simulations
    ml-training
    deployment

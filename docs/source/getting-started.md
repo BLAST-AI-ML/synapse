@@ -1,6 +1,6 @@
 # Getting Started
 
-Use the lock files for normal setup.
+For a reproducible install, use `environment-lock.yml` rather than the unpinned `environment.yml`.
 
 ## Dashboard
 
@@ -37,4 +37,4 @@ python train_model.py --test --config_file ../experiments/synapse-bella-ip2/conf
 
 - `SF_DB_HOST`: MongoDB host for the dashboard.
 - `SF_DB_READONLY_PASSWORD`: read-only MongoDB password.
-- `AM_SC_API_KEY`: AmSC MLflow API key when the config uses AmSC.
+- `AM_SC_API_KEY`: American Science Cloud MLflow API key when the config uses that service.

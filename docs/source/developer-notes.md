@@ -8,7 +8,7 @@ Python code is linted and formatted with Ruff through pre-commit:
 pre-commit run --files <modified files>
 ```
 
-There is no project `pyproject.toml` or `ruff.toml`; Ruff uses default rules.
+Ruff runs with its default rule set; there is no `pyproject.toml` or `ruff.toml` to override it.
 
 ## Environments
 
@@ -18,7 +18,7 @@ There is no project `pyproject.toml` or `ruff.toml`; Ruff uses default rules.
 
 ## Testing
 
-There is no broad pytest suite.
+The project does not have a full pytest suite.
 The main integration check is:
 
 ```bash

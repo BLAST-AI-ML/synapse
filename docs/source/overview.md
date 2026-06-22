@@ -1,12 +1,14 @@
 # Overview
 
-Synapse is a modular framework for building digital twin components that connect experimental data, simulation data, and machine learning models.
+Synapse is a modular framework for connecting experimental data, simulation data, and machine learning models for digital twin workflows.
 
-The repository has three main parts:
+The main source areas are:
 
 - `dashboard/`: a Trame web application for exploring experiments, simulations, model predictions, optimization, calibration, and NERSC job controls.
 - `ml/`: model training code for Gaussian Process, single Neural Network, and Neural Network ensemble models.
 - `experiments/`: experiment-specific configuration and scripts, usually cloned from private repositories.
+- `tests/`: integration checks for the ML pipeline.
+- `docs/`: Sphinx documentation source.
 
 The typical workflow is:
 
@@ -27,7 +29,7 @@ Synapse currently assumes these external services:
 - NERSC Superfacility API for Perlmutter jobs.
 - NERSC container registry for dashboard and ML images.
 
-## Map
+## Repository Map
 
 ```text
 dashboard/      Trame GUI and dashboard managers

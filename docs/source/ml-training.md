@@ -9,7 +9,7 @@ Use `--model` with one of:
 
 - `GP`: Gaussian Process.
 - `NN`: single neural network.
-- `ensemble_NN`: ensemble of 10 neural networks.
+- `ensemble_NN`: ensemble neural network. The current ensemble size is defined in `train_nn_ensemble()` in `ml/train_model.py`.
 
 ## Command
 
@@ -24,7 +24,7 @@ Use `--test` to skip MLflow registration.
 1. Load config, variables, database records, and MLflow settings.
 2. Build calibration and normalization transforms.
 3. Train on simulation data.
-4. Train calibration on experimental data when available.
+4. Train [calibration](experiment-configuration.md#calibration) on experimental data when available.
 5. Build a `lume-model`.
 6. Register to MLflow unless `--test` is set.
 
