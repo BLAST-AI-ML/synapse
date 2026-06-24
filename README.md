@@ -12,7 +12,7 @@ Synapse is actively developed and broadened to an AI-accelerated, portable frame
 Synapse is a software platform that enables physicists to couple experimental data, simulations, and machine learning (ML) models trained on experimental and simulation data.
 As an example, the schematic below illustrates how Synapse is used at the Berkeley Lab Laser Accelerator Center (BELLA):
 
-![Synapse overview](synapse_overview.png)
+![Synapse overview](figures/synapse.png)
 
 One of the main software components is the graphical user interface (GUI), which is deployed via [Spin](https://docs.nersc.gov/services/spin/) at NERSC.
 The application requires access to various data and information sources, as described below.
