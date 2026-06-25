@@ -13,10 +13,10 @@
 version: 1
 metadata:
   content_hash:
-    linux-64: a2fed7d577b1f8dcea6bda93e25a02b5fa61145b9779bb01476554f8c7c4af19
-    osx-arm64: 60e87eb1df36ed3e811a6b4eb6c26639d472750f97bafe76c9ef8023c4f12ec8
-    osx-64: cad060e1ca3f48f1346fa18cf66f17fd06fd03138486e7aff463e63ab152a829
-    win-64: 97423ceba8693b2be03dd400493ecb8e7523da65ad879c2e5b3a37f67694bcee
+    linux-64: 0759f6c24d976444ac929179d4adb90feb470b18cabf61eb73088b653f44fb1d
+    osx-arm64: 19497e8f7bc0e39c269331e3d968cd90ce0ebee4a2e78b3bd85743e22a02b977
+    osx-64: f1b218ffe212849239230cbe132cd1affbe1996bc7f33013d3ff1181f394f713
+    win-64: 1bf154b3ae3660663b43861cda4eefbaa2b49c856f7ea2e1047a6067616451db
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -3506,13 +3506,13 @@ package:
   category: main
   optional: false
 - name: fastapi
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: linux-64
   dependencies:
     email_validator: ''
     fastapi-cli: ''
-    fastapi-core: ==0.137.1
+    fastapi-core: ==0.137.2
     fastar: ''
     httpx: ''
     jinja2: ''
@@ -3520,20 +3520,20 @@ package:
     pydantic-settings: ''
     python-multipart: ''
     uvicorn-standard: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.1-h4c801a0_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.2-hb8814d4_0.conda
   hash:
-    md5: 1461f39ae66a7543d131151e6ed08280
-    sha256: b75653b747d0aa18ce551c4b07185f38a159e0342523cb16530f5c1822a7fe7c
+    md5: 1a4df021798c91bd29b60d351b4c5831
+    sha256: 04bddf8c5127f2bad4c84a4aa894a000a5b0b2d5c31eaf55fd0a2142dcc0f10c
   category: main
   optional: false
 - name: fastapi
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: osx-64
   dependencies:
     email_validator: ''
     fastapi-cli: ''
-    fastapi-core: ==0.137.1
+    fastapi-core: ==0.137.2
     fastar: ''
     httpx: ''
     jinja2: ''
@@ -3541,20 +3541,20 @@ package:
     pydantic-settings: ''
     python-multipart: ''
     uvicorn-standard: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.1-h4c801a0_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.2-hb8814d4_0.conda
   hash:
-    md5: 1461f39ae66a7543d131151e6ed08280
-    sha256: b75653b747d0aa18ce551c4b07185f38a159e0342523cb16530f5c1822a7fe7c
+    md5: 1a4df021798c91bd29b60d351b4c5831
+    sha256: 04bddf8c5127f2bad4c84a4aa894a000a5b0b2d5c31eaf55fd0a2142dcc0f10c
   category: main
   optional: false
 - name: fastapi
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: osx-arm64
   dependencies:
     email_validator: ''
     fastapi-cli: ''
-    fastapi-core: ==0.137.1
+    fastapi-core: ==0.137.2
     fastar: ''
     httpx: ''
     jinja2: ''
@@ -3562,20 +3562,20 @@ package:
     pydantic-settings: ''
     python-multipart: ''
     uvicorn-standard: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.1-h4c801a0_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.2-hb8814d4_0.conda
   hash:
-    md5: 1461f39ae66a7543d131151e6ed08280
-    sha256: b75653b747d0aa18ce551c4b07185f38a159e0342523cb16530f5c1822a7fe7c
+    md5: 1a4df021798c91bd29b60d351b4c5831
+    sha256: 04bddf8c5127f2bad4c84a4aa894a000a5b0b2d5c31eaf55fd0a2142dcc0f10c
   category: main
   optional: false
 - name: fastapi
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: win-64
   dependencies:
     email_validator: ''
     fastapi-cli: ''
-    fastapi-core: ==0.137.1
+    fastapi-core: ==0.137.2
     fastar: ''
     httpx: ''
     jinja2: ''
@@ -3583,14 +3583,14 @@ package:
     pydantic-settings: ''
     python-multipart: ''
     uvicorn-standard: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.1-h4c801a0_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-0.137.2-hb8814d4_0.conda
   hash:
-    md5: 1461f39ae66a7543d131151e6ed08280
-    sha256: b75653b747d0aa18ce551c4b07185f38a159e0342523cb16530f5c1822a7fe7c
+    md5: 1a4df021798c91bd29b60d351b4c5831
+    sha256: 04bddf8c5127f2bad4c84a4aa894a000a5b0b2d5c31eaf55fd0a2142dcc0f10c
   category: main
   optional: false
 - name: fastapi-cli
-  version: 0.0.24
+  version: 0.0.26
   manager: conda
   platform: linux-64
   dependencies:
@@ -3599,14 +3599,14 @@ package:
     tomli: '>=2.0.0'
     typer: '>=0.16'
     uvicorn-standard: '>=0.15.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.24-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.26-pyhcf101f3_0.conda
   hash:
-    md5: 517d72c5d62875c99fc0e6d4359a03f1
-    sha256: 0c13b515d4424587b97dd6ede9277a659a1f580608faf3ab43341bf95a270aca
+    md5: ce89eed1ab952a6467b184911857ce31
+    sha256: 005858be2cccd46063708bcce85dbb438c691f000de65279d560ef4e8bea0bbf
   category: main
   optional: false
 - name: fastapi-cli
-  version: 0.0.24
+  version: 0.0.26
   manager: conda
   platform: osx-64
   dependencies:
@@ -3615,14 +3615,14 @@ package:
     tomli: '>=2.0.0'
     typer: '>=0.16'
     uvicorn-standard: '>=0.15.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.24-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.26-pyhcf101f3_0.conda
   hash:
-    md5: 517d72c5d62875c99fc0e6d4359a03f1
-    sha256: 0c13b515d4424587b97dd6ede9277a659a1f580608faf3ab43341bf95a270aca
+    md5: ce89eed1ab952a6467b184911857ce31
+    sha256: 005858be2cccd46063708bcce85dbb438c691f000de65279d560ef4e8bea0bbf
   category: main
   optional: false
 - name: fastapi-cli
-  version: 0.0.24
+  version: 0.0.26
   manager: conda
   platform: osx-arm64
   dependencies:
@@ -3631,14 +3631,14 @@ package:
     tomli: '>=2.0.0'
     typer: '>=0.16'
     uvicorn-standard: '>=0.15.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.24-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.26-pyhcf101f3_0.conda
   hash:
-    md5: 517d72c5d62875c99fc0e6d4359a03f1
-    sha256: 0c13b515d4424587b97dd6ede9277a659a1f580608faf3ab43341bf95a270aca
+    md5: ce89eed1ab952a6467b184911857ce31
+    sha256: 005858be2cccd46063708bcce85dbb438c691f000de65279d560ef4e8bea0bbf
   category: main
   optional: false
 - name: fastapi-cli
-  version: 0.0.24
+  version: 0.0.26
   manager: conda
   platform: win-64
   dependencies:
@@ -3647,14 +3647,14 @@ package:
     tomli: '>=2.0.0'
     typer: '>=0.16'
     uvicorn-standard: '>=0.15.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.24-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-cli-0.0.26-pyhcf101f3_0.conda
   hash:
-    md5: 517d72c5d62875c99fc0e6d4359a03f1
-    sha256: 0c13b515d4424587b97dd6ede9277a659a1f580608faf3ab43341bf95a270aca
+    md5: ce89eed1ab952a6467b184911857ce31
+    sha256: 005858be2cccd46063708bcce85dbb438c691f000de65279d560ef4e8bea0bbf
   category: main
   optional: false
 - name: fastapi-core
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: linux-64
   dependencies:
@@ -3664,14 +3664,14 @@ package:
     starlette: '>=0.46.0'
     typing-inspection: '>=0.4.2'
     typing_extensions: '>=4.8.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.1-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.2-pyhcf101f3_0.conda
   hash:
-    md5: 5136e5e29be44ffd323f0ee1601db5cc
-    sha256: d152e8953d41001dd68d5c51838a6bf8127527e323963a8db10bfa49de1216a0
+    md5: d5e4f06a67fb9ed554ab1543f33d1347
+    sha256: 3f34cda6ae2bc45659b924cd8fd3eef8c16225cb714302544f54c491bd4f97ef
   category: main
   optional: false
 - name: fastapi-core
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: osx-64
   dependencies:
@@ -3681,14 +3681,14 @@ package:
     starlette: '>=0.46.0'
     typing-inspection: '>=0.4.2'
     typing_extensions: '>=4.8.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.1-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.2-pyhcf101f3_0.conda
   hash:
-    md5: 5136e5e29be44ffd323f0ee1601db5cc
-    sha256: d152e8953d41001dd68d5c51838a6bf8127527e323963a8db10bfa49de1216a0
+    md5: d5e4f06a67fb9ed554ab1543f33d1347
+    sha256: 3f34cda6ae2bc45659b924cd8fd3eef8c16225cb714302544f54c491bd4f97ef
   category: main
   optional: false
 - name: fastapi-core
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: osx-arm64
   dependencies:
@@ -3698,14 +3698,14 @@ package:
     starlette: '>=0.46.0'
     typing-inspection: '>=0.4.2'
     typing_extensions: '>=4.8.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.1-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.2-pyhcf101f3_0.conda
   hash:
-    md5: 5136e5e29be44ffd323f0ee1601db5cc
-    sha256: d152e8953d41001dd68d5c51838a6bf8127527e323963a8db10bfa49de1216a0
+    md5: d5e4f06a67fb9ed554ab1543f33d1347
+    sha256: 3f34cda6ae2bc45659b924cd8fd3eef8c16225cb714302544f54c491bd4f97ef
   category: main
   optional: false
 - name: fastapi-core
-  version: 0.137.1
+  version: 0.137.2
   manager: conda
   platform: win-64
   dependencies:
@@ -3715,10 +3715,10 @@ package:
     starlette: '>=0.46.0'
     typing-inspection: '>=0.4.2'
     typing_extensions: '>=4.8.0'
-  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.1-pyhcf101f3_0.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/fastapi-core-0.137.2-pyhcf101f3_0.conda
   hash:
-    md5: 5136e5e29be44ffd323f0ee1601db5cc
-    sha256: d152e8953d41001dd68d5c51838a6bf8127527e323963a8db10bfa49de1216a0
+    md5: d5e4f06a67fb9ed554ab1543f33d1347
+    sha256: 3f34cda6ae2bc45659b924cd8fd3eef8c16225cb714302544f54c491bd4f97ef
   category: main
   optional: false
 - name: fastar
@@ -5338,7 +5338,7 @@ package:
   category: main
   optional: false
 - name: greenlet
-  version: 3.5.1
+  version: 3.5.2
   manager: conda
   platform: linux-64
   dependencies:
@@ -5347,14 +5347,14 @@ package:
     libstdcxx: '>=14'
     python: ''
     python_abi: 3.11.*
-  url: https://conda.anaconda.org/conda-forge/linux-64/greenlet-3.5.1-py311hc665b79_0.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/greenlet-3.5.2-py311hc665b79_0.conda
   hash:
-    md5: 8010ee7b0e9f8b63efac8e9b871f45ec
-    sha256: f3e6b5bf74b6bb104808d46bc5ec8e3e500cf1ba36dcb9bdd366c753405a393e
+    md5: 1b6f16b94281ed1242e615f9a5456c96
+    sha256: 9c818895a764053e9aa261ae78bfd4b001dc2c0b00ebcdbb1cee401d2e444d82
   category: main
   optional: false
 - name: greenlet
-  version: 3.5.1
+  version: 3.5.2
   manager: conda
   platform: osx-64
   dependencies:
@@ -5362,14 +5362,14 @@ package:
     libcxx: '>=19'
     python: ''
     python_abi: 3.12.*
-  url: https://conda.anaconda.org/conda-forge/osx-64/greenlet-3.5.1-py312h4075484_0.conda
+  url: https://conda.anaconda.org/conda-forge/osx-64/greenlet-3.5.2-py312h4075484_0.conda
   hash:
-    md5: ab0b86223aff2f5a431e92523f3c3bb4
-    sha256: bfd54a63879763c6a8e25e48d9fb36d45d91ab207887651a23f9ea1d7f300d8f
+    md5: fde5ce9c0acf88a941c07f2eefdea412
+    sha256: 089c57a7b1df323e05af2847684a5b0fd7dcf82806b3251f10523aceabdffe8f
   category: main
   optional: false
 - name: greenlet
-  version: 3.5.1
+  version: 3.5.2
   manager: conda
   platform: osx-arm64
   dependencies:
@@ -5377,14 +5377,14 @@ package:
     libcxx: '>=19'
     python: 3.12.*
     python_abi: 3.12.*
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/greenlet-3.5.1-py312h6510ced_0.conda
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/greenlet-3.5.2-py312h6510ced_0.conda
   hash:
-    md5: bd46cb7969581b244df620180a8f9814
-    sha256: 8e6134cc7b11309423925c7272483de6742c5983cfdf0b0a9ae87e6118601e17
+    md5: 43ef2e3f132b36145e9d699640e6d480
+    sha256: 7e179caddd6364a0d3db60401dbfc63ef13d058d7ab1052382e3244e54a7aae5
   category: main
   optional: false
 - name: greenlet
-  version: 3.5.1
+  version: 3.5.2
   manager: conda
   platform: win-64
   dependencies:
@@ -5393,10 +5393,10 @@ package:
     ucrt: '>=10.0.20348.0'
     vc: '>=14.3,<15'
     vc14_runtime: '>=14.44.35208'
-  url: https://conda.anaconda.org/conda-forge/win-64/greenlet-3.5.1-py312ha1a9051_0.conda
+  url: https://conda.anaconda.org/conda-forge/win-64/greenlet-3.5.2-py312ha1a9051_0.conda
   hash:
-    md5: de9b6390bd439324ce5ee7b6628c1f7d
-    sha256: 193737c191e6253db6deb059b6bb4f24f4bd6a42faf4ead29f9f3a27b592ddc2
+    md5: 78b88a1bffe2fde31542355302cce3d4
+    sha256: 45c5d0a36e51bc3db2de5b1b1bbc7fb7415be0ca6ae4476808a7315e9a899e56
   category: main
   optional: false
 - name: gunicorn
@@ -10252,53 +10252,53 @@ package:
   category: main
   optional: false
 - name: llvm-openmp
-  version: 22.1.7
+  version: 22.1.8
   manager: conda
   platform: linux-64
   dependencies:
     __glibc: '>=2.17,<3.0.a0'
-  url: https://conda.anaconda.org/conda-forge/linux-64/llvm-openmp-22.1.7-h4922eb0_0.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/llvm-openmp-22.1.8-h4922eb0_0.conda
   hash:
-    md5: 362702bd1f3c1b06ba5908ff18ef6d8c
-    sha256: 41941a6edc8358ec41617252cfec6b9e560cdfdf6d5a5c7d3c2562f43a3b66cb
+    md5: 7bbfdc5a6eca997d3b0873a575c3e155
+    sha256: a37aba21b85800af1e7c5b04ba76abab96b6e591eedf99dc6e4df83b0fefd7a5
   category: main
   optional: false
 - name: llvm-openmp
-  version: 22.1.7
+  version: 22.1.8
   manager: conda
   platform: osx-64
   dependencies:
     __osx: '>=11.0'
-  url: https://conda.anaconda.org/conda-forge/osx-64/llvm-openmp-22.1.7-h0d3cbff_0.conda
+  url: https://conda.anaconda.org/conda-forge/osx-64/llvm-openmp-22.1.8-h0d3cbff_0.conda
   hash:
-    md5: 301c1db2d75ac8a91f46d21652e08dd6
-    sha256: c8eeb6bca45680db8974b78e0524b2ab3c285a9916a0b3356329d1f949b1311b
+    md5: 9d5828c46147a47f828ca47a18407621
+    sha256: 7e8dcf03c2ef5491405d6d86eb892d14e99902f50f4eeb250db0cbdc58dd5818
   category: main
   optional: false
 - name: llvm-openmp
-  version: 22.1.7
+  version: 22.1.8
   manager: conda
   platform: osx-arm64
   dependencies:
     __osx: '>=11.0'
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/llvm-openmp-22.1.7-hc7d1edf_0.conda
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/llvm-openmp-22.1.8-hc7d1edf_0.conda
   hash:
-    md5: 7c6a5897a8bc5b6d509a4ee9dec7fcc8
-    sha256: 6bf27376f11198c01a88a1c8234470f45bce0aa7502b7e7988ef03ef5db3a890
+    md5: a9c118f6343fb6301b6f3b4e94c4c562
+    sha256: ccbaad6bbc88f135ab849bc36af5fa6eda36a9ed18ce6f58e3dde3d11784c156
   category: main
   optional: false
 - name: llvm-openmp
-  version: 22.1.7
+  version: 22.1.8
   manager: conda
   platform: win-64
   dependencies:
     ucrt: '>=10.0.20348.0'
     vc: '>=14.3,<15'
     vc14_runtime: '>=14.44.35208'
-  url: https://conda.anaconda.org/conda-forge/win-64/llvm-openmp-22.1.7-h4fa8253_0.conda
+  url: https://conda.anaconda.org/conda-forge/win-64/llvm-openmp-22.1.8-h4fa8253_0.conda
   hash:
-    md5: 0ca3373049a5be11689bc2f9b2f3a9d2
-    sha256: 70140a1fa5d7cb801c6be3273b0704b5f0e418e2fff6b12b8ce9db13067a1ed5
+    md5: de3551bf6508d45ca46b714639e52823
+    sha256: 50c02902bb516eeb56680358f052be38b5bf74b40e78ea4b2a675e84957e7307
   category: main
   optional: false
 - name: lume-model
@@ -11418,7 +11418,7 @@ package:
   category: main
   optional: false
 - name: msgpack-python
-  version: 1.1.2
+  version: 1.2.0
   manager: conda
   platform: linux-64
   dependencies:
@@ -11427,29 +11427,29 @@ package:
     libstdcxx: '>=14'
     python: '>=3.11,<3.12.0a0'
     python_abi: 3.11.*
-  url: https://conda.anaconda.org/conda-forge/linux-64/msgpack-python-1.1.2-py311hdf67eae_1.conda
+  url: https://conda.anaconda.org/conda-forge/linux-64/msgpack-python-1.2.0-py311hdf67eae_0.conda
   hash:
-    md5: c1153b2cb3318889ce624a3b4f0db7f7
-    sha256: 8c81a6208def64afc3e208326d78d7af60bcbc32d44afe1269b332df84084f29
+    md5: f801b293c221d5d56c7e6afe0871465e
+    sha256: 86bc5946308c7ef1b8dab5b6cf8fc4fbd3482b166abc4037c70754234f57ee72
   category: main
   optional: false
 - name: msgpack-python
-  version: 1.1.2
+  version: 1.2.0
   manager: conda
   platform: osx-64
   dependencies:
-    __osx: '>=10.13'
+    __osx: '>=11.0'
     libcxx: '>=19'
     python: '>=3.12,<3.13.0a0'
     python_abi: 3.12.*
-  url: https://conda.anaconda.org/conda-forge/osx-64/msgpack-python-1.1.2-py312hd099df3_1.conda
+  url: https://conda.anaconda.org/conda-forge/osx-64/msgpack-python-1.2.0-py312hdb80668_0.conda
   hash:
-    md5: 00597ae4dd073faaa9e6d2ca478f21c6
-    sha256: 77314afa123abe6c25a0b8a161763d7f624f432bff382b976e5f243c72082944
+    md5: d152189d4ee58fa25bca512a96bce37f
+    sha256: 191487b8f422cd610a577f6ec3f4d127b26043336f38c9ffc8217e34118eaae3
   category: main
   optional: false
 - name: msgpack-python
-  version: 1.1.2
+  version: 1.2.0
   manager: conda
   platform: osx-arm64
   dependencies:
@@ -11457,14 +11457,14 @@ package:
     libcxx: '>=19'
     python: '>=3.12,<3.13.0a0'
     python_abi: 3.12.*
-  url: https://conda.anaconda.org/conda-forge/osx-arm64/msgpack-python-1.1.2-py312h84eede6_1.conda
+  url: https://conda.anaconda.org/conda-forge/osx-arm64/msgpack-python-1.2.0-py312h766f71e_0.conda
   hash:
-    md5: e3973f0ac5ac854bf86f0d5674a1a289
-    sha256: 1540339678e13365001453fdcb698887075a2b326d5fab05cfd0f4fdefae4eab
+    md5: 135caacbdc87ea276cdc4e37666edb7e
+    sha256: eecce72621c540487698c64dec2b6cdaad09ea74d73a4b817857f2ed6f19b2a4
   category: main
   optional: false
 - name: msgpack-python
-  version: 1.1.2
+  version: 1.2.0
   manager: conda
   platform: win-64
   dependencies:
@@ -11473,10 +11473,10 @@ package:
     ucrt: '>=10.0.20348.0'
     vc: '>=14.3,<15'
     vc14_runtime: '>=14.44.35208'
-  url: https://conda.anaconda.org/conda-forge/win-64/msgpack-python-1.1.2-py312hf90b1b7_1.conda
+  url: https://conda.anaconda.org/conda-forge/win-64/msgpack-python-1.2.0-py312hf90b1b7_0.conda
   hash:
-    md5: 3272249c8d0f9cb7693e189611b9943f
-    sha256: 0408cc0868e0963922c76940d618266df88518a7b58b5d28da8378911916b998
+    md5: 39976dfa176ff03e1cd55f493c311899
+    sha256: 025797912d97f871cc22ad876ec75e18dc444c96fda0b7dedefc97804369a8a8
   category: main
   optional: false
 - name: multidict
@@ -17130,56 +17130,56 @@ package:
   category: main
   optional: false
 - name: tqdm
-  version: 4.68.2
+  version: 4.68.3
   manager: conda
   platform: linux-64
   dependencies:
     __unix: ''
     python: ''
-  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.2-pyh8f84b5b_1.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.3-pyh8f84b5b_0.conda
   hash:
-    md5: 99ee58c51aae7ee9ab947a0c6ce5a4c7
-    sha256: f3ac3dcc43f011835efe2718f5d78981935e8aa1e1d9741b63499dfdd8fa802c
+    md5: 65094960cb7ed216b6049aab57205902
+    sha256: 613d5cc47571c0b66e31265ff1e0fa5bef0e7b7670f33c67f5a2c587faf6e5d1
   category: main
   optional: false
 - name: tqdm
-  version: 4.68.2
+  version: 4.68.3
   manager: conda
   platform: osx-64
   dependencies:
     __unix: ''
     python: '>=3.10'
-  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.2-pyh8f84b5b_1.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.3-pyh8f84b5b_0.conda
   hash:
-    md5: 99ee58c51aae7ee9ab947a0c6ce5a4c7
-    sha256: f3ac3dcc43f011835efe2718f5d78981935e8aa1e1d9741b63499dfdd8fa802c
+    md5: 65094960cb7ed216b6049aab57205902
+    sha256: 613d5cc47571c0b66e31265ff1e0fa5bef0e7b7670f33c67f5a2c587faf6e5d1
   category: main
   optional: false
 - name: tqdm
-  version: 4.68.2
+  version: 4.68.3
   manager: conda
   platform: osx-arm64
   dependencies:
     __unix: ''
     python: '>=3.10'
-  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.2-pyh8f84b5b_1.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.3-pyh8f84b5b_0.conda
   hash:
-    md5: 99ee58c51aae7ee9ab947a0c6ce5a4c7
-    sha256: f3ac3dcc43f011835efe2718f5d78981935e8aa1e1d9741b63499dfdd8fa802c
+    md5: 65094960cb7ed216b6049aab57205902
+    sha256: 613d5cc47571c0b66e31265ff1e0fa5bef0e7b7670f33c67f5a2c587faf6e5d1
   category: main
   optional: false
 - name: tqdm
-  version: 4.68.2
+  version: 4.68.3
   manager: conda
   platform: win-64
   dependencies:
     __win: ''
     colorama: ''
     python: '>=3.10'
-  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.2-pyha7b4d00_1.conda
+  url: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.68.3-pyha7b4d00_0.conda
   hash:
-    md5: f73d419741d981f9a22939d0cb68bd4a
-    sha256: f25ec3f44a3a0243c35baba3dceb1dc0e4a127e5f168ca9fa34708cee821f6b7
+    md5: 0b814124391b7e176bcc0cce445a3a36
+    sha256: 41768105c1b4d2cfa3877b902f653275de26bb57d8877904791113329acc1fd4
   category: main
   optional: false
 - name: trame
@@ -19399,6 +19399,114 @@ package:
     sha256: 368d8628424966fd8f9c8018326a9c779e06913dd39e646cf331226acc90e5b2
   category: main
   optional: false
+- name: amsc-api-autogen
+  version: '0.4'
+  manager: pip
+  platform: linux-64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/76368190/packages/pypi/files/961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747/amsc_api_autogen-0.4-py3-none-any.whl
+  hash:
+    sha256: 961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747
+  category: main
+  optional: false
+- name: amsc-api-autogen
+  version: '0.4'
+  manager: pip
+  platform: osx-64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/76368190/packages/pypi/files/961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747/amsc_api_autogen-0.4-py3-none-any.whl
+  hash:
+    sha256: 961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747
+  category: main
+  optional: false
+- name: amsc-api-autogen
+  version: '0.4'
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/76368190/packages/pypi/files/961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747/amsc_api_autogen-0.4-py3-none-any.whl
+  hash:
+    sha256: 961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747
+  category: main
+  optional: false
+- name: amsc-api-autogen
+  version: '0.4'
+  manager: pip
+  platform: win-64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/76368190/packages/pypi/files/961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747/amsc_api_autogen-0.4-py3-none-any.whl
+  hash:
+    sha256: 961f13e7d8c8855ef3d430e94b4aecb5977a53ad21621966fca41ef08bdf8747
+  category: main
+  optional: false
+- name: amsc-client
+  version: 0.4.3
+  manager: pip
+  platform: linux-64
+  dependencies:
+    amsc-api-autogen: '>=0.4,<0.5'
+    httpx: '>=0.23.0,<0.29.0'
+    iri-api-autogen: '>=0.1'
+    pyyaml: '>=6.0'
+  url: https://gitlab.com/api/v4/projects/77567162/packages/pypi/files/d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094/amsc_client-0.4.3-py3-none-any.whl
+  hash:
+    sha256: d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094
+  category: main
+  optional: false
+- name: amsc-client
+  version: 0.4.3
+  manager: pip
+  platform: osx-64
+  dependencies:
+    amsc-api-autogen: '>=0.4,<0.5'
+    httpx: '>=0.23.0,<0.29.0'
+    iri-api-autogen: '>=0.1'
+    pyyaml: '>=6.0'
+  url: https://gitlab.com/api/v4/projects/77567162/packages/pypi/files/d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094/amsc_client-0.4.3-py3-none-any.whl
+  hash:
+    sha256: d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094
+  category: main
+  optional: false
+- name: amsc-client
+  version: 0.4.3
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    amsc-api-autogen: '>=0.4,<0.5'
+    httpx: '>=0.23.0,<0.29.0'
+    iri-api-autogen: '>=0.1'
+    pyyaml: '>=6.0'
+  url: https://gitlab.com/api/v4/projects/77567162/packages/pypi/files/d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094/amsc_client-0.4.3-py3-none-any.whl
+  hash:
+    sha256: d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094
+  category: main
+  optional: false
+- name: amsc-client
+  version: 0.4.3
+  manager: pip
+  platform: win-64
+  dependencies:
+    amsc-api-autogen: '>=0.4,<0.5'
+    httpx: '>=0.23.0,<0.29.0'
+    iri-api-autogen: '>=0.1'
+    pyyaml: '>=6.0'
+  url: https://gitlab.com/api/v4/projects/77567162/packages/pypi/files/d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094/amsc_client-0.4.3-py3-none-any.whl
+  hash:
+    sha256: d645e1db0f13ecbc33317986d284b191ee4ee55ab1242de98660bad26c38f094
+  category: main
+  optional: false
 - name: authlib
   version: 1.7.2
   manager: pip
@@ -19445,6 +19553,58 @@ package:
   url: https://files.pythonhosted.org/packages/fb/95/adcb68e20c34162e9135f370d6e31737719c2b6f94bc953fe7ed1f10fe21/authlib-1.7.2-py2.py3-none-any.whl
   hash:
     sha256: 3e1faedc9d87e7d56a164eca3ccb6ace0d61b94abe83e92242f8dc8bba9b4a9f
+  category: main
+  optional: false
+- name: iri-api-autogen
+  version: 0.1.2
+  manager: pip
+  platform: linux-64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/80654726/packages/pypi/files/c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91/iri_api_autogen-0.1.2-py3-none-any.whl
+  hash:
+    sha256: c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91
+  category: main
+  optional: false
+- name: iri-api-autogen
+  version: 0.1.2
+  manager: pip
+  platform: osx-64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/80654726/packages/pypi/files/c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91/iri_api_autogen-0.1.2-py3-none-any.whl
+  hash:
+    sha256: c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91
+  category: main
+  optional: false
+- name: iri-api-autogen
+  version: 0.1.2
+  manager: pip
+  platform: osx-arm64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/80654726/packages/pypi/files/c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91/iri_api_autogen-0.1.2-py3-none-any.whl
+  hash:
+    sha256: c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91
+  category: main
+  optional: false
+- name: iri-api-autogen
+  version: 0.1.2
+  manager: pip
+  platform: win-64
+  dependencies:
+    attrs: '>=22.2.0'
+    httpx: '>=0.23.0,<0.29.0'
+    python-dateutil: '>=2.8.0,<3.0.0'
+  url: https://gitlab.com/api/v4/projects/80654726/packages/pypi/files/c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91/iri_api_autogen-0.1.2-py3-none-any.whl
+  hash:
+    sha256: c15433e5c3730d880f61d39f359a886c890a020c4f8388caf3659724225d2d91
   category: main
   optional: false
 - name: joserfc
