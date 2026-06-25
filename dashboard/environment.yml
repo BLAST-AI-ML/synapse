@@ -29,5 +29,6 @@ dependencies:
   - trame-router
   - trame-vuetify
   - pip:
-    - sfapi_client
     - amsc-client
+    - globus-sdk
+    - sfapi_client
