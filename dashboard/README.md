@@ -155,8 +155,6 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 > ```bash
 > python publish_container.py --gui
 > ```
-> By default this expects the locally patched `amsc-python-client` checkout at `../amsc-python-client`.
-> If it lives elsewhere, set `AMSC_CLIENT_SRC=/path/to/amsc-python-client`.
 
 > [!TIP]
 > Prune old, unused images periodically in order to free up space on your machine:
@@ -170,8 +168,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 2. Build the Docker image:
    ```bash
-   docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t synapse-gui -f dashboard.Dockerfile \
-     --build-context amsc-client-src="${AMSC_CLIENT_SRC:-../amsc-python-client}" .
+   docker build --platform linux/amd64 --output type=image,oci-mediatypes=true -t synapse-gui -f dashboard.Dockerfile .
    ```
 
 ### Push the Docker container
