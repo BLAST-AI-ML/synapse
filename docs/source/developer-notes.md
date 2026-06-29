@@ -18,7 +18,13 @@ Ruff runs with its default rule set; there is no `pyproject.toml` or `ruff.toml`
 
 ## Documentation
 
-Build the documentation locally from the repository root with:
+Create the documentation conda environment once from `docs/`:
+
+```bash
+conda env create -f docs.yml
+```
+
+Build the documentation locally with:
 
 ```bash
 conda activate synapse-docs
