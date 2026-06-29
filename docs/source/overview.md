@@ -1,7 +1,7 @@
 # Overview
 
 Synapse is a modular framework to build components of digital twins.
-It supports operators of machines and experiments with ML-assisted predictions, trained on a combination of continously measured and simulated data.
+It supports operators of machines and experiments with ML-assisted predictions, trained on a combination of continuously measured and simulated data.
 Synapse embraces emerging [integrated research infrastructures](https://www.nersc.gov/what-we-do/computing-for-science/integrated-research-infrastructure), deploying a user-facing cloud service, using HPC/cloud compute, and exchanging modular components via container registries.
 
 At the moment, Synapse uses the NERSC Spin (control, dashboard), NERSC Superfacility API (simulation submission & ML training on Perlmutter), and NERSC container registry.
@@ -22,7 +22,7 @@ To display ML predictions, the application requires the following:
 - **Experiment configuration file**: A YAML file named `config.yaml` stored in the root directory of an experiment's repository that defines the input, output, and calibration variables.
 - **Simulation and experimental data points**: Each data point consists of values for the scalar inputs and outputs defined in the experiment configuration file.
 Data points are stored in a [MongoDB](https://www.mongodb.com/) database, where each experiment is represented by a separate collection.
-Experimental and simulation data points are stored in the same collection and are distinguished by the `experimental_flag` attribute.
+Experimental and simulation data points are stored in the same collection and are distinguished by the `experiment_flag` attribute.
 - **ML models**: Machine learning models that interpolate between data points and are stored in [MLflow](https://mlflow.org/).
 - **Simulation movies** (optional): For certain experiments, users can click on simulation data points to visualize simulation movies.
 The corresponding MP4 files are stored in the Perlmutter shared file system at `/global/cfs/cdirs/m558/superfacility/simulation_data`.
