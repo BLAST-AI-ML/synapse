@@ -3,6 +3,8 @@
 An experiment is a directory named `experiments/synapse-<experiment>/`.
 The dashboard strips `synapse-` and uses the rest as the experiment identifier.
 
+Please clone the private repository relevant to your experiment in the `experiments/` directory.
+
 Each experiment should provide:
 
 - `config.yaml`
