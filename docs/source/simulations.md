@@ -1,7 +1,7 @@
 # Simulations
 
 Synapse treats simulation support as experiment-owned code.
-The dashboard only knows where to find scripts and how to submit a job through the NERSC Superfacility API.
+The dashboard only needs to know where to find scripts and how to submit a job through the NERSC Superfacility API.
 
 ## Directory Layout
 
@@ -34,7 +34,7 @@ Before submission, it writes the current dashboard parameters to `single_simulat
 ## Parameter Scans
 
 Some experiment repositories also include `submission_script_multi` or custom scan scripts.
-These are experiment-specific and are usually run manually on Perlmutter.
+These scripts are experiment-specific and are usually run manually on Perlmutter.
 
 ## Simulation Outputs
 

@@ -1,6 +1,6 @@
 # Getting Started
 
-For a reproducible install, use `environment-lock.yml` rather than the unpinned `environment.yml`.
+For a reproducible installation, use `environment-lock.yml` rather than the unpinned `environment.yml`.
 
 ## Dashboard
 

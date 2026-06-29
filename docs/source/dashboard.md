@@ -1,6 +1,6 @@
 # Dashboard
 
-The Synapse dashboard provides a web interface for working with data from experiments, simulations, and ML models.
+The Synapse dashboard provides a web interface for working with experiment data, simulation data, and ML models.
 
 The dashboard can be run in two distinct ways:
 
@@ -8,7 +8,7 @@ The dashboard can be run in two distinct ways:
 
 2. At NERSC through Spin.
 
-The dashboard is a Trame application rooted at `dashboard/app.py`.
+The dashboard is a Trame application rooted in `dashboard/app.py`.
 It discovers experiments from `experiments/synapse-*`, reads each experiment's `config.yaml`, connects to MongoDB, loads MLflow models, and builds the GUI used to inspect data and launch jobs.
 
 ## Run the Dashboard Locally
@@ -26,7 +26,7 @@ This section describes how to develop and use the dashboard locally.
 conda activate base
 ```
 
-3. Install `conda-lock` if not installed yet:
+3. Install `conda-lock` if it is not already installed:
 ```bash
 conda install -c conda-forge conda-lock
 ```
@@ -87,12 +87,12 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 ## Run the Dashboard at NERSC
 
-Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and play around!
-Remember that you need to upload valid Superfacility API credentials in order to launch simulations or train ML models directly from the dashboard.
+Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and explore it.
+You need to upload valid Superfacility API credentials before you can launch simulations or train ML models directly from the dashboard.
 
 ## Get the Superfacility API Credentials
 
-Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#client](https://docs.nersc.gov/services/sfapi/authentication/#client):
+Follow the instructions at [docs.nersc.gov/services/sfapi/authentication/#client](https://docs.nersc.gov/services/sfapi/authentication/#client):
 
 1. Log in to your profile page at [iris.nersc.gov/profile](https://iris.nersc.gov/profile).
 
@@ -102,7 +102,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
 
 4. Enter a client name (e.g., "Synapse"), choose `sf558` for the user, choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
 
-5. Download the private key file (in pem format) and save it as `priv_key.pem` in the root directory of the dashboard.
+5. Download the private key file in PEM format and save it as `priv_key.pem` in the root directory of the dashboard.
    Each time the dashboard is launched, it will automatically find the existing key file and load the corresponding credentials.
 
 6. Copy your client ID and add it on the first line of your private key file as described in the instructions at [nersc.github.io/sfapi_client/quickstart/#storing-keys-in-files](https://nersc.github.io/sfapi_client/quickstart/#storing-keys-in-files):
@@ -113,7 +113,7 @@ Following the instructions at [docs.nersc.gov/services/sfapi/authentication/#cli
    -----END RSA PRIVATE KEY-----
    ```
 
-7. Run `chmod 600 priv_key.pem` to change the permissions of your private key file to read/write only.
+7. Run `chmod 600 priv_key.pem` to restrict your private key file to read/write access only.
 
 ## Main Managers
 
@@ -162,7 +162,7 @@ The file must be PEM-formatted and include the Superfacility API client ID as th
 ### Build and push the Docker container to NERSC
 
 ```{warning}
-Pushing a new Docker container affects the production dashboard deployed at NERSC through Spin.
+Pushing a new Docker container affects the production dashboard deployed through Spin at NERSC.
 ```
 
 ````{tip}
@@ -173,7 +173,7 @@ python publish_container.py --gui
 ````
 
 ````{tip}
-Prune old, unused images periodically in order to free up space on your machine:
+Prune old, unused images periodically to free up space on your machine:
 ```bash
 docker system prune -a
 ```
@@ -192,7 +192,7 @@ docker system prune -a
 
 1. Move to the root directory of the repository.
 
-2. Login to the [NERSC registry](https://registry.nersc.gov):
+2. Log in to the [NERSC registry](https://registry.nersc.gov):
    ```bash
    docker login registry.nersc.gov
    # Username: your NERSC username

@@ -8,13 +8,13 @@ Python code is linted and formatted with Ruff through pre-commit:
 pre-commit run --files <modified files>
 ```
 
-Ruff runs with its default rule set; there is no `pyproject.toml` or `ruff.toml` to override it.
+Ruff runs with its default rule set; there is no `pyproject.toml` or `ruff.toml` that overrides it.
 
 ## Environments
 
 - Dashboard dependencies live in `dashboard/environment.yml`.
 - ML dependencies live in `ml/environment.yml`.
-- Regenerate the matching `environment-lock.yml` after dependency changes.
+- Regenerate the corresponding `environment-lock.yml` after dependency changes.
 
 ## Documentation
 

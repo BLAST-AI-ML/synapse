@@ -1,7 +1,7 @@
 # Data Model
 
 MongoDB stores experiment and simulation records.
-The collection name should match `experiment` in `config.yaml`.
+The collection name should match the `experiment` value in `config.yaml`.
 
 ## Record Types
 
@@ -10,9 +10,9 @@ The collection name should match `experiment` in `config.yaml`.
 
 ## Required Fields
 
-Each record must contain fields for the configured input and output variables, named to match `config.yaml`.
+Each record must contain fields for the configured input and output variables, with names that match `config.yaml`.
 
-Simulation records may use simulation-space names when `simulation_calibration` maps them back to experimental names.
+Simulation records may use simulation-space names when `simulation_calibration` maps those names back to experimental variables.
 
 ## Optional Fields
 

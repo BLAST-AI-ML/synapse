@@ -8,7 +8,7 @@ ML models can be trained in two distinct ways:
 
 2. At NERSC, either manually or through the dashboard.
 
-It reads config and MongoDB records, trains a model, wraps it with `lume-model`, and optionally registers it in MLflow.
+It reads the configuration and MongoDB records, trains a model, wraps it with `lume-model`, and optionally registers it in MLflow.
 
 ## Train ML Models Locally
 
@@ -25,7 +25,7 @@ This section describes how to train ML models locally.
    conda activate base
    ```
 
-3. Install `conda-lock` if not installed yet:
+3. Install `conda-lock` if it is not already installed:
    ```bash
    conda install -c conda-forge conda-lock
    ```
@@ -62,7 +62,7 @@ This section describes how to train ML models locally.
 
 #### Test the full train/save/load cycle: `test_ml_pipeline.py`
 
-`tests/test_ml_pipeline.py` exercises the full ML lifecycle: training → upload to MLflow → download → accuracy check. It requires a local, empty MLflow server to avoid touching any production server.
+`tests/test_ml_pipeline.py` exercises the full ML lifecycle: training → upload to MLflow → download → accuracy check. It requires a local, empty MLflow server so it does not touch a production server.
 
 1. Start a local MLflow server, e.g. with Docker:
    ```bash
@@ -138,7 +138,7 @@ This section describes how to train ML models at NERSC.
 ### Manually with Docker
 
 ```{warning}
-Note that the Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to `train_model.py`, unless you re-build and re-deploy the container first.
+The Docker container is pulled from the [NERSC registry](https://registry.nersc.gov) and does not reflect any local changes you may have made to `train_model.py` unless you rebuild and redeploy the container first.
 ```
 
 1. Log in to Perlmutter:
@@ -146,7 +146,7 @@ Note that the Docker container is pulled from the [NERSC registry](https://regis
    ssh perlmutter-p1.nersc.gov
    ```
 
-2. Ensure the file `$HOME/db.profile` contains the read-only password to the database and the AmSC MLflow API key: `export SF_DB_READONLY_PASSWORD='your_password_here'` and `export AM_SC_API_KEY='your_amsc_api_key_here'`.
+2. Ensure the file `$HOME/db.profile` contains the read-only database password and the AmSC MLflow API key: `export SF_DB_READONLY_PASSWORD='your_password_here'` and `export AM_SC_API_KEY='your_amsc_api_key_here'`.
 
 3. Pull the Docker container:
    ```bash
@@ -165,8 +165,8 @@ Note that the Docker container is pulled from the [NERSC registry](https://regis
 ### Through the dashboard
 
 ````{warning}
-When we train ML models through the dashboard, we use NERSC's Superfacility API with the collaboration account `sf558`.
-Since this is a non-interactive, non-user account, we also use a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
+When ML models are trained through the dashboard, Synapse uses NERSC's Superfacility API with the collaboration account `sf558`.
+Because this is a non-interactive, non-user account, Synapse also uses a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
 The registry login credentials need to be prepared (only once) in the `$HOME` of user `sf558` (`/global/homes/s/sf558/`), in a file named `registry.profile` with the following content:
 ```bash
 export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
@@ -175,7 +175,7 @@ export REGISTRY_PASSWORD="..."
 ````
 
 Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and click the `Train` button in the `ML` panel.
-Remember that you need to upload valid Superfacility API credentials in order to launch simulations or train ML models directly from the dashboard.
+You need to upload valid Superfacility API credentials before you can launch simulations or train ML models directly from the dashboard.
 
 ## Model Types
 
@@ -198,7 +198,7 @@ Use `--test` to skip MLflow registration.
 1. Load config, variables, database records, and MLflow settings.
 2. Build calibration and normalization transforms.
 3. Train on simulation data.
-4. Train [calibration](experiment-configuration.md#calibration) on experimental data when available.
+4. Train the [calibration](experiment-configuration.md#calibration) on experimental data when available.
 5. Build a `lume-model`.
 6. Register to MLflow unless `--test` is set.
 
@@ -240,7 +240,7 @@ synapse-<experiment>
 ### Build and push the Docker container to NERSC
 
 ```{warning}
-Pushing a new Docker container affects both the ML training jobs launched from a dashboard deployed locally and the ML training jobs launched from the dashboard deployed at NERSC, because in both cases the ML training runs in a Docker container pulled from the [NERSC registry](https://registry.nersc.gov).
+Pushing a new Docker container affects ML training jobs launched from both locally deployed dashboards and the dashboard deployed at NERSC, because in both cases training runs in a Docker container pulled from the [NERSC registry](https://registry.nersc.gov).
 Currently, this is the only way to test the end-to-end integration of the dashboard with the ML training workflow.
 ```
 
@@ -252,7 +252,7 @@ python publish_container.py --ml
 ````
 
 ````{tip}
-Prune old, unused images periodically in order to free up space on your machine:
+Prune old, unused images periodically to free up space on your machine:
 ```bash
 docker system prune -a
 ```
@@ -278,7 +278,7 @@ docker --version
 
 1. Move to the root directory of the repository.
 
-2. Login to the [NERSC registry](https://registry.nersc.gov):
+2. Log in to the [NERSC registry](https://registry.nersc.gov):
    ```bash
    docker login registry.nersc.gov
    # Username: your NERSC username
