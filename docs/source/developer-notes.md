@@ -16,6 +16,18 @@ Ruff runs with its default rule set; there is no `pyproject.toml` or `ruff.toml`
 - ML dependencies live in `ml/environment.yml`.
 - Regenerate the matching `environment-lock.yml` after dependency changes.
 
+## Documentation
+
+Build the documentation locally from the repository root with:
+
+```bash
+conda activate synapse-docs
+cd docs
+make html
+```
+
+The generated HTML is written to `docs/build/html/`.
+
 ## Testing
 
 The project does not have a full pytest suite.
