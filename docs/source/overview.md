@@ -1,0 +1,92 @@
+# Overview
+
+Synapse is a modular framework for building digital twin components.
+It supports machine and experiment operators with ML-assisted predictions trained on a combination of continuously measured and simulated data.
+Synapse embraces emerging [integrated research infrastructures](https://www.nersc.gov/what-we-do/computing-for-science/integrated-research-infrastructure) by deploying a user-facing cloud service, using HPC/cloud compute, and exchanging modular components through container registries.
+
+At the moment, Synapse uses NERSC Spin (control and dashboard), the NERSC Superfacility API (simulation submission and ML training on Perlmutter), and the NERSC container registry.
+Synapse is under active development and is being broadened into an AI-accelerated, portable framework.
+
+Synapse enables physicists to couple experimental data, simulations, and machine learning (ML) models trained on both experimental and simulation data.
+As an example, the schematic below illustrates how Synapse is used at the Berkeley Lab Laser Accelerator Center (BELLA):
+
+![Synapse overview](synapse_overview.png)
+
+One of the main software components is the graphical user interface (GUI), which is deployed through [Spin](https://docs.nersc.gov/services/spin/) at NERSC.
+The application requires access to various data and information sources, as described below.
+
+## Displaying ML Predictions
+
+To display ML predictions, the application requires the following:
+
+- **Experiment configuration file**: A YAML file named `config.yaml` stored in the root directory of an experiment's repository that defines the input, output, and calibration variables.
+- **Simulation and experimental data points**: Each data point consists of values for the scalar inputs and outputs defined in the experiment configuration file.
+Data points are stored in a [MongoDB](https://www.mongodb.com/) database, with each experiment represented by a separate collection.
+Experimental and simulation data points are stored in the same collection and distinguished by the `experiment_flag` attribute.
+- **ML models**: Machine learning models that interpolate between data points and are stored in [MLflow](https://mlflow.org/).
+- **Simulation movies** (optional): For certain experiments, users can click on simulation data points to visualize simulation movies.
+The corresponding MP4 files are stored in the Perlmutter shared file system at `/global/cfs/cdirs/m558/superfacility/simulation_data`.
+This directory is mounted on the container image running on Spin.
+
+## Launching ML Training at NERSC
+
+ML models can be trained by launching jobs on Perlmutter from the GUI, through the [NERSC Superfacility API](https://docs.nersc.gov/services/sfapi/). The application requires the following:
+
+- **Superfacility API credential file**: Instructions on generating and uploading the credential file from the GUI are in [Dashboard](dashboard.md).
+- **Submission script**: The batch script `ml/training_pm.sbatch` is copied into the container image pushed to the NERSC registry and deployed through Spin. It serves as a template for Superfacility API job submission when users launch model training from the GUI.
+- **Python scripts and configuration files**: These include `ml/train_model.py`, `ml/Neural_Net_Classes.py`, and the experiment configuration file `config.yaml`.
+They are copied into the container image pushed to the NERSC registry and deployed through Spin.
+When users launch model training from the GUI, these files are copied to the Perlmutter shared file system at `/global/cfs/cdirs/m558/superfacility/model_training/src/` for access by the Superfacility API job. The `config.yaml` file is automatically populated with the configuration values specified in the GUI before being copied to the shared file system.
+
+## Workflow
+
+The main source areas are:
+
+- `dashboard/`: a Trame web application for exploring experiments, simulations, model predictions, optimization, calibration, and NERSC job controls.
+- `ml/`: model training code for Gaussian Process, single Neural Network, and Neural Network ensemble models.
+- `experiments/`: experiment-specific configuration and scripts, usually cloned from private repositories.
+- `tests/`: integration checks for the ML pipeline.
+- `docs/`: Sphinx documentation source.
+
+The typical workflow is:
+
+1. Add or update an experiment repository under `experiments/synapse-<name>/`.
+2. Define `config.yaml` with database, MLflow, input, output, and optional calibration settings.
+3. Load experiment and simulation points from MongoDB.
+4. Train a model from simulation data, optionally calibrating against experimental data.
+5. Register the trained model in MLflow.
+6. Use the dashboard to visualize data, query the model, optimize inputs, and launch NERSC jobs.
+
+## Services
+
+Synapse currently assumes these external services:
+
+- MongoDB for experiment and simulation records.
+- MLflow for registered model storage.
+- NERSC Spin for dashboard deployment.
+- NERSC Superfacility API for Perlmutter jobs.
+- NERSC container registry for dashboard and ML images.
+
+## Repository Map
+
+```text
+dashboard/      Trame GUI and dashboard managers
+ml/             ML training script, model classes, Perlmutter batch template
+experiments/    Experiment configs and experiment-owned scripts
+tests/          End-to-end ML pipeline helpers
+docs/           Sphinx documentation source
+```
+
+## Copyright Notice and License Agreement
+
+Synapse v1.0 Copyright (c) 2025, The Regents of the University of California,
+through Lawrence Berkeley National Laboratory (subject to receipt of
+any required approvals from the U.S. Dept. of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Intellectual Property Office at
+IPO@lbl.gov.
+
+Please find the full copyright notice in `NOTICE.txt` and the full license agreement in `LICENSE.txt`.
+
+The SPDX license identifier is `BSD-3-Clause-LBNL`.
