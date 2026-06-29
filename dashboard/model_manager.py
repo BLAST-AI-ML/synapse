@@ -589,7 +589,7 @@ class ModelManager:
                                 disabled=(
                                     "model_training || "
                                     "(model_training_mode === 'sfapi' && "
-                                    "perlmutter_status !== 'active')",
+                                    "sfapi_perlmutter_status !== 'active')",
                                 ),
                                 block=True,
                                 style="text-transform: none",
