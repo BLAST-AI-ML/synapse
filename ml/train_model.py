@@ -27,7 +27,7 @@ import pandas as pd
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
 sys.path.append(".")
-from Neural_Net_Classes import CombinedNN, train_calibration
+from Neural_Net_Classes import CombinedNN, train_calibration, train_unified
 
 # measure the time it took to import everything
 import_end_time = time.time()
@@ -61,16 +61,22 @@ def parse_arguments():
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "--training_mode",
+        choices=["two_phase", "unified"],
+        default="two_phase",
+    )
     args = parser.parse_args()
     config_file = args.config_file
     model_type = args.model
     test_mode = args.test
+    training_mode = args.training_mode
     print(
-        f"Config file path: {config_file}, Model type: {model_type}, Test mode: {test_mode}"
+        f"Config file path: {config_file}, Model type: {model_type}, Test mode: {test_mode}, Training mode : {training_mode}"
     )
     if model_type not in ["NN", "ensemble_NN", "GP"]:
         raise ValueError(f"Invalid model type: {model_type}")
-    return config_file, model_type, test_mode
+    return config_file, model_type, test_mode, training_mode
 
 
 def load_config(config_file):
@@ -353,6 +359,65 @@ def train_calibration_phase(
     return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
 
 
+def train_unified_nn(
+    norm_sim_train,
+    norm_sim_val,
+    norm_exp,
+    input_names,
+    output_names,
+    device,
+    exp_weight=1.0,
+):
+    """Single-phase: jointly train NN + calibration on sim + exp data."""
+    n_inputs = len(input_names)
+    n_outputs = len(output_names)
+
+    sim_X = torch.tensor(norm_sim_train[input_names].values, dtype=torch.float).to(
+        device
+    )
+    sim_y = torch.tensor(norm_sim_train[output_names].values, dtype=torch.float).to(
+        device
+    )
+    sim_X_val = torch.tensor(norm_sim_val[input_names].values, dtype=torch.float).to(
+        device
+    )
+    sim_y_val = torch.tensor(norm_sim_val[output_names].values, dtype=torch.float).to(
+        device
+    )
+    exp_X = torch.tensor(norm_exp[input_names].values, dtype=torch.float).to(device)
+    exp_y = torch.tensor(norm_exp[output_names].values, dtype=torch.float).to(device)
+
+    model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
+    model.to(device)
+
+    c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output = (
+        train_unified(
+            model,
+            sim_X,
+            sim_y,
+            sim_X_val,
+            sim_y_val,
+            exp_X,
+            exp_y,
+            num_epochs=20000,
+            lr=0.0001,
+            exp_weight=exp_weight,
+        )
+    )
+
+    input_inferred_normalizedcalibration = AffineInputTransform(
+        n_inputs, coefficient=c_normcal_input.cpu(), offset=o_normcal_input.cpu()
+    )
+    output_inferred_normalizedcalibration = AffineInputTransform(
+        n_outputs, coefficient=c_normcal_output.cpu(), offset=o_normcal_output.cpu()
+    )
+    return (
+        [model],
+        input_inferred_normalizedcalibration,
+        output_inferred_normalizedcalibration,
+    )
+
+
 def build_lume_model(
     model,
     model_type,
@@ -532,7 +597,7 @@ def register_model_to_mlflow(model, model_type, experiment, config_dict):
 # Main execution block
 if __name__ == "__main__":
     # Parse command line arguments and load config
-    experiment, model_type, test_mode = parse_arguments()
+    experiment, model_type, test_mode, training_mode = parse_arguments()
     config_dict = load_config(experiment)
     # Extract experiment name from config file
     experiment = config_dict["experiment"]
@@ -617,32 +682,71 @@ if __name__ == "__main__":
             output_normalization,
         )
 
-    # Phase 1: Train model on simulation data
-    print("Phase 1: Training model on simulation data")
-    train_start_time = time.time()
-    if model_type != "GP":
-        trained_model = train_nn_ensemble(
-            model_type,
+    if training_mode == "unified":
+        if model_type != "NN":
+            raise ValueError("--training_mode unified currently only supports NN")
+        if norm_exp is None or len(norm_exp) == 0:
+            raise ValueError("--training_mode unified requires experimental data")
+        exp_weight = config_dict.get("training", {}).get("exp_weight", 1.0)
+        print("Unified training: jointly optimizing NN + calibration on sim + exp data")
+        train_start_time = time.time()
+        (
+            trained_model,
+            input_inferred_normalizedcalibration,
+            output_inferred_normalizedcalibration,
+        ) = train_unified_nn(
             norm_sim_train,
             norm_sim_val,
+            norm_exp,
             sim_input_names,
             sim_output_names,
             device,
+            exp_weight,
         )
-    else:
-        trained_model = train_gp(
-            norm_sim_train,
-            sim_input_names,
-            sim_output_names,
-            device,
+        input_inferred_calibration = build_inferred_calibration(
+            input_guess_calibration,
+            input_normalization,
+            input_inferred_normalizedcalibration,
+            len(sim_input_names),
         )
-    print("Phase 1: training complete")
+        input_transformers = [input_inferred_calibration, input_normalization]
+        output_inferred_calibration = build_inferred_calibration(
+            output_guess_calibration,
+            output_normalization,
+            output_inferred_normalizedcalibration,
+            len(sim_output_names),
+        )
+        output_transformers = [output_normalization, output_inferred_calibration]
+        print("Unified training complete")
+    elif training_mode == "two-phase":
+        # Phase 1: Train model on simulation data
+        print("Phase 1: Training model on simulation data")
+        train_start_time = time.time()
+        if model_type != "GP":
+            trained_model = train_nn_ensemble(
+                model_type,
+                norm_sim_train,
+                norm_sim_val,
+                sim_input_names,
+                sim_output_names,
+                device,
+            )
+        else:
+            trained_model = train_gp(
+                norm_sim_train,
+                sim_input_names,
+                sim_output_names,
+                device,
+            )
+        print("Phase 1: training complete")
 
-    # Phase 2: Train calibration on experimental data
-    if norm_exp is not None and len(norm_exp) > 0:
-        print("Phase 2: Training calibration on experimental data")
-        input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = (
-            train_calibration_phase(
+        # Phase 2: Train calibration on experimental data
+        if norm_exp is not None and len(norm_exp) > 0:
+            print("Phase 2: Training calibration on experimental data")
+            (
+                input_inferred_normalizedcalibration,
+                output_inferred_normalizedcalibration,
+            ) = train_calibration_phase(
                 trained_model,
                 model_type,
                 norm_exp,
@@ -650,37 +754,36 @@ if __name__ == "__main__":
                 sim_output_names,
                 device,
             )
-        )
 
-        # Build calibration transforms in physical units
-        input_inferred_calibration = build_inferred_calibration(
-            input_guess_calibration,
-            input_normalization,
-            input_inferred_normalizedcalibration,
-            len(sim_input_names),
-        )
+            # Build calibration transforms in physical units
+            input_inferred_calibration = build_inferred_calibration(
+                input_guess_calibration,
+                input_normalization,
+                input_inferred_normalizedcalibration,
+                len(sim_input_names),
+            )
 
-        input_transformers = [
-            input_inferred_calibration,
-            input_normalization,
-        ]
+            input_transformers = [
+                input_inferred_calibration,
+                input_normalization,
+            ]
 
-        output_inferred_calibration = build_inferred_calibration(
-            output_guess_calibration,
-            output_normalization,
-            output_inferred_normalizedcalibration,
-            len(sim_output_names),
-        )
+            output_inferred_calibration = build_inferred_calibration(
+                output_guess_calibration,
+                output_normalization,
+                output_inferred_normalizedcalibration,
+                len(sim_output_names),
+            )
 
-        output_transformers = [
-            output_normalization,
-            output_inferred_calibration,
-        ]
-        print("Phase 2: Calibration training complete")
-    else:
-        input_transformers = [input_guess_calibration, input_normalization]
-        output_transformers = [output_normalization, output_guess_calibration]
-        print("Phase 2: No experimental data available, skipping calibration")
+            output_transformers = [
+                output_normalization,
+                output_inferred_calibration,
+            ]
+            print("Phase 2: Calibration training complete")
+        else:
+            input_transformers = [input_guess_calibration, input_normalization]
+            output_transformers = [output_normalization, output_guess_calibration]
+            print("Phase 2: No experimental data available, skipping calibration")
 
     print("Training ended")
 
