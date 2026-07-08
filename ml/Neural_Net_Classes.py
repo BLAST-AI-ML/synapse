@@ -67,6 +67,7 @@ def _run_training_loop(
     factor=0.5,
     threshold=1e-4,
     label="",
+    aux_loss_fn=None,
 ):
     prefix = f"{label} " if label else ""
     optimizer = optim.Adam(parameters, lr=lr)
@@ -80,6 +81,8 @@ def _run_training_loop(
 
         outputs = forward_fn(train_inputs)
         loss = nan_mse_loss(train_targets, outputs)
+        if aux_loss_fn is not None:
+            loss = loss + aux_loss_fn()
         loss.backward()
         optimizer.step()
 
@@ -254,6 +257,82 @@ def train_calibration(
         patience_lr=200,
         patience_early=500,
         label="Calibration",
+    )
+
+    return (
+        c_normcal_input.detach(),
+        o_normcal_input.detach(),
+        c_normcal_output.detach(),
+        o_normcal_output.detach(),
+    )
+
+
+def train_unified(
+    model,
+    sim_inputs,
+    sim_targets,
+    sim_val_inputs,
+    sim_val_targets,
+    exp_inputs,
+    exp_targets,
+    num_epochs=20000,
+    lr=0.0001,
+    exp_weight=1.0,
+):
+    """
+    Jointly train NN weights + affine calibration on sim + exp data.
+
+    Loss = nan_mse_loss(sim_targets, model(sim_inputs))
+           + exp_weight * nan_mse_loss(exp_targets, calibrated_forward(exp_inputs))
+
+    Calibration convention (matches AffineInputTransform / train_calibration):
+      calibrated_x   = (1 / c_normcal_input) * (x - o_normcal_input)
+      calibrated_out = c_normcal_output * model(calibrated_x) + o_normcal_output
+
+    Early stopping monitors sim validation loss.
+
+    Returns (c_normcal_input, o_normcal_ormcal_output)
+    as detached tensors — same contract as train_calibration().
+    """
+    n_outputs = exp_targets.shape[1]
+    n_inputs = exp_inputs.shape[1]
+    device = exp_inputs.device
+
+    c_normcal_input = nn.Parameter(
+        torch.ones(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    o_normcal_input = nn.Parameter(
+        torch.zeros(n_inputs, dtype=exp_inputs.dtype, device=device)
+    )
+    c_normcal_output = nn.Parameter(
+        torch.ones(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+    o_normcal_output = nn.Parameter(
+        torch.zeros(n_outputs, dtype=exp_inputs.dtype, device=device)
+    )
+
+    def calibrated_forward(x):
+        calibrated_inputs = (1.0 / c_normcal_input) * (x - o_normcal_input)
+        base_predictions = model(calibrated_inputs)
+        return c_normcal_output * base_predictions + o_normcal_output
+
+    def exp_loss_fn():
+        return exp_weight * nan_mse_loss(exp_targets, calibrated_forward(exp_inputs))
+
+    _run_training_loop(
+        parameters=list(model.parameters())
+        + [c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output],
+        forward_fn=model,
+        train_inputs=sim_inputs,
+        train_targets=sim_targets,
+        val_inputs=sim_val_inputs,
+        val_targets=sim_val_targets,
+        num_epochs=num_epochs,
+        lr=lr,
+        patience_lr=200,
+        patience_early=500,
+        label="Unified",
+        aux_loss_fn=exp_loss_fn,
     )
 
     return (
