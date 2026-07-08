@@ -64,7 +64,7 @@ def parse_arguments():
     parser.add_argument(
         "--training_mode",
         choices=["two_phase", "unified"],
-        default="two_phase",        
+        default="two_phase",
     )
     args = parser.parse_args()
     config_file = args.config_file
@@ -358,6 +358,7 @@ def train_calibration_phase(
     )
     return input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
 
+
 def train_unified_nn(
     norm_sim_train,
     norm_sim_val,
@@ -371,19 +372,37 @@ def train_unified_nn(
     n_inputs = len(input_names)
     n_outputs = len(output_names)
 
-    sim_X = torch.tensor(norm_sim_train[input_names].values, dtype=torch.float).to(device)
-    sim_y = torch.tensor(norm_sim_train[output_names].values, dtype=torch.float).to(device)
-    sim_X_val = torch.tensor(norm_sim_val[input_names].values, dtype=torch.float).to(device)
-    sim_y_val = torch.tensor(norm_sim_val[output_names].values, dtype=torch.float).to(device)
+    sim_X = torch.tensor(norm_sim_train[input_names].values, dtype=torch.float).to(
+        device
+    )
+    sim_y = torch.tensor(norm_sim_train[output_names].values, dtype=torch.float).to(
+        device
+    )
+    sim_X_val = torch.tensor(norm_sim_val[input_names].values, dtype=torch.float).to(
+        device
+    )
+    sim_y_val = torch.tensor(norm_sim_val[output_names].values, dtype=torch.float).to(
+        device
+    )
     exp_X = torch.tensor(norm_exp[input_names].values, dtype=torch.float).to(device)
     exp_y = torch.tensor(norm_exp[output_names].values, dtype=torch.float).to(device)
 
     model = CombinedNN(n_inputs, n_outputs, learning_rate=0.0001)
     model.to(device)
 
-    c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output = train_unified(
-        model, sim_X, sim_y, sim_X_val, sim_y_val, exp_X, exp_y,
-        num_epochs=20000, lr=0.0001, exp_weight=exp_weight,
+    c_normcal_input, o_normcal_input, c_normcal_output, o_normcal_output = (
+        train_unified(
+            model,
+            sim_X,
+            sim_y,
+            sim_X_val,
+            sim_y_val,
+            exp_X,
+            exp_y,
+            num_epochs=20000,
+            lr=0.0001,
+            exp_weight=exp_weight,
+        )
     )
 
     input_inferred_normalizedcalibration = AffineInputTransform(
@@ -392,7 +411,12 @@ def train_unified_nn(
     output_inferred_normalizedcalibration = AffineInputTransform(
         n_outputs, coefficient=c_normcal_output.cpu(), offset=o_normcal_output.cpu()
     )
-    return [model], input_inferred_normalizedcalibration, output_inferred_normalizedcalibration
+    return (
+        [model],
+        input_inferred_normalizedcalibration,
+        output_inferred_normalizedcalibration,
+    )
+
 
 def build_lume_model(
     model,
@@ -666,20 +690,31 @@ if __name__ == "__main__":
         exp_weight = config_dict.get("training", {}).get("exp_weight", 1.0)
         print("Unified training: jointly optimizing NN + calibration on sim + exp data")
         train_start_time = time.time()
-        trained_model, input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = (
-            train_unified_nn(
-                norm_sim_train, norm_sim_val, norm_exp,
-                sim_input_names, sim_output_names, device, exp_weight,
-            )
+        (
+            trained_model,
+            input_inferred_normalizedcalibration,
+            output_inferred_normalizedcalibration,
+        ) = train_unified_nn(
+            norm_sim_train,
+            norm_sim_val,
+            norm_exp,
+            sim_input_names,
+            sim_output_names,
+            device,
+            exp_weight,
         )
         input_inferred_calibration = build_inferred_calibration(
-            input_guess_calibration, input_normalization,
-            input_inferred_normalizedcalibration, len(sim_input_names),
+            input_guess_calibration,
+            input_normalization,
+            input_inferred_normalizedcalibration,
+            len(sim_input_names),
         )
         input_transformers = [input_inferred_calibration, input_normalization]
         output_inferred_calibration = build_inferred_calibration(
-            output_guess_calibration, output_normalization,
-            output_inferred_normalizedcalibration, len(sim_output_names),
+            output_guess_calibration,
+            output_normalization,
+            output_inferred_normalizedcalibration,
+            len(sim_output_names),
         )
         output_transformers = [output_normalization, output_inferred_calibration]
         print("Unified training complete")
@@ -704,21 +739,22 @@ if __name__ == "__main__":
                 device,
             )
         print("Phase 1: training complete")
-    
+
         # Phase 2: Train calibration on experimental data
         if norm_exp is not None and len(norm_exp) > 0:
             print("Phase 2: Training calibration on experimental data")
-            input_inferred_normalizedcalibration, output_inferred_normalizedcalibration = (
-                train_calibration_phase(
-                    trained_model,
-                    model_type,
-                    norm_exp,
-                    sim_input_names,
-                    sim_output_names,
-                    device,
-                )
+            (
+                input_inferred_normalizedcalibration,
+                output_inferred_normalizedcalibration,
+            ) = train_calibration_phase(
+                trained_model,
+                model_type,
+                norm_exp,
+                sim_input_names,
+                sim_output_names,
+                device,
             )
-    
+
             # Build calibration transforms in physical units
             input_inferred_calibration = build_inferred_calibration(
                 input_guess_calibration,
@@ -726,19 +762,19 @@ if __name__ == "__main__":
                 input_inferred_normalizedcalibration,
                 len(sim_input_names),
             )
-    
+
             input_transformers = [
                 input_inferred_calibration,
                 input_normalization,
             ]
-    
+
             output_inferred_calibration = build_inferred_calibration(
                 output_guess_calibration,
                 output_normalization,
                 output_inferred_normalizedcalibration,
                 len(sim_output_names),
             )
-    
+
             output_transformers = [
                 output_normalization,
                 output_inferred_calibration,

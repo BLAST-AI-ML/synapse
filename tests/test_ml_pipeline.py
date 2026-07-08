@@ -119,7 +119,9 @@ def override_mlflow_config(cfg, mlflow_uri):
     return tmp_cfg
 
 
-def run_one_test(config_file, model_type, training_mode="two_phase", mlflow_uri=DEFAULT_MLFLOW_URI) -> str:
+def run_one_test(
+    config_file, model_type, training_mode="two_phase", mlflow_uri=DEFAULT_MLFLOW_URI
+) -> str:
     """
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
     Returns "PASS" or "SKIP". Raises on failure.
@@ -216,7 +218,9 @@ if __name__ == "__main__":
             print(f"Testing: {exp_name} / {model_type}")
             print(f"{'=' * 60}")
             try:
-                status = run_one_test(config_path, model_type, args.training_mode, args.mlflow_uri)
+                status = run_one_test(
+                    config_path, model_type, args.training_mode, args.mlflow_uri
+                )
                 results.append((exp_name, model_type, status, ""))
             except Exception as e:
                 results.append((exp_name, model_type, "FAIL", str(e)))
