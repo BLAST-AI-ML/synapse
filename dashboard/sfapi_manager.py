@@ -1,12 +1,12 @@
+import asyncio
 from datetime import datetime
+
+from error_manager import add_error
 from sfapi_client import Client
 from sfapi_client.compute import Machine
-from trame.widgets import vuetify3 as vuetify
-import asyncio
 from sfapi_client.jobs import TERMINAL_STATES, JobState
-
 from state_manager import state
-from error_manager import add_error
+from trame.widgets import vuetify3 as vuetify
 
 
 async def monitor_sfapi_job(sfapi_job, state_variable):
@@ -135,11 +135,10 @@ def load_sfapi_card():
                             hide_details=True,
                         )
                 # row with text field to display Perlmutter status
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        vuetify.VTextField(
-                            v_model=("sfapi_perlmutter_description",),
-                            label="Perlmutter Status",
-                            readonly=True,
-                            hide_details=True,
-                        )
+                with vuetify.VRow(), vuetify.VCol():
+                    vuetify.VTextField(
+                        v_model=("sfapi_perlmutter_description",),
+                        label="Perlmutter Status",
+                        readonly=True,
+                        hide_details=True,
+                    )

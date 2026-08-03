@@ -1,9 +1,8 @@
 import numpy as np
-from scipy.optimize import minimize
-from trame.widgets import vuetify3 as vuetify
-
 from error_manager import add_error
+from scipy.optimize import minimize
 from state_manager import state
+from trame.widgets import vuetify3 as vuetify
 
 
 class OptimizationManager:
@@ -80,29 +79,26 @@ class OptimizationManager:
                 style="font-size: 20px; font-weight: 500;",
             ):
                 with vuetify.VExpansionPanelText():
-                    with vuetify.VRow():
-                        with vuetify.VCol():
-                            vuetify.VSelect(
-                                v_model=("optimization_target",),
-                                label="Optimization target",
-                                items=(state.output_variables,),
-                                dense=True,
-                                hide_details=True,
-                            )
-                    with vuetify.VRow():
-                        with vuetify.VCol():
-                            vuetify.VSelect(
-                                v_model=("optimization_type",),
-                                label="Optimization type",
-                                items=(optimization_type_list,),
-                                dense=True,
-                                hide_details=True,
-                            )
-                    with vuetify.VRow():
-                        with vuetify.VCol():
-                            vuetify.VBtn(
-                                "Optimize",
-                                block=True,
-                                click=self.optimize_trigger,
-                                style="text-transform: none",
-                            )
+                    with vuetify.VRow(), vuetify.VCol():
+                        vuetify.VSelect(
+                            v_model=("optimization_target",),
+                            label="Optimization target",
+                            items=(state.output_variables,),
+                            dense=True,
+                            hide_details=True,
+                        )
+                    with vuetify.VRow(), vuetify.VCol():
+                        vuetify.VSelect(
+                            v_model=("optimization_type",),
+                            label="Optimization type",
+                            items=(optimization_type_list,),
+                            dense=True,
+                            hide_details=True,
+                        )
+                    with vuetify.VRow(), vuetify.VCol():
+                        vuetify.VBtn(
+                            "Optimize",
+                            block=True,
+                            click=self.optimize_trigger,
+                            style="text-transform: none",
+                        )
