@@ -17,7 +17,7 @@ from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
 from parameters_manager import ParametersManager
 from calibration_manager import SimulationCalibrationManager
-from sfapi_manager import load_sfapi_card
+from hpc_manager import load_hpc_card
 from state_manager import server, state, ctrl, initialize_state
 from error_manager import error_panel, add_error
 from utils import (
@@ -54,6 +54,7 @@ def update(
     reset_parameters=True,
     reset_calibration=True,
     reset_plots=True,
+    reset_execution_modes=True,
     reset_gui_route_home=True,
     reset_gui_route_hpc=True,
     reset_gui_route_chat=True,
@@ -73,9 +74,11 @@ def update(
     )
     # load data
     config_dict = load_config_dict(state.experiment)
-    # derive execution mode from execution_mode in the experiment configuration file
-    execution_mode = config_dict.get("execution_mode") or {}
-    state.model_training_mode = execution_mode.get("ml_training", "local")
+    if reset_execution_modes:
+        # Derive execution mode defaults from the experiment configuration file.
+        execution_mode = config_dict.get("execution_mode") or {}
+        state.model_training_mode = execution_mode.get("ml_training", "local")
+        state.simulation_running_mode = execution_mode.get("simulation", "local")
     state.model_mlflow_tracking_uri = (config_dict.get("mlflow") or {}).get(
         "tracking_uri"
     )
@@ -98,7 +101,10 @@ def update(
         else:
             mod_manager = preloaded_model_manager
         state.model_available = mod_manager.avail()
-        opt_manager = OptimizationManager(mod_manager)
+        if opt_manager is None or reset_gui_route_home:
+            opt_manager = OptimizationManager(mod_manager)
+        else:
+            opt_manager.model = mod_manager
     # reset parameters
     if reset_parameters:
         par_manager = ParametersManager(mod_manager, input_variables)
@@ -221,6 +227,7 @@ def reset(**kwargs):
                 reset_parameters=True,
                 reset_calibration=True,
                 reset_plots=True,
+                reset_execution_modes="experiment" in state.modified_keys,
                 reset_gui_route_home=True,
                 reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
@@ -239,7 +246,8 @@ def reset(**kwargs):
                 reset_parameters=False,
                 reset_calibration=False,
                 reset_plots=True,
-                reset_gui_route_home=True,
+                reset_execution_modes=False,
+                reset_gui_route_home=False,
                 reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
                 reset_gui_layout=False,
@@ -263,6 +271,7 @@ def reset(**kwargs):
                 reset_parameters=False,
                 reset_calibration=False,
                 reset_plots=True,
+                reset_execution_modes=False,
                 reset_gui_route_home=False,
                 reset_gui_route_hpc=False,
                 reset_gui_route_chat=False,
@@ -438,11 +447,11 @@ def hpc_route():
     print("Setting GUI HPC route...")
     with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
-            with vuetify.VCol(cols=4):
-                # NERSC Superfacility API card
+            with vuetify.VCol(cols=12):
+                # Render both API credential cards
                 with vuetify.VRow():
                     with vuetify.VCol():
-                        load_sfapi_card()
+                        load_hpc_card()
 
 
 # Chat route

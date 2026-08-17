@@ -65,7 +65,7 @@ def update_sfapi_info():
                 state.sfapi_perlmutter_description = f"{status.description}"
                 state.sfapi_perlmutter_status = f"{status.status.value}"
                 print(
-                    f"Perlmutter status is {state.sfapi_perlmutter_status} with description '{state.sfapi_perlmutter_description}'"
+                    f"Perlmutter status is '{state.sfapi_perlmutter_status}' with description '{state.sfapi_perlmutter_description}'"
                 )
             else:
                 # reset key expiration date
@@ -96,7 +96,6 @@ def update_sfapi_info():
 def load_sfapi_credentials(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
     if len(state.modified_keys) == 1:
-        # return if no key file has been uploaded (redundant)
         if state.sfapi_key_dict is not None:
             print("Loading Superfacility API credentials...")
             # store the whole content of the key file in a string
@@ -109,37 +108,30 @@ def load_sfapi_credentials(**kwargs):
 
 def load_sfapi_card():
     print("Setting Superfacility API card...")
-    with vuetify.VCard():
-        with vuetify.VCardTitle("NERSC Superfacility API"):
-            with vuetify.VCardText():
-                # row with component to upload input file
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        vuetify.VFileInput(
-                            v_model=("sfapi_key_dict",),
-                            label="Key File (pem format, must include client ID in first line)",
-                            accept=".pem",
-                            prepend_icon="",
-                            prepend_inner_icon="mdi-paperclip",
-                            hide_details=True,
-                            style="cursor: pointer",
-                            __properties=["accept"],
-                        )
-                # row with text field to display key expiration date
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        vuetify.VTextField(
-                            v_model=("sfapi_key_expiration",),
-                            label="Key Expiration (if expired or unavailable, please upload a valid key)",
-                            readonly=True,
-                            hide_details=True,
-                        )
-                # row with text field to display Perlmutter status
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        vuetify.VTextField(
-                            v_model=("sfapi_perlmutter_description",),
-                            label="Perlmutter Status",
-                            readonly=True,
-                            hide_details=True,
-                        )
+    # row with component to upload input file with top padding
+    with vuetify.VRow(style="padding-top: 20px;"):
+        with vuetify.VCol():
+            vuetify.VFileInput(
+                v_model=("sfapi_key_dict",),
+                label="Key File (pem format, must include client ID in first line)",
+                accept=".pem",
+                prepend_icon="",
+                prepend_inner_icon="mdi-paperclip",
+                __properties=["accept"],
+            )
+    # row with text field to display key expiration date
+    with vuetify.VRow():
+        with vuetify.VCol():
+            vuetify.VTextField(
+                v_model=("sfapi_key_expiration",),
+                label="Key Expiration",
+                readonly=True,
+            )
+    # row with text field to display Perlmutter status
+    with vuetify.VRow():
+        with vuetify.VCol():
+            vuetify.VTextField(
+                v_model=("sfapi_perlmutter_description",),
+                label="Perlmutter Status",
+                readonly=True,
+            )
