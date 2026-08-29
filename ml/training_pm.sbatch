@@ -25,7 +25,7 @@ REGISTRY_NAME="registry.nersc.gov"
 IMAGE_NAME="m558/superfacility/synapse-ml"
 IMAGE_VERSION="latest"
 
-podman-hpc login --username "${REGISTRY_USER}" --password "${REGISTRY_PASSWORD}" ${REGISTRY_NAME}
+echo "${REGISTRY_PASSWORD}" | podman-hpc login --username "${REGISTRY_USER}" --password-stdin "${REGISTRY_NAME}"
 # As the local image, we use the digest id.
 #   podman-hpc lists to entries with the same digest id,
 #   one local and one migrated (read-write and read-only).
