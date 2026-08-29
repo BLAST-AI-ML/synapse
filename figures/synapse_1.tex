@@ -1,0 +1,55 @@
+% This figure can be rendered by compiling the following LaTeX document:
+%
+% \documentclass[9pt, aspectratio=169]{beamer}
+% \usetheme{metropolis}
+% \usepackage{tikz}
+% \usetikzlibrary{arrows.meta, positioning, backgrounds, fit}
+% \begin{document}
+% \begin{frame}[plain]
+%     \begin{center}
+%         \resizebox{0.8\textwidth}{!}{\input{synapse_1}}
+%     \end{center}
+% \end{frame}
+% \end{document}
+
+
+\begin{tikzpicture}[
+    txt/.style={align=center},
+    data/.style={-{Stealth[length=4pt]}, orange, dashed},
+    ctrl/.style={-{Stealth[length=4pt]}, gray, dotted},
+    api/.style={{Stealth[length=4pt]}-{Stealth[length=4pt]}, gray, dotted},
+]
+
+    \node[inner sep=0pt] (exp) {\includegraphics[width=2cm]{fig_bella.jpg}};
+    \node[txt, above=1pt of exp] (exp-label) {Experiment};
+
+    \node[inner sep=0pt, right=2cm of exp, yshift=-2cm] (db) {\includegraphics[width=2cm]{fig_database.jpg}};
+    \node[txt, above=1pt of db] (db-label) {Database};
+
+    \node[inner sep=0pt, right=2cm of db, yshift=2cm] (hpc) {\includegraphics[width=2cm]{fig_perlmutter.jpg}};
+    \node[txt, above=1pt of hpc] (hpc-label) {Supercomputer};
+
+    \node[inner sep=0pt, right=2cm of hpc, yshift=-2cm] (ml) {\includegraphics[width=2cm]{fig_ml.png}};
+    \node[txt, above=1pt of ml] (ml-label) {AI/ML Models};
+
+    \node[inner sep=0pt, below=2cm of exp] (dashfe) {\includegraphics[width=2cm]{fig_dashboard_frontend.jpg}};
+    \node[txt, below=1pt of dashfe] (dashfe-label) {Dashboard Frontend \\ (Control Room)};
+
+    \node[inner sep=0pt, below=2cm of hpc] (dashbe) {\includegraphics[width=2cm]{fig_dashboard_backend.jpg}};
+    \node[txt, below=1pt of dashbe] (dashbe-label) {Dashboard Backend \\ (Kubernetes Cluster)};
+
+    \begin{scope}[on background layer] % draw behind
+        \node[draw=gray!50, rounded corners=5pt, fill=orange!5, inner sep=10pt, fit=(exp-label)(exp)(dashfe)(dashfe-label), label={[text=gray, anchor=south] north:Experimental Site}] {};
+        \node[draw=gray!50, rounded corners=5pt, fill=orange!5, inner sep=10pt, fit=(hpc-label)(hpc)(dashbe)(dashbe-label), label={[text=gray, anchor=south] north:Computing Site}] {};
+    \end{scope}
+
+    \draw[data] (exp) -- (db) node[midway, sloped, above] {write};
+    \draw[data] (hpc) -- (db) node[midway, sloped, above] {read/write};
+    \draw[data] (hpc) -- (ml) node[midway, sloped, above] {write};
+    \draw[data] (dashbe) -- (db) node[midway, sloped, above] {read};
+    \draw[data] (dashbe) -- (ml) node[midway, sloped, above] {read};
+    \draw[ctrl] (dashbe) -- (hpc) node[midway, rotate=90, yshift=7pt] {launch};
+    \draw[ctrl] (dashfe) -- (exp) node[midway, rotate=90, yshift=7pt] {feedback};
+    \draw[api] (dashfe) -- (dashbe);
+
+\end{tikzpicture}
