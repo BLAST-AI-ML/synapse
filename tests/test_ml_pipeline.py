@@ -119,7 +119,9 @@ def override_mlflow_config(cfg, mlflow_uri):
     return tmp_cfg
 
 
-def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> str:
+def run_one_test(
+    config_file, model_type, training_mode="two_phase", mlflow_uri=DEFAULT_MLFLOW_URI
+) -> str:
     """
     Full train, save, load, and evaluate cycle for one (config, model_type) pair.
     Returns "PASS" or "SKIP". Raises on failure.
@@ -143,7 +145,7 @@ def run_one_test(config_file, model_type, mlflow_uri=DEFAULT_MLFLOW_URI) -> str:
         with open(tmp_path, "w") as f:
             yaml.dump(tmp_cfg, f)
         subprocess.run(
-            f"conda run -n synapse-ml python train_model.py --config_file {tmp_path} --model {model_type}",
+            f"conda run -n synapse-ml python train_model.py --config_file {tmp_path} --model {model_type} --training_mode {training_mode}",
             shell=True,
             check=True,
             cwd=ML_DIR,
@@ -180,6 +182,12 @@ if __name__ == "__main__":
         help="Path to a config.yaml file. Defaults to all available config.yaml files in the experiments directory.",
     )
     parser.add_argument(
+        "--training_mode",
+        choices=["two_phase", "unified"],
+        default="two_phase",
+        help="Training mode to pass through to train_model.py (default: two_phase)",
+    )
+    parser.add_argument(
         "--test-mlflow-uri",
         default=DEFAULT_MLFLOW_URI,
         dest="mlflow_uri",
@@ -210,7 +218,9 @@ if __name__ == "__main__":
             print(f"Testing: {exp_name} / {model_type}")
             print(f"{'=' * 60}")
             try:
-                status = run_one_test(config_path, model_type, args.mlflow_uri)
+                status = run_one_test(
+                    config_path, model_type, args.training_mode, args.mlflow_uri
+                )
                 results.append((exp_name, model_type, status, ""))
             except Exception as e:
                 results.append((exp_name, model_type, "FAIL", str(e)))
