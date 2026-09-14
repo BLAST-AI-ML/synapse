@@ -1,17 +1,19 @@
 import asyncio
 import copy
 import tempfile
-import yaml
 from datetime import datetime
 from pathlib import Path
-from sfapi_client import AsyncClient
-from sfapi_client.compute import Machine
-from trame.widgets import client, vuetify3 as vuetify
-from utils import load_variables
+
+import yaml
 from calibration_manager import SimulationCalibrationManager
 from error_manager import add_error
+from sfapi_client import AsyncClient
+from sfapi_client.compute import Machine
 from sfapi_manager import monitor_sfapi_job
-from state_manager import state, EXPERIMENTS_PATH
+from state_manager import EXPERIMENTS_PATH, state
+from trame.widgets import client
+from trame.widgets import vuetify3 as vuetify
+from utils import load_variables
 
 
 class ParametersManager:
@@ -227,15 +229,14 @@ class ParametersManager:
                                         change="flushState('parameters_show_all')",
                                         label="Show all",
                                     )
-                        with vuetify.VRow():
-                            with vuetify.VCol():
-                                vuetify.VTextField(
-                                    v_model_number=("simulation_running_status",),
-                                    label="Simulation status",
-                                    readonly=True,
-                                    dense=True,
-                                    hide_details=True,
-                                )
+                        with vuetify.VRow(), vuetify.VCol():
+                            vuetify.VTextField(
+                                v_model_number=("simulation_running_status",),
+                                label="Simulation status",
+                                readonly=True,
+                                dense=True,
+                                hide_details=True,
+                            )
                         with vuetify.VRow():
                             with vuetify.VCol(cols=6):
                                 vuetify.VBtn(
