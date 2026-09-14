@@ -87,18 +87,22 @@ class OptimizationManager:
                                 label="Optimization target",
                                 items=(state.output_variables,),
                                 dense=True,
+                                hide_details=True,
                             )
+                    with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VSelect(
                                 v_model=("optimization_type",),
                                 label="Optimization type",
                                 items=(optimization_type_list,),
                                 dense=True,
+                                hide_details=True,
                             )
                     with vuetify.VRow():
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Optimize",
+                                block=True,
                                 click=self.optimize_trigger,
                                 style="text-transform: none",
                             )
