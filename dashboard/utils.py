@@ -1,15 +1,16 @@
-import numpy as np
 import os
+import time
+
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import pymongo
-import time
 import torch
 import yaml
-from trame.widgets import vuetify3 as vuetify
-from state_manager import state, EXPERIMENTS_PATH
 from error_manager import add_error
+from plotly.subplots import make_subplots
+from state_manager import EXPERIMENTS_PATH, state
+from trame.widgets import vuetify3 as vuetify
 
 
 def timer(function):
@@ -418,8 +419,9 @@ def data_depth_panel():
                         style="margin-top: 16px;",
                     )
                 # create a row for the slider and text field
-                with vuetify.VRow(no_gutters=True):
-                    with vuetify.VSlider(
+                with (
+                    vuetify.VRow(no_gutters=True),
+                    vuetify.VSlider(
                         v_model_number=("opacity",),
                         change="flushState('opacity')",
                         hide_details=True,
@@ -427,14 +429,15 @@ def data_depth_panel():
                         min=0.0,
                         step=0.025,
                         style="align-items: center;",
-                    ):
-                        with vuetify.Template(v_slot_append=True):
-                            vuetify.VTextField(
-                                v_model_number=("opacity",),
-                                density="compact",
-                                hide_details=True,
-                                readonly=True,
-                                single_line=True,
-                                style="margin-top: 0px; padding-top: 0px; width: 80px;",
-                                type="number",
-                            )
+                    ),
+                    vuetify.Template(v_slot_append=True),
+                ):
+                    vuetify.VTextField(
+                        v_model_number=("opacity",),
+                        density="compact",
+                        hide_details=True,
+                        readonly=True,
+                        single_line=True,
+                        style="margin-top: 0px; padding-top: 0px; width: 80px;",
+                        type="number",
+                    )
