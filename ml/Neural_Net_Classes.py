@@ -156,10 +156,62 @@ class CombinedNN(nn.Module):
                 break
 
 
+def _calibration_penalty(
+    c_normcal,
+    o_normcal,
+    c_guess,
+    o_guess,
+    c_norm,
+    o_norm,
+    alpha_uncertainty,
+    beta_uncertainty,
+):
+    """Compute penalty that keeps inferred alpha/beta near their guess values.
+
+    The inferred calibration is obtained by composing the guess calibration,
+    normalization, and learned normalized calibration (see build_inferred_calibration).
+    From those compositions:
+        alpha_inferred = 1 / (c_guess * c_normcal)
+        beta_inferred  = o_guess + c_guess*o_norm + c_guess*c_norm*o_normcal
+                         - c_guess*c_normcal*o_norm
+
+    The penalty is  sum((alpha_I - alpha_G)^2 / alpha_U^2)
+                  + sum((beta_I  - beta_G )^2 / beta_U^2)
+    where alpha_G = 1/c_guess and beta_G = o_guess.
+    Dimensions with infinite uncertainty contribute zero penalty.
+    """
+    c_inferred = c_guess * c_normcal
+    alpha_inferred = 1.0 / c_inferred
+    alpha_guess = 1.0 / c_guess
+
+    beta_inferred = (
+        o_guess + c_guess * o_norm + c_guess * c_norm * o_normcal - c_inferred * o_norm
+    )
+    beta_guess = o_guess
+
+    penalty_alpha = torch.sum(
+        (alpha_inferred - alpha_guess) ** 2 / alpha_uncertainty**2
+    )
+    penalty_beta = torch.sum((beta_inferred - beta_guess) ** 2 / beta_uncertainty**2)
+    return penalty_alpha + penalty_beta
+
+
 def train_calibration(
     model,
     exp_inputs,
     exp_targets,
+    c_guess_input,
+    o_guess_input,
+    c_norm_input,
+    o_norm_input,
+    alpha_uncertainty_input,
+    beta_uncertainty_input,
+    c_guess_output,
+    o_guess_output,
+    c_norm_output,
+    o_norm_output,
+    alpha_uncertainty_output,
+    beta_uncertainty_output,
     num_epochs=5000,
     lr=0.001,
 ):
@@ -174,10 +226,26 @@ def train_calibration(
       calibrated_input  = (1 / c_normcal_input) * (x - o_normcal_input)
       calibrated_output = c_normcal_output * model(calibrated_input) + o_normcal_output
 
+    A penalization term is added to the loss to keep the inferred alpha/beta
+    close to their guess values (see _calibration_penalty). Dimensions with
+    infinite uncertainty contribute zero penalty.
+
     Args:
         model: frozen callable that maps exp_inputs -> predictions
         exp_inputs: experimental input tensor
         exp_targets: experimental target values (may contain NaN)
+        c_guess_input: guess calibration coefficients for inputs
+        o_guess_input: guess calibration offsets for inputs
+        c_norm_input: normalization coefficients for inputs
+        o_norm_input: normalization offsets for inputs
+        alpha_uncertainty_input: uncertainty on alpha for inputs (inf = no penalty)
+        beta_uncertainty_input: uncertainty on beta for inputs (inf = no penalty)
+        c_guess_output: guess calibration coefficients for outputs
+        o_guess_output: guess calibration offsets for outputs
+        c_norm_output: normalization coefficients for outputs
+        o_norm_output: normalization offsets for outputs
+        alpha_uncertainty_output: uncertainty on alpha for outputs (inf = no penalty)
+        beta_uncertainty_output: uncertainty on beta for outputs (inf = no penalty)
         num_epochs: number of training epochs
         lr: learning rate
 
@@ -217,7 +285,30 @@ def train_calibration(
         base_predictions = model(calibrated_inputs)
         calibrated_outputs = c_normcal_output * base_predictions + o_normcal_output
 
-        loss = nan_mse_loss(exp_targets, calibrated_outputs)
+        loss = (
+            nan_mse_loss(exp_targets, calibrated_outputs)
+            + _calibration_penalty(
+                c_normcal_input,
+                o_normcal_input,
+                c_guess_input,
+                o_guess_input,
+                c_norm_input,
+                o_norm_input,
+                alpha_uncertainty_input,
+                beta_uncertainty_input,
+            )
+            + _calibration_penalty(
+                c_normcal_output,
+                o_normcal_output,
+                c_guess_output,
+                o_guess_output,
+                c_norm_output,
+                o_norm_output,
+                alpha_uncertainty_output,
+                beta_uncertainty_output,
+            )
+        )
+
         loss.backward()
         optimizer.step()
 
