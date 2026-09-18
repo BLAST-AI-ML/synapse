@@ -1,0 +1,7 @@
+/* Keep the {repo} and {repo-dir} links looking like the code spans they
+   replaced, so that paths stay easy to spot while remaining navigable. */
+a.extlink-repo,
+a.extlink-repo-dir {
+  font-family: var(--pst-font-family-monospace);
+  font-size: var(--pst-font-size-milli);
+}
