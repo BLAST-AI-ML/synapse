@@ -19,8 +19,17 @@ author = ""
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["myst_parser", "sphinx.ext.extlinks", "sphinx_copybutton"]
+extensions = [
+    "myst_parser",
+    "sphinx.ext.extlinks",
+    "sphinx_copybutton",
+    "sphinx_design",
+]
 myst_heading_anchors = 4
+# ":::" fences, used to nest the sphinx-design tab sets. All tab sets use the
+# sync group "deployment" with the keys "general" (default) and "bella-nersc",
+# so a selected tab applies to all pages.
+myst_enable_extensions = ["colon_fence"]
 
 # Roles that turn a repository-relative path into a link to GitHub, so that
 # source files and directories mentioned in the docs stay navigable:
