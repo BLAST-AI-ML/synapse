@@ -121,8 +121,8 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 
 - **MongoDB** is used for persistent data from experiments and simulations.
 - **MLflow** is used for persistent data from ML models.
-- Database access requires SSH tunneling to NERSC when running locally.
-- Environment variables: `SF_DB_HOST` (dashboard), `SF_DB_READONLY_PASSWORD` (dashboard and ML training), `AM_SC_API_KEY` (dashboard and ML training, required when MLflow tracking_uri is AmSC).
+- Database connection settings are read from the `database` section of the experiment's `config.yaml`. Local runs usually reach the database through an SSH tunnel, with `database.host` set to `127.0.0.1` in a local copy of `config.yaml`.
+- Environment variables: `config.yaml` sets their names. `database.password_ro_env` names the read-only database password, and `mlflow.api_key_env` names the MLflow API key, which is only needed when `mlflow.tracking_uri` is AmSC. Both are used by the dashboard and by ML training. The BELLA deployment uses `SF_DB_READONLY_PASSWORD` and `AM_SC_API_KEY`.
 
 ## Common Pitfalls and Workarounds
 
