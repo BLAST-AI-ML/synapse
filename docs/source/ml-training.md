@@ -341,7 +341,7 @@ The batch job reads two files from the `$HOME` of that user, which need to be pr
 ````
 
 ```{note}
-{repo}`ml/training_pm.sbatch` and {repo}`dashboard/model_manager.py` hardcode values of the BELLA deployment: the NERSC project `m558`, the image `registry.nersc.gov/m558/superfacility/synapse-ml`, and the directory `/global/cfs/cdirs/m558/superfacility/model_training/` for the configuration file and the job logs.
+{repo}`ml/training_pm.sbatch` and {repo}`dashboard/model_manager.py` hardcode values of the BELLA deployment: the NERSC project `m558`, the `realtime` QoS, the image `registry.nersc.gov/m558/superfacility/synapse-ml`, and the directory `/global/cfs/cdirs/m558/superfacility/model_training/` for the configuration file and the job logs.
 Other projects need to adapt these values before training ML models through the dashboard.
 ```
 

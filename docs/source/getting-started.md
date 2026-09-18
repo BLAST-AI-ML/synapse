@@ -84,6 +84,8 @@ python -u app.py --port 8080
 Training requires an experiment configuration.
 Experiment configs are not part of this repository: clone the private repository for your experiment into {repo-dir}`experiments/` first, so that `experiments/synapse-<experiment>/config.yaml` exists.
 See [Experiment configuration](experiment-configuration.md) for the expected layout.
+If `database.port` is not `27017` and you access the database through a gateway, open a separate tunnel for training with local port `27017`: `ssh -L 27017:<database.host>:<database.port> <username>@<gateway_host> -N`.
+Unlike the dashboard, {repo}`train_model.py <ml/train_model.py>` does not read `database.port` yet and always connects to the default MongoDB port.
 
 From {repo-dir}`ml/`, run {repo}`train_model.py <ml/train_model.py>`:
 

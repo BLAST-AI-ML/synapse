@@ -90,7 +90,7 @@ docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0
 python tests/test_ml_pipeline.py
 
 # Optionally restrict to a specific model type or config
-python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2
+python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-<experiment>/config.yaml
 ```
 
 Dashboard validation is done manually by running the application.
