@@ -137,7 +137,7 @@ It requires a local, empty MLflow server so it does not touch a production serve
    :sync: bella-nersc
 
    ```bash
-   python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2/config.yaml
+   python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-<experiment>/config.yaml
    ```
    :::
    ::::

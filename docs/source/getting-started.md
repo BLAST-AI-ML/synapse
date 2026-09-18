@@ -112,7 +112,7 @@ conda-lock install --name synapse-ml environment-lock.yml
 conda activate synapse-ml
 export SF_DB_READONLY_PASSWORD='...'
 export AM_SC_API_KEY='...'
-python train_model.py --test --config_file ../experiments/synapse-bella-ip2/config.yaml --model NN
+python train_model.py --test --config_file ../experiments/synapse-<experiment>/config.yaml --model NN
 ```
 :::
 ::::
