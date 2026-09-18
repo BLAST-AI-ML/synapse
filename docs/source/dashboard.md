@@ -38,26 +38,67 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 #### Run the dashboard
 
-1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
+1. In a separate terminal, create an SSH tunnel to the MongoDB database through a gateway node, using `database.host` and `database.port` from your experiment's `config.yaml`:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   ssh -L <database.port>:<database.host>:<database.port> <username>@<gateway_host> -N
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
+   :::
+   ::::
 
-2. Move to the {repo-dir}`dashboard/` directory.
+2. Set `database.host` to `127.0.0.1` in your local copy of `config.yaml`, so that the dashboard connects through the tunnel.
+   Do not commit this change.
+   ```yaml
+   database:
+     host: "127.0.0.1"
+   ```
 
-3. Set up the database settings (read-only) and the AmSC MLflow API key:
+3. Move to the {repo-dir}`dashboard/` directory.
+
+4. Set up the read-only database password and the MLflow API key:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
    ```bash
-   export SF_DB_HOST='127.0.0.1'
+   export <database.password_ro_env>='your_password_here'  # Use SINGLE quotes around the password!
+   export <mlflow.api_key_env>='your_api_key_here'         # Required when MLflow tracking_uri is AmSC
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
+   ```bash
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
    ```
+   :::
+   ::::
 
-4. Activate the conda environment `synapse-gui`:
+5. Activate the conda environment `synapse-gui`:
    ```bash
    conda activate synapse-gui
    ```
 
-5. Run the dashboard as a web application:
+6. Run the dashboard as a web application:
    ```bash
    python -u app.py --port 8080
    ```
@@ -66,28 +107,88 @@ conda-lock install --name synapse-gui environment-lock.yml
 
 #### Run the container
 
-1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
+1. In a separate terminal, create an SSH tunnel to the MongoDB database through a gateway node, using `database.host` and `database.port` from your experiment's `config.yaml`:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   ssh -L <database.port>:<database.host>:<database.port> <username>@<gateway_host> -N
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
+   :::
+   ::::
 
-2. Move to the root directory of the repository.
+2. Set `database.host` to `127.0.0.1` in your local copy of `config.yaml`.
+   Do this before building the image, because {repo}`dashboard.Dockerfile` copies {repo-dir}`experiments/` into it.
+   Do not commit this change.
 
-3. Build the Docker image as described [below](#build-the-docker-image).
+3. Move to the root directory of the repository.
 
-4. Run the Docker container:
+4. Build the Docker image as described [below](#build-the-docker-image).
+
+5. Run the Docker container with the read-only database password and the MLflow API key:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' synapse-gui
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e <database.password_ro_env>='your_password_here' -e <mlflow.api_key_env>='your_api_key_here' synapse-gui
    ```
    For debugging, you can enter the container without starting the app:
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_HOST='127.0.0.1' -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' -it synapse-gui bash
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e <database.password_ro_env>='your_password_here' -e <mlflow.api_key_env>='your_api_key_here' -it synapse-gui bash
    ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
+   ```bash
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' synapse-gui
+   ```
+   For debugging, you can enter the container without starting the app:
+   ```bash
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' -it synapse-gui bash
+   ```
+   :::
+   ::::
+
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
 ## Run the dashboard at NERSC
 
-Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and explore it.
+Connect to the dashboard deployed for your project at NERSC through Spin and explore it:
+
+::::{tab-set}
+:sync-group: deployment
+
+:::{tab-item} General
+:sync: general
+
+Open `https://<dashboard_url>/`, the URL of your project's Spin deployment.
+:::
+
+:::{tab-item} Project Example: BELLA @ NERSC
+:sync: bella-nersc
+
+Open [bellasuperfacility.lbl.gov](https://bellasuperfacility.lbl.gov/).
+:::
+::::
+
 You need to upload valid Superfacility API credentials before you can launch simulations or train ML models directly from the dashboard.
 
 ## Generate Superfacility API credentials
@@ -100,7 +201,24 @@ Follow the instructions at [docs.nersc.gov/services/sfapi/authentication/#client
 
 3. Scroll down to the section "Superfacility API Clients" and click "New Client".
 
-4. Enter a client name (e.g., "Synapse"), choose `sf558` for the user, choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
+4. Enter a client name (e.g., "Synapse"), choose the user that runs the jobs launched from the dashboard, choose "Red" security level, and select either "Your IP" or "Spin" from the "IP Presets" menu, depending on whether the key will be used from a local computer or from Spin.
+   ML training jobs expect credential files in the `$HOME` of that user, as described in [Through the dashboard](ml-training.md#through-the-dashboard).
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   Choose your own NERSC user or a collaboration account of your NERSC project.
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
+   Choose the collaboration account `sf558`.
+   :::
+   ::::
 
 5. Download the private key file in PEM format and save it as `priv_key.pem` in the root directory of the dashboard.
    Each time the dashboard is launched, it will automatically find the existing key file and load the corresponding credentials.
@@ -136,7 +254,8 @@ The dashboard has three routes, reachable from the navigation drawer:
   The `Optimization` tab holds the optimization controls.
   The `ML` tab holds the model controls and the calibration controls.
 - `/hpc` ("HPC Connection"): NERSC Superfacility API credential and Perlmutter status panel.
-- `/chat` ("AI Assistant"): embedded assistant route for experiment support; currently backed by [synapse-chat.lbl.gov](https://synapse-chat.lbl.gov/).
+- `/chat` ("AI Assistant"): embedded assistant for experiment support.
+  It loads [synapse-chat.lbl.gov](https://synapse-chat.lbl.gov/), which is hardcoded in {repo}`dashboard/app.py`.
 
 The experiment selector, the date range selector, and the error panel belong to the shared layout rather than to any single route, so they appear on all three.
 
@@ -177,6 +296,8 @@ Run this workflow automatically with the Python script {repo}`publish_container.
 ```bash
 python publish_container.py --gui
 ```
+The script pushes to `registry.nersc.gov/m558/superfacility`, which is hardcoded for the BELLA deployment.
+For other projects, follow the steps below.
 ````
 
 ````{tip}
@@ -206,16 +327,51 @@ docker system prune -a
    # Password: your NERSC password without 2FA
    ```
 
-3. Tag the Docker image:
+3. Tag the Docker image with the registry path of your NERSC project:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   docker tag synapse-gui:latest registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-gui:latest
+   docker tag synapse-gui:latest registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-gui:$(date "+%y.%m")
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    docker tag synapse-gui:latest registry.nersc.gov/m558/superfacility/synapse-gui:latest
    docker tag synapse-gui:latest registry.nersc.gov/m558/superfacility/synapse-gui:$(date "+%y.%m")
    ```
+   :::
+   ::::
 
 4. Push the Docker image:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   docker push -a registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-gui
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    docker push -a registry.nersc.gov/m558/superfacility/synapse-gui
    ```
+   :::
+   ::::
 
 ## References
 

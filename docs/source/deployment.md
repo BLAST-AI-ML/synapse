@@ -32,5 +32,28 @@ python publish_container.py --gui --ml
 
 - Dashboard runs on Spin.
 - Training and simulations run on Perlmutter through Superfacility API.
-- Images are pushed to `registry.nersc.gov/m558/superfacility`.
+- Images are pushed to the registry of the deployment's NERSC project:
+
+  ::::{tab-set}
+  :sync-group: deployment
+
+  :::{tab-item} General
+  :sync: general
+
+  ```text
+  registry.nersc.gov/<nersc_project>/[<namespace>/]
+  ```
+  :::
+
+  :::{tab-item} Project Example: BELLA @ NERSC
+  :sync: bella-nersc
+
+  ```text
+  registry.nersc.gov/m558/superfacility/
+  ```
+  :::
+  ::::
+
+  {repo}`publish_container.py` hardcodes the BELLA path.
+  For other projects, tag and push the images manually, as described in [Dashboard](dashboard.md#push-the-docker-image) and [ML training](ml-training.md#push-the-docker-image).
 - Before publishing, validate the images locally.

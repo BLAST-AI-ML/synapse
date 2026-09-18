@@ -20,6 +20,63 @@ Each experiment should provide:
 - `inputs`: scalar variables with `name`, `type`, `default`, and `value_range`.
 - `outputs`: scalar variables with `name` and `type`.
 
+## Database and MLflow settings
+
+The `database` and `mlflow` sections hold the connection settings of a deployment.
+Secrets are not stored in `config.yaml`: the keys ending in `_env` name the environment variables that hold them.
+
+- `database.host`, `database.port`: the MongoDB server.
+  When you access the database through an SSH tunnel, set `database.host` to `127.0.0.1` in your local copy of `config.yaml` (see [Getting started](getting-started.md#run-the-dashboard)).
+- `database.name`: the database.
+- `database.auth`: the authentication database of the user.
+- `database.username_ro`: the read-only user.
+- `database.password_ro_env`: the environment variable that holds the password of the read-only user.
+- `mlflow.tracking_uri`: the MLflow tracking server.
+  Without it, the dashboard cannot load models and the training script does not register them.
+- `mlflow.api_key_env`: the environment variable that holds the MLflow API key, only used when `mlflow.tracking_uri` is the AmSC MLflow server, `https://mlflow.american-science-cloud.org`.
+
+::::{tab-set}
+:sync-group: deployment
+
+:::{tab-item} General
+:sync: general
+
+```yaml
+experiment: "<experiment>"
+
+database:
+  host: "<database_host>"
+  port: <database_port>
+  name: "<database_name>"
+  auth: "<authentication_database>"
+  username_ro: "<read_only_user>"
+  password_ro_env: "<PASSWORD_ENV_VAR>"
+
+mlflow:
+  tracking_uri: "<mlflow_tracking_uri>"
+  api_key_env: "<API_KEY_ENV_VAR>"
+```
+:::
+
+:::{tab-item} Project Example: BELLA @ NERSC
+:sync: bella-nersc
+
+```yaml
+experiment: "bella-ip2"
+
+database:
+  host: "mongodb05.nersc.gov"
+  port: 27017
+  # name, auth, username_ro: see the experiment repository
+  password_ro_env: "SF_DB_READONLY_PASSWORD"
+
+mlflow:
+  tracking_uri: "https://mlflow.american-science-cloud.org"
+  api_key_env: "AM_SC_API_KEY"
+```
+:::
+::::
+
 ## Simulation calibration
 
 `simulation_calibration` maps simulation variable names to experimental variable names:

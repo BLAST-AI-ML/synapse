@@ -36,25 +36,71 @@ This section describes how to train ML models locally.
 
 #### Run the training
 
-1. Create an SSH tunnel to access the MongoDB database at NERSC (in a separate terminal):
+1. In a separate terminal, create an SSH tunnel to the MongoDB database through a gateway node, using `database.host` and `database.port` from your experiment's `config.yaml`:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   ssh -L 27017:<database.host>:<database.port> <username>@<gateway_host> -N
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    ssh -L 27017:mongodb05.nersc.gov:27017 <username>@dtn03.nersc.gov -N
    ```
+   :::
+   ::::
 
-2. Move to the {repo-dir}`ml/` directory.
+   ```{note}
+   The local port is 27017 because {repo}`train_model.py <ml/train_model.py>` does not read `database.port` yet and always connects to the default MongoDB port.
+   ```
 
-3. Set up the database settings (read-only) and the AmSC MLflow API key:
+2. Set `database.host` to `127.0.0.1` in your local copy of `config.yaml`, so that the training connects through the tunnel.
+   Do not commit this change.
+   ```yaml
+   database:
+     host: "127.0.0.1"
+   ```
+
+3. Move to the {repo-dir}`ml/` directory.
+
+4. Set up the read-only database password and the MLflow API key:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   export <database.password_ro_env>='your_password_here'  # Use SINGLE quotes around the password!
+   export <mlflow.api_key_env>='your_api_key_here'         # Required when MLflow tracking_uri is AmSC
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
    ```
+   :::
+   ::::
 
-4. Activate the conda environment `synapse-ml`:
+5. Activate the conda environment `synapse-ml`:
    ```bash
    conda activate synapse-ml
    ```
 
-5. Run the ML training script in test mode:
+6. Run the ML training script in test mode:
    ```bash
    python train_model.py --test --model <your_model> --config_file <your_config_file>
    ```
@@ -75,9 +121,26 @@ It requires a local, empty MLflow server so it does not touch a production serve
    ```
 
    Optionally, restrict to a specific model type or config file:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-<experiment>/config.yaml
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2/config.yaml
    ```
+   :::
+   ::::
 
    If your MLflow server is running on a different port (e.g. 5001 instead of 5000), pass it explicitly:
    ```bash
@@ -118,11 +181,29 @@ This section describes how to train ML models at NERSC.
 
 1. Move to the {repo-dir}`ml/` directory.
 
-2. Set up the database settings (read-only) and the AmSC MLflow API key:
+2. Set up the read-only database password and the MLflow API key:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   export <database.password_ro_env>='your_password_here'  # Use SINGLE quotes around the password!
+   export <mlflow.api_key_env>='your_api_key_here'         # Required when MLflow tracking_uri is AmSC
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
    ```
+   :::
+   ::::
 
 3. Activate the conda environment `synapse-ml`:
    ```bash
@@ -146,35 +227,125 @@ The Docker image is pulled from the [NERSC registry](https://registry.nersc.gov)
    ssh perlmutter-p1.nersc.gov
    ```
 
-2. Ensure the file `$HOME/db.profile` contains the read-only database password and the AmSC MLflow API key: `export SF_DB_READONLY_PASSWORD='your_password_here'` and `export AM_SC_API_KEY='your_amsc_api_key_here'`.
+2. Ensure the file `$HOME/db-podman.profile` contains the read-only database password and the MLflow API key.
+   The file is passed to the container with `--env-file`, so write one `NAME=value` per line, without `export` and without quotes, which would become part of the value:
 
-3. Pull the Docker image:
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```text
+   <database.password_ro_env>=your_password_here
+   <mlflow.api_key_env>=your_api_key_here
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
+   ```text
+   SF_DB_READONLY_PASSWORD=your_password_here
+   AM_SC_API_KEY=your_amsc_api_key_here
+   ```
+   :::
+   ::::
+
+   Run `chmod 600 $HOME/db-podman.profile` so that only you can read it.
+
+3. Pull the Docker image from the registry path of your NERSC project:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   podman-hpc login --username $USER registry.nersc.gov
+   # Password: your NERSC password without 2FA
+   podman-hpc pull registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-ml:latest
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    podman-hpc login --username $USER registry.nersc.gov
    # Password: your NERSC password without 2FA
    podman-hpc pull registry.nersc.gov/m558/superfacility/synapse-ml:latest
    ```
+   :::
+   ::::
 
-4. Allocate a GPU node and run the container:
+4. Allocate a GPU node, charged to your NERSC project, and run the container:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A <nersc_project>
+   podman-hpc run --gpu -v /etc/localtime:/etc/localtime --env-file $HOME/db-podman.profile -v <your_config_file>:/app/ml/config.yaml --rm -it registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    salloc -N 1 --ntasks-per-node=1 -t 1:00:00 -q interactive -C gpu --gpu-bind=single:1 -c 32 -G 1 -A m558
-   podman-hpc run --gpu -v /etc/localtime:/etc/localtime -v $HOME/db.profile:/root/db.profile -v /path/to/config.yaml:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
+   podman-hpc run --gpu -v /etc/localtime:/etc/localtime --env-file $HOME/db-podman.profile -v <your_config_file>:/app/ml/config.yaml --rm -it registry.nersc.gov/m558/superfacility/synapse-ml:latest python -u /app/ml/train_model.py --test --config_file /app/ml/config.yaml --model NN
    ```
+   :::
+   ::::
+
    Note that `-v /etc/localtime:/etc/localtime` is necessary to synchronize the time zone in the container with the host machine.
 
 ### Through the dashboard
 
 ````{warning}
-When ML models are trained through the dashboard, Synapse uses NERSC's Superfacility API with the collaboration account `sf558`.
-Because this is a non-interactive, non-user account, Synapse also uses a custom user to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
-The registry login credentials need to be prepared (only once) in the `$HOME` of user `sf558` (`/global/homes/s/sf558/`), in a file named `registry.profile` with the following content:
-```bash
-export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
-export REGISTRY_PASSWORD="..."
-```
+When ML models are trained through the dashboard, Synapse submits the batch script {repo}`ml/training_pm.sbatch` through NERSC's Superfacility API, as the user of the Superfacility API client (see [Generate Superfacility API credentials](dashboard.md#generate-superfacility-api-credentials)).
+The batch job reads two files from the `$HOME` of that user, which need to be prepared once:
+
+- `db-podman.profile`: the read-only database password and the MLflow API key, in the format described in [Manually with Docker](#manually-with-docker).
+- `registry.profile`: the login credentials used to pull the image from the [NERSC registry](https://registry.nersc.gov) to Perlmutter.
+  A collaboration account cannot log in to the registry interactively, so use a robot account of your registry project:
+
+  ::::{tab-set}
+  :sync-group: deployment
+
+  :::{tab-item} General
+  :sync: general
+
+  ```bash
+  export REGISTRY_USER="robot\$<nersc_project>+<robot_name>"
+  export REGISTRY_PASSWORD="..."
+  ```
+  :::
+
+  :::{tab-item} Project Example: BELLA @ NERSC
+  :sync: bella-nersc
+
+  In the `$HOME` of the collaboration account `sf558`, `/global/homes/s/sf558/`:
+  ```bash
+  export REGISTRY_USER="robot\$m558+perlmutter-nersc-gov"
+  export REGISTRY_PASSWORD="..."
+  ```
+  :::
+  ::::
 ````
 
-Connect to the [dashboard](https://bellasuperfacility.lbl.gov/) deployed at NERSC through Spin and click the `Train` button in the `ML` panel.
+```{note}
+{repo}`ml/training_pm.sbatch` and {repo}`dashboard/model_manager.py` hardcode values of the BELLA deployment: the NERSC project `m558`, the image `registry.nersc.gov/m558/superfacility/synapse-ml`, and the directory `/global/cfs/cdirs/m558/superfacility/model_training/` for the configuration file and the job logs.
+Other projects need to adapt these values before training ML models through the dashboard.
+```
+
+Connect to the dashboard deployed for your project at NERSC through Spin (see [Run the dashboard at NERSC](dashboard.md#run-the-dashboard-at-nersc)) and click the `Train` button in the `ML` panel.
 You need to upload valid Superfacility API credentials before you can launch simulations or train ML models directly from the dashboard.
 
 ## Model types
@@ -256,6 +427,8 @@ Run this workflow automatically with the Python script {repo}`publish_container.
 ```bash
 python publish_container.py --ml
 ```
+The script pushes to `registry.nersc.gov/m558/superfacility`, which is hardcoded for the BELLA deployment.
+For other projects, follow the steps below.
 ````
 
 ````{tip}
@@ -292,16 +465,51 @@ docker --version
    # Password: your NERSC password without 2FA
    ```
 
-3. Tag the Docker image:
+3. Tag the Docker image with the registry path of your NERSC project:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   docker tag synapse-ml:latest registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-ml:latest
+   docker tag synapse-ml:latest registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-ml:$(date "+%y.%m")
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    docker tag synapse-ml:latest registry.nersc.gov/m558/superfacility/synapse-ml:latest
    docker tag synapse-ml:latest registry.nersc.gov/m558/superfacility/synapse-ml:$(date "+%y.%m")
    ```
+   :::
+   ::::
 
 4. Push the Docker image:
+
+   ::::{tab-set}
+   :sync-group: deployment
+
+   :::{tab-item} General
+   :sync: general
+
+   ```bash
+   docker push -a registry.nersc.gov/<nersc_project>/[<namespace>/]synapse-ml
+   ```
+   :::
+
+   :::{tab-item} Project Example: BELLA @ NERSC
+   :sync: bella-nersc
+
    ```bash
    docker push -a registry.nersc.gov/m558/superfacility/synapse-ml
    ```
+   :::
+   ::::
 
 ## References
 
