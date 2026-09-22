@@ -28,6 +28,11 @@ Before submission, it writes the current dashboard parameters to `single_simulat
    /global/cfs/cdirs/m558/superfacility/simulation_running/<experiment>/templates
    ```
 
+   ```{note}
+   This path is hardcoded for the BELLA deployment in {repo}`dashboard/parameters_manager.py`.
+   Other projects need to adapt it before launching simulations from the dashboard.
+   ```
+
 5. The dashboard reads `submission_script_single` and submits it through Superfacility API.
 6. Job status is polled until a terminal state, such as completed, failed, or cancelled.
 
@@ -41,6 +46,28 @@ These scripts are experiment-specific and are usually run manually on Perlmutter
 Simulation records should be written to the experiment's MongoDB collection with `experiment_flag: 0`.
 Field names should match either the experiment config outputs or the configured simulation calibration variable names.
 
-When a simulation record includes a `data_directory` under `/global/cfs/cdirs/m558/superfacility/simulation_data`, the dashboard can link the record to a plot file in that directory's `plots/` subdirectory.
+When a simulation record includes a `data_directory` inside a directory named `simulation_data`, the dashboard can link the record to a plot file in that directory's `plots/` subdirectory.
 It prefers a single MP4 file and otherwise falls back to the last PNG file whose name contains `iteration`.
 This support is optional because the experiment's simulation scripts must create the record and its corresponding files.
+
+The dashboard looks for the `simulation_data` directory at `/app/simulation_data/` in its container, so the deployment mounts it there from the Perlmutter shared file system:
+
+::::{tab-set}
+:sync-group: deployment
+
+:::{tab-item} General
+:sync: general
+
+```text
+/global/cfs/cdirs/<nersc_project>/[<subdirectory>/]simulation_data
+```
+:::
+
+:::{tab-item} Project Example: BELLA @ NERSC
+:sync: bella-nersc
+
+```text
+/global/cfs/cdirs/m558/superfacility/simulation_data
+```
+:::
+::::
