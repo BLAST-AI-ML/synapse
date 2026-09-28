@@ -1,31 +1,32 @@
 import asyncio
-from bson.objectid import ObjectId
 import os
 import re
-from trame.assets.local import LocalFileManager
-from trame.ui.router import RouterViewLayout
-from trame.ui.vuetify3 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
+from bson.objectid import ObjectId
+from calibration_manager import SimulationCalibrationManager
+from error_manager import add_error, error_panel
 from model_manager import (
     ModelManager,
     is_model_available_on_mlflow,
     load_model_from_mlflow_with_progress,
     model_type_dict,
 )
-from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
+from outputs_manager import OutputManager
 from parameters_manager import ParametersManager
-from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import load_sfapi_card
-from state_manager import server, state, ctrl, initialize_state
-from error_manager import error_panel, add_error
+from state_manager import ctrl, initialize_state, server, state
+from trame.assets.local import LocalFileManager
+from trame.ui.router import RouterViewLayout
+from trame.ui.vuetify3 import SinglePageWithDrawerLayout
+from trame.widgets import html, plotly, router
+from trame.widgets import vuetify3 as vuetify
 from utils import (
     data_depth_panel,
     load_config_dict,
-    load_experiments,
-    load_database,
     load_data,
+    load_database,
+    load_experiments,
     load_variables,
     plot,
 )
@@ -375,74 +376,61 @@ def close_simulation_dialog(**kwargs):
 # home route
 def home_route():
     print("Setting GUI home route...")
-    with RouterViewLayout(server, "/"):
-        with vuetify.VRow():
-            with vuetify.VCol(cols=4):
-                with vuetify.VCard():
-                    with vuetify.VTabs(
-                        v_model=("active_tab", "parameters_tab"),
-                        color="primary",
-                        mandatory=True,
-                    ):
-                        vuetify.VTab("Parameters", value="parameters_tab")
-                        vuetify.VTab("Optimization", value="optimization_tab")
-                        vuetify.VTab("ML", value="ml_tab")
-                    with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
-                        with vuetify.VWindowItem(value="parameters_tab"):
-                            # output control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    out_manager.panel()
-                            # parameters control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    par_manager.panel()
-                            # plots control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    data_depth_panel()
-                        with vuetify.VWindowItem(value="optimization_tab"):
-                            # optimization control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    opt_manager.panel()
-                        with vuetify.VWindowItem(value="ml_tab"):
-                            # model control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    mod_manager.panel()
-                            # calibration control panel
-                            with vuetify.VRow():
-                                with vuetify.VCol():
-                                    cal_manager.panel()
-            # plots card
-            with vuetify.VCol(cols=8):
-                with vuetify.VCard():
-                    with vuetify.VCardTitle("Plots"):
-                        with vuetify.VContainer(
-                            style=f"height: {400 * len(state.parameters)}px;"
-                        ):
-                            figure = plotly.Figure(
-                                display_mode_bar="true",
-                                config={"responsive": True},
-                                click=(
-                                    open_simulation_dialog,
-                                    "[utils.safe($event)]",
-                                ),
-                            )
-                            ctrl.figure_update = figure.update
+    with RouterViewLayout(server, "/"), vuetify.VRow():
+        with vuetify.VCol(cols=4), vuetify.VCard():
+            with vuetify.VTabs(
+                v_model=("active_tab", "parameters_tab"),
+                color="primary",
+                mandatory=True,
+            ):
+                vuetify.VTab("Parameters", value="parameters_tab")
+                vuetify.VTab("Optimization", value="optimization_tab")
+                vuetify.VTab("ML", value="ml_tab")
+            with vuetify.VWindow(v_model=("active_tab",), mandatory=True):
+                with vuetify.VWindowItem(value="parameters_tab"):
+                    # output control panel
+                    with vuetify.VRow(), vuetify.VCol():
+                        out_manager.panel()
+                    # parameters control panel
+                    with vuetify.VRow(), vuetify.VCol():
+                        par_manager.panel()
+                    # plots control panel
+                    with vuetify.VRow(), vuetify.VCol():
+                        data_depth_panel()
+                with vuetify.VWindowItem(value="optimization_tab"):
+                    # optimization control panel
+                    with vuetify.VRow():
+                        with vuetify.VCol():
+                            opt_manager.panel()
+                with vuetify.VWindowItem(value="ml_tab"):
+                    # model control panel
+                    with vuetify.VRow(), vuetify.VCol():
+                        mod_manager.panel()
+                    # calibration control panel
+                    with vuetify.VRow(), vuetify.VCol():
+                        cal_manager.panel()
+        # plots card
+        with vuetify.VCol(cols=8), vuetify.VCard(), vuetify.VCardTitle("Plots"):
+            with vuetify.VContainer(style=f"height: {400 * len(state.parameters)}px;"):
+                figure = plotly.Figure(
+                    display_mode_bar="true",
+                    config={"responsive": True},
+                    click=(
+                        open_simulation_dialog,
+                        "[utils.safe($event)]",
+                    ),
+                )
+                ctrl.figure_update = figure.update
 
 
 # HPC route
 def hpc_route():
     print("Setting GUI HPC route...")
-    with RouterViewLayout(server, "/hpc"):
+    with RouterViewLayout(server, "/hpc"), vuetify.VRow(), vuetify.VCol(cols=4):
+        # NERSC Superfacility API card
         with vuetify.VRow():
-            with vuetify.VCol(cols=4):
-                # NERSC Superfacility API card
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        load_sfapi_card()
+            with vuetify.VCol():
+                load_sfapi_card()
 
 
 # Chat route
@@ -513,38 +501,40 @@ def gui_setup():
                     title="HPC Connection",
                 )
         # interactive dialog for simulation plots
-        with vuetify.VDialog(
-            v_model=("simulation_dialog",),
-            content_class="d-flex align-center justify-center",
+        with (
+            vuetify.VDialog(
+                v_model=("simulation_dialog",),
+                content_class="d-flex align-center justify-center",
+            ),
+            vuetify.VCard(style="width: 80vw; height: 80vh;"),
         ):
-            with vuetify.VCard(style="width: 80vw; height: 80vh;"):
-                with vuetify.VCardTitle(
-                    "Simulation Plots",
-                    classes="d-flex align-center",
-                ):
-                    vuetify.VSpacer()
-                    vuetify.VBtn(
-                        click=close_simulation_dialog,
-                        icon="mdi-close",
-                        variant="plain",
-                    )
-                with vuetify.VRow(
-                    align="center",
-                    justify="center",
-                    style="width: 80vw; height: 60vh;",
-                ):
-                    html.Video(
-                        v_if=("simulation_video",),
-                        controls=True,
-                        src=("simulation_url",),
-                        style="width: 100%; height: 100%",
-                    )
-                    vuetify.VImg(
-                        v_if=("!simulation_video",),
-                        src=("simulation_url",),
-                        contain=True,
-                        style="width: 100%; height: 100%",
-                    )
+            with vuetify.VCardTitle(
+                "Simulation Plots",
+                classes="d-flex align-center",
+            ):
+                vuetify.VSpacer()
+                vuetify.VBtn(
+                    click=close_simulation_dialog,
+                    icon="mdi-close",
+                    variant="plain",
+                )
+            with vuetify.VRow(
+                align="center",
+                justify="center",
+                style="width: 80vw; height: 60vh;",
+            ):
+                html.Video(
+                    v_if=("simulation_video",),
+                    controls=True,
+                    src=("simulation_url",),
+                    style="width: 100%; height: 100%",
+                )
+                vuetify.VImg(
+                    v_if=("!simulation_video",),
+                    src=("simulation_url",),
+                    contain=True,
+                    style="width: 100%; height: 100%",
+                )
 
 
 # -----------------------------------------------------------------------------

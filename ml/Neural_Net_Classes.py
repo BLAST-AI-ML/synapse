@@ -1,6 +1,5 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
+from torch import nn, optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
@@ -77,7 +76,7 @@ class CombinedNN(nn.Module):
             float threshold: how many place values to consider repeated numbers
 
         """
-        super(CombinedNN, self).__init__()
+        super().__init__()
 
         self.hidden1 = nn.Linear(input_size, hidden_size)
         self.hidden2 = nn.Linear(hidden_size, hidden_size)
