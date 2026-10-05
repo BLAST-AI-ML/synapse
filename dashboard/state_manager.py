@@ -1,7 +1,7 @@
 from pathlib import Path
+
 from trame.app import get_server
 from trame.widgets import vuetify3 as vuetify
-
 
 EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
 

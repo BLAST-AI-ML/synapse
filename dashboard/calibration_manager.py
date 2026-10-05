@@ -1,7 +1,9 @@
-from trame.widgets import client, vuetify3 as vuetify, html
-from state_manager import state
-from error_manager import add_error
 import copy
+
+from error_manager import add_error
+from state_manager import state
+from trame.widgets import client, html
+from trame.widgets import vuetify3 as vuetify
 
 
 def build_inferred_calibration(variables, alpha_values, beta_values):
