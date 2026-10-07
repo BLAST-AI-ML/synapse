@@ -88,7 +88,7 @@ This section describes how to train ML models locally.
    :sync: bella-nersc
 
    ```bash
-   export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
    ```
    :::
@@ -198,7 +198,7 @@ This section describes how to train ML models at NERSC.
    :sync: bella-nersc
 
    ```bash
-   export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
+   export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
    export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
    ```
    :::
@@ -245,7 +245,7 @@ The Docker image is pulled from the [NERSC registry](https://registry.nersc.gov)
    :sync: bella-nersc
 
    ```text
-   SF_DB_READONLY_PASSWORD=your_password_here
+   SF_DB_READONLY_PASSWORD=<your_password_here>
    AM_SC_API_KEY=your_amsc_api_key_here
    ```
    :::

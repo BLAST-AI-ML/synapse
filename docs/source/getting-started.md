@@ -61,7 +61,7 @@ Assuming `conda-lock` is installed in your conda `base` environment, from {repo-
 conda activate base
 conda-lock install --name synapse-gui environment-lock.yml
 conda activate synapse-gui
-export <database.password_ro_env>='...'
+export <database.password_ro_env>='<your_password_here>'  # Use SINGLE quotes around the password!
 export <mlflow.api_key_env>='...'
 python -u app.py --port 8080
 ```
@@ -74,7 +74,7 @@ python -u app.py --port 8080
 conda activate base
 conda-lock install --name synapse-gui environment-lock.yml
 conda activate synapse-gui
-export SF_DB_READONLY_PASSWORD='...'
+export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
 export AM_SC_API_KEY='...'
 python -u app.py --port 8080
 ```
@@ -114,7 +114,7 @@ python train_model.py --test --config_file ../experiments/synapse-<experiment>/c
 conda activate base
 conda-lock install --name synapse-ml environment-lock.yml
 conda activate synapse-ml
-export SF_DB_READONLY_PASSWORD='...'
+export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
 export AM_SC_API_KEY='...'
 python train_model.py --test --config_file ../experiments/synapse-<experiment>/config.yaml --model NN
 ```

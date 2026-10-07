@@ -29,7 +29,7 @@ Before submission, it writes the current dashboard parameters to `single_simulat
    ```
 
    ```{note}
-   This path is hardcoded for the BELLA deployment in {repo}`dashboard/parameters_manager.py`.
+   This path is hardcoded for the BELLA deployment in {repo}`dashboard/parameters_manager.py` and {repo}`dashboard/model_manager.py`.
    Other projects need to adapt it before launching simulations from the dashboard.
    ```
 

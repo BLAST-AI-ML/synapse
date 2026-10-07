@@ -86,8 +86,8 @@ conda-lock install --name synapse-gui environment-lock.yml
    :sync: bella-nersc
 
    ```bash
-   export SF_DB_READONLY_PASSWORD='your_password_here'  # Use SINGLE quotes around the password!
-   export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
+   export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
+   export AM_SC_API_KEY='<your_amsc_api_key_here>'        # Required when MLflow tracking_uri is AmSC
    ```
    :::
    ::::
@@ -156,11 +156,11 @@ conda-lock install --name synapse-gui environment-lock.yml
    :sync: bella-nersc
 
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' synapse-gui
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_READONLY_PASSWORD='<your_password_here>' -e AM_SC_API_KEY='<your_amsc_api_key_here>' synapse-gui
    ```
    For debugging, you can enter the container without starting the app:
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_READONLY_PASSWORD='your_password_here' -e AM_SC_API_KEY='your_amsc_api_key_here' -it synapse-gui bash
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e SF_DB_READONLY_PASSWORD='<your_password_here>' -e AM_SC_API_KEY='<your_amsc_api_key_here>' -it synapse-gui bash
    ```
    :::
    ::::
