@@ -3,6 +3,12 @@ import os
 import re
 
 from bson.objectid import ObjectId
+from trame.assets.local import LocalFileManager
+from trame.ui.router import RouterViewLayout
+from trame.ui.vuetify3 import SinglePageWithDrawerLayout
+from trame.widgets import html, plotly, router
+from trame.widgets import vuetify3 as vuetify
+
 from calibration_manager import SimulationCalibrationManager
 from error_manager import add_error, error_panel
 from model_manager import (
@@ -16,11 +22,6 @@ from outputs_manager import OutputManager
 from parameters_manager import ParametersManager
 from sfapi_manager import load_sfapi_card
 from state_manager import ctrl, initialize_state, server, state
-from trame.assets.local import LocalFileManager
-from trame.ui.router import RouterViewLayout
-from trame.ui.vuetify3 import SinglePageWithDrawerLayout
-from trame.widgets import html, plotly, router
-from trame.widgets import vuetify3 as vuetify
 from utils import (
     data_depth_panel,
     load_config_dict,

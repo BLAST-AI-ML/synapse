@@ -7,10 +7,11 @@ import plotly.graph_objects as go
 import pymongo
 import torch
 import yaml
-from error_manager import add_error
 from plotly.subplots import make_subplots
-from state_manager import EXPERIMENTS_PATH, state
 from trame.widgets import vuetify3 as vuetify
+
+from error_manager import add_error
+from state_manager import EXPERIMENTS_PATH, state
 
 
 def timer(function):

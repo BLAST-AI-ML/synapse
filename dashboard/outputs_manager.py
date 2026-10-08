@@ -1,5 +1,6 @@
-from state_manager import state
 from trame.widgets import vuetify3 as vuetify
+
+from state_manager import state
 
 
 class OutputManager:

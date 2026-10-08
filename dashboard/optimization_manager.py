@@ -1,8 +1,9 @@
 import numpy as np
-from error_manager import add_error
 from scipy.optimize import minimize
-from state_manager import state
 from trame.widgets import vuetify3 as vuetify
+
+from error_manager import add_error
+from state_manager import state
 
 
 class OptimizationManager:
