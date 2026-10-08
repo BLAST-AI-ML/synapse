@@ -2,7 +2,7 @@
 
 Synapse is typically deployed using Docker images, e.g., on Kubernetes.
 
-Below, we document our public deployment workflow (recipes currently in a `private repo <https://github.com/BLAST-AI-ML/synapse-kubernetes-nersc>`__) using NERSC services like `Spin <https://docs.nersc.gov/services/spin/>`__.
+Below, we document our public deployment workflow (recipes currently in a [private repository](https://github.com/BLAST-AI-ML/synapse-kubernetes-nersc)) using NERSC services like [Spin](https://docs.nersc.gov/services/spin/).
 
 ## Build the dashboard image
 
