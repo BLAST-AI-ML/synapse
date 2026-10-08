@@ -12,8 +12,8 @@ Ruff runs with its default rule set; there is no `pyproject.toml` or `ruff.toml`
 
 ## Conda environments
 
-- Dashboard dependencies live in {repo}`dashboard/environment.yml`.
-- ML dependencies live in {repo}`ml/environment.yml`.
+- Dashboard dependencies are defined in {repo}`dashboard/environment.yml`.
+- ML dependencies are defined in {repo}`ml/environment.yml`.
 - Regenerate the corresponding `environment-lock.yml` after dependency changes.
 
 ## Build the documentation
