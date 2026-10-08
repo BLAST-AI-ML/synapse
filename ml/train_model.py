@@ -1,5 +1,5 @@
-## This script trains machine learning models (GP, NN, or ensemble_NN)
-## using simulation and experimental data from MongoDB and saves trained models to MLflow
+# This script trains machine learning models (GP, NN, or ensemble_NN)
+# using simulation and experimental data from MongoDB and saves trained models to MLflow
 import time
 
 import_start_time = time.time()
