@@ -79,8 +79,8 @@ This section describes how to train ML models locally.
    :sync: general
 
    ```bash
-   export <database.password_ro_env>='your_password_here'  # Use SINGLE quotes around the password!
-   export <mlflow.api_key_env>='your_api_key_here'         # Required when MLflow tracking_uri is AmSC
+   export <database.password_ro_env>='<your_password_here>'  # Use SINGLE quotes around the password!
+   export <mlflow.api_key_env>='<your_api_key_here>'         # Required when MLflow tracking_uri is AmSC
    ```
    :::
 
@@ -89,7 +89,7 @@ This section describes how to train ML models locally.
 
    ```bash
    export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
-   export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
+   export AM_SC_API_KEY='<your_amsc_api_key_here>'        # Required when MLflow tracking_uri is AmSC
    ```
    :::
    ::::
@@ -189,8 +189,8 @@ This section describes how to train ML models at NERSC.
    :sync: general
 
    ```bash
-   export <database.password_ro_env>='your_password_here'  # Use SINGLE quotes around the password!
-   export <mlflow.api_key_env>='your_api_key_here'         # Required when MLflow tracking_uri is AmSC
+   export <database.password_ro_env>='<your_password_here>'  # Use SINGLE quotes around the password!
+   export <mlflow.api_key_env>='<your_api_key_here>'         # Required when MLflow tracking_uri is AmSC
    ```
    :::
 
@@ -199,7 +199,7 @@ This section describes how to train ML models at NERSC.
 
    ```bash
    export SF_DB_READONLY_PASSWORD='<your_password_here>'  # Use SINGLE quotes around the password!
-   export AM_SC_API_KEY='your_amsc_api_key_here'        # Required when MLflow tracking_uri is AmSC
+   export AM_SC_API_KEY='<your_amsc_api_key_here>'        # Required when MLflow tracking_uri is AmSC
    ```
    :::
    ::::

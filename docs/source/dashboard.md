@@ -77,8 +77,8 @@ conda-lock install --name synapse-gui environment-lock.yml
    :sync: general
 
    ```bash
-   export <database.password_ro_env>='your_password_here'  # Use SINGLE quotes around the password!
-   export <mlflow.api_key_env>='your_api_key_here'         # Required when MLflow tracking_uri is AmSC
+   export <database.password_ro_env>='<your_password_here>'  # Use SINGLE quotes around the password!
+   export <mlflow.api_key_env>='<your_api_key_here>'         # Required when MLflow tracking_uri is AmSC
    ```
    :::
 
@@ -144,11 +144,11 @@ conda-lock install --name synapse-gui environment-lock.yml
    :sync: general
 
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e <database.password_ro_env>='your_password_here' -e <mlflow.api_key_env>='your_api_key_here' synapse-gui
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e <database.password_ro_env>='<your_password_here>' -e <mlflow.api_key_env>='<your_api_key_here>' synapse-gui
    ```
    For debugging, you can enter the container without starting the app:
    ```bash
-   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e <database.password_ro_env>='your_password_here' -e <mlflow.api_key_env>='your_api_key_here' -it synapse-gui bash
+   docker run --network=host -v /etc/localtime:/etc/localtime -v $PWD/ml:/app/ml -e <database.password_ro_env>='<your_password_here>' -e <mlflow.api_key_env>='<your_api_key_here>' -it synapse-gui bash
    ```
    :::
 
