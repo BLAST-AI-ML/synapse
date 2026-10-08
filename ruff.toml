@@ -7,5 +7,5 @@ ignore = [
     "ASYNC230",
     "BLE001",
     # Nested `with` blocks are idiomatic for trame layouts
-    "SIM117"
+    "SIM117",
 ]
