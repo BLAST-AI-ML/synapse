@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Check that a model stored in MLflow loads and evaluates correctly,
 using the same logic as the dashboard.

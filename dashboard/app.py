@@ -280,7 +280,7 @@ def find_simulation(event, db):
         if len(documents) == 1:
             this_point_parameters = {
                 parameter: documents[0][parameter]
-                for parameter in state.parameters.keys()
+                for parameter in state.parameters
                 if parameter in documents[0]
             }
             print(f"Clicked on data point ({this_point_parameters})")

@@ -127,7 +127,7 @@ class SimulationCalibrationManager:
                             label="Use inferred calibration",
                         )
                     with client.DeepReactive("simulation_calibration"):
-                        for key in state.simulation_calibration.keys():
+                        for key in state.simulation_calibration:
                             # create a row for the calibration formula
                             with vuetify.VRow():
                                 html.Small(

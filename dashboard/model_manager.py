@@ -243,7 +243,7 @@ class ModelManager:
 
     def avail(self):
         print("Checking model availability...")
-        model_avail = True if self.__model is not None else False
+        model_avail = self.__model is not None
         return model_avail
 
     @timer
@@ -456,7 +456,9 @@ class ModelManager:
                     f"Unsupported training mode: {state.model_training_mode}"
                 )
             if result:
-                state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                state.model_training_time = (
+                    datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
+                )
                 state.flush()
                 print(f"Finished training model at {state.model_training_time}")
             else:
@@ -587,9 +589,11 @@ class ModelManager:
                             "Train",
                             click=self.training_trigger,
                             disabled=(
-                                "model_training || "
-                                "(model_training_mode === 'sfapi' && "
-                                "sfapi_perlmutter_status !== 'active')",
+                                (
+                                    "model_training || "
+                                    "(model_training_mode === 'sfapi' && "
+                                    "sfapi_perlmutter_status !== 'active')"
+                                ),
                             ),
                             block=True,
                             style="text-transform: none",

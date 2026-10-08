@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
 ## using simulation and experimental data from MongoDB and saves trained models to MLflow
 import time
@@ -366,16 +365,14 @@ def build_lume_model(
         del input_variables[k]["default"]
 
     # Define lume-model input and output variables
-    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
-    output_vars = [
-        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
-    ]
+    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables]
+    output_vars = [ScalarVariable(**output_variables[k]) for k in output_variables]
     if model_type in ["GP", "ensemble_NN"]:
         distribution_output_vars = [
             DistributionVariable(
                 **output_variables[k], distribution_type="MultiVariateNormal"
             )
-            for k in output_variables.keys()
+            for k in output_variables
         ]
 
     if model_type == "GP":

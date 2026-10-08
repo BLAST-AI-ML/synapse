@@ -18,11 +18,11 @@ def initialize_state():
     """
     print("Initializing state variables at startup...")
     # Experiment
-    default_experiment = [
+    default_experiment = next(
         d.name.removeprefix("synapse-")
         for d in EXPERIMENTS_PATH.iterdir()
         if d.is_dir()
-    ][0]
+    )
     print(f"Setting default experiment to {default_experiment}...")
     state.experiment = default_experiment
     state.experiment_date_range = []
