@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 from error_manager import add_error
 from sfapi_client import Client
@@ -55,9 +55,9 @@ def update_sfapi_info():
             # parse key expiration date from string
             expiration = datetime.strptime(
                 credential_client.expiresAt, sfapi_format
-            ).astimezone()
+            ).astimezone(timezone.utc)
             # if key is not expired, update info, else set to expired/unavailable
-            if expiration.replace(tzinfo=None) > datetime.now().astimezone():
+            if expiration > datetime.now(timezone.utc):
                 # update key expiration date
                 state.sfapi_key_expiration = (
                     f"Valid Until {expiration.strftime(user_format)}"
