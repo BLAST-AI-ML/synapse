@@ -1,31 +1,32 @@
 import asyncio
-from bson.objectid import ObjectId
 import os
 import re
-from trame.assets.local import LocalFileManager
-from trame.ui.router import RouterViewLayout
-from trame.ui.vuetify3 import SinglePageWithDrawerLayout
-from trame.widgets import plotly, router, vuetify3 as vuetify, html
 
+from bson.objectid import ObjectId
+from calibration_manager import SimulationCalibrationManager
+from error_manager import add_error, error_panel
 from model_manager import (
     ModelManager,
     is_model_available_on_mlflow,
     load_model_from_mlflow_with_progress,
     model_type_dict,
 )
-from outputs_manager import OutputManager
 from optimization_manager import OptimizationManager
+from outputs_manager import OutputManager
 from parameters_manager import ParametersManager
-from calibration_manager import SimulationCalibrationManager
 from sfapi_manager import load_sfapi_card
-from state_manager import server, state, ctrl, initialize_state
-from error_manager import error_panel, add_error
+from state_manager import ctrl, initialize_state, server, state
+from trame.assets.local import LocalFileManager
+from trame.ui.router import RouterViewLayout
+from trame.ui.vuetify3 import SinglePageWithDrawerLayout
+from trame.widgets import html, plotly, router
+from trame.widgets import vuetify3 as vuetify
 from utils import (
     data_depth_panel,
     load_config_dict,
-    load_experiments,
-    load_database,
     load_data,
+    load_database,
+    load_experiments,
     load_variables,
     plot,
 )
@@ -279,7 +280,7 @@ def find_simulation(event, db):
         if len(documents) == 1:
             this_point_parameters = {
                 parameter: documents[0][parameter]
-                for parameter in state.parameters.keys()
+                for parameter in state.parameters
                 if parameter in documents[0]
             }
             print(f"Clicked on data point ({this_point_parameters})")

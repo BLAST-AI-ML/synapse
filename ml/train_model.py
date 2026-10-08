@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# ruff: noqa: E402
 ## This script trains machine learning models (GP, NN, or ensemble_NN)
 ## using simulation and experimental data from MongoDB and saves trained models to MLflow
 import time
@@ -8,23 +6,23 @@ import_start_time = time.time()
 
 import argparse
 import os
-import torch
-from botorch.models.transforms.input import AffineInputTransform
-from botorch.models import SingleTaskGP, ModelListGP
-from botorch.fit import fit_gpytorch_mll
-from gpytorch.kernels import ScaleKernel, MaternKernel
-import pymongo
-import yaml
+import sys
+
 import mlflow
+import pandas as pd
+import pymongo
+import torch
+import yaml
+from botorch.fit import fit_gpytorch_mll
+from botorch.models import ModelListGP, SingleTaskGP
+from botorch.models.transforms.input import AffineInputTransform
+from gpytorch.kernels import MaternKernel, ScaleKernel
+from gpytorch.mlls import ExactMarginalLogLikelihood
 from lume_model.models import TorchModel
 from lume_model.models.ensemble import NNEnsemble
 from lume_model.models.gp_model import GPModel
-from lume_model.variables import ScalarVariable
-from lume_model.variables import DistributionVariable
+from lume_model.variables import DistributionVariable, ScalarVariable
 from sklearn.model_selection import train_test_split
-import sys
-import pandas as pd
-from gpytorch.mlls import ExactMarginalLogLikelihood
 
 sys.path.append(".")
 from Neural_Net_Classes import CombinedNN, train_calibration
@@ -367,16 +365,14 @@ def build_lume_model(
         del input_variables[k]["default"]
 
     # Define lume-model input and output variables
-    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables.keys()]
-    output_vars = [
-        ScalarVariable(**output_variables[k]) for k in output_variables.keys()
-    ]
+    input_vars = [ScalarVariable(**input_variables[k]) for k in input_variables]
+    output_vars = [ScalarVariable(**output_variables[k]) for k in output_variables]
     if model_type in ["GP", "ensemble_NN"]:
         distribution_output_vars = [
             DistributionVariable(
                 **output_variables[k], distribution_type="MultiVariateNormal"
             )
-            for k in output_variables.keys()
+            for k in output_variables
         ]
 
     if model_type == "GP":
@@ -463,7 +459,7 @@ def enable_amsc_x_api_key(config_dict):
 
     See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
     """
-    import mlflow.utils.rest_utils as rest_utils
+    from mlflow.utils import rest_utils
 
     mlflow_cfg = config_dict.get("mlflow") if config_dict is not None else None
     if not isinstance(mlflow_cfg, dict):

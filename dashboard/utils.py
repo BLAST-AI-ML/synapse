@@ -1,15 +1,16 @@
-import numpy as np
 import os
+import time
+
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import pymongo
-import time
 import torch
 import yaml
-from trame.widgets import vuetify3 as vuetify
-from state_manager import state, EXPERIMENTS_PATH
 from error_manager import add_error
+from plotly.subplots import make_subplots
+from state_manager import EXPERIMENTS_PATH, state
+from trame.widgets import vuetify3 as vuetify
 
 
 def timer(function):
@@ -188,7 +189,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             # loop over all inputs except the current one
             for subkey in [
                 subkey
-                for subkey in parameters.keys()
+                for subkey in parameters
                 if (subkey != key and subkey in df_copy.columns)
             ]:
                 pname_loc = subkey
@@ -264,9 +265,10 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                         x=df_copy_filtered[key],
                         y=df_copy_filtered[objective_name],
                         mode="markers",
-                        marker=dict(
-                            color=df_cds[df_count], opacity=df_copy_filtered["opacity"]
-                        ),
+                        marker={
+                            "color": df_cds[df_count],
+                            "opacity": df_copy_filtered["opacity"],
+                        },
                     )
                 ]
             )
@@ -284,7 +286,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                     x=[None],
                     y=[None],
                     mode="markers",
-                    marker=dict(color=df_cds[df_count], opacity=1),
+                    marker={"color": df_cds[df_count], "opacity": 1},
                     showlegend=True,
                     name=df_leg[df_count],
                 )
@@ -300,14 +302,14 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
         # ----------------------------------------------------------------------
         # figure trace from model data
         if model_manager.avail():
-            input_dict_loc = dict()
+            input_dict_loc = {}
             steps = 1000
             input_dict_loc[key] = torch.linspace(
                 start=parameters_min[key],
                 end=parameters_max[key],
                 steps=steps,
             )
-            for subkey in [subkey for subkey in parameters.keys() if subkey != key]:
+            for subkey in [subkey for subkey in parameters if subkey != key]:
                 input_dict_loc[subkey] = parameters[subkey] * torch.ones(steps)
             # get mean and lower/upper bounds for uncertainty prediction
             # (when lower/upper bounds are not predicted by the model,
@@ -323,7 +325,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             upper_bound = go.Scatter(
                 x=input_dict_loc[key],
                 y=upper,
-                line=dict(color="orange", width=0.3),
+                line={"color": "orange", "width": 0.3},
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -338,7 +340,7 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
                 y=lower,
                 fill="tonexty",  # fill area between this trace and the next one
                 fillcolor="rgba(255,165,0,0.25)",  # orange with alpha
-                line=dict(color="orange", width=0.3),
+                line={"color": "orange", "width": 0.3},
                 showlegend=False,
                 hoverinfo="skip",
             )
@@ -351,9 +353,9 @@ def plot(exp_data, sim_data, model_manager, cal_manager):
             mod_trace = go.Scatter(
                 x=input_dict_loc[key],
                 y=mean,
-                line=dict(color="orange"),
+                line={"color": "orange"},
                 name="ML Model",
-                showlegend=(True if i == 0 else False),
+                showlegend=(i == 0),
             )
             # add trace
             fig.add_trace(
