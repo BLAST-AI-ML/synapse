@@ -1,25 +1,28 @@
 import asyncio
+import os
+import re
+import tempfile
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-import tempfile
-import os
-import yaml
-import re
+
 import mlflow
 import mlflow.store.artifact.artifact_repo as mlflow_artifact_repo
 import mlflow.store.artifact.cloud_artifact_repo as mlflow_cloud_artifact_repo
 import mlflow.utils.file_utils as mlflow_file_utils
+import yaml
 from mlflow.exceptions import MlflowException
-from trame.assets.local import LocalFileManager
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-from trame.widgets import vuetify3 as vuetify, html
-from utils import timer, load_config_dict, create_date_filter
+from trame.assets.local import LocalFileManager
+from trame.widgets import html
+from trame.widgets import vuetify3 as vuetify
+
 from calibration_manager import build_inferred_calibration
 from error_manager import add_error
 from sfapi_manager import monitor_sfapi_job
 from state_manager import state
+from utils import create_date_filter, load_config_dict, timer
 
 LOGO_DIR = Path(__file__).parent / "logos"
 AMSC_MLFLOW_URL = "https://mlflow.american-science-cloud.org"
@@ -172,7 +175,7 @@ def enable_amsc_x_api_key(config_dict):
 
     See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
     """
-    import mlflow.utils.rest_utils as rest_utils
+    from mlflow.utils import rest_utils
 
     mlflow_cfg = config_dict.get("mlflow") or {}
     api_key_env = mlflow_cfg.get("api_key_env")
@@ -241,7 +244,7 @@ class ModelManager:
 
     def avail(self):
         print("Checking model availability...")
-        model_avail = True if self.__model is not None else False
+        model_avail = self.__model is not None
         return model_avail
 
     @timer
@@ -454,7 +457,9 @@ class ModelManager:
                     f"Unsupported training mode: {state.model_training_mode}"
                 )
             if result:
-                state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                state.model_training_time = (
+                    datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
+                )
                 state.flush()
                 print(f"Finished training model at {state.model_training_time}")
             else:
@@ -587,9 +592,11 @@ class ModelManager:
                                 "Train",
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || "
-                                    "(model_training_mode === 'sfapi' && "
-                                    "sfapi_perlmutter_status !== 'active')",
+                                    (
+                                        "model_training || "
+                                        "(model_training_mode === 'sfapi' && "
+                                        "sfapi_perlmutter_status !== 'active')"
+                                    ),
                                 ),
                                 block=True,
                                 style="text-transform: none",

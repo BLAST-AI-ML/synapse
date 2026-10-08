@@ -1,4 +1,6 @@
-from trame.widgets import vuetify3 as vuetify, html
+from trame.widgets import html
+from trame.widgets import vuetify3 as vuetify
+
 from state_manager import state
 
 
