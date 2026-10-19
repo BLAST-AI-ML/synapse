@@ -1,7 +1,7 @@
 from pathlib import Path
+
 from trame.app import get_server
 from trame.widgets import vuetify3 as vuetify
-
 
 EXPERIMENTS_PATH = Path.cwd().parent / "experiments/"
 
@@ -18,11 +18,11 @@ def initialize_state():
     """
     print("Initializing state variables at startup...")
     # Experiment
-    default_experiment = [
+    default_experiment = next(
         d.name.removeprefix("synapse-")
         for d in EXPERIMENTS_PATH.iterdir()
         if d.is_dir()
-    ][0]
+    )
     print(f"Setting default experiment to {default_experiment}...")
     state.experiment = default_experiment
     state.experiment_date_range = []
@@ -32,6 +32,11 @@ def initialize_state():
     state.model_training_mode = "local"
     state.model_training_status = None
     state.model_training_time = None
+    state.model_available = False
+    state.model_downloading = False
+    state.model_download_status = None
+    state.model_download_progress = None
+    state.model_mlflow_tracking_uri = None
     # Optimization
     state.optimization_type = "Maximize"
     state.optimization_status = None
@@ -42,8 +47,8 @@ def initialize_state():
     state.sfapi_key = None
     state.sfapi_key_dict = None
     state.sfapi_key_expiration = "Unavailable"
-    state.perlmutter_description = "Unavailable"
-    state.perlmutter_status = "unavailable"
+    state.sfapi_perlmutter_description = "Unavailable"
+    state.sfapi_perlmutter_status = "unavailable"
     # Simulation plots in interactive dialog
     state.simulation_url = None
     state.simulation_dialog = False

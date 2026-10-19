@@ -1,0 +1,11 @@
+# Treat these directories as first-party so isort groups local modules separately
+src = ["dashboard", "ml"]
+
+[lint]
+ignore = [
+    # TODO Handle these and re-enable them selectively
+    "ASYNC230",
+    "BLE001",
+    # Nested `with` blocks are idiomatic for trame layouts
+    "SIM117",
+]
