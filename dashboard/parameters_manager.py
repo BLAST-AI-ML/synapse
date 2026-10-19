@@ -272,8 +272,8 @@ class ParametersManager:
                                     disabled=(
                                         (
                                             "simulation_running || !simulatable || "
-                                            "(simulation_running_mode !== 'sfapi' && "
-                                            "simulation_running_mode !== 'iriapi') || "
+                                            # TODO: re-enable 'iriapi' once simulation_async() supports it
+                                            "simulation_running_mode !== 'sfapi' || "
                                             f"{remote_backend_unavailable_expr('simulation_running_mode')}"
                                         ),
                                     ),
