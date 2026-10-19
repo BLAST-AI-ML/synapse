@@ -132,7 +132,7 @@ def load_sfapi_card():
                     with vuetify.VCol():
                         vuetify.VTextField(
                             v_model=("sfapi_key_expiration",),
-                            label="Key Expiration (if expired or unavailable, please upload a valid key)",
+                            label="Key Expiration",
                             readonly=True,
                             hide_details=True,
                         )
