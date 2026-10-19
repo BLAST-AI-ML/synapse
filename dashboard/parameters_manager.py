@@ -1,18 +1,21 @@
 import asyncio
 import copy
 import tempfile
-import yaml
 from datetime import datetime
 from pathlib import Path
+
+import yaml
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-from trame.widgets import client, vuetify3 as vuetify
-from utils import load_variables
+from trame.widgets import client
+from trame.widgets import vuetify3 as vuetify
+
 from calibration_manager import SimulationCalibrationManager
-from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from error_manager import add_error
+from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from sfapi_manager import monitor_sfapi_job
-from state_manager import state, EXPERIMENTS_PATH
+from state_manager import EXPERIMENTS_PATH, state
+from utils import load_variables
 
 
 class ParametersManager:
@@ -21,11 +24,11 @@ class ParametersManager:
         # save model
         self.__model = model
         # define state variables
-        state.parameters = dict()
-        state.parameters_min = dict()
-        state.parameters_max = dict()
-        state.parameters_show_all = dict()
-        self.parameters_step = dict()
+        state.parameters = {}
+        state.parameters_min = {}
+        state.parameters_max = {}
+        state.parameters_show_all = {}
+        self.parameters_step = {}
         state.simulatable = (
             self.simulation_scripts_base_path / "submission_script_single"
         ).is_file()
@@ -127,8 +130,8 @@ class ParametersManager:
                     f"Unsupported simulation mode: {state.simulation_running_mode}"
                 )
             if await self.simulation_kernel():
-                state.simulation_running_time = datetime.now().strftime(
-                    "%Y-%m-%d %H:%M"
+                state.simulation_running_time = (
+                    datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
                 )
                 print(f"Finished running simulation at {state.simulation_running_time}")
             else:
@@ -267,10 +270,12 @@ class ParametersManager:
                                     block=True,
                                     click=self.simulation_trigger,
                                     disabled=(
-                                        "simulation_running || !simulatable || "
-                                        "(simulation_running_mode !== 'sfapi' && "
-                                        "simulation_running_mode !== 'iriapi') || "
-                                        f"{remote_backend_unavailable_expr('simulation_running_mode')}",
+                                        (
+                                            "simulation_running || !simulatable || "
+                                            "(simulation_running_mode !== 'sfapi' && "
+                                            "simulation_running_mode !== 'iriapi') || "
+                                            f"{remote_backend_unavailable_expr('simulation_running_mode')}"
+                                        ),
                                     ),
                                     style="text-transform: none;",
                                 )

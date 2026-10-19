@@ -1,6 +1,5 @@
 from state_manager import state
 
-
 # Mapping from internal execution mode values to display labels
 EXECUTION_MODE_LABELS = {
     "local": "Local",

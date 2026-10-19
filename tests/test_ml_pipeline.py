@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Automated test: train ML models, save to MLflow, load and evaluate.
 

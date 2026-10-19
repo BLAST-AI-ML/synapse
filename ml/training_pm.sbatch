@@ -41,7 +41,7 @@ if [ ! -r "${DB_ENV_FILE}" ]; then
     exit 1
 fi
 
-printf '%s\n' "${REGISTRY_PASSWORD}" | podman-hpc login --username "${REGISTRY_USER}" --password-stdin "${REGISTRY_NAME}"
+echo "${REGISTRY_PASSWORD}" | podman-hpc login --username "${REGISTRY_USER}" --password-stdin "${REGISTRY_NAME}"
 # As the local image, we use the digest id.
 #   podman-hpc lists to entries with the same digest id,
 #   one local and one migrated (read-write and read-only).

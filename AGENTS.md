@@ -21,6 +21,10 @@ synapse/
 │   ├── environment.yml     # Conda dependencies for ML
 │   └── environment-lock.yml
 ├── experiments/            # Experiment configs (cloned from private repos)
+├── docs/                   # Sphinx documentation
+│   ├── source/             # Markdown/reST sources (semantic line breaks)
+│   ├── docs.yml            # Conda environment for building the docs
+│   └── Makefile            # Sphinx build entry point (`make html`)
 ├── tests/                  # Integration tests (ML pipeline)
 │   ├── test_ml_pipeline.py # Full ML training pipeline test
 │   └── check_model.py      # Model checking utility
@@ -49,9 +53,17 @@ pre-commit run --files <file1> <file2> ...
 
 Always run `pre-commit run --files <modified files>` before committing changes.
 
+### Markdown in `docs/source/`
+
+Documentation uses **semantic line breaks**: one sentence per line, and never wrap mid-sentence. Lines may be as long as the sentence requires — do not reflow prose to a fixed column width. This keeps diffs limited to the sentences that actually changed. Continuation sentences inside a list item are indented to align with the item text: 3 spaces in ordered lists (`1. `), 2 spaces in unordered lists (`- `).
+
 ## Building
 
-There is no traditional build step (no `setup.py`, `pyproject.toml`, or `Makefile`). The project runs directly as Python scripts within Conda environments and is containerized via Docker for deployment.
+There is no traditional build step for the Python code (no `setup.py` or `pyproject.toml`, and no top-level `Makefile`). The project runs directly as Python scripts within Conda environments and is containerized via Docker for deployment. The one exception is the documentation, which has its own Sphinx `Makefile` in `docs/`.
+
+### Documentation build
+
+The documentation is built with Sphinx from `docs/` (`cd docs && make html`), which requires a dedicated Conda environment. See the Documentation section of `docs/source/developer-notes.md` for the environment setup and output location.
 
 ### Docker builds (from repository root)
 
@@ -78,7 +90,7 @@ docker run -p 127.0.0.1:5000:5000 ghcr.io/mlflow/mlflow mlflow server --host 0.0
 python tests/test_ml_pipeline.py
 
 # Optionally restrict to a specific model type or config
-python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-bella-ip2
+python tests/test_ml_pipeline.py --model NN --config_file experiments/synapse-<experiment>/config.yaml
 ```
 
 Dashboard validation is done manually by running the application.
@@ -109,8 +121,8 @@ The only CI workflow is **CodeQL Advanced** (`.github/workflows/codeql.yml`), wh
 
 - **MongoDB** is used for persistent data from experiments and simulations.
 - **MLflow** is used for persistent data from ML models.
-- Database access requires SSH tunneling to NERSC when running locally.
-- Environment variables: `SF_DB_HOST` (dashboard), `SF_DB_READONLY_PASSWORD` (dashboard and ML training), `AM_SC_API_KEY` (dashboard and ML training, required when MLflow tracking_uri is AmSC).
+- Database connection settings are read from the `database` section of the experiment's `config.yaml`. Local runs usually reach the database through an SSH tunnel, with `database.host` set to `127.0.0.1` in a local copy of `config.yaml`.
+- Environment variables: `config.yaml` sets their names. `database.password_ro_env` names the read-only database password, and `mlflow.api_key_env` names the MLflow API key, which is only needed when `mlflow.tracking_uri` is AmSC. Both are used by the dashboard and by ML training. The BELLA deployment uses `SF_DB_READONLY_PASSWORD` and `AM_SC_API_KEY`.
 
 ## Common Pitfalls and Workarounds
 

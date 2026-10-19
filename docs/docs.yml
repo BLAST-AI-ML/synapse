@@ -1,0 +1,14 @@
+name: synapse-docs
+
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  - myst-parser
+  - pre-commit
+  - sphinx
+  - sphinx-autobuild
+  - sphinx-book-theme
+  - sphinx-copybutton
+  - sphinx-design

@@ -1,6 +1,6 @@
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 from amsc_client import Client
@@ -8,7 +8,6 @@ from trame.widgets import vuetify3 as vuetify
 
 from error_manager import add_error
 from state_manager import state
-
 
 IRIAPI_CREDENTIALS_PATH = Path.home() / ".amsc" / "credentials.json"
 
@@ -86,13 +85,13 @@ def update_iriapi_info():
         # Parse token expiration date from Unix timestamp
         expiration_utc = datetime.fromtimestamp(
             expires_at,
-            tz=timezone.utc,
+            tz=UTC,
         )
         expiration = expiration_utc.astimezone(
             timezone(expiration_utc.astimezone().utcoffset())
         )
         # If token is not expired, update info, else set to expired/unavailable
-        if expiration_utc > datetime.now(timezone.utc):
+        if expiration_utc > datetime.now(UTC):
             # Update token expiration date
             state.iriapi_key_expiration = (
                 f"Valid Until {expiration.strftime(user_format)}"
@@ -135,11 +134,10 @@ def update_iriapi_info():
 @state.change("iriapi_key_dict")
 def load_iriapi_credentials(**kwargs):
     # Skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        if state.iriapi_key_dict is not None:
-            print("Loading AmSC IRI API credentials...")
-            # Decode, persist, and immediately validate the uploaded token file
-            update_iriapi_info()
+    if len(state.modified_keys) == 1 and state.iriapi_key_dict is not None:
+        print("Loading AmSC IRI API credentials...")
+        # Decode, persist, and immediately validate the uploaded token file
+        update_iriapi_info()
 
 
 def load_iriapi_card():

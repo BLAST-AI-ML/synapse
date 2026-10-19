@@ -1,37 +1,39 @@
 import asyncio
-from copy import deepcopy
-from contextlib import contextmanager
-from datetime import datetime
 import os
 import re
 import shlex
-from pathlib import Path, PurePosixPath
 import tempfile
+from contextlib import contextmanager
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path, PurePosixPath
 
 import mlflow
-import yaml
-from amsc_client import Client
 import mlflow.store.artifact.artifact_repo as mlflow_artifact_repo
 import mlflow.store.artifact.cloud_artifact_repo as mlflow_cloud_artifact_repo
 import mlflow.utils.file_utils as mlflow_file_utils
-from mlflow.exceptions import MlflowException
-from trame.assets.local import LocalFileManager
+import yaml
+from amsc_client import Client
 from iri_api_autogen.models import (
     JobAttributes,
     JobAttributesCustomAttributes,
     JobSpec,
     ResourceSpec,
 )
+from mlflow.exceptions import MlflowException
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
-from trame.widgets import vuetify3 as vuetify, html
-from utils import timer, load_config_dict, create_date_filter
+from trame.assets.local import LocalFileManager
+from trame.widgets import html
+from trame.widgets import vuetify3 as vuetify
+
 from calibration_manager import build_inferred_calibration
-from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from error_manager import add_error
-from sfapi_manager import monitor_sfapi_job
+from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from iriapi_manager import monitor_iriapi_job
+from sfapi_manager import monitor_sfapi_job
 from state_manager import state
+from utils import create_date_filter, load_config_dict, timer
 
 LOGO_DIR = Path(__file__).parent / "logos"
 AMSC_MLFLOW_URL = "https://mlflow.american-science-cloud.org"
@@ -521,7 +523,7 @@ def enable_amsc_x_api_key(config_dict):
 
     See https://gitlab.com/amsc2/ai-services/model-services/intro-to-mlflow-pytorch for more details.
     """
-    import mlflow.utils.rest_utils as rest_utils
+    from mlflow.utils import rest_utils
 
     mlflow_cfg = config_dict.get("mlflow") or {}
     api_key_env = mlflow_cfg.get("api_key_env")
@@ -590,7 +592,7 @@ class ModelManager:
 
     def avail(self):
         print("Checking model availability...")
-        model_avail = True if self.__model is not None else False
+        model_avail = self.__model is not None
         return model_avail
 
     @timer
@@ -938,7 +940,9 @@ class ModelManager:
             else:
                 raise ValueError(f"Unsupported training mode: {training_mode}")
             if result:
-                state.model_training_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                state.model_training_time = (
+                    datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
+                )
                 state.flush()
                 print(f"Finished training model at {state.model_training_time}")
             else:
@@ -991,25 +995,31 @@ class ModelManager:
                         ):
                             with html.A(
                                 href=(
-                                    f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
-                                    f"{AMSC_MLFLOW_MODEL_URL_EXPR} : null",
+                                    (
+                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                        f"{AMSC_MLFLOW_MODEL_URL_EXPR} : null"
+                                    ),
                                 ),
                                 target="_blank",
                                 rel="noopener noreferrer",
                                 title=(
-                                    f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
-                                    "'Open selected model in AmSC MLflow' : "
-                                    "'Selected model is not available in AmSC "
-                                    "MLflow'",
+                                    (
+                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                        "'Open selected model in AmSC MLflow' : "
+                                        "'Selected model is not available in AmSC "
+                                        "MLflow'"
+                                    ),
                                 ),
                                 style=(
-                                    f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
-                                    "'display: block; width: 100%; "
-                                    "max-width: 300px; margin-left: auto; "
-                                    "cursor: pointer;' : "
-                                    "'display: block; width: 100%; "
-                                    "max-width: 300px; margin-left: auto; "
-                                    "cursor: default;'",
+                                    (
+                                        f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
+                                        "'display: block; width: 100%; "
+                                        "max-width: 300px; margin-left: auto; "
+                                        "cursor: pointer;' : "
+                                        "'display: block; width: 100%; "
+                                        "max-width: 300px; margin-left: auto; "
+                                        "cursor: default;'"
+                                    ),
                                 ),
                             ):
                                 vuetify.VImg(
@@ -1044,9 +1054,11 @@ class ModelManager:
                         with vuetify.VCol():
                             with html.Div(
                                 style=(
-                                    f"{MODEL_DOWNLOAD_ACTIVE_EXPR} ? "
-                                    "'visibility: visible; opacity: 1;' : "
-                                    "'visibility: hidden; opacity: 0;'",
+                                    (
+                                        f"{MODEL_DOWNLOAD_ACTIVE_EXPR} ? "
+                                        "'visibility: visible; opacity: 1;' : "
+                                        "'visibility: hidden; opacity: 0;'"
+                                    ),
                                 )
                             ):
                                 with html.Div(
@@ -1064,9 +1076,11 @@ class ModelManager:
                                     vuetify.VSpacer()
                                     html.Span(
                                         v_text=(
-                                            "model_download_progress === null ? "
-                                            "'' : "
-                                            "`${Math.round(model_download_progress)}%`",
+                                            (
+                                                "model_download_progress === null ? "
+                                                "'' : "
+                                                "`${Math.round(model_download_progress)}%`"
+                                            ),
                                         ),
                                         style="min-width: 3em; text-align: right;",
                                     )
@@ -1102,8 +1116,10 @@ class ModelManager:
                                 block=True,
                                 click=self.training_trigger,
                                 disabled=(
-                                    "model_training || "
-                                    f"{remote_backend_unavailable_expr('model_training_mode')}",
+                                    (
+                                        "model_training || "
+                                        f"{remote_backend_unavailable_expr('model_training_mode')}"
+                                    ),
                                 ),
                                 style="text-transform: none",
                             )
