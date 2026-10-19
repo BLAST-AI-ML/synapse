@@ -1,5 +1,7 @@
 import asyncio
 import json
+import os
+import tempfile
 from datetime import UTC, datetime, timezone
 from pathlib import Path
 
@@ -25,11 +27,26 @@ def get_uploaded_iriapi_credentials():
 
 def write_iriapi_credentials(credentials):
     IRIAPI_CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    IRIAPI_CREDENTIALS_PATH.write_text(
-        json.dumps(credentials, indent=2) + "\n",
-        encoding="utf-8",
+    # Write the new credentials to an owner-only temporary file in the same
+    # directory. Once the write finishes, replace the destination in one step:
+    # readers see either the old complete file or the new complete file, never
+    # a partially written new file. Existing permissions on the old file are
+    # not changed before it is replaced.
+    fd, tmp_path = tempfile.mkstemp(
+        dir=IRIAPI_CREDENTIALS_PATH.parent,
+        prefix=f".{IRIAPI_CREDENTIALS_PATH.name}.",
+        suffix=".tmp",
     )
-    IRIAPI_CREDENTIALS_PATH.chmod(0o600)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(json.dumps(credentials, indent=2) + "\n")
+        os.replace(tmp_path, IRIAPI_CREDENTIALS_PATH)
+    except BaseException:
+        try:
+            os.unlink(tmp_path)
+        except FileNotFoundError:
+            pass
+        raise
     print(f"Wrote AmSC IRI API credentials to {IRIAPI_CREDENTIALS_PATH}")
 
 
