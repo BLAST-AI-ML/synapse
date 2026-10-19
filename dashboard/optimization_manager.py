@@ -17,9 +17,7 @@ class OptimizationManager:
         # convert array of parameters to dictionary
         parameters_dict = dict(zip(state.parameters.keys(), parameters_array))
         # change sign to the result in order to maximize when optimizing
-        mean, lower, upper = self.__model.evaluate(
-            parameters_dict, state.optimization_target
-        )
+        mean, _, _ = self.__model.evaluate(parameters_dict, state.optimization_target)
         res = -mean if state.optimization_type == "Maximize" else mean
         return res
 
@@ -31,7 +29,7 @@ class OptimizationManager:
             parameters_values = np.array(list(state.parameters.values()))
             # define parameters bounds for optimization
             parameters_bounds = []
-            for key in state.parameters.keys():
+            for key in state.parameters:
                 parameters_bounds.append(
                     (state.parameters_min[key], state.parameters_max[key])
                 )

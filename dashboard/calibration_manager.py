@@ -1,7 +1,10 @@
-from trame.widgets import client, vuetify3 as vuetify, html
-from state_manager import state
-from error_manager import add_error
 import copy
+
+from trame.widgets import client, html
+from trame.widgets import vuetify3 as vuetify
+
+from error_manager import add_error
+from state_manager import state
 
 
 def build_inferred_calibration(variables, alpha_values, beta_values):
@@ -125,7 +128,7 @@ class SimulationCalibrationManager:
                             label="Use inferred calibration",
                         )
                     with client.DeepReactive("simulation_calibration"):
-                        for key in state.simulation_calibration.keys():
+                        for key in state.simulation_calibration:
                             # create a row for the calibration formula
                             with vuetify.VRow():
                                 html.Small(

@@ -1,12 +1,13 @@
-from datetime import datetime
+import asyncio
+from datetime import datetime, timezone
+
 from sfapi_client import Client
 from sfapi_client.compute import Machine
-from trame.widgets import vuetify3 as vuetify
-import asyncio
 from sfapi_client.jobs import TERMINAL_STATES, JobState
+from trame.widgets import vuetify3 as vuetify
 
-from state_manager import state
 from error_manager import add_error
+from state_manager import state
 
 
 async def monitor_sfapi_job(sfapi_job, state_variable):
@@ -43,19 +44,21 @@ def update_sfapi_info():
             # get the user object
             user = client.user()
             # get client associated with the user and the client ID stored in the key file
-            credential_client = [
+            credential_client = next(
                 this_client
                 for this_client in user.clients()
                 if this_client.clientId == state.sfapi_client_id
-            ][0]
+            )
             # (see https://docs.python.org/3/library/datetime.html#format-codes
             # for all format codes accepted by the methods strftime and strptime)
             sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
             user_format = "%B %d, %Y, %H:%M %Z"
             # parse key expiration date from string
-            expiration = datetime.strptime(credential_client.expiresAt, sfapi_format)
+            expiration = datetime.strptime(
+                credential_client.expiresAt, sfapi_format
+            ).astimezone(timezone.utc)
             # if key is not expired, update info, else set to expired/unavailable
-            if expiration.replace(tzinfo=None) > datetime.now():
+            if expiration > datetime.now(timezone.utc):
                 # update key expiration date
                 state.sfapi_key_expiration = (
                     f"Valid Until {expiration.strftime(user_format)}"
@@ -95,16 +98,15 @@ def update_sfapi_info():
 @state.change("sfapi_key_dict")
 def load_sfapi_credentials(**kwargs):
     # skip if triggered on server ready (all state variables marked as modified)
-    if len(state.modified_keys) == 1:
-        # return if no key file has been uploaded (redundant)
-        if state.sfapi_key_dict is not None:
-            print("Loading Superfacility API credentials...")
-            # store the whole content of the key file in a string
-            key_str = state.sfapi_key_dict["content"].decode("utf-8")
-            # store the client ID and key in the respective state variables
-            parse_sfapi_key(key_str)
-            # update Superfacility API info
-            update_sfapi_info()
+    # and return if no key file has been uploaded (redundant)
+    if len(state.modified_keys) == 1 and state.sfapi_key_dict is not None:
+        print("Loading Superfacility API credentials...")
+        # store the whole content of the key file in a string
+        key_str = state.sfapi_key_dict["content"].decode("utf-8")
+        # store the client ID and key in the respective state variables
+        parse_sfapi_key(key_str)
+        # update Superfacility API info
+        update_sfapi_info()
 
 
 def load_sfapi_card():
