@@ -11,7 +11,7 @@ from trame.widgets import vuetify3 as vuetify
 
 from calibration_manager import SimulationCalibrationManager
 from error_manager import add_error, error_panel
-from hpc_manager import load_hpc_card
+from iriapi_manager import load_iriapi_card
 from model_manager import (
     ModelManager,
     is_model_available_on_mlflow,
@@ -21,6 +21,7 @@ from model_manager import (
 from optimization_manager import OptimizationManager
 from outputs_manager import OutputManager
 from parameters_manager import ParametersManager
+from sfapi_manager import load_sfapi_card
 from state_manager import ctrl, initialize_state, server, state
 from utils import (
     data_depth_panel,
@@ -449,11 +450,18 @@ def hpc_route():
     print("Setting GUI HPC route...")
     with RouterViewLayout(server, "/hpc"):
         with vuetify.VRow():
-            with vuetify.VCol(cols=12):
-                # Render both API credential cards
-                with vuetify.VRow():
-                    with vuetify.VCol():
-                        load_hpc_card()
+            with vuetify.VCol(cols=12, md=6):
+                # Supefacility API card
+                with vuetify.VCard():
+                    vuetify.VCardTitle("NERSC Superfacility API")
+                    with vuetify.VCardText():
+                        load_sfapi_card()
+            with vuetify.VCol(cols=12, md=6):
+                # AmSC IRI API card
+                with vuetify.VCard():
+                    vuetify.VCardTitle("AmSC IRI API")
+                    with vuetify.VCardText():
+                        load_iriapi_card()
 
 
 # Chat route
