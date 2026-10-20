@@ -1,26 +1,27 @@
-import asyncio
 from datetime import UTC, datetime
 
 from sfapi_client import Client
 from sfapi_client.compute import Machine
 from sfapi_client.jobs import TERMINAL_STATES, JobState
-from trame.widgets import vuetify3 as vuetify
 
 from error_manager import add_error
+from nersc_api_common import (
+    USER_DATE_FORMAT,
+    load_credentials_card,
+    monitor_job,
+)
 from state_manager import state
 
 
 async def monitor_sfapi_job(sfapi_job, state_variable):
-    while sfapi_job.state not in TERMINAL_STATES:
-        await asyncio.sleep(5)
-        await sfapi_job.update()
-        # Make the status more readable by putting in spaces and capitalizing the words
-        job_status = sfapi_job.state.value.replace("_", " ").title()
-        if state[state_variable] != job_status:
-            state[state_variable] = job_status
-            state.flush()
-            print("Job status: ", state[state_variable])
-    return sfapi_job.state == JobState.COMPLETED
+    return await monitor_job(
+        sfapi_job,
+        state_variable,
+        refresh=lambda job: job.update(),
+        is_terminal=lambda job: job.state in TERMINAL_STATES,
+        state_text=lambda job: job.state.value,
+        is_completed=lambda job: job.state == JobState.COMPLETED,
+    )
 
 
 def parse_sfapi_key(key_str):
@@ -52,7 +53,6 @@ def update_sfapi_info():
             # (see https://docs.python.org/3/library/datetime.html#format-codes
             # for all format codes accepted by the methods strftime and strptime)
             sfapi_format = "%Y-%m-%dT%H:%M:%S.%f%z"
-            user_format = "%B %d, %Y, %H:%M %Z"
             # parse key expiration date from string
             expiration = datetime.strptime(
                 credential_client.expiresAt, sfapi_format
@@ -61,7 +61,7 @@ def update_sfapi_info():
             if expiration > datetime.now(UTC):
                 # update key expiration date
                 state.sfapi_key_expiration = (
-                    f"Valid Until {expiration.strftime(user_format)}"
+                    f"Valid Until {expiration.strftime(USER_DATE_FORMAT)}"
                 )
                 # update Perlmutter status
                 status = client.compute(Machine.perlmutter)
@@ -73,13 +73,13 @@ def update_sfapi_info():
             else:
                 # reset key expiration date
                 state.sfapi_key_expiration = (
-                    f"Expired On {expiration.strftime(user_format)}"
+                    f"Expired On {expiration.strftime(USER_DATE_FORMAT)}"
                 )
                 # reset Perlmutter status
                 state.sfapi_perlmutter_description = "Unavailable"
                 state.sfapi_perlmutter_status = "unavailable"
                 title = "Unable to find a valid Superfacility API key"
-                msg = f"Superfacility API key expired on {expiration.strftime(user_format)}"
+                msg = f"Superfacility API key expired on {expiration.strftime(USER_DATE_FORMAT)}"
                 add_error(title, msg)
                 print(msg)
     except Exception as e:
@@ -111,30 +111,11 @@ def load_sfapi_credentials(**kwargs):
 
 def load_sfapi_card():
     print("Setting Superfacility API card...")
-    # row with component to upload input file with top padding
-    with vuetify.VRow(style="padding-top: 20px;"):
-        with vuetify.VCol():
-            vuetify.VFileInput(
-                v_model=("sfapi_key_dict",),
-                label="Key File (pem format, must include client ID in first line)",
-                accept=".pem",
-                prepend_icon="",
-                prepend_inner_icon="mdi-paperclip",
-                __properties=["accept"],
-            )
-    # row with text field to display key expiration date
-    with vuetify.VRow():
-        with vuetify.VCol():
-            vuetify.VTextField(
-                v_model=("sfapi_key_expiration",),
-                label="Key Expiration",
-                readonly=True,
-            )
-    # row with text field to display Perlmutter status
-    with vuetify.VRow():
-        with vuetify.VCol():
-            vuetify.VTextField(
-                v_model=("sfapi_perlmutter_description",),
-                label="Perlmutter Status",
-                readonly=True,
-            )
+    load_credentials_card(
+        key_dict_variable="sfapi_key_dict",
+        key_file_label="Key File (pem format, must include client ID in first line)",
+        key_file_accept=".pem",
+        key_expiration_variable="sfapi_key_expiration",
+        key_expiration_label="Key Expiration",
+        perlmutter_description_variable="sfapi_perlmutter_description",
+    )

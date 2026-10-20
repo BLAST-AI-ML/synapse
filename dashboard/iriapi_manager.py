@@ -6,9 +6,13 @@ from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 from amsc_client import Client
-from trame.widgets import vuetify3 as vuetify
 
 from error_manager import add_error
+from nersc_api_common import (
+    USER_DATE_FORMAT,
+    load_credentials_card,
+    monitor_job,
+)
 from state_manager import state
 
 IRIAPI_CREDENTIALS_PATH = Path.home() / ".amsc" / "credentials.json"
@@ -75,18 +79,20 @@ def parse_iriapi_credentials(credentials):
     return str(access_token).strip(), float(credentials["expires_at"])
 
 
+async def refresh_iriapi_job(iriapi_job):
+    # Refresh in a worker thread because the IRI client call is synchronous
+    await asyncio.to_thread(iriapi_job.refresh)
+
+
 async def monitor_iriapi_job(iriapi_job, state_variable):
-    while not iriapi_job.is_terminal:
-        await asyncio.sleep(5)
-        # Refresh in a worker thread because the IRI client call is synchronous
-        await asyncio.to_thread(iriapi_job.refresh)
-        # Make the status more readable by putting in spaces and capitalizing the words
-        job_status = iriapi_job.state.replace("_", " ").title()
-        if state[state_variable] != job_status:
-            state[state_variable] = job_status
-            state.flush()
-            print("Job status: ", state[state_variable])
-    return iriapi_job.state == "completed"
+    return await monitor_job(
+        iriapi_job,
+        state_variable,
+        refresh=refresh_iriapi_job,
+        is_terminal=lambda job: job.is_terminal,
+        state_text=lambda job: job.state,
+        is_completed=lambda job: job.state == "completed",
+    )
 
 
 def update_iriapi_info():
@@ -96,9 +102,6 @@ def update_iriapi_info():
         credentials = get_uploaded_iriapi_credentials()
         state.iriapi_key, expires_at = parse_iriapi_credentials(credentials)
         write_iriapi_credentials(credentials)
-        # (see https://docs.python.org/3/library/datetime.html#format-codes
-        # for all format codes accepted by the methods strftime and strptime)
-        user_format = "%B %d, %Y, %H:%M %Z"
         # Parse token expiration date from Unix timestamp
         expiration_utc = datetime.fromtimestamp(
             expires_at,
@@ -111,7 +114,7 @@ def update_iriapi_info():
         if expiration_utc > datetime.now(UTC):
             # Update token expiration date
             state.iriapi_key_expiration = (
-                f"Valid Until {expiration.strftime(user_format)}"
+                f"Valid Until {expiration.strftime(USER_DATE_FORMAT)}"
             )
             # Create an authenticated client
             client = Client(auth_method="globus")
@@ -126,13 +129,15 @@ def update_iriapi_info():
         else:
             # Reset token expiration date
             state.iriapi_key_expiration = (
-                f"Expired On {expiration.strftime(user_format)}"
+                f"Expired On {expiration.strftime(USER_DATE_FORMAT)}"
             )
             # Reset Perlmutter status
             state.iriapi_perlmutter_description = "Unavailable"
             state.iriapi_perlmutter_status = "unavailable"
             title = "Unable to find a valid AmSC IRI API token"
-            msg = f"AmSC IRI API token expired on {expiration.strftime(user_format)}"
+            msg = (
+                f"AmSC IRI API token expired on {expiration.strftime(USER_DATE_FORMAT)}"
+            )
             add_error(title, msg)
             print(msg)
     except Exception as e:
@@ -159,30 +164,11 @@ def load_iriapi_credentials(**kwargs):
 
 def load_iriapi_card():
     print("Setting AmSC IRI API card...")
-    # Row with component to upload input file with top padding
-    with vuetify.VRow(style="padding-top: 20px;"):
-        with vuetify.VCol():
-            vuetify.VFileInput(
-                v_model=("iriapi_key_dict",),
-                label="Token File",
-                accept=".json",
-                prepend_icon="",
-                prepend_inner_icon="mdi-paperclip",
-                __properties=["accept"],
-            )
-    # Row with text field to display key expiration date
-    with vuetify.VRow():
-        with vuetify.VCol():
-            vuetify.VTextField(
-                v_model=("iriapi_key_expiration",),
-                label="Token Expiration",
-                readonly=True,
-            )
-    # Row with text field to display Perlmutter status
-    with vuetify.VRow():
-        with vuetify.VCol():
-            vuetify.VTextField(
-                v_model=("iriapi_perlmutter_description",),
-                label="Perlmutter Status",
-                readonly=True,
-            )
+    load_credentials_card(
+        key_dict_variable="iriapi_key_dict",
+        key_file_label="Token File",
+        key_file_accept=".json",
+        key_expiration_variable="iriapi_key_expiration",
+        key_expiration_label="Token Expiration",
+        perlmutter_description_variable="iriapi_perlmutter_description",
+    )
