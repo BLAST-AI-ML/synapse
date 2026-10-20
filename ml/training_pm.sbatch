@@ -12,10 +12,10 @@
 #SBATCH -o /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.o%j
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
-# FIXME Debug this
-set -o errexit
-set -o nounset
-set -o pipefail
+# TODO
+#set -o errexit
+#set -o nounset
+#set -o pipefail
 
 model=${1}  # e.g., "NN", "GP", etc.
 
