@@ -7,6 +7,11 @@ WORKDIR /app/dashboard
 # Silence pip error to install in root dirs
 ENV PIP_ROOT_USER_ACTION=ignore
 
+# Spin runs with a random user ID and no usable home directory.
+# Create ~/.amsc so that user can write to it, while preventing users
+# from deleting or renaming one another's files.
+RUN mkdir -p /app/dashboard/.amsc && chmod 1777 /app/dashboard/.amsc
+
 # Install any needed packages specified in the environment file
 COPY dashboard/environment-lock.yml /app/dashboard/environment-lock.yml
 RUN conda install -c conda-forge conda-lock \
