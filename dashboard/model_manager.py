@@ -1014,7 +1014,7 @@ class ModelManager:
                                     max_width=300,
                                     max_height=72,
                                     contain=True,
-                                    style="width: 100%; cursor: inherit;",
+                                    style="width: 100%;",
                                 )
                             vuetify.VImg(
                                 v_if=(f"!({AMSC_MLFLOW_LINK_ACTIVE_EXPR})",),
