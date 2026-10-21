@@ -1099,7 +1099,6 @@ class ModelManager:
                         with vuetify.VCol():
                             vuetify.VBtn(
                                 "Train",
-                                block=True,
                                 click=self.training_trigger,
                                 disabled=(
                                     (
@@ -1107,5 +1106,6 @@ class ModelManager:
                                         f"{remote_backend_unavailable_expr('model_training_mode')}"
                                     ),
                                 ),
+                                block=True,
                                 style="text-transform: none",
                             )
