@@ -907,35 +907,22 @@ class ModelManager:
     async def training_async(self):
         try:
             print("Training model...")
-            experiment = state.experiment
-            model_type = model_type_dict[state.model_type_verbose]
             training_mode = state.model_training_mode
-            experiment_date_range = list(state.experiment_date_range or [])
-            simulation_calibration = deepcopy(state.simulation_calibration)
+            training_args = (
+                state.experiment,
+                model_type_dict[state.model_type_verbose],
+                list(state.experiment_date_range or []),
+                deepcopy(state.simulation_calibration),
+            )
             state.model_training = True
             state.model_training_status = "Submitting"
             state.flush()
             if training_mode == "local":
-                result = await self._training_kernel_local(
-                    experiment,
-                    model_type,
-                    experiment_date_range,
-                    simulation_calibration,
-                )
+                result = await self._training_kernel_local(*training_args)
             elif training_mode == "sfapi":
-                result = await self._training_kernel_sfapi(
-                    experiment,
-                    model_type,
-                    experiment_date_range,
-                    simulation_calibration,
-                )
+                result = await self._training_kernel_sfapi(*training_args)
             elif training_mode == "iriapi":
-                result = await self._training_kernel_iriapi(
-                    experiment,
-                    model_type,
-                    experiment_date_range,
-                    simulation_calibration,
-                )
+                result = await self._training_kernel_iriapi(*training_args)
             else:
                 raise ValueError(f"Unsupported training mode: {training_mode}")
             if result:
