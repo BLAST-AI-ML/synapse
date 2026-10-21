@@ -193,7 +193,7 @@ You need to upload valid Superfacility API credentials before you can launch sim
 
 Follow the instructions at [docs.nersc.gov/services/sfapi/authentication/#client](https://docs.nersc.gov/services/sfapi/authentication/#client):
 
-1. Log in to your profile page at [iris.nersc.gov/profile](https://iris.nersc.gov/profile).
+1. Log in to your profile page at [iris.nersc.gov/login](https://iris.nersc.gov/login).
 
 2. Click the icon with your username in the upper right of the profile page.
 
