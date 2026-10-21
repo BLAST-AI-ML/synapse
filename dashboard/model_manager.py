@@ -85,7 +85,6 @@ SBATCH_SUBMIT_OPTION_MAP = {
 SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
 IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker
 TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
-TRAINING_CONFIG_REMOTE_PATH = f"{TRAINING_REMOTE_DIR}/config.yaml"
 TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
 TRAINING_CONFIG_MOUNT_RE = re.compile(
     rf"(?P<prefix>(?:^|\s)-v\s+)"
