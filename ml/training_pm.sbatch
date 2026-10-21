@@ -37,7 +37,8 @@ source "${REGISTRY_PROFILE}"
 : "${REGISTRY_USER:?REGISTRY_USER must be set in ${REGISTRY_PROFILE}}"
 : "${REGISTRY_PASSWORD:?REGISTRY_PASSWORD must be set in ${REGISTRY_PROFILE}}"
 
-# Podman loads this file at container startup: do not source it in the job shell.
+# Fail before container operations if the environment file is unavailable.
+# Podman loads this file at container startup, no need to source it here.
 if [ ! -r "${DB_ENV_FILE}" ]; then
     echo "Missing container environment file: ${DB_ENV_FILE}" >&2
     echo "Create it with SF_DB_READONLY_PASSWORD and AM_SC_API_KEY." >&2
