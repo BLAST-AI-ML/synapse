@@ -256,18 +256,17 @@ class ParametersManager:
                                     dense=True,
                                     hide_details=True,
                                 )
-                        with vuetify.VRow(align="center"):
+                        with vuetify.VRow():
                             with vuetify.VCol(cols=6):
                                 vuetify.VBtn(
                                     "Reset",
-                                    block=True,
                                     click=self.reset,
+                                    block=True,
                                     style="text-transform: none",
                                 )
                             with vuetify.VCol(cols=6):
                                 vuetify.VBtn(
                                     "Simulate",
-                                    block=True,
                                     click=self.simulation_trigger,
                                     disabled=(
                                         (
@@ -277,5 +276,6 @@ class ParametersManager:
                                             f"{remote_backend_unavailable_expr('simulation_running_mode')}"
                                         ),
                                     ),
-                                    style="text-transform: none;",
+                                    block=True,
+                                    style="text-transform: none",
                                 )
