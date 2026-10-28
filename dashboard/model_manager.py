@@ -804,7 +804,6 @@ class ModelManager:
                     cfs.fs.upload,
                     config_path,
                     remote_config_path,
-                    file_name=PurePosixPath(remote_config_path).name,
                 )
                 upload_task = await asyncio.to_thread(upload_task.wait)
                 if upload_task.state != "completed":
@@ -818,7 +817,7 @@ class ModelManager:
             # Submit the training job through the AmSC IRI API
             iriapi_job = await asyncio.to_thread(
                 perlmutter.submit,
-                body=training_job_spec,
+                job_spec=training_job_spec,
             )
             state.model_training_status = "Submitted"
             state.flush()

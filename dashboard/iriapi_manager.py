@@ -91,7 +91,7 @@ async def monitor_iriapi_job(iriapi_job, state_variable):
         refresh=refresh_iriapi_job,
         is_terminal=lambda job: job.is_terminal,
         state_text=lambda job: job.state,
-        is_completed=lambda job: job.state == "completed",
+        is_completed=lambda job: job.state == "COMPLETED" and job.exit_code == 0,
     )
 
 
