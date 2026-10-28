@@ -14,12 +14,7 @@ import mlflow.store.artifact.cloud_artifact_repo as mlflow_cloud_artifact_repo
 import mlflow.utils.file_utils as mlflow_file_utils
 import yaml
 from amsc_client import Client
-from iri_api_autogen.models import (
-    JobAttributes,
-    JobAttributesCustomAttributes,
-    JobSpec,
-    ResourceSpec,
-)
+from amsc_iri.models import JobAttributes, JobSpec, ResourceSpec
 from mlflow.exceptions import MlflowException
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
@@ -232,11 +227,11 @@ def replace_training_config_mount(command, remote_config_path):
 
 
 def _custom_attributes_from_submit_options(submit_options):
-    custom_attributes = JobAttributesCustomAttributes()
-    for key in ("constraint",):
-        if key in submit_options:
-            custom_attributes.additional_properties[key] = submit_options[key]
-    return custom_attributes
+    return {
+        key: str(submit_options[key])
+        for key in ("constraint",)
+        if key in submit_options
+    }
 
 
 def _gpu_cores_per_process(submit_options):
