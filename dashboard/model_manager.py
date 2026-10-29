@@ -14,7 +14,6 @@ import mlflow.store.artifact.cloud_artifact_repo as mlflow_cloud_artifact_repo
 import mlflow.utils.file_utils as mlflow_file_utils
 import yaml
 from amsc_client import Client
-from amsc_iri.models import JobAttributes, JobSpec, ResourceSpec
 from mlflow.exceptions import MlflowException
 from sfapi_client import AsyncClient
 from sfapi_client.compute import Machine
@@ -224,57 +223,6 @@ def replace_training_config_mount(command, remote_config_path):
             "Could not find the training config bind mount in the launch command"
         )
     return rewritten_command
-
-
-def _custom_attributes_from_submit_options(submit_options):
-    return {
-        key: str(submit_options[key])
-        for key in ("constraint",)
-        if key in submit_options
-    }
-
-
-def _gpu_cores_per_process(submit_options):
-    gpus_per_node = int(submit_options["gpus-per-node"])
-    tasks_per_node = int(submit_options["ntasks-per-node"])
-    if gpus_per_node % tasks_per_node != 0:
-        raise ValueError(
-            "AmSC IRI API GPU resources require --gpus-per-node to be evenly "
-            "divisible by --ntasks-per-node"
-        )
-    return gpus_per_node // tasks_per_node
-
-
-def build_iri_training_job_spec(submit_options, launch_spec, directory):
-    """Build an IRI JobSpec with GPU resources in the standard resource field."""
-    tasks_per_node = int(submit_options["ntasks-per-node"])
-    node_count = submit_options["nodes"]
-
-    resources = ResourceSpec(
-        node_count=node_count,
-        process_count=node_count * tasks_per_node,
-        processes_per_node=tasks_per_node,
-        gpu_cores_per_process=_gpu_cores_per_process(submit_options),
-    )
-    attributes = JobAttributes(
-        duration=submit_options["duration"],
-        queue_name=submit_options["queue"],
-        account=submit_options["account"],
-        custom_attributes=_custom_attributes_from_submit_options(submit_options),
-    )
-
-    return JobSpec(
-        executable=launch_spec["executable"],
-        arguments=launch_spec["arguments"],
-        directory=directory,
-        name=submit_options["name"],
-        resources=resources,
-        attributes=attributes,
-        stdout_path=submit_options["stdout_path"],
-        stderr_path=submit_options["stderr_path"],
-        pre_launch=launch_spec["pre_launch"],
-        launcher=launch_spec["launcher"],
-    )
 
 
 def collapse_shell_command(lines):
@@ -776,20 +724,7 @@ class ModelManager:
                 model_type,
                 remote_config_path,
             )
-            training_job_spec = build_iri_training_job_spec(
-                submit_options, launch_spec, TRAINING_REMOTE_DIR
-            )
-            print(
-                "AmSC IRI API training submit options: "
-                f"account={submit_options['account']}, "
-                f"queue={submit_options['queue']}, "
-                f"constraint={submit_options['constraint']}, "
-                f"gpus-per-node={submit_options['gpus-per-node']}, "
-                f"gpu-cores-per-process="
-                f"{training_job_spec.resources.gpu_cores_per_process}, "
-                f"nodes={submit_options['nodes']}, "
-                f"duration={submit_options['duration']}"
-            )
+            print(f"AmSC IRI API training submit options: {submit_options}")
 
             # Training script is parsed locally; only config.yaml is uploaded
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -815,9 +750,13 @@ class ModelManager:
                 print(f"Uploaded training configuration to {remote_config_path}")
 
             # Submit the training job through the AmSC IRI API
+            # (SBATCH options without a dedicated submit() keyword, such as
+            # constraint and gpus-per-node, are passed as custom attributes)
             iriapi_job = await asyncio.to_thread(
                 perlmutter.submit,
-                job_spec=training_job_spec,
+                directory=TRAINING_REMOTE_DIR,
+                **launch_spec,
+                **submit_options,
             )
             state.model_training_status = "Submitted"
             state.flush()
