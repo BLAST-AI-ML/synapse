@@ -13,6 +13,9 @@
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
 model=${1}  # e.g., "NN", "GP", etc.
+# Path of the training config file on NERSC.
+# The dashboard sets a new path for each job; manual runs use the default.
+config_path=${2:-/global/cfs/cdirs/m558/superfacility/model_training/config.yaml}
 
 # login to the registry, update if needed
 # Note: If you encounter issues, note that we compare image
@@ -80,10 +83,9 @@ echo "Container check/pull took ${SECONDS} seconds."
 
 # CUDA visible devices are ordered inverse to local task IDs
 #   Reference: nvidia-smi topo -m
-# API submissions rewrite only the host side of the config mount.
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
-    -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
+    -v ${config_path}:/app/ml/config.yaml \
     --env-file "${DB_ENV_FILE}" \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
     python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}

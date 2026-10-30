@@ -79,17 +79,6 @@ SBATCH_SUBMIT_OPTION_MAP = {
 SBATCH_REQUIRED_SUBMIT_OPTIONS = set(SBATCH_SUBMIT_OPTION_MAP.values())
 IRI_TRAINING_LAUNCH_PREFIX = ("srun", "podman-hpc", "run")  # Container launch marker
 TRAINING_REMOTE_DIR = "/global/cfs/cdirs/m558/superfacility/model_training"
-TRAINING_CONFIG_CONTAINER_PATH = "/app/ml/config.yaml"
-TRAINING_CONFIG_MOUNT_RE = re.compile(
-    rf"(?P<prefix>(?:^|\s)-v\s+)"
-    rf"(?P<host_quote>[\"']?)"
-    rf"(?P<host>[^\"'\s:]+)"
-    rf"(?P=host_quote):"
-    rf"(?P<container_quote>[\"']?)"
-    rf"{re.escape(TRAINING_CONFIG_CONTAINER_PATH)}"
-    rf"(?P=container_quote)"
-    rf"(?=\s|\\|$)"
-)
 # Match model=$1 or model=${1}, with optional comment
 SCRIPT_MODEL_ARGUMENT_RE = re.compile(r"^model=\$\{?1\}?\s*(#.*)?$")
 # Capture shell assignments like REGISTRY_NAME=value, ignoring trailing comments
@@ -204,27 +193,6 @@ def build_remote_training_config_path(experiment, model_type):
     return f"{TRAINING_REMOTE_DIR}/{config_name}"
 
 
-def replace_training_config_mount(command, remote_config_path):
-    """Rewrite only the host path bound to the fixed container config path."""
-
-    def replace_mount(match):
-        return (
-            f"{match.group('prefix')}"
-            f"{shlex.quote(remote_config_path)}:{TRAINING_CONFIG_CONTAINER_PATH}"
-        )
-
-    rewritten_command, replacement_count = TRAINING_CONFIG_MOUNT_RE.subn(
-        replace_mount,
-        command,
-        count=1,
-    )
-    if replacement_count != 1:
-        raise ValueError(
-            "Could not find the training config bind mount in the launch command"
-        )
-    return rewritten_command
-
-
 def collapse_shell_command(lines):
     """Return the one command from a launch block.
 
@@ -325,14 +293,15 @@ def parse_iri_training_launch_spec(script_path, model_type, remote_config_path=N
 
     launch_command = collapse_shell_command(launch_lines)
     variables = parse_shell_variable_assignments(pre_launch_lines)
+    if remote_config_path is not None:
+        # Use this job's config file instead of the default path in the script
+        variables["config_path"] = shlex.quote(remote_config_path)
     launcher = IRI_TRAINING_LAUNCH_PREFIX[0]
     executable = "/bin/bash"
     shell_command = re.sub(
         rf"^\s*{re.escape(launcher)}\s+", "", launch_command, count=1
     )
     shell_command = expand_iri_shell_command(shell_command, model_type, variables)
-    if remote_config_path is not None:
-        shell_command = replace_training_config_mount(shell_command, remote_config_path)
     arguments = ["-lc", shell_command]
 
     return {
@@ -677,8 +646,9 @@ class ModelManager:
                     repl=rf"--model {model_type}",
                     string=training_script,
                 )
-                training_script = replace_training_config_mount(
-                    training_script, remote_config_path
+                # point the container's config mount to this job's config file
+                training_script = training_script.replace(
+                    "${config_path}", shlex.quote(remote_config_path)
                 )
                 # submit the training job through the Superfacility API
                 sfapi_job = await perlmutter.submit_job(training_script)
