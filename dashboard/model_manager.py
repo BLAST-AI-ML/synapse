@@ -895,8 +895,7 @@ class ModelManager:
                                     (
                                         f"{AMSC_MLFLOW_LINK_ACTIVE_EXPR} ? "
                                         "'Open selected model in AmSC MLflow' : "
-                                        "'Selected model is not available in AmSC "
-                                        "MLflow'"
+                                        "'Selected model is not available in AmSC MLflow'"
                                     ),
                                 ),
                                 style=(
@@ -917,22 +916,8 @@ class ModelManager:
                                     max_width=300,
                                     max_height=72,
                                     contain=True,
-                                    style="width: 100%;",
+                                    style="width: 100%; cursor: inherit;",
                                 )
-                            vuetify.VImg(
-                                v_if=(f"!({AMSC_MLFLOW_LINK_ACTIVE_EXPR})",),
-                                src=AMSC_LOGO_URL,
-                                alt="AmSC",
-                                max_width=300,
-                                max_height=72,
-                                contain=True,
-                                title=(
-                                    "Selected model is not available in AmSC MLflow"
-                                ),
-                                style=(
-                                    "width: 100%; max-width: 300px; margin-left: auto;"
-                                ),
-                            )
                     with vuetify.VRow(
                         no_gutters=True,
                         align="center",
@@ -974,7 +959,7 @@ class ModelManager:
                                         style="min-width: 3em; text-align: right;",
                                     )
                                 vuetify.VProgressLinear(
-                                    indeterminate=("model_download_progress === null"),
+                                    indeterminate=("model_download_progress === null",),
                                     model_value=("model_download_progress",),
                                     color="primary",
                                     height=4,
