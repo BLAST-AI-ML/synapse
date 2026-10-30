@@ -12,6 +12,7 @@ from trame.widgets import vuetify3 as vuetify
 
 from calibration_manager import SimulationCalibrationManager
 from error_manager import add_error
+from execution_mode_manager import EXECUTION_MODE_ITEMS, remote_backend_unavailable_expr
 from sfapi_manager import monitor_sfapi_job
 from state_manager import EXPERIMENTS_PATH, state
 from utils import load_variables
@@ -124,6 +125,10 @@ class ParametersManager:
             state.simulation_running = True
             state.simulation_running_status = "Submitting"
             state.flush()
+            if state.simulation_running_mode != "sfapi":
+                raise ValueError(
+                    f"Unsupported simulation mode: {state.simulation_running_mode}"
+                )
             if await self.simulation_kernel():
                 state.simulation_running_time = (
                     datetime.now().astimezone().strftime("%Y-%m-%d %H:%M")
@@ -139,6 +144,9 @@ class ParametersManager:
             msg = f"Error occurred when running simulation: {e}"
             add_error(title, msg)
             print(msg)
+            state.simulation_running = False
+            state.simulation_running_status = "Failed"
+            state.flush()
 
     def simulation_trigger(self):
         try:
@@ -232,6 +240,15 @@ class ParametersManager:
                                     )
                         with vuetify.VRow():
                             with vuetify.VCol():
+                                vuetify.VSelect(
+                                    v_model=("simulation_running_mode",),
+                                    label="Simulation backend",
+                                    items=(EXECUTION_MODE_ITEMS,),
+                                    dense=True,
+                                    hide_details=True,
+                                )
+                        with vuetify.VRow():
+                            with vuetify.VCol():
                                 vuetify.VTextField(
                                     v_model_number=("simulation_running_status",),
                                     label="Simulation status",
@@ -252,7 +269,12 @@ class ParametersManager:
                                     "Simulate",
                                     click=self.simulation_trigger,
                                     disabled=(
-                                        "simulation_running || sfapi_perlmutter_status != 'active' || !simulatable",
+                                        (
+                                            "simulation_running || !simulatable || "
+                                            # TODO: re-enable 'iriapi' once simulation_async() supports it
+                                            "simulation_running_mode !== 'sfapi' || "
+                                            f"{remote_backend_unavailable_expr('simulation_running_mode')}"
+                                        ),
                                     ),
                                     block=True,
                                     style="text-transform: none",
