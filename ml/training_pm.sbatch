@@ -17,7 +17,6 @@ model=${1}  # e.g., "NN", "GP", etc.
 # The dashboard sets a new path for each job; manual runs use the default.
 config_path=${2:-/global/cfs/cdirs/m558/superfacility/model_training/config.yaml}
 
-# login to the registry, update if needed
 # Note: If you encounter issues, note that we compare image
 #       Ids, but should compare image Digests.
 #       We did not find a way to compare digests between the docker registry
@@ -29,21 +28,27 @@ REGISTRY_NAME="registry.nersc.gov"
 IMAGE_NAME="m558/superfacility/synapse-ml"
 IMAGE_VERSION="latest"
 
+# Fail before registry operations if the credentials file is unavailable.
 if [ ! -r "${REGISTRY_PROFILE}" ]; then
     echo "Missing registry credentials file: ${REGISTRY_PROFILE}" >&2
     echo "Create it with REGISTRY_USER and REGISTRY_PASSWORD for ${REGISTRY_NAME}." >&2
     exit 1
 fi
-source "${REGISTRY_PROFILE}"  # credential variables: REGISTRY_USER and REGISTRY_PASSWORD
+
+# Load registry credentials and require both values to be nonempty.
+source "${REGISTRY_PROFILE}"
 : "${REGISTRY_USER:?REGISTRY_USER must be set in ${REGISTRY_PROFILE}}"
 : "${REGISTRY_PASSWORD:?REGISTRY_PASSWORD must be set in ${REGISTRY_PROFILE}}"
 
+# Fail before container operations if the environment file is unavailable.
+# Podman loads this file at container startup, no need to source it here.
 if [ ! -r "${DB_ENV_FILE}" ]; then
     echo "Missing container environment file: ${DB_ENV_FILE}" >&2
     echo "Create it with SF_DB_READONLY_PASSWORD and AM_SC_API_KEY." >&2
     exit 1
 fi
 
+# Log in to the registry and update the image if needed.
 echo "${REGISTRY_PASSWORD}" | podman-hpc login --username "${REGISTRY_USER}" --password-stdin "${REGISTRY_NAME}"
 # As the local image, we use the digest id.
 #   podman-hpc lists to entries with the same digest id,
