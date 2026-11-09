@@ -131,18 +131,24 @@ def load_database(config_dict):
     db_auth = config_dict["database"]["auth"]
     db_username = config_dict["database"]["username_ro"]
     db_password_env = config_dict["database"]["password_ro_env"]
-    db_password = os.getenv(db_password_env)
-    if db_password is None:
-        raise RuntimeError(f"Environment variable {db_password_env} must be set!")
+    # no password environment variable means no authentication (e.g., local server)
+    auth_kwargs = {}
+    if db_password_env is not None:
+        db_password = os.getenv(db_password_env)
+        if db_password is None:
+            raise RuntimeError(f"Environment variable {db_password_env} must be set!")
+        auth_kwargs = {
+            "authSource": db_auth,
+            "username": db_username,
+            "password": db_password,
+        }
     # get database instance
     print(f"Connecting to database {db_name}@{db_host}:{db_port}...")
     db = pymongo.MongoClient(
         host=db_host,
         port=db_port,
-        authSource=db_auth,
-        username=db_username,
-        password=db_password,
         directConnection=(db_host in ["localhost", "127.0.0.1"]),  # SSH forwarding
+        **auth_kwargs,
     )[db_name]
     return db
 
