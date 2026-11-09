@@ -12,6 +12,14 @@ class OptimizationManager:
         self.__model = model
         state.optimization_target = state.displayed_output
 
+    @property
+    def model(self):
+        return self.__model
+
+    @model.setter
+    def model(self, model):
+        self.__model = model
+
     def model_wrapper(self, parameters_array):
         print("Wrapping model...")
         # convert array of parameters to dictionary
