@@ -82,18 +82,27 @@ def load_config(config_file):
 def connect_to_db(config_dict):
     # Connect to the MongoDB database with read-only access
     db_host = config_dict["database"]["host"]
+    db_port = config_dict["database"]["port"]
     db_name = config_dict["database"]["name"]
     db_auth = config_dict["database"]["auth"]
     db_username = config_dict["database"]["username_ro"]
     db_password_env = config_dict["database"]["password_ro_env"]
-    db_password = os.getenv(db_password_env)
-    if db_password is None:
-        raise RuntimeError(f"Environment variable {db_password_env} must be set!")
+    # no password environment variable means no authentication (e.g., local server)
+    auth_kwargs = {}
+    if db_password_env is not None:
+        db_password = os.getenv(db_password_env)
+        if db_password is None:
+            raise RuntimeError(f"Environment variable {db_password_env} must be set!")
+        auth_kwargs = {
+            "authSource": db_auth,
+            "username": db_username,
+            "password": db_password,
+        }
     return pymongo.MongoClient(
         host=db_host,
-        authSource=db_auth,
-        username=db_username,
-        password=db_password,
+        port=db_port,
+        directConnection=(db_host in ["localhost", "127.0.0.1"]),  # SSH forwarding
+        **auth_kwargs,
     )[db_name]
 
 
