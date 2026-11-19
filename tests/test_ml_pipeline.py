@@ -63,14 +63,30 @@ def check_mlflow_reachable(uri, timeout=5):
         ) from e
 
 
+def mongo_client_kwargs(db_cfg):
+    """Return MongoClient keyword arguments from the database section of the config."""
+    kwargs = {
+        "host": db_cfg["host"],
+        "port": db_cfg["port"],
+        "directConnection": (db_cfg["host"] in ["localhost", "127.0.0.1"]),
+    }
+    # no password environment variable means no authentication (e.g., local server)
+    password_ro_env = db_cfg["password_ro_env"]
+    if password_ro_env is not None:
+        kwargs["authSource"] = db_cfg["auth"]
+        kwargs["username"] = db_cfg["username_ro"]
+        kwargs["password"] = os.getenv(password_ro_env)
+    return kwargs
+
+
 def check_db_reachable(cfg):
     """Check that the DB password env var is set and that MongoDB responds to a ping."""
     import pymongo
 
     db_cfg = cfg["database"]
     password_ro_env = db_cfg["password_ro_env"]
-    password = os.getenv(password_ro_env)
-    if password is None:
+    # no password environment variable means no authentication (e.g., local server)
+    if password_ro_env is not None and os.getenv(password_ro_env) is None:
         raise RuntimeError(
             f"Environment variable '{password_ro_env}' is not set.\n"
             f"Export it before running: export {password_ro_env}=<password>"
@@ -78,11 +94,7 @@ def check_db_reachable(cfg):
 
     try:
         client = pymongo.MongoClient(
-            host=db_cfg["host"],
-            port=db_cfg["port"],
-            authSource=db_cfg["auth"],
-            username=db_cfg["username_ro"],
-            password=password,
+            **mongo_client_kwargs(db_cfg),
             serverSelectionTimeoutMS=5000,  # fail after 5 seconds if DB is unreachable
         )
         client.admin.command("ping")
@@ -97,14 +109,7 @@ def count_sim_datapoints(cfg):
     import pymongo
 
     db_cfg = cfg["database"]
-    password = os.getenv(db_cfg["password_ro_env"])
-    client = pymongo.MongoClient(
-        host=db_cfg["host"],
-        port=db_cfg["port"],
-        authSource=db_cfg["auth"],
-        username=db_cfg["username_ro"],
-        password=password,
-    )
+    client = pymongo.MongoClient(**mongo_client_kwargs(db_cfg))
     db = client[db_cfg["name"]]
     date_filter = cfg.get("date_filter", {})
     return db[cfg["experiment"]].count_documents({"experiment_flag": 0, **date_filter})
