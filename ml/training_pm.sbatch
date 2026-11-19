@@ -4,7 +4,7 @@
 #SBATCH -N 1
 #SBATCH -J trainsf
 #SBATCH -A m558
-#SBATCH -q realtime
+#SBATCH -q debug
 #SBATCH --constraint=gpu
 # ideally single:1, but NERSC cgroups issue
 #SBATCH --ntasks-per-node=1
@@ -13,12 +13,15 @@
 #SBATCH -e /global/cfs/cdirs/m558/superfacility/model_training/logs/sf.e%j
 
 model=${1}  # e.g., "NN", "GP", etc.
+# Path of the training config file on NERSC.
+# The dashboard sets a new path for each job; manual runs use the default.
+config_path=${2:-/global/cfs/cdirs/m558/superfacility/model_training/config.yaml}
 
 # Note: If you encounter issues, note that we compare image
 #       Ids, but should compare image Digests.
 #       We did not find a way to compare digests between the docker registry
 #       and the local podman-hpc images (they change, conversion?)
-SECONDS=0                      # built-in bash timer: reset
+SECONDS=0  # built-in bash timer: reset
 REGISTRY_PROFILE="$HOME/registry.profile"
 DB_ENV_FILE="$HOME/db-podman.profile"
 REGISTRY_NAME="registry.nersc.gov"
@@ -56,21 +59,21 @@ LOCAL_SHA="sha256:"$(podman-hpc images --digests --format "{{.Id}}" ${REGISTRY_N
 OCI_INDEX_TYPE="application/vnd.oci.image.index.v1+json"
 OCI_MANIFEST_TYPE="application/vnd.oci.image.manifest.v1+json"
 #   first we unwarp the provenance information to pick the right image manifest
-MANIFEST_INDEX=$(curl -s \
+MANIFEST_INDEX=$(curl -fsS \
     -H "Accept: ${OCI_INDEX_TYPE}" \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${IMAGE_VERSION}" | \
-    jq -r '.manifests[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest' || echo "NOOCI")
+    jq -er '(.manifests // [])[] | select(.annotations["vnd.docker.reference.type"] != "attestation-manifest") | .digest' || echo "NOOCI")
 #   fallback for old Docker builders without OCI index
 if [ "${MANIFEST_INDEX}" == "NOOCI" ]; then
     MANIFEST_INDEX=${IMAGE_VERSION}
 fi
 #   then we download the manifest of the image and parse out the config digest SHA
-REMOTE_SHA=$(curl -s \
+REMOTE_SHA=$(curl -fsS \
     -H "Accept: ${OCI_MANIFEST_TYPE}" \
     -u "${REGISTRY_USER}:${REGISTRY_PASSWORD}" \
     "https://${REGISTRY_NAME}/v2/${IMAGE_NAME}/manifests/${MANIFEST_INDEX}" | \
-    jq -r '.config.digest')
+    jq -er '.config.digest')
 
 if [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
     echo "Ids are different."
@@ -87,7 +90,7 @@ echo "Container check/pull took ${SECONDS} seconds."
 #   Reference: nvidia-smi topo -m
 srun podman-hpc run --gpu \
     -v /etc/localtime:/etc/localtime \
-    -v /global/cfs/cdirs/m558/superfacility/model_training/config.yaml:/app/ml/config.yaml \
+    -v ${config_path}:/app/ml/config.yaml \
     --env-file "${DB_ENV_FILE}" \
     --rm -it ${REGISTRY_NAME}/${IMAGE_NAME}:${IMAGE_VERSION} \
     python -u /app/ml/train_model.py --config_file /app/ml/config.yaml --model ${model}

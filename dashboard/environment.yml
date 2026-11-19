@@ -9,11 +9,12 @@ pip-repositories:
   - https://gitlab.com/api/v4/projects/77567162/packages/pypi/simple
   - https://gitlab.com/api/v4/projects/76368190/packages/pypi/simple
   - https://gitlab.com/api/v4/projects/80654726/packages/pypi/simple
+  - https://gitlab.com/api/v4/projects/82001936/packages/pypi/simple
 
 dependencies:
   - botorch
   - cpuonly
-  - lume-model>=2.0.1
+  - lume-model>=2.0.1,<3
   - mlflow
   - pandas
   - pip
@@ -29,6 +30,6 @@ dependencies:
   - trame-router
   - trame-vuetify
   - pip:
-    - amsc-client
+    - amsc-client>=0.7.1
     - globus-sdk
     - sfapi_client
